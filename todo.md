@@ -32,10 +32,11 @@ context to pick up cold. (MoM scope tracked here without dates, per decision.)
 - [ ] **Browser end-to-end form test** — DB insert path is verified via SQL and
       the health check; still submit all 4 forms in a browser once deployed and
       confirm rows land with correct `kind` + UTM values.
-- [ ] **Turnstile keys** — create a Turnstile site in the Cloudflare dash; set
-      `NEXT_PUBLIC_TURNSTILE_SITE_KEY` (build env) and `TURNSTILE_SECRET_KEY`
-      (`.dev.vars` locally, `wrangler secret put` in prod). Forms pass through
-      without keys by design.
+- [x] **Turnstile keys** — widget created (hostnames: workers.dev + localhost);
+      site key in `apps/website/.env` (build-time), secret in `.dev.vars` +
+      `wrangler secret put TURNSTILE_SECRET_KEY`. Deployed and verified in prod
+      chunks. Remember to add `truelend.in` to the widget's hostnames when the
+      custom domain goes live.
 - [ ] **Custom domain** — site assumes `https://truelend.in`
       (`content/site.ts`, sitemap, OG URLs). Attach the real domain to the
       Worker and update if different.
