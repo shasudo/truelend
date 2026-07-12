@@ -25,7 +25,10 @@ context to pick up cold. (MoM scope tracked here without dates, per decision.)
 - [x] **Apply DB migration** — migration 0000 applied to Neon; insert/select
       round-trip verified; workerd preview health reports `db: ok` through the
       Hyperdrive binding.
-- [ ] **First production deploy** — `pnpm deploy` (needs explicit go-ahead).
+- [x] **First production deploy** — live at
+      https://truelend-website.truelend.workers.dev (workers.dev subdomain
+      `truelend` registered account-wide). Health reports `db: ok` through
+      Hyperdrive; all routes verified 200.
 - [ ] **Browser end-to-end form test** — DB insert path is verified via SQL and
       the health check; still submit all 4 forms in a browser once deployed and
       confirm rows land with correct `kind` + UTM values.
