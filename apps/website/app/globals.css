@@ -22,3 +22,10 @@
     transform: translateX(0);
   }
 }
+
+/* Partner strip — content is duplicated, so -50% loops seamlessly. */
+@keyframes marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}

@@ -51,3 +51,22 @@
   /* Motion */
   --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
 }
+
+/* Radix Accordion open/close (mount-based, so transitions can't be used). */
+@keyframes accordion-down {
+  from {
+    height: 0;
+  }
+  to {
+    height: var(--radix-accordion-content-height);
+  }
+}
+
+@keyframes accordion-up {
+  from {
+    height: var(--radix-accordion-content-height);
+  }
+  to {
+    height: 0;
+  }
+}
