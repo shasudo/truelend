@@ -9,8 +9,13 @@ catalog:
   react: ^19.0.0
   react-dom: ^19.0.0
   next: ^15.5.18
-  drizzle-orm: ^0.38.0
+  drizzle-orm: ^0.45.2
   postgres: ^3.4.5
+  # auth
+  better-auth: ^1.6.23
+  "@better-auth/drizzle-adapter": ^1.6.23
+  # dashboards
+  recharts: ^3.9.2
   # ui / styling
   tailwindcss: ^4.1.0
   "@tailwindcss/postcss": ^4.1.0
@@ -34,8 +39,9 @@ catalog:
   "@opennextjs/cloudflare": ^1.0.0
   wrangler: ^4.86.0
   "@cloudflare/workers-types": ^5.20260708.1
-  drizzle-kit: ^0.30.0
+  drizzle-kit: ^0.31.10
   # build / dev tooling
+  tsx: ^4.20.0
   typescript: ^5.7.0
   turbo: ^2.3.0
   prettier: ^3.4.0
