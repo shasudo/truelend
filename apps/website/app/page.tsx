@@ -13,10 +13,12 @@ import { Reveal } from "@/components/reveal";
 import { StatsBand } from "@/components/stats-band";
 import { CategoryCard } from "@/components/category-card";
 import { PartnerStrip } from "@/components/partner-strip";
+import { PostCard } from "@/components/post-card";
 import { CtaBand } from "@/components/cta-band";
 import { products, productBySlug } from "@/content/products";
 import { banks } from "@/content/banks";
 import { rateRange, toRateTableRows } from "@/lib/format";
+import { getAllPosts } from "@/lib/blog";
 
 const heroChips = ["Right Lender", "Better Terms", "Higher Approval Probability"];
 
@@ -296,6 +298,29 @@ export default function Home() {
       </section>
 
       <PartnerStrip />
+
+      {/* From the blog */}
+      <section>
+        <Container className="py-20 sm:py-24">
+          <Reveal>
+            <SectionHeading
+              eyebrow="The ledger"
+              title="Borrowing, explained without the fine print"
+              lede="Notes from our advisory desk on scores, switching and the real cost of convenient money."
+            />
+          </Reveal>
+          <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {getAllPosts()
+              .slice(0, 3)
+              .map((post, i) => (
+                <Reveal key={post.slug} delay={(i % 3) * 0.06}>
+                  <PostCard post={post} />
+                </Reveal>
+              ))}
+          </div>
+        </Container>
+      </section>
+
       <CtaBand />
     </>
   );

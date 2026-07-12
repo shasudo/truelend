@@ -16,9 +16,13 @@
   "dependencies": {
     "@hookform/resolvers": "catalog:",
     "@marsidev/react-turnstile": "catalog:",
+    "@mdx-js/loader": "catalog:",
+    "@mdx-js/react": "catalog:",
+    "@next/mdx": "catalog:",
     "@truelend/db": "workspace:*",
     "@truelend/types": "workspace:*",
     "@truelend/ui": "workspace:*",
+    "gray-matter": "catalog:",
     "lucide-react": "catalog:",
     "motion": "catalog:",
     "next": "catalog:",
@@ -26,6 +30,7 @@
     "react": "catalog:",
     "react-dom": "catalog:",
     "react-hook-form": "catalog:",
+    "remark-frontmatter": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {
@@ -33,6 +38,8 @@
     "@eslint/eslintrc": "catalog:",
     "@opennextjs/cloudflare": "catalog:",
     "@tailwindcss/postcss": "catalog:",
+    "@tailwindcss/typography": "catalog:",
+    "@types/mdx": "catalog:",
     "@truelend/typescript-config": "workspace:*",
     "@types/node": "catalog:",
     "@types/react": "catalog:",
