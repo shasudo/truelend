@@ -43,8 +43,8 @@ Server code gets platform resources from `getCloudflareContext()` (from `@openne
 
 ```ts
 const { env, ctx } = getCloudflareContext();
-env.HYPERDRIVE.connectionString  // Postgres (pooled by Hyperdrive)
-env.BUCKET                       // R2 bucket (use its API directly; no wrapper)
+env.HYPERDRIVE.connectionString; // Postgres (pooled by Hyperdrive)
+env.BUCKET; // R2 bucket (use its API directly; no wrapper)
 ```
 
 Bindings are declared in `apps/web/wrangler.jsonc` and typed in `apps/web/cloudflare-env.d.ts` — when you change one, update the other (or run `pnpm cf-typegen`). `initOpenNextCloudflareForDev()` in `next.config.ts` makes bindings work during `next dev`; the Hyperdrive binding falls back to `localConnectionString` locally.
@@ -63,6 +63,50 @@ Schema changes: edit `packages/db/src/schema.ts` → `pnpm db:generate` → `pnp
 - Route handlers that touch the DB need `export const dynamic = "force-dynamic"`.
 - `apps/web/next-env.d.ts` is committed deliberately so `tsc --noEmit` passes on a fresh checkout without a prior build.
 - Deliberate shortcuts are marked with `ponytail:` comments naming the upgrade path.
+
+## Code rules
+
+**Organization — every file has one obvious home:**
+
+- `apps/web/app/` — routes only (`page.tsx`, `layout.tsx`, `route.ts`). Keep route handlers and pages thin: parse input → call logic → shape response.
+- `apps/web/components/` — reusable UI components. Pieces used by a single route live next to that route.
+- `apps/web/lib/` — non-UI helpers used across routes (formatting, fetch wrappers).
+- `packages/db/` — the only place that touches the database. No inline SQL or drizzle calls in components; route handlers go through `@truelend/db`.
+- `packages/types/` — shared request/response contracts. If web and a handler both need a type, it goes here.
+- Domain logic with no runtime surface (money math, validation rules) → a package, not a route file, so it's reusable and testable.
+
+**Naming:**
+
+- Files and folders: `kebab-case` (`loan-summary.tsx`, `format-currency.ts`). Next.js reserved names (`page.tsx`, `route.ts`, `layout.tsx`) as required.
+- React components and types: `PascalCase`. Functions, variables, DB columns follow existing style (`camelCase` in TS, `snake_case` column names in schema.ts).
+- Name things for what they do, not how (`getActiveLoans`, not `queryHelper2`).
+
+**Components & reuse (DRY, applied with judgment):**
+
+- Server components by default; add `"use client"` only for state, effects, or browser APIs.
+- Extract a shared component/helper when the _third_ usage appears (rule of three). Two similar blocks are cheaper than a premature abstraction with a config surface.
+- One responsibility per module/component; compose small pieces rather than extending big ones. Keep functions small enough to name honestly.
+- Never copy-paste a type or constant between packages — import it from its home.
+
+**Prefer packages over hand-written code:**
+
+- Don't hand-roll what a well-maintained library already does (validation → zod, dates → date-fns/Temporal, auth → an established provider). Check in this order: already in the repo → already an installed dependency → stdlib/platform → then add a package.
+- New dependencies go in the `catalog:` block of `pnpm-workspace.yaml`, referenced as `"catalog:"` — never a version pinned in one package.json.
+- Prefer boring, popular, actively maintained packages; avoid micro-deps a few lines can replace.
+
+**Comments:**
+
+- Comment only what the code can't say: constraints, gotchas, whys (`// Hyperdrive pools upstream, keep max small`). Never narrate what the next line does.
+- Deliberate shortcuts get a `ponytail:` comment naming the ceiling and upgrade path.
+
+**Correctness & safety:**
+
+- TypeScript strict mode is on; keep it clean — no `any`, no `@ts-ignore` (use `@ts-expect-error` with a reason if truly needed). `import type` for type-only imports.
+- Validate all external input at the boundary (route handler request bodies/params) before it reaches logic or the DB.
+- Route handlers return proper status codes and never leak internal error details in responses.
+- Money is never `float` — use integer cents or `numeric` columns.
+- Secrets: never in code or committed files. Local dev → `.dev.vars` / `packages/db/.env` (gitignored); production → `wrangler secret put`.
+- Before committing: `pnpm lint && pnpm typecheck && pnpm build` must pass, `pnpm format` applied.
 
 ## Workflow
 
