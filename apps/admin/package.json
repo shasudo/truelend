@@ -1,0 +1,47 @@
+{
+  "name": "@truelend/admin",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev -p 3001",
+    "build": "next build",
+    "start": "next start",
+    "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
+    "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
+    "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@hookform/resolvers": "catalog:",
+    "@truelend/auth": "workspace:*",
+    "@truelend/db": "workspace:*",
+    "@truelend/types": "workspace:*",
+    "@truelend/ui": "workspace:*",
+    "better-auth": "catalog:",
+    "lucide-react": "catalog:",
+    "next": "catalog:",
+    "radix-ui": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "react-hook-form": "catalog:",
+    "recharts": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "catalog:",
+    "@eslint/eslintrc": "catalog:",
+    "@opennextjs/cloudflare": "catalog:",
+    "@tailwindcss/postcss": "catalog:",
+    "@truelend/typescript-config": "workspace:*",
+    "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "eslint": "catalog:",
+    "eslint-config-next": "catalog:",
+    "tailwindcss": "catalog:",
+    "typescript": "catalog:",
+    "wrangler": "catalog:"
+  }
+}

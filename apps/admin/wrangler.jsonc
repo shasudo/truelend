@@ -1,0 +1,27 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "truelend-admin",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2025-04-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS",
+  },
+  "observability": {
+    "enabled": true,
+  },
+  "vars": {
+    // Overridden to http://localhost:3001 in .dev.vars for local dev.
+    "BETTER_AUTH_URL": "https://truelend-admin.truelend.workers.dev",
+  },
+  // Same account-level Hyperdrive config the website uses (shared Neon pool).
+  // Secrets (wrangler secret put / .dev.vars): BETTER_AUTH_SECRET.
+  "hyperdrive": [
+    {
+      "binding": "HYPERDRIVE",
+      "id": "88ae362ffaea4695b72a99731389a543",
+      "localConnectionString": "postgres://postgres:postgres@localhost:5432/truelend",
+    },
+  ],
+}
