@@ -20,7 +20,7 @@ export async function GET() {
 
   const body: HealthResponse = {
     status: "ok",
-    service: "web",
+    service: "website",
     timestamp: new Date().toISOString(),
     db,
   };

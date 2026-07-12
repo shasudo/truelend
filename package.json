@@ -12,8 +12,8 @@
     "typecheck": "turbo typecheck",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "deploy": "pnpm --filter @truelend/web deploy",
-    "cf-typegen": "pnpm --filter @truelend/web cf-typegen",
+    "deploy": "pnpm --filter @truelend/website deploy",
+    "cf-typegen": "pnpm --filter @truelend/website cf-typegen",
     "db:generate": "pnpm --filter @truelend/db db:generate",
     "db:migrate": "pnpm --filter @truelend/db db:migrate",
     "db:studio": "pnpm --filter @truelend/db db:studio"

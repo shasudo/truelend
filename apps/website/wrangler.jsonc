@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "truelend-web",
+  "name": "truelend-website",
   "main": ".open-next/worker.js",
   // nodejs_compat + a recent date are required by OpenNext and postgres.js.
   "compatibility_date": "2025-04-01",

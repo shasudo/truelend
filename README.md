@@ -8,8 +8,8 @@ backed by **Postgres** (through Cloudflare Hyperdrive) and **R2** object storage
 
 ```
 apps/
-  web/    Next.js (App Router) → Cloudflare Workers via OpenNext
-          app/api/*  = the API (route handlers)
+  website/  Next.js (App Router) → Cloudflare Workers via OpenNext
+            app/api/*  = the API (route handlers)
 packages/
   db/                 Drizzle ORM + postgres.js (Postgres via Hyperdrive)
   types/              shared response types (the API ↔ UI contract)
@@ -78,7 +78,7 @@ const object = await env.BUCKET.get(key);
 ## Deploy
 
 1. `wrangler login`
-2. Create the resources and paste the ids into [`apps/web/wrangler.jsonc`](apps/web/wrangler.jsonc):
+2. Create the resources and paste the ids into [`apps/website/wrangler.jsonc`](apps/website/wrangler.jsonc):
    ```bash
    wrangler hyperdrive create truelend --connection-string="postgres://…"
    wrangler r2 bucket create truelend
