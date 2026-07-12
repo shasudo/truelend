@@ -10,6 +10,7 @@
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
     "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
     "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
+    "seed:admin": "tsx scripts/seed-admin.ts",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit"
   },
@@ -41,6 +42,7 @@
     "eslint": "catalog:",
     "eslint-config-next": "catalog:",
     "tailwindcss": "catalog:",
+    "tsx": "catalog:",
     "typescript": "catalog:",
     "wrangler": "catalog:"
   }

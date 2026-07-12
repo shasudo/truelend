@@ -6,6 +6,8 @@ import { schema, type Database } from "@truelend/db";
 export interface CreateAuthOptions {
   secret: string;
   baseURL: string;
+  /** Bootstrap/seed only — permits email signup. Production leaves this off. */
+  allowSignUp?: boolean;
 }
 
 /*
@@ -32,7 +34,7 @@ export function createAuth(db: Database, opts: CreateAuthOptions) {
     emailAndPassword: {
       enabled: true,
       // Accounts are created by an admin from the Team page, never self-serve.
-      disableSignUp: true,
+      disableSignUp: !opts.allowSignUp,
     },
     plugins: [admin({ defaultRole: "employee" })],
   });
