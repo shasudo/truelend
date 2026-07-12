@@ -1,0 +1,7 @@
+{
+  "extends": "@truelend/typescript-config/react.json",
+  "compilerOptions": {
+    "types": ["vite/client"]
+  },
+  "include": ["src"]
+}

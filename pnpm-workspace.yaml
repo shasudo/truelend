@@ -1,0 +1,37 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+
+# esbuild's postinstall just fetches its platform binary (used by vite/tsup/vitest).
+allowBuilds:
+  esbuild: true
+
+# One pinned version per dependency, shared across every package.
+# Reference in package.json as "catalog:". Bump here, not in N files.
+catalog:
+  # runtime
+  react: ^19.0.0
+  react-dom: ^19.0.0
+  hono: ^4.6.0
+  "@hono/node-server": ^1.13.0
+  # build / dev tooling
+  typescript: ^5.7.0
+  turbo: ^2.3.0
+  vite: ^6.0.0
+  "@vitejs/plugin-react": ^4.3.0
+  vitest: ^2.1.0
+  tsx: ^4.19.0
+  tsup: ^8.3.0
+  prettier: ^3.4.0
+  # linting
+  eslint: ^9.17.0
+  "@eslint/js": ^9.17.0
+  typescript-eslint: ^8.18.0
+  eslint-config-prettier: ^9.1.0
+  eslint-plugin-react-hooks: ^5.1.0
+  eslint-plugin-react-refresh: ^0.4.16
+  globals: ^15.14.0
+  # types
+  "@types/node": ^22.10.0
+  "@types/react": ^19.0.0
+  "@types/react-dom": ^19.0.0
