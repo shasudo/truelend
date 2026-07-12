@@ -18,12 +18,21 @@ const instrument = Instrument_Sans({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://truelend.in"),
   title: {
     default: "TrueLend — Lending Choices, Simplified.",
     template: "%s — TrueLend",
   },
   description:
     "TrueLend helps you make the right borrowing decision by matching your financial profile with lenders whose policies best fit your needs.",
+  openGraph: {
+    siteName: "TrueLend",
+    type: "website",
+    locale: "en_IN",
+  },
+  twitter: {
+    card: "summary_large_image",
+  },
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
