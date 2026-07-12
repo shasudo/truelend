@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-pnpm + Turborepo monorepo: a single Next.js 15 (App Router) app that deploys to **Cloudflare Workers** via OpenNext, backed by **Postgres through Cloudflare Hyperdrive** (Drizzle + postgres.js) and **R2** object storage. There is no separate API service — `apps/website/app/api/*` route handlers are the API.
+pnpm + Turborepo monorepo for the TrueLend lending platform. Currently one Next.js 15 (App Router) app — the public website — deploying to **Cloudflare Workers** via OpenNext, backed by **Postgres through Cloudflare Hyperdrive** (Drizzle + postgres.js) and **R2** object storage. There is no separate API service — route handlers and server actions in `apps/website` are the API. Future dashboards (CRM, admin, partner) are additional `apps/*` in this repo, each its own Worker, sharing `packages/*`. Pending work is tracked in `todo.md` (keep it updated).
 
 ## Commands
 
@@ -31,11 +31,24 @@ Single-package runs: `pnpm --filter @truelend/website <script>`. There are no te
 ## Architecture
 
 ```
-apps/website/            Next.js → Workers (OpenNext); app/api/* route handlers = the API
-packages/db/         Drizzle ORM + postgres.js; schema.ts is the source of truth
-packages/types/      type-only package: API ↔ UI response contract (import type only)
+apps/website/        Public site: Next.js → Workers (OpenNext)
+  app/               routes; api/health; sitemap/robots/OG
+  components/        site chrome + composites (Header, Footer, forms/, CtaBand…)
+  content/           typed content: site.ts, products.ts, banks.ts, blog/*.mdx
+  lib/               schemas.ts (zod), actions.ts (server actions), blog.ts, format.ts
+packages/ui/         design system: theme.css (Tailwind v4 @theme tokens) + brand primitives
+packages/db/         Drizzle ORM + postgres.js; schema.ts is the source of truth (leads table)
+packages/types/      type-only package (import type only)
 packages/eslint-config/, packages/typescript-config/   shared flat config / tsconfig bases
+branding/            logo JPEGs + OG image SVG source (reference assets)
 ```
+
+### Design system (packages/ui + Tailwind v4)
+
+- Brand tokens live ONLY in `packages/ui/src/theme.css` (`@theme`): navy scale (logo navy = `navy-800` #14204A), red scale (logo red = `red-600` #CE0E17), `paper` background, `hairline` borders. **The default Tailwind palette is wiped** — off-brand classes like `bg-blue-500` don't compile; that's intentional.
+- Fonts: Bricolage Grotesque (`font-display`) + Instrument Sans (`font-sans`) via next/font, bridged in `@theme inline`. Rates/numerals use `tabular-nums`.
+- `apps/website/app/globals.css` must keep the `@source "../../../packages/ui/src"` line — Tailwind v4 does not scan symlinked workspace packages; without it, ui-package classes silently vanish from the build.
+- New brand-level primitives go in `packages/ui` (future dashboards reuse them); site-specific composites stay in `apps/website/components/`.
 
 ### Cloudflare bindings (the core pattern)
 
@@ -60,7 +73,8 @@ Schema changes: edit `packages/db/src/schema.ts` → `pnpm db:generate` → `pnp
 
 - Workspace packages (`@truelend/db`, `@truelend/types`) ship **raw TypeScript** — no build step. Next.js compiles them via `transpilePackages` in `next.config.ts`. Because of that, use **extensionless relative imports** inside these packages (`./schema`, not `./schema.js` — the `.js` form breaks Next's webpack resolution).
 - Dependency versions live once in the `catalog:` block of `pnpm-workspace.yaml`; package.json files reference `"catalog:"`. Bump versions there.
-- Route handlers that touch the DB need `export const dynamic = "force-dynamic"`.
+- Route handlers that touch the DB need `export const dynamic = "force-dynamic"`. Pages stay fully static — forms submit through the `submitLead` server action (`apps/website/lib/actions.ts`), which re-validates with the same zod schemas used client-side and verifies Turnstile (env-gated: no `TURNSTILE_SECRET_KEY` = pass-through).
+- Blog posts are MDX in `apps/website/content/blog/` compiled at build time (`@next/mdx`); `lib/blog.ts` reads frontmatter with fs at build only — Workers has no runtime fs, so keep blog pages `dynamicParams = false`.
 - `apps/website/next-env.d.ts` is committed deliberately so `tsc --noEmit` passes on a fresh checkout without a prior build.
 - Deliberate shortcuts are marked with `ponytail:` comments naming the upgrade path.
 
