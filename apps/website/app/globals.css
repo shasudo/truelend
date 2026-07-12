@@ -1,0 +1,5 @@
+@import "tailwindcss";
+@import "@truelend/ui/theme.css";
+
+/* Tailwind v4 won't scan symlinked workspace packages — point at the real path. */
+@source "../../../packages/ui/src";

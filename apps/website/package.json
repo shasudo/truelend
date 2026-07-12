@@ -16,6 +16,7 @@
   "dependencies": {
     "@truelend/db": "workspace:*",
     "@truelend/types": "workspace:*",
+    "@truelend/ui": "workspace:*",
     "next": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:"
@@ -24,12 +25,14 @@
     "@cloudflare/workers-types": "catalog:",
     "@eslint/eslintrc": "catalog:",
     "@opennextjs/cloudflare": "catalog:",
+    "@tailwindcss/postcss": "catalog:",
     "@truelend/typescript-config": "workspace:*",
     "@types/node": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
     "eslint": "catalog:",
     "eslint-config-next": "catalog:",
+    "tailwindcss": "catalog:",
     "typescript": "catalog:",
     "wrangler": "catalog:"
   }

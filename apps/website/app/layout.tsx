@@ -1,15 +1,33 @@
 import type { ReactNode } from "react";
 import type { Metadata } from "next";
+import { Bricolage_Grotesque, Instrument_Sans } from "next/font/google";
+import "./globals.css";
+
+const bricolage = Bricolage_Grotesque({
+  subsets: ["latin"],
+  variable: "--font-bricolage",
+  display: "swap",
+});
+
+const instrument = Instrument_Sans({
+  subsets: ["latin"],
+  variable: "--font-instrument",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
-  title: "truelend",
-  description: "truelend",
+  title: {
+    default: "TrueLend — Lending Choices, Simplified.",
+    template: "%s — TrueLend",
+  },
+  description:
+    "TrueLend helps you make the right borrowing decision by matching your financial profile with lenders whose policies best fit your needs.",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
-      <body style={{ fontFamily: "system-ui, sans-serif", margin: 0 }}>{children}</body>
+    <html lang="en" className={`${bricolage.variable} ${instrument.variable}`}>
+      <body className="bg-paper font-sans text-navy-900 antialiased">{children}</body>
     </html>
   );
 }

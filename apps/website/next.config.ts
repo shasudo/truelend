@@ -3,7 +3,7 @@ import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
 
 const nextConfig: NextConfig = {
   // Workspace packages ship TypeScript source — let Next transpile them.
-  transpilePackages: ["@truelend/db", "@truelend/types"],
+  transpilePackages: ["@truelend/db", "@truelend/types", "@truelend/ui"],
 };
 
 export default nextConfig;

@@ -1,0 +1,53 @@
+/*
+ * TrueLend design tokens — "editorial ledger".
+ * Brand colors sampled from the logo (branding/): navy #14204A, red #CE0E17.
+ * The default Tailwind palette is wiped so ONLY brand colors exist —
+ * an off-palette class like `bg-blue-500` simply doesn't compile.
+ */
+
+@theme inline {
+  /* Bridges next/font CSS variables (set on <html>) into Tailwind utilities. */
+  --font-display: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-instrument), ui-sans-serif, system-ui, sans-serif;
+}
+
+@theme {
+  --color-*: initial;
+
+  --color-white: #ffffff;
+  --color-black: #000000;
+  --color-transparent: transparent;
+  --color-current: currentColor;
+
+  /* Paper — the warm ground everything sits on */
+  --color-paper: #faf8f3;
+  --color-paper-deep: #f1ede3;
+
+  /* Navy — brand ink. 800 is the logo navy. */
+  --color-navy-50: #eef0f7;
+  --color-navy-100: #dfe3ef;
+  --color-navy-200: #c3cbe1;
+  --color-navy-300: #9ba7c9;
+  --color-navy-400: #6d7dac;
+  --color-navy-500: #46578f;
+  --color-navy-600: #2d3d74;
+  --color-navy-700: #1e2c5d;
+  --color-navy-800: #14204a;
+  --color-navy-900: #0d1637;
+  --color-navy-950: #070d24;
+
+  /* Red — signal only: CTAs, key numerals, active states. 600 is the logo red. */
+  --color-red-50: #fdeced;
+  --color-red-100: #fbd7d8;
+  --color-red-200: #f5a9ac;
+  --color-red-500: #e0212b;
+  --color-red-600: #ce0e17;
+  --color-red-700: #a90d14;
+  --color-red-800: #850a10;
+
+  /* Hairline — the ledger rule */
+  --color-hairline: #14204a1f;
+
+  /* Motion */
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+}
