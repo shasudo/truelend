@@ -3,3 +3,22 @@
 
 /* Tailwind v4 won't scan symlinked workspace packages — point at the real path. */
 @source "../../../packages/ui/src";
+
+/* Entrance animations for Radix portals (mount/unmount can't use transitions). */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes drawer-in {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
