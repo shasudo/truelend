@@ -1,0 +1,32 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "truelend-web",
+  "main": ".open-next/worker.js",
+  // nodejs_compat + a recent date are required by OpenNext and postgres.js.
+  "compatibility_date": "2025-04-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS",
+  },
+  "observability": {
+    "enabled": true,
+  },
+  // Postgres, pooled by Hyperdrive. Create it once, then paste its id:
+  //   wrangler hyperdrive create truelend --connection-string="postgres://..."
+  // localConnectionString is used by `next dev` / `wrangler dev` against a local DB.
+  "hyperdrive": [
+    {
+      "binding": "HYPERDRIVE",
+      "id": "REPLACE_WITH_HYPERDRIVE_ID",
+      "localConnectionString": "postgres://postgres:postgres@localhost:5432/truelend",
+    },
+  ],
+  // Object storage. Create it once: wrangler r2 bucket create truelend
+  "r2_buckets": [
+    {
+      "binding": "BUCKET",
+      "bucket_name": "truelend",
+    },
+  ],
+}

@@ -4,25 +4,33 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview",
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
+    "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
+    "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@truelend/db": "workspace:*",
     "@truelend/types": "workspace:*",
+    "next": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:"
   },
   "devDependencies": {
-    "@truelend/eslint-config": "workspace:*",
+    "@cloudflare/workers-types": "catalog:",
+    "@eslint/eslintrc": "catalog:",
+    "@opennextjs/cloudflare": "catalog:",
     "@truelend/typescript-config": "workspace:*",
+    "@types/node": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
-    "@vitejs/plugin-react": "catalog:",
     "eslint": "catalog:",
+    "eslint-config-next": "catalog:",
     "typescript": "catalog:",
-    "vite": "catalog:"
+    "wrangler": "catalog:"
   }
 }

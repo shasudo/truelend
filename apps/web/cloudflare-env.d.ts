@@ -1,0 +1,14 @@
+// Types for the Cloudflare bindings declared in wrangler.jsonc.
+// getCloudflareContext().env is typed as the global CloudflareEnv interface.
+// Regenerate from wrangler.jsonc with: pnpm cf-typegen
+import type { Hyperdrive, R2Bucket, Fetcher } from "@cloudflare/workers-types";
+
+declare global {
+  interface CloudflareEnv {
+    ASSETS: Fetcher;
+    HYPERDRIVE: Hyperdrive;
+    BUCKET: R2Bucket;
+  }
+}
+
+export {};

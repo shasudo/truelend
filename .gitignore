@@ -8,3 +8,12 @@ coverage
 .env
 .env.*
 !.env.example
+
+# next / opennext / wrangler
+.next
+.open-next
+.wrangler
+*.tsbuildinfo
+.dev.vars
+.dev.vars.*
+# next-env.d.ts is committed (kept static) so `tsc --noEmit` runs without a prior build

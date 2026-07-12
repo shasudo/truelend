@@ -4,7 +4,7 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": ["dist/**"]
+      "outputs": [".next/**", "!.next/cache/**", ".open-next/**"]
     },
     "dev": {
       "cache": false,
@@ -12,9 +12,6 @@
     },
     "lint": {},
     "typecheck": {
-      "dependsOn": ["^build"]
-    },
-    "test": {
       "dependsOn": ["^build"]
     }
   }

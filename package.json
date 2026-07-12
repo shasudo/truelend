@@ -10,9 +10,13 @@
     "dev": "turbo dev",
     "lint": "turbo lint",
     "typecheck": "turbo typecheck",
-    "test": "turbo test",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "deploy": "pnpm --filter @truelend/web deploy",
+    "cf-typegen": "pnpm --filter @truelend/web cf-typegen",
+    "db:generate": "pnpm --filter @truelend/db db:generate",
+    "db:migrate": "pnpm --filter @truelend/db db:migrate",
+    "db:studio": "pnpm --filter @truelend/db db:studio"
   },
   "devDependencies": {
     "prettier": "catalog:",
