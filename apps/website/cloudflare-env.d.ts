@@ -8,6 +8,8 @@ declare global {
     ASSETS: Fetcher;
     HYPERDRIVE: Hyperdrive;
     BUCKET: R2Bucket;
+    /** Optional — set via .dev.vars locally, `wrangler secret put` in prod. */
+    TURNSTILE_SECRET_KEY?: string;
   }
 }
 
