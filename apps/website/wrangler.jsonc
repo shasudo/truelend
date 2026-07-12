@@ -12,13 +12,15 @@
   "observability": {
     "enabled": true,
   },
-  // Postgres, pooled by Hyperdrive. Create it once, then paste its id:
-  //   wrangler hyperdrive create truelend --connection-string="postgres://..."
-  // localConnectionString is used by `next dev` / `wrangler dev` against a local DB.
+  // Postgres (Neon), pooled by Hyperdrive. The id is not a secret — credentials
+  // live inside the Hyperdrive config on Cloudflare. For local dev/preview the
+  // connection string comes from apps/website/.env via
+  // WRANGLER_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE (gitignored);
+  // localConnectionString below is only the fallback when that env is unset.
   "hyperdrive": [
     {
       "binding": "HYPERDRIVE",
-      "id": "REPLACE_WITH_HYPERDRIVE_ID",
+      "id": "88ae362ffaea4695b72a99731389a543",
       "localConnectionString": "postgres://postgres:postgres@localhost:5432/truelend",
     },
   ],

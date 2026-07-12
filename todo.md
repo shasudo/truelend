@@ -11,19 +11,24 @@ context to pick up cold. (MoM scope tracked here without dates, per decision.)
       Rate data is flagged by `RATES_ARE_PLACEHOLDER` in `content/products.ts`.
 - [ ] **Real contact details** — phone, WhatsApp, email, address in
       `apps/website/content/site.ts` are placeholders.
-- [ ] **Provision infra** — done: `wrangler login` (shathwik@linchpinsoftsolution.com),
-      R2 bucket `truelend` created. Remaining: pick a Postgres provider, then
-      `pnpm exec wrangler hyperdrive create truelend --connection-string=…`
-      (paste id into `apps/website/wrangler.jsonc`) → `pnpm deploy`.
-      Note: wrangler is workspace-local — run via `pnpm exec wrangler` from
-      `apps/website`, not bare `wrangler`. Account also has an unused
-      `truelend-files` bucket from June.
-- [ ] **Apply DB migration** — `packages/db/drizzle/0000_*.sql` via
-      `pnpm db:migrate` (needs `DATABASE_URL` in `packages/db/.env`). No
-      database has been provisioned yet.
-- [ ] **End-to-end form test against a real Postgres** — submit all 4 forms,
-      confirm rows land in `leads` with correct `kind` + UTM values. (Static
-      pages verified; insert path not yet exercised against a live DB.)
+- [x] **Provision infra** — `wrangler login` (shathwik@linchpinsoftsolution.com),
+      R2 bucket `truelend`, Neon Postgres, Hyperdrive config
+      `88ae362ffaea4695b72a99731389a543` (id in wrangler.jsonc). Credentials live
+      in gitignored `packages/db/.env` (direct endpoint, migrations) and
+      `apps/website/.env` (pooled endpoint for local dev/preview via
+      `WRANGLER_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE`). Note: wrangler
+      is workspace-local — `pnpm exec wrangler` from `apps/website`. Account
+      also has an unused `truelend-files` bucket from June.
+- [ ] **Rotate the Neon password** — the connection string was shared in chat;
+      reset it in the Neon dashboard, then update both `.env` files and
+      `pnpm exec wrangler hyperdrive update` with the new string.
+- [x] **Apply DB migration** — migration 0000 applied to Neon; insert/select
+      round-trip verified; workerd preview health reports `db: ok` through the
+      Hyperdrive binding.
+- [ ] **First production deploy** — `pnpm deploy` (needs explicit go-ahead).
+- [ ] **Browser end-to-end form test** — DB insert path is verified via SQL and
+      the health check; still submit all 4 forms in a browser once deployed and
+      confirm rows land with correct `kind` + UTM values.
 - [ ] **Turnstile keys** — create a Turnstile site in the Cloudflare dash; set
       `NEXT_PUBLIC_TURNSTILE_SITE_KEY` (build env) and `TURNSTILE_SECRET_KEY`
       (`.dev.vars` locally, `wrangler secret put` in prod). Forms pass through
