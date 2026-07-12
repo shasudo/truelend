@@ -11,9 +11,13 @@ context to pick up cold. (MoM scope tracked here without dates, per decision.)
       Rate data is flagged by `RATES_ARE_PLACEHOLDER` in `content/products.ts`.
 - [ ] **Real contact details** — phone, WhatsApp, email, address in
       `apps/website/content/site.ts` are placeholders.
-- [ ] **Provision infra**: `wrangler login` → `wrangler hyperdrive create truelend
-    --connection-string=…` (paste id into `apps/website/wrangler.jsonc`) →
-      `wrangler r2 bucket create truelend` → `pnpm deploy`.
+- [ ] **Provision infra** — done: `wrangler login` (shathwik@linchpinsoftsolution.com),
+      R2 bucket `truelend` created. Remaining: pick a Postgres provider, then
+      `pnpm exec wrangler hyperdrive create truelend --connection-string=…`
+      (paste id into `apps/website/wrangler.jsonc`) → `pnpm deploy`.
+      Note: wrangler is workspace-local — run via `pnpm exec wrangler` from
+      `apps/website`, not bare `wrangler`. Account also has an unused
+      `truelend-files` bucket from June.
 - [ ] **Apply DB migration** — `packages/db/drizzle/0000_*.sql` via
       `pnpm db:migrate` (needs `DATABASE_URL` in `packages/db/.env`). No
       database has been provisioned yet.
