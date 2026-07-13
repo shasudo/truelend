@@ -16,8 +16,8 @@
     "BETTER_AUTH_URL": "https://truelend-partners.truelend.workers.dev",
     // Email (Resend). RESEND_API_KEY is a secret; TEAM_EMAIL receives partner
     // lead alerts. Missing key = no-op.
-    "EMAIL_FROM": "TrueLend <onboarding@resend.dev>",
-    "TEAM_EMAIL": "",
+    "EMAIL_FROM": "TrueLend <hello@truelend.in>",
+    "TEAM_EMAIL": "shathwik@icloud.com",
   },
   // Same account-level Hyperdrive config (shared Neon pool) the other apps use.
   "hyperdrive": [

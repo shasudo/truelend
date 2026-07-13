@@ -17,8 +17,8 @@
   // your own account email. Set TEAM_EMAIL to route new-lead alerts. Empty
   // TEAM_EMAIL / missing key = email is a silent no-op.
   "vars": {
-    "EMAIL_FROM": "TrueLend <onboarding@resend.dev>",
-    "TEAM_EMAIL": "",
+    "EMAIL_FROM": "TrueLend <hello@truelend.in>",
+    "TEAM_EMAIL": "shathwik@icloud.com",
   },
   // Postgres (Neon), pooled by Hyperdrive. The id is not a secret — credentials
   // live inside the Hyperdrive config on Cloudflare. For local dev/preview the
