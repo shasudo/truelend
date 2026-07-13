@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { z } from "zod";
 import { getAuthContext } from "./auth";
@@ -69,7 +70,7 @@ const roleSchema = z.object({ userId: z.string().min(1), role: z.enum(ROLES) });
 
 export async function setRoleAction(formData: FormData) {
   const { auth, db, ctx, h, me } = await adminContext();
-  if (me?.role !== "admin") return;
+  if (me?.role !== "admin") redirect("/login");
   const parsed = roleSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return;
   // Don't let an admin demote themselves and risk locking everyone out.
@@ -92,7 +93,7 @@ const banSchema = z.object({
 
 export async function toggleBanAction(formData: FormData) {
   const { auth, db, ctx, h, me } = await adminContext();
-  if (me?.role !== "admin") return;
+  if (me?.role !== "admin") redirect("/login");
   const parsed = banSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return;
   if (parsed.data.userId === me.id) return; // never ban yourself

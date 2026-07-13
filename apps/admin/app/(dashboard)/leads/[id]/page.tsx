@@ -108,6 +108,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
               <Textarea
                 name="body"
                 required
+                maxLength={4000}
                 placeholder="Log a call, note next steps…"
                 className="min-h-20"
               />

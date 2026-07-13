@@ -73,7 +73,7 @@ const createSchema = z.object({
 
 export async function createLoanCaseAction(formData: FormData) {
   const { db, ctx, user } = await getMutationContext();
-  if (!user) return;
+  if (!user) redirect("/login"); // expired session → explain, don't eat the click
   const parsed = createSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return;
   const d = parsed.data;
@@ -113,7 +113,7 @@ const updateSchema = z.object({
 
 export async function updateLoanCaseAction(formData: FormData) {
   const { db, ctx, user } = await getMutationContext();
-  if (!user) return;
+  if (!user) redirect("/login"); // expired session → explain, don't eat the click
   const parsed = updateSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return;
   const d = parsed.data;

@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { schema, type Database } from "@truelend/db";
@@ -28,7 +29,7 @@ const idSchema = z.object({ partnerId: z.string().min(1) });
 
 export async function approvePartnerAction(formData: FormData) {
   const { db, ctx, env, isAdmin, adminId } = await admin();
-  if (!isAdmin || !adminId) return;
+  if (!isAdmin || !adminId) redirect("/login");
   const parsed = idSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return;
   try {
@@ -61,7 +62,7 @@ export async function approvePartnerAction(formData: FormData) {
 
 export async function revokePartnerAction(formData: FormData) {
   const { db, ctx, isAdmin } = await admin();
-  if (!isAdmin) return;
+  if (!isAdmin) redirect("/login");
   const parsed = idSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return;
   try {
@@ -84,7 +85,7 @@ const rejectSchema = z.object({
 
 export async function rejectPartnerAction(formData: FormData) {
   const { db, ctx, env, isAdmin, adminId } = await admin();
-  if (!isAdmin || !adminId) return;
+  if (!isAdmin || !adminId) redirect("/login");
   const parsed = rejectSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return;
   const reason = parsed.data.reason || "Documents did not pass verification.";
@@ -126,7 +127,7 @@ const payoutSchema = z.object({
 
 export async function recordPayoutAction(formData: FormData) {
   const { db, ctx, isAdmin } = await admin();
-  if (!isAdmin) return;
+  if (!isAdmin) redirect("/login");
   const parsed = payoutSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return;
   const amountPaise = rupeesToPaise(parsed.data.amount);

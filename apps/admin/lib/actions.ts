@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
@@ -29,7 +30,7 @@ const pipelineSchema = z.object({
 // so saving one control must not discard an unsaved change to the other.
 export async function updateLeadPipelineAction(formData: FormData) {
   const { db, ctx, user } = await session();
-  if (!user) return;
+  if (!user) redirect("/login"); // expired session → explain, don't eat the click
   const parsed = pipelineSchema.safeParse({
     leadId: formData.get("leadId"),
     status: formData.get("status"),
@@ -57,7 +58,7 @@ const noteSchema = z.object({
 
 export async function addLeadNoteAction(formData: FormData) {
   const { db, ctx, user } = await session();
-  if (!user) return;
+  if (!user) redirect("/login"); // expired session → explain, don't eat the click
   const parsed = noteSchema.safeParse({
     leadId: formData.get("leadId"),
     body: formData.get("body"),

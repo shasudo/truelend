@@ -184,6 +184,7 @@ export default async function PartnerDetailPage({ params }: { params: Promise<{ 
                 <Textarea
                   name="reason"
                   required
+                  maxLength={500}
                   placeholder="Reason (shown to the partner)"
                   className="min-h-16 text-sm"
                 />
@@ -244,7 +245,8 @@ export default async function PartnerDetailPage({ params }: { params: Promise<{ 
                     id="amount"
                     name="amount"
                     type="number"
-                    min="0"
+                    required
+                    min="1"
                     step="1"
                     inputMode="numeric"
                     placeholder="0"
