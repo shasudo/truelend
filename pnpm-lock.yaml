@@ -509,6 +509,21 @@ importers:
         specifier: 'catalog:'
         version: 5.9.3
 
+  packages/email:
+    devDependencies:
+      '@truelend/eslint-config':
+        specifier: workspace:*
+        version: link:../eslint-config
+      '@truelend/typescript-config':
+        specifier: workspace:*
+        version: link:../typescript-config
+      eslint:
+        specifier: 'catalog:'
+        version: 9.39.5(jiti@2.7.0)
+      typescript:
+        specifier: 'catalog:'
+        version: 5.9.3
+
   packages/eslint-config:
     dependencies:
       '@eslint/js':
