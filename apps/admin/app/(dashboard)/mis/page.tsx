@@ -1,12 +1,135 @@
+import { Card } from "@truelend/ui";
 import { PageTitle } from "@/components/page-title";
+import { getAuthContext } from "@/lib/auth";
+import { getMisByProduct, getMisByChannel, type MisRow } from "@/lib/mis-queries";
+import { formatPaise } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
-export default function MisPage() {
+function MisTable({ dimension, rows }: { dimension: string; rows: MisRow[] }) {
+  const totals = rows.reduce(
+    (a, r) => ({
+      leads: a.leads + r.leads,
+      cases: a.cases + r.cases,
+      approved: a.approved + r.approved,
+      declined: a.declined + r.declined,
+      disbursed: a.disbursed + r.disbursed,
+      disbursedVolumePaise: a.disbursedVolumePaise + r.disbursedVolumePaise,
+      revenuePaise: a.revenuePaise + r.revenuePaise,
+      payoutPaise: a.payoutPaise + r.payoutPaise,
+      netPaise: a.netPaise + r.netPaise,
+    }),
+    {
+      leads: 0,
+      cases: 0,
+      approved: 0,
+      declined: 0,
+      disbursed: 0,
+      disbursedVolumePaise: 0,
+      revenuePaise: 0,
+      payoutPaise: 0,
+      netPaise: 0,
+    },
+  );
+
+  return (
+    <Card className="overflow-x-auto">
+      <table className="w-full min-w-[900px] text-left text-sm">
+        <thead>
+          <tr className="border-b border-hairline text-xs font-semibold uppercase tracking-[0.1em] text-navy-500">
+            <th className="px-5 py-3 font-semibold">{dimension}</th>
+            <th className="px-5 py-3 text-right font-semibold">Leads</th>
+            <th className="px-5 py-3 text-right font-semibold">Cases</th>
+            <th className="px-5 py-3 text-right font-semibold">Approved</th>
+            <th className="px-5 py-3 text-right font-semibold">Declined</th>
+            <th className="px-5 py-3 text-right font-semibold">Disbursed</th>
+            <th className="px-5 py-3 text-right font-semibold">Volume</th>
+            <th className="px-5 py-3 text-right font-semibold">Revenue</th>
+            <th className="px-5 py-3 text-right font-semibold">Payout</th>
+            <th className="px-5 py-3 text-right font-semibold">Net</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.length === 0 && (
+            <tr>
+              <td colSpan={10} className="px-5 py-12 text-center text-navy-400">
+                No activity yet.
+              </td>
+            </tr>
+          )}
+          {rows.map((r) => (
+            <tr key={r.key} className="border-b border-hairline hover:bg-paper">
+              <td className="px-5 py-3.5 font-medium text-navy-950">{r.label}</td>
+              <td className="px-5 py-3.5 text-right tabular-nums text-navy-700">{r.leads}</td>
+              <td className="px-5 py-3.5 text-right tabular-nums text-navy-700">{r.cases}</td>
+              <td className="px-5 py-3.5 text-right tabular-nums text-navy-700">{r.approved}</td>
+              <td className="px-5 py-3.5 text-right tabular-nums text-navy-700">{r.declined}</td>
+              <td className="px-5 py-3.5 text-right tabular-nums text-navy-700">{r.disbursed}</td>
+              <td className="px-5 py-3.5 text-right tabular-nums text-navy-700">
+                {formatPaise(r.disbursedVolumePaise)}
+              </td>
+              <td className="px-5 py-3.5 text-right tabular-nums text-navy-700">
+                {formatPaise(r.revenuePaise)}
+              </td>
+              <td className="px-5 py-3.5 text-right tabular-nums text-navy-700">
+                {formatPaise(r.payoutPaise)}
+              </td>
+              <td className="px-5 py-3.5 text-right font-semibold tabular-nums text-navy-950">
+                {formatPaise(r.netPaise)}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+        {rows.length > 0 && (
+          <tfoot>
+            <tr className="border-t-2 border-navy-800/20 font-semibold text-navy-950">
+              <td className="px-5 py-3.5">Total</td>
+              <td className="px-5 py-3.5 text-right tabular-nums">{totals.leads}</td>
+              <td className="px-5 py-3.5 text-right tabular-nums">{totals.cases}</td>
+              <td className="px-5 py-3.5 text-right tabular-nums">{totals.approved}</td>
+              <td className="px-5 py-3.5 text-right tabular-nums">{totals.declined}</td>
+              <td className="px-5 py-3.5 text-right tabular-nums">{totals.disbursed}</td>
+              <td className="px-5 py-3.5 text-right tabular-nums">
+                {formatPaise(totals.disbursedVolumePaise)}
+              </td>
+              <td className="px-5 py-3.5 text-right tabular-nums">
+                {formatPaise(totals.revenuePaise)}
+              </td>
+              <td className="px-5 py-3.5 text-right tabular-nums">
+                {formatPaise(totals.payoutPaise)}
+              </td>
+              <td className="px-5 py-3.5 text-right tabular-nums">
+                {formatPaise(totals.netPaise)}
+              </td>
+            </tr>
+          </tfoot>
+        )}
+      </table>
+    </Card>
+  );
+}
+
+export default async function MisPage() {
+  const { db } = getAuthContext();
+  const [byProduct, byChannel] = await Promise.all([getMisByProduct(db), getMisByChannel(db)]);
+
   return (
     <>
       <PageTitle title="MIS" subtitle="Product- and channel-wise performance" />
-      <p className="text-navy-500">MIS reporting coming next.</p>
+
+      <section className="mb-8">
+        <h2 className="mb-3 font-display text-lg font-bold text-navy-950">By product</h2>
+        <MisTable dimension="Product" rows={byProduct} />
+      </section>
+
+      <section>
+        <h2 className="mb-3 font-display text-lg font-bold text-navy-950">By channel</h2>
+        <MisTable dimension="Channel" rows={byChannel} />
+        <p className="mt-3 text-xs text-navy-400">
+          Channels currently cover website leads (direct and referral). Business- and
+          referral-partner channels will appear here once those platforms are live.
+        </p>
+      </section>
     </>
   );
 }

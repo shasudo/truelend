@@ -6,6 +6,7 @@ export { SectionHeading } from "./section-heading";
 export { Card } from "./card";
 export { Badge } from "./badge";
 export { Stat } from "./stat";
+export { StatTile } from "./stat-tile";
 export { RateTable, type RateTableRow } from "./rate-table";
 export { Accordion } from "./accordion";
 export { HexPattern } from "./hex-pattern";
