@@ -158,6 +158,9 @@ importers:
       '@truelend/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@truelend/reference':
+        specifier: workspace:*
+        version: link:../../packages/reference
       '@truelend/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -167,6 +170,9 @@ importers:
       better-auth:
         specifier: 'catalog:'
         version: 1.6.23(@cloudflare/workers-types@5.20260711.1)(drizzle-kit@0.31.10)(drizzle-orm@0.45.2(@cloudflare/workers-types@5.20260711.1)(gel@2.2.0)(kysely@0.29.3)(postgres@3.4.9))(next@15.5.20(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      drizzle-orm:
+        specifier: 'catalog:'
+        version: 0.45.2(@cloudflare/workers-types@5.20260711.1)(gel@2.2.0)(kysely@0.29.3)(postgres@3.4.9)
       lucide-react:
         specifier: 'catalog:'
         version: 0.525.0(react@19.2.7)
@@ -417,6 +423,21 @@ importers:
       typescript-eslint:
         specifier: 'catalog:'
         version: 8.63.0(eslint@9.39.5(jiti@2.7.0))(typescript@5.9.3)
+
+  packages/reference:
+    devDependencies:
+      '@truelend/eslint-config':
+        specifier: workspace:*
+        version: link:../eslint-config
+      '@truelend/typescript-config':
+        specifier: workspace:*
+        version: link:../typescript-config
+      eslint:
+        specifier: 'catalog:'
+        version: 9.39.5(jiti@2.7.0)
+      typescript:
+        specifier: 'catalog:'
+        version: 5.9.3
 
   packages/types:
     devDependencies:
