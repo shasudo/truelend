@@ -6,6 +6,7 @@ import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { schema } from "@truelend/db";
 import { getAuthContext } from "./auth";
+import { isApplicationComplete } from "./onboarding";
 
 export type KycState = { ok?: boolean; error?: string };
 
@@ -65,6 +66,52 @@ export async function savePartnerKyc(_prev: KycState, formData: FormData): Promi
     revalidatePath("/dashboard");
     revalidatePath("/kyc");
     return { ok: true };
+  } finally {
+    ctx.waitUntil(db.$client.end());
+  }
+}
+
+/** Submit the completed application for review → redirect to the review screen. */
+export async function submitForReview() {
+  const { db, ctx, auth } = getAuthContext();
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session) return;
+  try {
+    const [partner] = await db
+      .select()
+      .from(schema.partners)
+      .where(eq(schema.partners.userId, session.user.id))
+      .limit(1);
+    if (!partner) return;
+    const docs = await db
+      .select({ docType: schema.partnerDocuments.docType })
+      .from(schema.partnerDocuments)
+      .where(eq(schema.partnerDocuments.partnerId, partner.userId));
+    const uploaded = new Set(docs.map((d) => d.docType));
+    // Server-side guard — the button is only enabled when complete, but re-check.
+    if (!isApplicationComplete(partner, uploaded)) return;
+
+    await db
+      .update(schema.partners)
+      .set({ submittedAt: new Date(), status: "pending", rejectionReason: null })
+      .where(eq(schema.partners.userId, partner.userId));
+    revalidatePath("/dashboard");
+  } finally {
+    ctx.waitUntil(db.$client.end());
+  }
+}
+
+/** Reopen a submitted application for editing (partner-initiated). */
+export async function reopenApplication() {
+  const { db, ctx, auth } = getAuthContext();
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session) return;
+  try {
+    await db
+      .update(schema.partners)
+      .set({ submittedAt: null })
+      .where(eq(schema.partners.userId, session.user.id));
+    revalidatePath("/dashboard");
   } finally {
     ctx.waitUntil(db.$client.end());
   }

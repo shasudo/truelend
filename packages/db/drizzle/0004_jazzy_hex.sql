@@ -1,0 +1,1 @@
+ALTER TABLE "partners" ADD COLUMN "submitted_at" timestamp with time zone;

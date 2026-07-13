@@ -1,10 +1,12 @@
-import { Clock, XCircle } from "lucide-react";
-import { Card, Container, Logo } from "@truelend/ui";
+import { Clock, XCircle, Send, CheckCircle2 } from "lucide-react";
+import { Button, Card, Container, Logo } from "@truelend/ui";
 import { partnerTypeLabels } from "@truelend/reference";
 import type { Partner, PartnerDocument } from "@truelend/db";
 import { KycDetailsForm } from "@/components/kyc-details-form";
 import { KycUpload } from "@/components/kyc-upload";
 import { SignOutButton } from "@/components/sign-out-button";
+import { isApplicationComplete } from "@/lib/onboarding";
+import { submitForReview } from "@/lib/kyc-actions";
 
 // Shown by the dashboard layout until a partner is verified. Pending partners
 // upload their KYC here; rejected partners see the reason and can re-upload.
@@ -18,6 +20,7 @@ export function PartnerStatusScreen({
   documents: PartnerDocument[];
 }) {
   const rejected = partner.status === "rejected";
+  const complete = isApplicationComplete(partner, new Set(documents.map((d) => d.docType)));
   return (
     <div className="min-h-screen">
       <header className="border-b border-hairline bg-white">
@@ -77,6 +80,34 @@ export function PartnerStatusScreen({
           </h2>
           <p className="mb-4 mt-1 text-sm text-navy-500">Upload proof for the details above.</p>
           <KycUpload documents={documents} />
+        </div>
+
+        {/* Step 3: submit */}
+        <div className="mt-8">
+          <h2 className="font-display text-lg font-bold text-navy-950">
+            <span className="mr-2 text-red-600">3.</span>Submit for review
+          </h2>
+          <Card className="mt-4 p-6">
+            {complete ? (
+              <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <p className="flex items-center gap-2 text-sm text-navy-700">
+                  <CheckCircle2 className="h-5 w-5 text-navy-800" aria-hidden />
+                  Everything looks complete. Submit and our team will review it.
+                </p>
+                <form action={submitForReview}>
+                  <Button type="submit" size="lg">
+                    <Send className="h-4 w-4" aria-hidden />
+                    Submit application
+                  </Button>
+                </form>
+              </div>
+            ) : (
+              <p className="text-sm text-navy-500">
+                Fill in all your details and upload the required documents (PAN, Aadhaar, photo and
+                cancelled cheque) to submit your application.
+              </p>
+            )}
+          </Card>
         </div>
       </Container>
     </div>

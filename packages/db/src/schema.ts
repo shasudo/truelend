@@ -242,6 +242,8 @@ export const partners = pgTable("partners", {
   accountHolder: text("account_holder"),
   accountNumber: text("account_number"),
   ifsc: text("ifsc"),
+  // set when the partner submits their completed application for review
+  submittedAt: timestamp("submitted_at", { withTimezone: true }),
   verifiedBy: text("verified_by").references(() => user.id, { onDelete: "set null" }),
   verifiedAt: timestamp("verified_at", { withTimezone: true }),
   rejectionReason: text("rejection_reason"),

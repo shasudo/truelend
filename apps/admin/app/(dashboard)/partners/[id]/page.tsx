@@ -80,6 +80,12 @@ export default async function PartnerDetailPage({ params }: { params: Promise<{ 
               <Detail label="Type" value={partnerTypeLabels[partner.type]} />
               {partner.businessName && <Detail label="Business" value={partner.businessName} />}
               <Detail label="Registered" value={formatDate(partner.createdAt)} />
+              <Detail
+                label="Submitted for review"
+                value={
+                  partner.submittedAt ? formatDateTime(partner.submittedAt) : "Not yet submitted"
+                }
+              />
             </dl>
           </Card>
 

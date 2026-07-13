@@ -29,6 +29,13 @@
       "when": 1783918468258,
       "tag": "0003_nasty_marvel_boy",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1783919430507,
+      "tag": "0004_jazzy_hex",
+      "breakpoints": true
     }
   ]
 }
