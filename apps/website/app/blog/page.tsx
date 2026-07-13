@@ -23,13 +23,17 @@ export default function BlogPage() {
       />
       <section>
         <Container className="py-16 sm:py-20">
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {posts.map((post, i) => (
-              <Reveal key={post.slug} delay={(i % 3) * 0.06}>
-                <PostCard post={post} />
-              </Reveal>
-            ))}
-          </div>
+          {posts.length === 0 ? (
+            <p className="text-navy-600">New articles are on the way.</p>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {posts.map((post, i) => (
+                <Reveal key={post.slug} delay={(i % 3) * 0.06}>
+                  <PostCard post={post} />
+                </Reveal>
+              ))}
+            </div>
+          )}
         </Container>
       </section>
       <CtaBand />

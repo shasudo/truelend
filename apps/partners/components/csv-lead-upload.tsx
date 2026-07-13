@@ -36,7 +36,10 @@ export function CsvLeadUpload() {
         </p>
       )}
       {state.ok && (
-        <p className="rounded-lg border border-navy-800/15 bg-navy-800/[0.05] px-4 py-3 text-sm text-navy-700">
+        <p
+          role="status"
+          className="rounded-lg border border-navy-800/15 bg-navy-800/[0.05] px-4 py-3 text-sm text-navy-700"
+        >
           Imported {state.inserted} lead{state.inserted === 1 ? "" : "s"}.
           {state.rowErrors &&
             state.rowErrors.length > 0 &&

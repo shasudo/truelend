@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Card, StatTile } from "@truelend/ui";
+import { Button, Card, StatTile, StatusBadge } from "@truelend/ui";
 import { earningsLabel, productName, leadStatusLabels } from "@truelend/reference";
 import { requirePartner, getAuthContext } from "@/lib/auth";
 import { getPartnerMetrics, getPartnerLeads } from "@/lib/dashboard-queries";
@@ -40,12 +40,11 @@ export default async function DashboardPage() {
           </h1>
           <p className="mt-1 text-sm text-navy-500">Your performance at a glance.</p>
         </div>
-        <Link
-          href={submitHref}
-          className="inline-flex h-11 items-center rounded-lg bg-red-600 px-6 text-sm font-semibold text-white transition-colors hover:bg-red-700"
-        >
-          {partner!.type === "business" ? "Submit a lead" : "Refer a friend"}
-        </Link>
+        <Button asChild>
+          <Link href={submitHref}>
+            {partner!.type === "business" ? "Submit a lead" : "Refer a friend"}
+          </Link>
+        </Button>
       </div>
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-3 xl:grid-cols-6">
@@ -87,9 +86,10 @@ export default async function DashboardPage() {
                 <p className="truncate text-xs text-navy-500">{productName(lead.productSlug)}</p>
               </div>
               <div className="flex shrink-0 items-center gap-4">
-                <span className="rounded-full bg-navy-800/[0.07] px-2.5 py-0.5 text-xs font-semibold text-navy-700">
-                  {leadStatusLabels[lead.status]}
-                </span>
+                <StatusBadge
+                  status={lead.status}
+                  label={leadStatusLabels[lead.status] ?? lead.status}
+                />
                 <span className="w-20 text-right text-xs tabular-nums text-navy-400">
                   {dateFmt.format(lead.createdAt)}
                 </span>

@@ -59,6 +59,24 @@ export async function approvePartnerAction(formData: FormData) {
   }
 }
 
+export async function revokePartnerAction(formData: FormData) {
+  const { db, ctx, isAdmin } = await admin();
+  if (!isAdmin) return;
+  const parsed = idSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return;
+  try {
+    // Back to pending: an accidental approval must be reversible from the UI.
+    await db
+      .update(schema.partners)
+      .set({ status: "pending", verifiedBy: null, verifiedAt: null })
+      .where(eq(schema.partners.userId, parsed.data.partnerId));
+    revalidatePath(`/partners/${parsed.data.partnerId}`);
+    revalidatePath("/partners");
+  } finally {
+    ctx.waitUntil(db.$client.end());
+  }
+}
+
 const rejectSchema = z.object({
   partnerId: z.string().min(1),
   reason: z.string().trim().max(500).optional(),

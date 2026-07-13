@@ -19,7 +19,14 @@ async function adminContext() {
   return { auth, db, ctx, h, me: session?.user ?? null };
 }
 
-export type CreateUserState = { ok?: boolean; error?: string };
+export type CreateUserState = {
+  ok?: boolean;
+  error?: string;
+  // Returned on success so the admin can copy the credentials to share — the
+  // temp password isn't stored anywhere retrievable afterward.
+  createdEmail?: string;
+  tempPassword?: string;
+};
 
 const createSchema = z.object({
   name: z.string().trim().min(2, "Name is required"),
@@ -50,7 +57,7 @@ export async function createUserAction(
       headers: h,
     });
     revalidatePath("/team");
-    return { ok: true };
+    return { ok: true, createdEmail: parsed.data.email, tempPassword: parsed.data.password };
   } catch (err) {
     return { error: (err as Error).message || "Could not create user (email may already exist)." };
   } finally {

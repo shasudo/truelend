@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { motion, useReducedMotion } from "motion/react";
+import { cx } from "@truelend/ui";
 
 export interface RevealProps {
   children: ReactNode;
@@ -18,7 +19,9 @@ export function Reveal({ children, delay = 0, immediate, className }: RevealProp
 
   return (
     <motion.div
-      className={className}
+      // tl-reveal lets a <noscript> stylesheet force visibility when JS is off
+      // (framer emits opacity:0 into SSR output).
+      className={cx("tl-reveal", className)}
       initial={{ opacity: 0, y: 24 }}
       {...(immediate
         ? { animate: { opacity: 1, y: 0 } }

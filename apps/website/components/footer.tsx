@@ -8,7 +8,7 @@ const companyLinks = [
   { label: "About Us", href: "/about" },
   { label: "Blog", href: "/blog" },
   { label: "Refer a Friend", href: "/refer" },
-  { label: "Free CIBIL Score", href: "/cibil-score" },
+  { label: "Free CIBIL Score (soon)", href: "/cibil-score" },
   { label: "Contact Us", href: "/contact" },
 ];
 

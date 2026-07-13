@@ -8,9 +8,11 @@ export function CreateUserForm() {
   const [state, action, pending] = useActionState<CreateUserState, FormData>(createUserAction, {});
   const formRef = useRef<HTMLFormElement>(null);
 
+  // Clear the inputs after every successful create (new state object each time),
+  // while the returned credentials stay visible in the banner below.
   useEffect(() => {
     if (state.ok) formRef.current?.reset();
-  }, [state.ok]);
+  }, [state]);
 
   return (
     <form ref={formRef} action={action} className="space-y-4">
@@ -48,9 +50,21 @@ export function CreateUserForm() {
         </p>
       )}
       {state.ok && (
-        <p className="rounded-lg border border-navy-800/15 bg-navy-800/[0.05] px-4 py-3 text-sm text-navy-700">
-          User created. Share the password with them to sign in.
-        </p>
+        <div
+          role="status"
+          className="rounded-lg border border-navy-800/15 bg-navy-800/[0.05] px-4 py-3 text-sm text-navy-700"
+        >
+          <p className="font-semibold text-navy-950">User created — share these credentials.</p>
+          <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1">
+            <dt className="text-navy-500">Email</dt>
+            <dd className="font-mono text-navy-950 break-all">{state.createdEmail}</dd>
+            <dt className="text-navy-500">Password</dt>
+            <dd className="font-mono text-navy-950 break-all">{state.tempPassword}</dd>
+          </dl>
+          <p className="mt-2 text-xs text-navy-500">
+            This password won&apos;t be shown again once you create another user.
+          </p>
+        </div>
       )}
 
       <Button type="submit" disabled={pending}>

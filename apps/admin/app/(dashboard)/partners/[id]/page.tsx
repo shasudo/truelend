@@ -7,6 +7,7 @@ import {
   partnerStatusLabels,
   partnerDocTypeLabels,
   productName,
+  earningsLabel,
 } from "@truelend/reference";
 import { PageTitle } from "@/components/page-title";
 import { requireAdmin, getAuthContext } from "@/lib/auth";
@@ -15,6 +16,7 @@ import { formatPaise, formatDate, formatDateTime } from "@/lib/format";
 import {
   approvePartnerAction,
   rejectPartnerAction,
+  revokePartnerAction,
   recordPayoutAction,
 } from "@/lib/partner-actions";
 
@@ -43,6 +45,9 @@ export default async function PartnerDetailPage({ params }: { params: Promise<{ 
   if (!data) notFound();
   const { partner, name, email, documents, payouts, leads, earnedPaise, paidPaise } = data;
   const balance = earnedPaise - paidPaise;
+  // "Payout" (business) / "Incentive" (referral) — inner labels echo the card.
+  const noun = earningsLabel(partner.type);
+  const canApprove = Boolean(partner.submittedAt) && documents.length > 0;
 
   return (
     <>
@@ -160,11 +165,19 @@ export default async function PartnerDetailPage({ params }: { params: Promise<{ 
                 <input type="hidden" name="partnerId" value={partner.userId} />
                 <SubmitButton
                   className="w-full"
+                  disabled={!canApprove}
                   pendingText="Approving…"
                   confirm={`Approve ${partner.businessName || name} and grant them portal access? They'll be emailed a confirmation.`}
                 >
                   <Check className="h-4 w-4" aria-hidden /> Approve partner
                 </SubmitButton>
+                {!canApprove && (
+                  <p className="mt-2 text-xs text-navy-400">
+                    {!partner.submittedAt
+                      ? "Partner hasn't submitted their application yet."
+                      : "No documents uploaded."}
+                  </p>
+                )}
               </form>
               <form action={rejectPartnerAction} className="mt-3 space-y-2">
                 <input type="hidden" name="partnerId" value={partner.userId} />
@@ -186,10 +199,28 @@ export default async function PartnerDetailPage({ params }: { params: Promise<{ 
             </Card>
           )}
 
+          {partner.status === "verified" && (
+            <Card className="p-6">
+              <h2 className="font-display text-lg font-bold text-navy-950">Verification</h2>
+              <p className="mt-2 text-sm text-navy-500">
+                Verified — this partner has portal access.
+              </p>
+              <form action={revokePartnerAction} className="mt-4">
+                <input type="hidden" name="partnerId" value={partner.userId} />
+                <SubmitButton
+                  variant="outline"
+                  className="w-full"
+                  pendingText="Revoking…"
+                  confirm="Revoke verification and return this partner to pending? They'll lose portal access until re-approved."
+                >
+                  Revoke verification
+                </SubmitButton>
+              </form>
+            </Card>
+          )}
+
           <Card className="p-6">
-            <h2 className="font-display text-lg font-bold text-navy-950">
-              {partner.type === "business" ? "Payouts" : "Incentives"}
-            </h2>
+            <h2 className="font-display text-lg font-bold text-navy-950">{noun}s</h2>
             <div className="mt-4 grid grid-cols-3 gap-3">
               <Stat value={formatPaise(earnedPaise)} label="Earned" />
               <Stat value={formatPaise(paidPaise)} label="Paid" />
@@ -229,11 +260,15 @@ export default async function PartnerDetailPage({ params }: { params: Promise<{ 
                 className="w-full"
                 pendingText="Recording…"
               >
-                Record entry
+                Record {noun.toLowerCase()}
               </SubmitButton>
             </form>
 
-            {payouts.length > 0 && (
+            {payouts.length === 0 ? (
+              <p className="mt-5 border-t border-hairline pt-4 text-sm text-navy-400">
+                No entries yet.
+              </p>
+            ) : (
               <ul className="mt-5 space-y-2 border-t border-hairline pt-4">
                 {payouts.map((p) => (
                   <li key={p.id} className="flex items-center justify-between gap-3 text-sm">

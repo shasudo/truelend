@@ -39,6 +39,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" className={`${bricolage.variable} ${instrument.variable}`}>
       <body className="flex min-h-screen flex-col bg-paper font-sans text-navy-900 antialiased">
+        {/* Scroll-reveal content is SSR'd at opacity:0; keep it visible without JS. */}
+        <noscript>
+          <style>{`.tl-reveal{opacity:1 !important;transform:none !important}`}</style>
+        </noscript>
         <Header />
         <main className="flex-1">{children}</main>
         <Footer />

@@ -1,5 +1,5 @@
 import { CheckCircle2, Clock, BadgeCheck, Mail } from "lucide-react";
-import { Button, Card, Container, HexPattern, Logo } from "@truelend/ui";
+import { Card, Container, HexPattern, Logo, SubmitButton } from "@truelend/ui";
 import type { Partner } from "@truelend/db";
 import { reopenApplication } from "@/lib/kyc-actions";
 import { SignOutButton } from "@/components/sign-out-button";
@@ -84,9 +84,14 @@ export function UnderReviewScreen({
         </Card>
 
         <form action={reopenApplication} className="mt-8">
-          <Button type="submit" variant="ghost" size="sm">
+          <SubmitButton
+            variant="ghost"
+            size="sm"
+            pendingText="Reopening…"
+            confirm="Reopen your application for editing? You'll need to submit it again for review."
+          >
             Need to change something? Edit your application
-          </Button>
+          </SubmitButton>
         </form>
       </Container>
     </div>

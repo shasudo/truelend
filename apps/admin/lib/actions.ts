@@ -18,42 +18,21 @@ async function session() {
   return { db, ctx, user: s?.user ?? null };
 }
 
-const statusSchema = z.object({
+const pipelineSchema = z.object({
   leadId: z.string().uuid(),
   status: z.enum(schema.leadStatus.enumValues),
-});
-
-export async function updateLeadStatusAction(formData: FormData) {
-  const { db, ctx, user } = await session();
-  if (!user) return;
-  const parsed = statusSchema.safeParse({
-    leadId: formData.get("leadId"),
-    status: formData.get("status"),
-  });
-  if (!parsed.success) return;
-  try {
-    await db
-      .update(schema.leads)
-      .set({ status: parsed.data.status })
-      .where(eq(schema.leads.id, parsed.data.leadId));
-    revalidatePath(`/leads/${parsed.data.leadId}`);
-    revalidatePath("/leads");
-  } finally {
-    ctx.waitUntil(db.$client.end());
-  }
-}
-
-const assignSchema = z.object({
-  leadId: z.string().uuid(),
   // "" means unassign
   assignedTo: z.string().optional(),
 });
 
-export async function assignLeadAction(formData: FormData) {
+// Status + assignee update in one write — the Pipeline card is a single form,
+// so saving one control must not discard an unsaved change to the other.
+export async function updateLeadPipelineAction(formData: FormData) {
   const { db, ctx, user } = await session();
   if (!user) return;
-  const parsed = assignSchema.safeParse({
+  const parsed = pipelineSchema.safeParse({
     leadId: formData.get("leadId"),
+    status: formData.get("status"),
     assignedTo: formData.get("assignedTo"),
   });
   if (!parsed.success) return;
@@ -62,7 +41,7 @@ export async function assignLeadAction(formData: FormData) {
   try {
     await db
       .update(schema.leads)
-      .set({ assignedTo })
+      .set({ status: parsed.data.status, assignedTo })
       .where(eq(schema.leads.id, parsed.data.leadId));
     revalidatePath(`/leads/${parsed.data.leadId}`);
     revalidatePath("/leads");

@@ -5,9 +5,9 @@ import { banks } from "@/content/banks";
 export function PartnerStrip() {
   const names = [...banks.map((b) => b.name), "and many more"];
   return (
-    <section aria-label="Our lending partners" className="border-y border-hairline bg-white">
+    <section aria-label="Lenders we compare across" className="border-y border-hairline bg-white">
       <p className="pt-8 text-center text-xs font-bold uppercase tracking-[0.18em] text-navy-400">
-        Our lending partners
+        Lenders we compare across
       </p>
       <div className="relative overflow-hidden py-6 [mask-image:linear-gradient(to_right,transparent,black_10%,black_90%,transparent)]">
         <div className="flex w-max animate-[marquee_45s_linear_infinite] motion-reduce:animate-none">

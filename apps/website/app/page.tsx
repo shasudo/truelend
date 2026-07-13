@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Phone, ShieldCheck, MoveUpRight } from "lucide-react";
+import { Headset, ShieldCheck, MoveUpRight } from "lucide-react";
 import {
   Badge,
   Button,
@@ -85,7 +85,7 @@ function HeroComparisonCard() {
       <div className="flex items-center justify-between border-b border-hairline px-6 py-4">
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.14em] text-navy-400">
-            Live comparison
+            Sample comparison
           </p>
           <p className="mt-0.5 font-display font-bold text-navy-950">Home Loan · ₹75 L · 20 yrs</p>
         </div>
@@ -128,6 +128,7 @@ function HeroComparisonCard() {
 
 export default function Home() {
   const homeLoan = productBySlug("home-loan")!;
+  const posts = getAllPosts().slice(0, 3);
 
   return (
     <>
@@ -167,7 +168,7 @@ export default function Home() {
               <div className="mt-8 flex flex-wrap gap-3">
                 <Button size="lg" asChild>
                   <Link href="/enquiry">
-                    <Phone className="h-4 w-4" aria-hidden />
+                    <Headset className="h-4 w-4" aria-hidden />
                     Speak to an Advisor
                   </Link>
                 </Button>
@@ -201,8 +202,8 @@ export default function Home() {
           </Reveal>
           <ol className="mt-12 grid gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
             {steps.map((step, i) => (
-              <Reveal key={step.title} delay={(i % 3) * 0.08}>
-                <li className="border-t border-hairline pt-5">
+              <li key={step.title} className="border-t border-hairline pt-5">
+                <Reveal delay={(i % 3) * 0.08}>
                   <span className="font-display text-2xl font-extrabold tabular-nums text-red-600">
                     {String(i + 1).padStart(2, "0")}
                   </span>
@@ -210,8 +211,8 @@ export default function Home() {
                     {step.title}
                   </h3>
                   <p className="mt-1.5 text-sm leading-relaxed text-navy-600">{step.desc}</p>
-                </li>
-              </Reveal>
+                </Reveal>
+              </li>
             ))}
           </ol>
         </Container>
@@ -309,15 +310,17 @@ export default function Home() {
               lede="Notes from our advisory desk on scores, switching and the real cost of convenient money."
             />
           </Reveal>
-          <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {getAllPosts()
-              .slice(0, 3)
-              .map((post, i) => (
+          {posts.length === 0 ? (
+            <p className="mt-12 text-navy-600">New articles are on the way.</p>
+          ) : (
+            <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {posts.map((post, i) => (
                 <Reveal key={post.slug} delay={(i % 3) * 0.06}>
                   <PostCard post={post} />
                 </Reveal>
               ))}
-          </div>
+            </div>
+          )}
         </Container>
       </section>
 

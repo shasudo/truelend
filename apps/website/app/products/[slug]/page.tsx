@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Phone, MoveUpRight, FileText, UserCheck } from "lucide-react";
+import { Headset, MoveUpRight, FileText, UserCheck } from "lucide-react";
 import {
   Accordion,
   Badge,
@@ -74,7 +74,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
               <div className="mt-7 flex flex-wrap gap-3">
                 <Button size="lg" asChild>
                   <Link href={enquiryHref}>
-                    <Phone className="h-4 w-4" aria-hidden />
+                    <Headset className="h-4 w-4" aria-hidden />
                     Check My Eligibility
                   </Link>
                 </Button>

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Phone, MessageCircle } from "lucide-react";
+import { Headset, MessageCircle } from "lucide-react";
 import { Button, Container, HexPattern } from "@truelend/ui";
 import { site } from "@/content/site";
 
@@ -27,7 +27,7 @@ export function CtaBand({
         <div className="flex flex-wrap gap-3">
           <Button size="lg" asChild>
             <Link href={href}>
-              <Phone className="h-4 w-4" aria-hidden />
+              <Headset className="h-4 w-4" aria-hidden />
               Speak to an Advisor
             </Link>
           </Button>

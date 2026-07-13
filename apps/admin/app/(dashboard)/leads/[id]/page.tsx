@@ -15,7 +15,7 @@ import { StatusBadge } from "@/components/status-badge";
 import { getAuthContext } from "@/lib/auth";
 import { getLead, listEmployees } from "@/lib/queries";
 import { formatDateTime, formatPaise } from "@/lib/format";
-import { updateLeadStatusAction, assignLeadAction, addLeadNoteAction } from "@/lib/actions";
+import { updateLeadPipelineAction, addLeadNoteAction } from "@/lib/actions";
 
 export const dynamic = "force-dynamic";
 
@@ -134,7 +134,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
           <Card className="p-6">
             <h2 className="font-display text-lg font-bold text-navy-950">Pipeline</h2>
 
-            <form action={updateLeadStatusAction} className="mt-4">
+            <form action={updateLeadPipelineAction} className="mt-4 space-y-4">
               <input type="hidden" name="leadId" value={lead.id} />
               <Field label="Status" htmlFor="status">
                 <Select id="status" name="status" defaultValue={lead.status}>
@@ -145,18 +145,6 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
                   ))}
                 </Select>
               </Field>
-              <SubmitButton
-                size="sm"
-                variant="secondary"
-                className="mt-3 w-full"
-                pendingText="Updating…"
-              >
-                Update status
-              </SubmitButton>
-            </form>
-
-            <form action={assignLeadAction} className="mt-5 border-t border-hairline pt-5">
-              <input type="hidden" name="leadId" value={lead.id} />
               <Field label="Assigned to" htmlFor="assignedTo">
                 <Select id="assignedTo" name="assignedTo" defaultValue={lead.assignedTo ?? ""}>
                   <option value="">Unassigned</option>
@@ -167,13 +155,8 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
                   ))}
                 </Select>
               </Field>
-              <SubmitButton
-                size="sm"
-                variant="outline"
-                className="mt-3 w-full"
-                pendingText="Updating…"
-              >
-                Update assignee
+              <SubmitButton size="sm" variant="secondary" className="w-full" pendingText="Saving…">
+                Save
               </SubmitButton>
             </form>
 

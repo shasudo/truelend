@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useForm, type DefaultValues, type FieldValues, type Resolver } from "react-hook-form";
 import { Turnstile } from "@marsidev/react-turnstile";
 import { CheckCircle2, MessageCircle } from "lucide-react";
-import { Button, Card } from "@truelend/ui";
+import { Button } from "@truelend/ui";
 import { submitLead } from "@/lib/actions";
 import { site } from "@/content/site";
 
@@ -123,18 +123,29 @@ export function RootError({ message }: { message?: string }) {
   );
 }
 
-export function FormSuccess({ title, sub }: { title: string; sub: string }) {
+export function FormSuccess({
+  title,
+  sub,
+  showWhatsApp = true,
+}: {
+  title: string;
+  sub: string;
+  showWhatsApp?: boolean;
+}) {
+  // Page slot is already a Card (enquiry/refer/contact/cibil-score) — stay a plain div.
   return (
-    <Card className="flex flex-col items-center gap-4 p-10 text-center">
+    <div className="flex flex-col items-center gap-4 p-6 text-center sm:p-10">
       <CheckCircle2 className="h-12 w-12 text-red-600" aria-hidden />
       <h2 className="font-display text-2xl font-extrabold tracking-tight text-navy-950">{title}</h2>
       <p className="max-w-md text-navy-600">{sub}</p>
-      <Button variant="outline" asChild className="mt-2">
-        <a href={site.whatsappHref} target="_blank" rel="noopener noreferrer">
-          <MessageCircle className="h-4 w-4" aria-hidden />
-          Chat with us on WhatsApp
-        </a>
-      </Button>
-    </Card>
+      {showWhatsApp && (
+        <Button variant="outline" asChild className="mt-2">
+          <a href={site.whatsappHref} target="_blank" rel="noopener noreferrer">
+            <MessageCircle className="h-4 w-4" aria-hidden />
+            Chat with us on WhatsApp
+          </a>
+        </Button>
+      )}
+    </div>
   );
 }

@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
-import { schema, type NewLoanCase } from "@truelend/db";
+import { schema, type Database, type NewLoanCase } from "@truelend/db";
 import { getMutationContext } from "./auth";
 import { rupeesToPaise } from "./format";
 
@@ -17,6 +17,22 @@ const leadStatusForCase: Record<CaseStatus, (typeof schema.leadStatus.enumValues
   declined: "declined",
   disbursed: "disbursed",
 };
+
+const leadOrder = schema.leadStatus.enumValues;
+
+// Move the parent lead forward to match a case's status — never backward, so
+// editing an old case can't rewind a lead that's already further along.
+async function advanceLeadStatus(db: Database, leadId: string, caseStatus: CaseStatus) {
+  const target = leadStatusForCase[caseStatus];
+  const rows = await db
+    .select({ status: schema.leads.status })
+    .from(schema.leads)
+    .where(eq(schema.leads.id, leadId))
+    .limit(1);
+  const current = rows[0]?.status;
+  if (!current || leadOrder.indexOf(target) <= leadOrder.indexOf(current)) return;
+  await db.update(schema.leads).set({ status: target }).where(eq(schema.leads.id, leadId));
+}
 
 // Which timestamp column records when a case reached each status.
 const timestampField: Record<
@@ -78,10 +94,7 @@ export async function createLoanCaseAction(formData: FormData) {
       .values(values)
       .returning({ id: schema.loanCases.id });
     newId = inserted[0]?.id;
-    await db
-      .update(schema.leads)
-      .set({ status: leadStatusForCase[d.status] })
-      .where(eq(schema.leads.id, d.leadId));
+    await advanceLeadStatus(db, d.leadId, d.status);
     revalidatePath(`/leads/${d.leadId}`);
     revalidatePath("/loan-cases");
   } finally {
@@ -122,10 +135,7 @@ export async function updateLoanCaseAction(formData: FormData) {
     if (!existing[tsField]) set[tsField] = new Date();
 
     await db.update(schema.loanCases).set(set).where(eq(schema.loanCases.id, d.caseId));
-    await db
-      .update(schema.leads)
-      .set({ status: leadStatusForCase[d.status] })
-      .where(eq(schema.leads.id, existing.leadId));
+    await advanceLeadStatus(db, existing.leadId, d.status);
 
     revalidatePath(`/loan-cases/${d.caseId}`);
     revalidatePath(`/leads/${existing.leadId}`);

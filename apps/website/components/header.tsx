@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Dialog } from "radix-ui";
-import { Menu, X, Phone } from "lucide-react";
+import { Menu, X, Headset } from "lucide-react";
 import { Button, Container, Logo, cx } from "@truelend/ui";
 import { site } from "@/content/site";
 
@@ -41,7 +41,7 @@ export function Header() {
         <div className="flex items-center gap-3">
           <Button size="sm" asChild className="hidden sm:inline-flex">
             <Link href="/enquiry">
-              <Phone className="h-4 w-4" aria-hidden />
+              <Headset className="h-4 w-4" aria-hidden />
               Speak to an Advisor
             </Link>
           </Button>
@@ -88,7 +88,7 @@ export function Header() {
                 <div className="mt-auto space-y-4 border-t border-white/10 pt-6">
                   <Button asChild className="w-full">
                     <Link href="/enquiry" onClick={() => setOpen(false)}>
-                      <Phone className="h-4 w-4" aria-hidden />
+                      <Headset className="h-4 w-4" aria-hidden />
                       Speak to an Advisor
                     </Link>
                   </Button>

@@ -44,7 +44,15 @@ function leadWhere(f: LeadFilters): SQL | undefined {
 
 export async function listLeads(db: Database, f: LeadFilters) {
   const where = leadWhere(f);
-  const offset = (f.page - 1) * PAGE_SIZE;
+
+  const totalRows = await db.select({ total: count() }).from(schema.leads).where(where);
+  const total = totalRows[0]?.total ?? 0;
+
+  // Clamp the requested page so paging past the last page can't dead-end on a
+  // false "no results" state.
+  const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const page = Math.min(Math.max(1, f.page), pageCount);
+  const offset = (page - 1) * PAGE_SIZE;
 
   const rows = (await db
     .select({
@@ -58,14 +66,11 @@ export async function listLeads(db: Database, f: LeadFilters) {
     .limit(PAGE_SIZE)
     .offset(offset)) as { lead: Lead; assigneeName: string | null }[];
 
-  const totalRows = await db.select({ total: count() }).from(schema.leads).where(where);
-  const total = totalRows[0]?.total ?? 0;
-
   return {
     rows: rows.map((r): LeadRow => ({ ...r.lead, assigneeName: r.assigneeName })),
     total,
-    page: f.page,
-    pageCount: Math.max(1, Math.ceil(total / PAGE_SIZE)),
+    page,
+    pageCount,
   };
 }
 

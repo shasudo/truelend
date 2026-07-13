@@ -97,6 +97,7 @@ function DocRow({
       <label
         className={cx(
           "inline-flex cursor-pointer items-center gap-2 rounded-lg border border-navy-800/20 px-3.5 py-2 text-sm font-medium text-navy-800 transition-colors hover:border-navy-800/50",
+          "focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-red-600",
           busy && "pointer-events-none opacity-60",
         )}
       >
@@ -110,7 +111,7 @@ function DocRow({
           ref={inputRef}
           type="file"
           accept="image/jpeg,image/png,application/pdf"
-          capture="environment"
+          aria-label={`Upload ${doc.label}`}
           className="sr-only"
           onChange={onFile}
           disabled={busy}

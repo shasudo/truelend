@@ -26,12 +26,16 @@ export function NotifyForm() {
       <FormSuccess
         title="You're on the list."
         sub="We'll email you the day free CIBIL score checks go live — nothing else."
+        showWhatsApp={false}
       />
     );
   }
 
   return (
     <form onSubmit={onSubmit} noValidate className="space-y-4">
+      <noscript>
+        <p className="text-sm text-red-700">This form needs JavaScript enabled to submit.</p>
+      </noscript>
       <div className="flex flex-col gap-3 sm:flex-row">
         <Field
           label="Email address"
@@ -61,11 +65,15 @@ export function NotifyForm() {
       <TurnstilePendingHint show={!turnstileReady} />
 
       <label className="flex gap-3 text-sm leading-relaxed text-navy-600">
-        <Checkbox aria-invalid={!!err.consent} {...register("consent")} />
+        <Checkbox
+          aria-invalid={!!err.consent}
+          aria-describedby={err.consent ? "cib-consent-error" : undefined}
+          {...register("consent")}
+        />
         <span>Email me once when this launches. No newsletters, no spam.</span>
       </label>
       {err.consent && (
-        <p role="alert" className="text-sm text-red-600">
+        <p id="cib-consent-error" role="alert" className="text-sm text-red-600">
           {err.consent.message}
         </p>
       )}

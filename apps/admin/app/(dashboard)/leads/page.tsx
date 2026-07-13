@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Search, ChevronLeft, ChevronRight } from "lucide-react";
-import { Button, Card, Input, Select } from "@truelend/ui";
+import { Button, Card, Input, Select, cx } from "@truelend/ui";
 import { products, leadKindLabels, leadStatusLabels, productName } from "@truelend/reference";
 import { schema } from "@truelend/db";
 import { PageTitle } from "@/components/page-title";
@@ -56,6 +56,9 @@ function queryString(f: LeadFilters, page: number): string {
 export default async function LeadsPage({ searchParams }: { searchParams: Promise<SP> }) {
   const sp = await searchParams;
   const filters = parseFilters(sp);
+  const hasFilters = Boolean(
+    filters.status || filters.kind || filters.product || filters.assignee || filters.q,
+  );
   const { db } = getAuthContext();
   const [{ rows, total, page, pageCount }, employees] = await Promise.all([
     listLeads(db, filters),
@@ -93,8 +96,8 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
               </option>
             ))}
           </Select>
-          <Select name="kind" defaultValue={filters.kind ?? ""} aria-label="Kind">
-            <option value="">Any kind</option>
+          <Select name="kind" defaultValue={filters.kind ?? ""} aria-label="Channel">
+            <option value="">Any channel</option>
             {schema.leadKind.enumValues.map((k) => (
               <option key={k} value={k}>
                 {leadKindLabels[k]}
@@ -137,7 +140,7 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
               <th className="px-5 py-3 font-semibold">Name</th>
               <th className="px-5 py-3 font-semibold">Contact</th>
               <th className="px-5 py-3 font-semibold">Product</th>
-              <th className="px-5 py-3 font-semibold">Kind</th>
+              <th className="px-5 py-3 font-semibold">Channel</th>
               <th className="px-5 py-3 font-semibold">Status</th>
               <th className="px-5 py-3 font-semibold">Assignee</th>
               <th className="px-5 py-3 font-semibold">Created</th>
@@ -147,7 +150,9 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
             {rows.length === 0 && (
               <tr>
                 <td colSpan={7} className="px-5 py-12 text-center text-navy-400">
-                  No leads match these filters.
+                  {hasFilters
+                    ? "No leads match these filters."
+                    : "No leads yet — they'll appear here as the website captures them."}
                 </td>
               </tr>
             )}
@@ -187,15 +192,31 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
             Page {page} of {pageCount}
           </span>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" asChild disabled={page <= 1}>
-              <Link href={`/leads${queryString(filters, page - 1)}`} aria-disabled={page <= 1}>
+            {/* asChild disabled doesn't inert an anchor — kill pointer + focus explicitly. */}
+            <Button
+              variant="outline"
+              size="sm"
+              asChild
+              className={cx(page <= 1 && "pointer-events-none opacity-50")}
+            >
+              <Link
+                href={`/leads${queryString(filters, page - 1)}`}
+                aria-disabled={page <= 1}
+                tabIndex={page <= 1 ? -1 : undefined}
+              >
                 <ChevronLeft className="h-4 w-4" aria-hidden /> Prev
               </Link>
             </Button>
-            <Button variant="outline" size="sm" asChild disabled={page >= pageCount}>
+            <Button
+              variant="outline"
+              size="sm"
+              asChild
+              className={cx(page >= pageCount && "pointer-events-none opacity-50")}
+            >
               <Link
                 href={`/leads${queryString(filters, page + 1)}`}
                 aria-disabled={page >= pageCount}
+                tabIndex={page >= pageCount ? -1 : undefined}
               >
                 Next <ChevronRight className="h-4 w-4" aria-hidden />
               </Link>

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Card } from "@truelend/ui";
 import { partnerTypeLabels } from "@truelend/reference";
 import { PageTitle } from "@/components/page-title";
-import { getAuthContext } from "@/lib/auth";
+import { requireAdmin, getAuthContext } from "@/lib/auth";
 import { getMisByProduct, getMisByChannel, getMisByPartner, type MisRow } from "@/lib/mis-queries";
 import { formatPaise } from "@/lib/format";
 
@@ -112,6 +112,7 @@ function MisTable({ dimension, rows }: { dimension: string; rows: MisRow[] }) {
 }
 
 export default async function MisPage() {
+  await requireAdmin();
   const { db } = getAuthContext();
   const [byProduct, byChannel, byPartner] = await Promise.all([
     getMisByProduct(db),

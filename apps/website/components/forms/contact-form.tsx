@@ -35,6 +35,9 @@ export function ContactForm() {
 
   return (
     <form onSubmit={onSubmit} noValidate className="space-y-5">
+      <noscript>
+        <p className="text-sm text-red-700">This form needs JavaScript enabled to submit.</p>
+      </noscript>
       <div className="grid gap-5 sm:grid-cols-2">
         <Field label="Full name" htmlFor="con-name" required error={err.name?.message}>
           <Input
@@ -70,11 +73,15 @@ export function ContactForm() {
       </Field>
 
       <label className="flex gap-3 text-sm leading-relaxed text-navy-600">
-        <Checkbox aria-invalid={!!err.consent} {...register("consent")} />
+        <Checkbox
+          aria-invalid={!!err.consent}
+          aria-describedby={err.consent ? "con-consent-error" : undefined}
+          {...register("consent")}
+        />
         <span>I&rsquo;m happy for TrueLend to respond to this message by phone or email.</span>
       </label>
       {err.consent && (
-        <p role="alert" className="text-sm text-red-600">
+        <p id="con-consent-error" role="alert" className="text-sm text-red-600">
           {err.consent.message}
         </p>
       )}

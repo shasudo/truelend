@@ -69,7 +69,10 @@ export function PartnerLeadForm({ variant }: { variant: "business" | "referral" 
         </p>
       )}
       {state.ok && (
-        <p className="rounded-lg border border-navy-800/15 bg-navy-800/[0.05] px-4 py-3 text-sm text-navy-700">
+        <p
+          role="status"
+          className="rounded-lg border border-navy-800/15 bg-navy-800/[0.05] px-4 py-3 text-sm text-navy-700"
+        >
           Lead submitted — our team will take it from here and you can track it on your dashboard.
         </p>
       )}

@@ -42,6 +42,9 @@ export function EnquiryForm() {
 
   return (
     <form onSubmit={onSubmit} noValidate className="space-y-5">
+      <noscript>
+        <p className="text-sm text-red-700">This form needs JavaScript enabled to submit.</p>
+      </noscript>
       <div className="grid gap-5 sm:grid-cols-2">
         <Field label="Full name" htmlFor="enq-name" required error={err.name?.message}>
           <Input
@@ -96,14 +99,18 @@ export function EnquiryForm() {
       </Field>
 
       <label className="flex gap-3 text-sm leading-relaxed text-navy-600">
-        <Checkbox aria-invalid={!!err.consent} {...register("consent")} />
+        <Checkbox
+          aria-invalid={!!err.consent}
+          aria-describedby={err.consent ? "enq-consent-error" : undefined}
+          {...register("consent")}
+        />
         <span>
           I authorise TrueLend to contact me about this enquiry via phone, WhatsApp or email. This
           consent overrides my DND registration.
         </span>
       </label>
       {err.consent && (
-        <p role="alert" className="text-sm text-red-600">
+        <p id="enq-consent-error" role="alert" className="text-sm text-red-600">
           {err.consent.message}
         </p>
       )}

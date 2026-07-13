@@ -7,7 +7,7 @@ export const metadata: Metadata = { title: "Sign in" };
 
 export default function LoginPage() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center gap-8 px-5">
+    <main className="flex min-h-screen flex-col items-center justify-center gap-8 px-5 py-12">
       <Link href="/" aria-label="TrueLend Partners home" className="text-navy-800">
         <Logo tagline />
       </Link>

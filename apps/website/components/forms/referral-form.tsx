@@ -37,6 +37,9 @@ export function ReferralForm() {
 
   return (
     <form onSubmit={onSubmit} noValidate className="space-y-6">
+      <noscript>
+        <p className="text-sm text-red-700">This form needs JavaScript enabled to submit.</p>
+      </noscript>
       <fieldset className="space-y-5">
         <legend className="font-display text-sm font-bold uppercase tracking-[0.14em] text-navy-500">
           About you
@@ -105,14 +108,18 @@ export function ReferralForm() {
       </fieldset>
 
       <label className="flex gap-3 text-sm leading-relaxed text-navy-600">
-        <Checkbox aria-invalid={!!err.consent} {...register("consent")} />
+        <Checkbox
+          aria-invalid={!!err.consent}
+          aria-describedby={err.consent ? "ref-consent-error" : undefined}
+          {...register("consent")}
+        />
         <span>
           I confirm my friend knows I&rsquo;m sharing their number and is happy to hear from
           TrueLend.
         </span>
       </label>
       {err.consent && (
-        <p role="alert" className="text-sm text-red-600">
+        <p id="ref-consent-error" role="alert" className="text-sm text-red-600">
           {err.consent.message}
         </p>
       )}
