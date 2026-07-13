@@ -82,22 +82,51 @@ context to pick up cold. (MoM scope tracked here without dates, per decision.)
 - [ ] **Admin custom domain / Access** — currently a workers.dev URL, noindex.
       Consider Cloudflare Access (extra network-level gate) or a real subdomain.
 
+## Partner Portal (apps/partners) — pending
+
+- [x] **Built + deployed** — one role-driven app (`truelend-partners`) for
+      business + referral partners: self-register → KYC upload to R2 →
+      admin verification → type-branched dashboard (payout|incentive) → lead
+      submission (single + bulk CSV). Admin got partner verification, an
+      authenticated KYC doc viewer (cross-worker R2 read verified in prod),
+      manual payout ledger, and partner channels/table in MIS. Schema 0002
+      applied. Live at https://truelend-partners.truelend.workers.dev.
+- [ ] **Registration action browser test** — the full flow was verified in
+      prod via the API + DB (signup, KYC upload/read, approve, lead → MIS);
+      still worth clicking through `registerPartner` (server action) in a
+      browser once, since that exact action wasn't curl-driven.
+- [ ] **Partner secret rotation** — `BETTER_AUTH_SECRET` for truelend-partners
+      was generated locally and lives in `.dev.vars` (gitignored); fine, but
+      rotate if it's ever shared.
+- [ ] **Commission auto-calc** — payouts are a manual admin ledger (earned/
+      paid). If TrueLend defines commission %s, add a rate + auto-accrue on
+      disbursal (schema hook noted in mis/partner-actions).
+- [ ] **CSV column mapping UX** — bulk import expects fixed columns
+      (name/phone/email/city/product/message); add a template download + a
+      column-mapping step if partners upload arbitrary exports.
+- [ ] **Orphaned R2 cleanup** — re-uploading a KYC doc keeps the old R2 object
+      (only the newest DB row is shown). Add a cleanup or overwrite-by-key later.
+- [ ] **Partner training content** — /resources is placeholder cards; real
+      decks/videos/collateral from TrueLend.
+
 ## Platform — upcoming (from the partnership MoM)
 
-- [ ] **Business Partner platform** (`apps/partner`) — registration with document
-      upload (PAN/Aadhaar/photo/cheque/GST → R2, camera capture + upload),
-      verification workflow, login (reuse `packages/auth`, add `partner` role),
-      lead upload, dashboard (leads/logins, product-wise business, approved/
-      declined/disbursed, payout earned vs received), training & collateral.
-- [ ] **Referral Partner platform** (`apps/referral`) — registration + docs,
-      referral dashboard (leads, product-wise, disbursement volume, incentives
-      earned/received). `referral` role in `packages/auth`.
-- [ ] **Partner attribution in schema** — add `source_channel` enum +
-      `partner_id` FK to `leads` (and a partners table + payout ledger) when the
-      partner apps land; MIS `channelForKind` is a placeholder until then.
 - [ ] **Mobile application** — scope undefined beyond the MoM line item.
 - [ ] **TRAI/DLT compliance** — DLT registration, SMS template + sender-ID
       approval; prerequisite for SMS campaigns (LinchPin-owned).
+
+## Gotchas worth remembering
+
+- **Raw postgres.js (`db.$client`) with `fetch_types:false` returns timestamptz
+  as a STRING** — wrap in `new Date()` before formatting. Drizzle queries parse
+  dates; raw SQL ones don't. (Caused a partners-list 500.)
+- **R2 upload on Workers** — use a POST route handler (not a server action:
+  1MB body cap + OpenNext issue). Guard `entry instanceof File && entry.size>0`
+  (workerd turns empty file inputs into `""`). Buffer with `await file.arrayBuffer()`
+  to avoid the DOM/workers ReadableStream type mismatch. Private docs are proxied
+  through an authenticated worker route — no presigned URLs.
+- **Conditional SQL fragments** `${cond ? sql\`…\` : sql\`\`}` throw in the worker
+runtime — use a null-guard WHERE (`where (${s}::text is null or col = ${s})`).
 
 ## Conventions
 

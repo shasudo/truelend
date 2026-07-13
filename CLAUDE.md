@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-pnpm + Turborepo monorepo for the TrueLend lending platform. Two Next.js 15 (App Router) apps — the public **website** and the internal **admin** dashboard — each deploying as its own **Cloudflare Worker** via OpenNext, backed by a shared **Postgres through Cloudflare Hyperdrive** (Drizzle + postgres.js) and **R2**. No separate API service — route handlers and server actions in each app are its API. Future partner dashboards are more `apps/*`, each its own Worker, sharing `packages/*`. Pending work is tracked in `todo.md` (keep it updated).
+pnpm + Turborepo monorepo for the TrueLend lending platform. Three Next.js 15 (App Router) apps — the public **website**, the internal **admin** dashboard, and the **partners** portal (business + referral partners) — each deploying as its own **Cloudflare Worker** via OpenNext, backed by a shared **Postgres through Cloudflare Hyperdrive** (Drizzle + postgres.js) and **R2** (KYC docs). No separate API service — route handlers and server actions in each app are its API. Pending work is tracked in `todo.md` (keep it updated).
 
 ## Commands
 
@@ -25,7 +25,10 @@ pnpm db:studio       # drizzle studio
 pnpm cf-typegen      # regenerate apps/website/cloudflare-env.d.ts from wrangler.jsonc
 pnpm deploy          # deploy the website Worker
 pnpm deploy:admin    # deploy the admin Worker
+pnpm deploy:partners # deploy the partners Worker
 ```
+
+Apps run on ports 3000 (website), 3001 (admin), 3002 (partners).
 
 Single-package runs: `pnpm --filter @truelend/website <script>` (or `@truelend/admin`). The admin app runs on port 3001 (`pnpm dev` runs both). Seed the first admin: `DATABASE_URL=… BETTER_AUTH_SECRET=… pnpm --filter @truelend/admin seed:admin <email> <password> [name]`. There are no unit tests yet (deliberate); verification is done by driving the apps on the workerd preview against Neon. CI (`.github/workflows/ci.yml`) runs lint → typecheck → build.
 
@@ -40,7 +43,10 @@ apps/admin/          Internal ops dashboard: Next.js → Workers (truelend-admin
   lib/               auth.ts (request context + guards), queries, *-actions (server actions)
   components/        sidebar, forms, charts (recharts), status-badge
 packages/ui/         design system: theme.css (Tailwind v4 @theme tokens) + brand primitives
-packages/db/         Drizzle ORM + postgres.js; schema.ts = source of truth (leads, notes, loan_cases, auth tables)
+apps/partners/       Partner portal: Next.js → Workers (truelend-partners, port 3002)
+  self-register (allowSignUp) → KYC upload to R2 → admin verifies → dashboard
+  one app, two roles (business|referral); differs only in payout|incentive labels + bulk CSV
+packages/db/         Drizzle ORM + postgres.js; schema.ts = source of truth (leads, notes, loan_cases, partners, partner_documents, partner_payouts, auth tables)
 packages/auth/       shared better-auth: createAuth(db,{secret,baseURL}) factory + React client
 packages/reference/  canonical product/bank slugs+names + enum labels (used by admin, future partner apps)
 packages/types/      type-only package (import type only)
@@ -56,6 +62,16 @@ branding/            logo JPEGs + OG image SVG source (reference assets)
 - Auth-table ids are `text` (better-auth generates them); people-FKs (`leads.assigned_to`, `lead_notes.author_id`, `loan_cases.created_by`) are text.
 - Money is **integer paise** in `bigint({mode:"number"})`; convert rupees↔paise only at the form boundary (`lib/format.ts`), format with `Intl` en-IN. Never floats.
 - Charts: single-series recharts, one brand hue, per the dataviz skill — read it before adding charts.
+
+### R2 file uploads (KYC — apps/partners writes, apps/admin reads)
+
+- Upload = a POST **route handler** (not a server action: 1MB body cap + an OpenNext bug). `req.formData()` → guard `entry instanceof File && entry.size > 0` (workerd coerces empty file inputs to `""`) → validate type/size → `env.BUCKET.put(key, await file.arrayBuffer())` (buffering avoids a DOM/workers `ReadableStream` type mismatch). One file per request.
+- Private docs are **proxied through an authenticated worker route** — no presigned URLs (the R2 binding can't presign). Admin serves via `app/api/kyc/[...key]` (catch-all; `requireAdmin` then streams `env.BUCKET.get(key).body`). Both workers bind the same bucket `truelend`.
+
+### Two SQL gotchas (both caused prod 500s — remember them)
+
+- **Raw postgres.js (`db.$client`) with `fetch_types:false` returns `timestamptz` as a STRING** — wrap in `new Date()` before formatting. Drizzle queries parse dates; raw `db.$client` ones don't.
+- **Conditional SQL fragments** `${cond ? sql\`…\` : sql\`\`}`throw in the worker runtime — use a null-guard WHERE instead:`where (${s}::text is null or col = ${s})`.
 
 ### Design system (packages/ui + Tailwind v4)
 
