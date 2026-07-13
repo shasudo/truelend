@@ -2,6 +2,7 @@ import { Clock, XCircle } from "lucide-react";
 import { Card, Container, Logo } from "@truelend/ui";
 import { partnerTypeLabels } from "@truelend/reference";
 import type { Partner, PartnerDocument } from "@truelend/db";
+import { KycDetailsForm } from "@/components/kyc-details-form";
 import { KycUpload } from "@/components/kyc-upload";
 import { SignOutButton } from "@/components/sign-out-button";
 
@@ -56,8 +57,25 @@ export function PartnerStatusScreen({
           </div>
         </Card>
 
-        <div className="mt-6">
-          <h2 className="mb-4 font-display text-lg font-bold text-navy-950">Your documents</h2>
+        {/* Step 1: KYC details */}
+        <div className="mt-8">
+          <h2 className="font-display text-lg font-bold text-navy-950">
+            <span className="mr-2 text-red-600">1.</span>Your details
+          </h2>
+          <p className="mb-4 mt-1 text-sm text-navy-500">
+            PAN, address and bank details — so we can verify you and pay you.
+          </p>
+          <Card className="p-6">
+            <KycDetailsForm partner={partner} />
+          </Card>
+        </div>
+
+        {/* Step 2: documents */}
+        <div className="mt-8">
+          <h2 className="font-display text-lg font-bold text-navy-950">
+            <span className="mr-2 text-red-600">2.</span>Your documents
+          </h2>
+          <p className="mb-4 mt-1 text-sm text-navy-500">Upload proof for the details above.</p>
           <KycUpload documents={documents} />
         </div>
       </Container>

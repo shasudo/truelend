@@ -83,6 +83,20 @@ export default async function PartnerDetailPage({ params }: { params: Promise<{ 
             </dl>
           </Card>
 
+          {/* KYC details */}
+          <Card className="p-6">
+            <h2 className="font-display text-lg font-bold text-navy-950">KYC details</h2>
+            <dl className="mt-5 grid grid-cols-2 gap-5">
+              <Detail label="PAN" value={partner.pan} />
+              <Detail label="GST" value={partner.gst} />
+              <Detail label="Address" value={partner.address} />
+              <div />
+              <Detail label="Account holder" value={partner.accountHolder} />
+              <Detail label="Account number" value={partner.accountNumber} />
+              <Detail label="IFSC" value={partner.ifsc} />
+            </dl>
+          </Card>
+
           {/* KYC documents */}
           <Card className="p-6">
             <h2 className="font-display text-lg font-bold text-navy-950">KYC documents</h2>

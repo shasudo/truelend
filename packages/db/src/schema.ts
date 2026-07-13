@@ -234,8 +234,14 @@ export const partners = pgTable("partners", {
   status: partnerStatus("status").notNull().default("pending"),
   phone: text("phone"),
   businessName: text("business_name"),
+  // KYC details (collected before document upload)
   pan: text("pan"),
   gst: text("gst"),
+  address: text("address"),
+  // bank details for payouts (the cancelled-cheque document backs these)
+  accountHolder: text("account_holder"),
+  accountNumber: text("account_number"),
+  ifsc: text("ifsc"),
   verifiedBy: text("verified_by").references(() => user.id, { onDelete: "set null" }),
   verifiedAt: timestamp("verified_at", { withTimezone: true }),
   rejectionReason: text("rejection_reason"),
