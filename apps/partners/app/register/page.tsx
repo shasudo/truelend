@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { ArrowDown, BadgeCheck } from "lucide-react";
 import { Button, Card, Container, HexPattern, SectionHeading } from "@truelend/ui";
 import { PartnerPathCards } from "@/components/partner-path-cards";
@@ -13,7 +14,13 @@ export const metadata: Metadata = {
   alternates: { canonical: "/register" },
 };
 
+// The Turnstile site key is a Worker runtime variable, so this page must not
+// be statically generated at build time.
+export const dynamic = "force-dynamic";
+
 export default function RegisterPage() {
+  const { env } = getCloudflareContext();
+
   return (
     <>
       <PublicHeader />
@@ -97,7 +104,7 @@ export default function RegisterPage() {
                 after registration.
               </p>
               <div className="mt-7">
-                <RegisterForm />
+                <RegisterForm siteKey={env.TURNSTILE_SITE_KEY} />
               </div>
               <p className="mt-6 text-center text-sm text-navy-500">
                 Already a partner?{" "}

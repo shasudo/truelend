@@ -21,9 +21,7 @@ const types = [
   },
 ] as const;
 
-const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
-
-export function RegisterForm() {
+export function RegisterForm({ siteKey }: { siteKey?: string }) {
   const [type, setType] = useState<"business" | "referral">("business");
   const [turnstileToken, setTurnstileToken] = useState<string>();
   const [turnstileKey, setTurnstileKey] = useState(0);
@@ -129,10 +127,10 @@ export function RegisterForm() {
       )}
 
       <input type="hidden" name="turnstileToken" value={turnstileToken ?? ""} />
-      {TURNSTILE_SITE_KEY && (
+      {siteKey && (
         <Turnstile
           key={turnstileKey}
-          siteKey={TURNSTILE_SITE_KEY}
+          siteKey={siteKey}
           onSuccess={(token) => {
             setTurnstileError(undefined);
             setTurnstileToken(token);
@@ -155,7 +153,7 @@ export function RegisterForm() {
       <Button
         type="submit"
         size="lg"
-        disabled={pending || Boolean(TURNSTILE_SITE_KEY && !turnstileToken)}
+        disabled={pending || Boolean(siteKey && !turnstileToken)}
         className="w-full"
       >
         {pending ? "Creating your account…" : "Create partner account"}
