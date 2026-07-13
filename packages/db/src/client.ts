@@ -1,5 +1,4 @@
 import { drizzle } from "drizzle-orm/postgres-js";
-import { sql } from "drizzle-orm";
 import postgres from "postgres";
 import * as schema from "./schema";
 
@@ -17,5 +16,9 @@ export function createDb(connectionString: string) {
 export type Database = ReturnType<typeof createDb>;
 
 export async function ping(db: Database): Promise<void> {
-  await db.execute(sql`select 1`);
+  const nonce = crypto.randomUUID();
+  const [row] = await db.$client<{ nonce: string }[]>`
+    select ${nonce}::text as nonce, pg_backend_pid() as backend_pid, clock_timestamp() as checked_at
+  `;
+  if (row?.nonce !== nonce) throw new Error("Database freshness probe failed");
 }

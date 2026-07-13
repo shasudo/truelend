@@ -35,6 +35,11 @@
   --color-navy-900: #0d1637;
   --color-navy-950: #070d24;
 
+  /* Semantic readable secondary text. Both tokens meet WCAG AA on their
+   * intended paper/white and navy-950 surfaces. */
+  --color-muted: #46578f;
+  --color-on-dark-muted: #cbd2e3;
+
   /* Red — signal only: CTAs, key numerals, active states. 600 is the logo red. */
   --color-red-50: #fdeced;
   --color-red-100: #fbd7d8;

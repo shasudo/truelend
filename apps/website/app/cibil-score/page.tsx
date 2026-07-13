@@ -7,6 +7,7 @@ export const metadata: Metadata = {
   title: "Free CIBIL Score — Coming Soon",
   description:
     "Free CIBIL score checks are coming to TrueLend. Leave your email and we'll tell you the day it goes live.",
+  alternates: { canonical: "/cibil-score" },
 };
 
 const benefits = [

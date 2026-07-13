@@ -8,11 +8,16 @@ declare global {
     HYPERDRIVE: Hyperdrive;
     BUCKET: R2Bucket;
     AUTH_RATE_LIMITER: RateLimit;
+    REGISTRATION_RATE_LIMITER: RateLimit;
     PARTNER_WRITE_RATE_LIMITER: RateLimit;
     CSV_IMPORT_RATE_LIMITER: RateLimit;
     BETTER_AUTH_URL: string;
     /** Secret — set via .dev.vars locally, `wrangler secret put` in prod. */
     BETTER_AUTH_SECRET: string;
+    /** Optional only for local development; production registration fails closed without it. */
+    TURNSTILE_SECRET_KEY?: string;
+    /** Protects /api/health/ready; set as a Worker secret. */
+    HEALTHCHECK_SECRET?: string;
     // Email (Resend) — see @truelend/email. Missing key = no-op.
     RESEND_API_KEY?: string;
     EMAIL_FROM?: string;

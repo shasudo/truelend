@@ -26,6 +26,12 @@ export async function POST(req: Request) {
   const { partner, db, ctx, env } = gate;
   let uploadedKey: string | undefined;
   try {
+    const expectedOrigin = new URL(env.BETTER_AUTH_URL).origin;
+    const origin = req.headers.get("origin");
+    const fetchSite = req.headers.get("sec-fetch-site");
+    if (origin !== expectedOrigin || (fetchSite && fetchSite !== "same-origin")) {
+      return Response.json({ error: "Invalid upload origin" }, { status: 403 });
+    }
     // Reject obviously oversized multipart requests before materializing them.
     const contentLength = Number(req.headers.get("content-length") ?? 0);
     if (Number.isFinite(contentLength) && contentLength > MAX_BYTES + 1_000_000) {

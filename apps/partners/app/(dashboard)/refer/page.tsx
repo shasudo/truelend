@@ -24,3 +24,4 @@ export default async function ReferPage() {
     </div>
   );
 }
+export const metadata = { title: "Refer a customer" };

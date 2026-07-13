@@ -5,11 +5,13 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
+    "./admin-client": "./src/admin-client.ts",
     "./client": "./src/client.ts",
     "./forms": "./src/forms.tsx"
   },
   "scripts": {
     "lint": "eslint .",
+    "test": "tsx --test test/**/*.test.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -26,10 +28,12 @@
   "devDependencies": {
     "@truelend/eslint-config": "workspace:*",
     "@truelend/typescript-config": "workspace:*",
+    "@types/node": "catalog:",
     "@types/react": "catalog:",
     "eslint": "catalog:",
     "next": "catalog:",
     "react": "catalog:",
+    "tsx": "catalog:",
     "typescript": "catalog:"
   }
 }

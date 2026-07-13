@@ -21,17 +21,6 @@ export function CreateUserForm() {
         <Field label="Email" htmlFor="email" required>
           <Input id="email" name="email" type="email" autoComplete="off" maxLength={254} required />
         </Field>
-        <Field label="Temporary password" htmlFor="password" required>
-          <Input
-            id="password"
-            name="password"
-            type="text"
-            autoComplete="off"
-            minLength={8}
-            maxLength={128}
-            required
-          />
-        </Field>
         <Field label="Role" htmlFor="role">
           <Select id="role" name="role" defaultValue="employee">
             <option value="employee">Employee</option>
@@ -53,15 +42,14 @@ export function CreateUserForm() {
           role="status"
           className="rounded-lg border border-navy-800/15 bg-navy-800/[0.05] px-4 py-3 text-sm text-navy-700"
         >
-          <p className="font-semibold text-navy-950">User created — share these credentials.</p>
+          <p className="font-semibold text-navy-950">Teammate created.</p>
           <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1">
             <dt className="text-navy-500">Email</dt>
             <dd className="font-mono text-navy-950 break-all">{state.createdEmail}</dd>
-            <dt className="text-navy-500">Password</dt>
-            <dd className="font-mono text-navy-950 break-all">{state.tempPassword}</dd>
           </dl>
           <p className="mt-2 text-xs text-navy-500">
-            This password won&apos;t be shown again once you create another user.
+            A single-use activation link was sent by email. No password is shown or shared by an
+            administrator.
           </p>
         </div>
       )}

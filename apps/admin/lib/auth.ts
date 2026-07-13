@@ -4,7 +4,12 @@ import { redirect } from "next/navigation";
 import type { ExecutionContext } from "@cloudflare/workers-types";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { createDb, type Database } from "@truelend/db";
-import { createAuth, type Auth, type CreateAuthOptions, type Session } from "@truelend/auth";
+import {
+  createAdminAuth,
+  type AdminAuth,
+  type AdminSession,
+  type CreateAuthOptions,
+} from "@truelend/auth";
 import { sendPasswordReset } from "@truelend/email";
 
 export function authOptions(env: CloudflareEnv): CreateAuthOptions {
@@ -12,14 +17,17 @@ export function authOptions(env: CloudflareEnv): CreateAuthOptions {
     secret: env.BETTER_AUTH_SECRET,
     baseURL: env.BETTER_AUTH_URL,
     sendResetPassword: async ({ user, url }) => {
-      await sendPasswordReset(env, { to: user.email, name: user.name, url });
+      const result = await sendPasswordReset(env, { to: user.email, name: user.name, url });
+      if (!result.ok || result.skipped) {
+        throw new Error("Password reset email was not accepted for delivery");
+      }
     },
   };
 }
 
 interface AuthContext {
   db: Database;
-  auth: Auth;
+  auth: AdminAuth;
   ctx: ExecutionContext;
   env: CloudflareEnv;
 }
@@ -36,7 +44,7 @@ interface AuthContext {
 export const getAuthContext = cache((): AuthContext => {
   const { env, ctx } = getCloudflareContext();
   const db = createDb(env.HYPERDRIVE.connectionString);
-  const auth = createAuth(db, authOptions(env));
+  const auth = createAdminAuth(db, authOptions(env));
   return { db, auth, ctx, env };
 });
 
@@ -51,7 +59,7 @@ function isStaff(role: string | null | undefined): boolean {
   return role != null && STAFF_ROLES.has(role);
 }
 
-export async function requireSession(): Promise<Session> {
+export async function requireSession(): Promise<AdminSession> {
   const { auth } = getAuthContext();
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) redirect("/login");
@@ -65,13 +73,13 @@ export async function requireSession(): Promise<Session> {
  * ponytail: bounce-to-login leaves the partner's admin-domain session live but
  * useless. Clear it on rejection if the half-signed-in state confuses anyone.
  */
-export async function requireStaff(): Promise<Session> {
+export async function requireStaff(): Promise<AdminSession> {
   const session = await requireSession();
   if (!isStaff(session.user.role)) redirect("/login");
   return session;
 }
 
-export async function requireAdmin(): Promise<Session> {
+export async function requireAdmin(): Promise<AdminSession> {
   const session = await requireSession();
   if (session.user.role !== "admin") redirect("/");
   return session;
@@ -80,7 +88,7 @@ export async function requireAdmin(): Promise<Session> {
 interface MutationContext {
   db: Database;
   ctx: ExecutionContext;
-  user: Session["user"] | null;
+  user: AdminSession["user"] | null;
 }
 
 /**

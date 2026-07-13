@@ -3,7 +3,10 @@ import { Container } from "@truelend/ui";
 import { PageHeader } from "@/components/page-header";
 import { site } from "@/content/site";
 
-export const metadata: Metadata = { title: "Terms of Use" };
+export const metadata: Metadata = {
+  title: "Terms of Use",
+  alternates: { canonical: "/terms" },
+};
 
 // PLACEHOLDER legal copy — must be replaced by counsel-approved text before
 // campaigns run (todo.md).
@@ -39,7 +42,7 @@ export default function TermsPage() {
             our services.
           </p>
         </section>
-        <p className="border-t border-hairline pt-6 text-sm text-navy-400">
+        <p className="border-t border-hairline pt-6 text-sm text-muted">
           Questions about these terms? Write to {site.email}. This is interim text pending formal
           legal review. Last updated July 2026.
         </p>

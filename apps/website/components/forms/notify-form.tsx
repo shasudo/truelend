@@ -5,6 +5,7 @@ import { Button, Checkbox, Field, Input } from "@truelend/ui";
 import { cibilNotifySchema } from "@/lib/schemas";
 import {
   FormSuccess,
+  NoScriptFallback,
   RootError,
   TurnstileField,
   TurnstilePendingHint,
@@ -43,9 +44,7 @@ export function NotifyForm() {
 
   return (
     <form onSubmit={onSubmit} noValidate className="space-y-4">
-      <noscript>
-        <p className="text-sm text-red-700">This form needs JavaScript enabled to submit.</p>
-      </noscript>
+      <NoScriptFallback />
       <div className="flex flex-col gap-3 sm:flex-row">
         <Field
           label="Email address"
@@ -88,6 +87,7 @@ export function NotifyForm() {
 
       <TurnstileField
         resetKey={turnstileKey}
+        action="lead_cibil_notify"
         onToken={setToken}
         onExpire={resetToken}
         onError={failTurnstile}

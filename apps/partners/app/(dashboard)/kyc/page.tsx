@@ -42,3 +42,4 @@ export default async function KycPage() {
     </div>
   );
 }
+export const metadata = { title: "KYC" };

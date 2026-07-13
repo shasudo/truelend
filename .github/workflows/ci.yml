@@ -16,7 +16,7 @@ permissions:
 
 jobs:
   ci:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
@@ -39,7 +39,7 @@ jobs:
   migrate:
     needs: ci
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     concurrency:
       group: database-migration
@@ -62,7 +62,8 @@ jobs:
   deploy:
     needs: [ci, migrate]
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    environment: production
     timeout-minutes: 20
     strategy:
       # Deploy every worker; an unchanged worker is a harmless no-op version bump.
@@ -81,12 +82,46 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter @truelend/${{ matrix.app }} deploy
+      - name: Verify protected production configuration
+        run: |
+          pnpm --filter @truelend/${{ matrix.app }} exec wrangler secret list --format json > /tmp/worker-secrets.json
+          node scripts/assert-production-config.mjs "${{ matrix.app }}" /tmp/worker-secrets.json
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          HEALTHCHECK_SECRET: ${{ secrets.HEALTHCHECK_SECRET }}
+          NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${{ vars.NEXT_PUBLIC_TURNSTILE_SITE_KEY }}
+      - name: Build immutable Worker artifact
+        run: pnpm --filter @truelend/${{ matrix.app }} worker:build
+        env:
           NEXT_TELEMETRY_DISABLED: "1"
-          # Public keys baked into the website client bundle at build time (safe to expose).
-          # Unset = Turnstile/analytics stay off, same as an unconfigured build. Ignored by admin/partners.
           NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${{ vars.NEXT_PUBLIC_TURNSTILE_SITE_KEY }}
           NEXT_PUBLIC_CF_BEACON_TOKEN: ${{ vars.NEXT_PUBLIC_CF_BEACON_TOKEN }}
+      - name: Validate and scan exact upload bundle
+        run: |
+          pnpm --filter @truelend/${{ matrix.app }} worker:dry-run
+          node scripts/scan-worker-bundle.mjs "${{ matrix.app }}" "apps/${{ matrix.app }}/.wrangler/deploy-bundle"
+      - name: Deploy tested artifact
+        run: pnpm --filter @truelend/${{ matrix.app }} worker:deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      - name: Verify release or roll back
+        shell: bash
+        run: |
+          case "${{ matrix.app }}" in
+            website) base_url="https://truelend.in" ;;
+            admin) base_url="https://admin.truelend.in" ;;
+            partners) base_url="https://partner.truelend.in" ;;
+          esac
+          if ! curl --fail --silent --show-error --retry 5 --retry-all-errors "${base_url}/api/health" >/dev/null || \
+             ! curl --fail --silent --show-error --retry 5 --retry-all-errors \
+               -H "Authorization: Bearer ${HEALTHCHECK_SECRET}" "${base_url}/api/health/ready" >/dev/null; then
+            pnpm --filter @truelend/${{ matrix.app }} exec wrangler rollback --yes \
+              --message "Automated rollback: post-deploy health verification failed"
+            exit 1
+          fi
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          HEALTHCHECK_SECRET: ${{ secrets.HEALTHCHECK_SECRET }}

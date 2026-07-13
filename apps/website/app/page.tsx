@@ -84,7 +84,7 @@ function HeroComparisonCard() {
     <Card className="relative shadow-[0_24px_60px_-24px_rgba(20,32,74,0.35)]">
       <div className="flex items-center justify-between border-b border-hairline px-6 py-4">
         <div>
-          <p className="text-xs font-bold uppercase tracking-[0.14em] text-navy-400">
+          <p className="text-xs font-bold uppercase tracking-[0.14em] text-muted">
             Sample comparison
           </p>
           <p className="mt-0.5 font-display font-bold text-navy-950">Home Loan · ₹75 L · 20 yrs</p>
@@ -119,7 +119,7 @@ function HeroComparisonCard() {
           );
         })}
       </ul>
-      <p className="px-6 py-3 text-xs text-navy-400">
+      <p className="px-6 py-3 text-xs text-muted">
         Indicative rates — your match depends on your profile.
       </p>
     </Card>
@@ -176,7 +176,7 @@ export default function Home() {
                 </Button>
               </div>
               <p className="mt-5 flex items-center gap-2 text-sm text-navy-500">
-                <ShieldCheck className="h-4 w-4 text-navy-400" aria-hidden />
+                <ShieldCheck className="h-4 w-4 text-muted" aria-hidden />
                 100% Confidential · No Spam Calls
               </p>
             </Reveal>

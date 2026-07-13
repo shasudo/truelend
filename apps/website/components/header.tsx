@@ -26,6 +26,7 @@ export function Header() {
             <Link
               key={item.href}
               href={item.href}
+              aria-current={isActive(item.href) ? "page" : undefined}
               className={cx(
                 "text-sm font-medium text-navy-600 transition-colors hover:text-navy-950",
                 isActive(item.href) &&
@@ -79,6 +80,7 @@ export function Header() {
                 <Link
                   key={item.href}
                   href={item.href}
+                  aria-current={isActive(item.href) ? "page" : undefined}
                   onClick={() => menuRef.current?.close()}
                   className="rounded-lg px-3 py-3 font-display text-xl font-semibold text-white/85 transition-colors hover:bg-white/5 hover:text-white"
                 >
@@ -94,7 +96,7 @@ export function Header() {
                   Speak to an Advisor
                 </Link>
               </Button>
-              <p className="text-sm text-white/60">
+              <p className="text-sm text-on-dark-muted">
                 {site.phone} · {site.hours}
               </p>
             </div>

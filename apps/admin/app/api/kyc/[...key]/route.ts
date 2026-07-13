@@ -36,7 +36,11 @@ export async function GET(_req: Request, { params }: { params: Promise<{ key: st
     // Never turn this route into a generic authenticated R2 reader. Only keys
     // currently referenced by a KYC database row may be fetched.
     const [document] = await db
-      .select({ r2Key: schema.partnerDocuments.r2Key })
+      .select({
+        id: schema.partnerDocuments.id,
+        partnerId: schema.partnerDocuments.partnerId,
+        r2Key: schema.partnerDocuments.r2Key,
+      })
       .from(schema.partnerDocuments)
       .where(eq(schema.partnerDocuments.r2Key, r2Key))
       .limit(1);
@@ -45,6 +49,14 @@ export async function GET(_req: Request, { params }: { params: Promise<{ key: st
     }
     const obj = await env.BUCKET.get(r2Key);
     if (!obj) return errorPage("Document not found", "This file may have been removed.", 404);
+    await db.insert(schema.auditLog).values({
+      actorId: session.user.id,
+      actorEmail: session.user.email,
+      action: "partner.kyc_document_view",
+      entityType: "partner_document",
+      entityId: document.id,
+      after: { partnerId: document.partnerId },
+    });
 
     return new Response(obj.body as BodyInit, {
       headers: {

@@ -3,7 +3,7 @@
 import { useState, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Dialog } from "radix-ui";
+import * as Dialog from "@radix-ui/react-dialog";
 import {
   LayoutDashboard,
   Upload,
@@ -32,7 +32,8 @@ function useSignOut() {
     if (pending) return;
     setPending(true);
     try {
-      await authClient.signOut();
+      const { error } = await authClient.signOut();
+      if (error) throw new Error("Sign out failed");
       router.push("/login");
       router.refresh();
     } catch {
@@ -52,6 +53,7 @@ function NavLinks({ nav, onNavigate }: { nav: NavItem[]; onNavigate?: () => void
           key={item.href}
           href={item.href}
           onClick={onNavigate}
+          aria-current={active(item.href) ? "page" : undefined}
           className={cx(
             "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
             active(item.href)
@@ -112,6 +114,12 @@ export function DashboardShell({
 
   return (
     <div className="lg:flex">
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:rounded-lg focus:bg-navy-800 focus:px-4 focus:py-2 focus:text-white"
+      >
+        Skip to content
+      </a>
       <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-hairline bg-white lg:flex">
         <div className="flex h-16 items-center border-b border-hairline px-5 text-navy-800">
           <Logo />
@@ -162,7 +170,9 @@ export function DashboardShell({
           </Dialog.Root>
         </header>
 
-        <main className="flex-1 px-6 py-8 sm:px-10">{children}</main>
+        <main id="main-content" tabIndex={-1} className="flex-1 px-6 py-8 sm:px-10">
+          {children}
+        </main>
       </div>
     </div>
   );

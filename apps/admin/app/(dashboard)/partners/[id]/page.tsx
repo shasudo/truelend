@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, FileText, Check, X } from "lucide-react";
-import { Card, Textarea, Stat, SubmitButton, cx } from "@truelend/ui";
+import { Card, Field, Textarea, Stat, SubmitButton, cx } from "@truelend/ui";
 import {
   partnerTypeLabels,
   partnerStatusLabels,
@@ -24,6 +24,7 @@ import {
 } from "@/lib/partner-actions";
 
 export const dynamic = "force-dynamic";
+export const metadata = { title: "Partner details" };
 
 const statusStyles: Record<string, string> = {
   pending: "bg-navy-800/[0.08] text-navy-700",
@@ -34,7 +35,7 @@ const statusStyles: Record<string, string> = {
 function Detail({ label, value }: { label: string; value: string | null | undefined }) {
   return (
     <div>
-      <dt className="text-xs font-semibold uppercase tracking-[0.1em] text-navy-400">{label}</dt>
+      <dt className="text-xs font-semibold uppercase tracking-[0.1em] text-muted">{label}</dt>
       <dd className="mt-0.5 text-navy-900">{value || "—"}</dd>
     </div>
   );
@@ -124,7 +125,7 @@ export default async function PartnerDetailPage({ params }: { params: Promise<{ 
             <h2 className="font-display text-lg font-bold text-navy-950">KYC documents</h2>
             <ul className="mt-4 space-y-2">
               {documents.length === 0 && (
-                <li className="text-sm text-navy-400">No documents uploaded yet.</li>
+                <li className="text-sm text-muted">No documents uploaded yet.</li>
               )}
               {documents.map((doc) => (
                 <li key={doc.id}>
@@ -140,7 +141,7 @@ export default async function PartnerDetailPage({ params }: { params: Promise<{ 
                         {partnerDocTypeLabels[doc.docType] ?? doc.docType}
                       </span>
                     </span>
-                    <span className="text-xs text-navy-400">{formatDateTime(doc.uploadedAt)}</span>
+                    <span className="text-xs text-muted">{formatDateTime(doc.uploadedAt)}</span>
                   </a>
                 </li>
               ))}
@@ -150,7 +151,7 @@ export default async function PartnerDetailPage({ params }: { params: Promise<{ 
           <Card className="p-6">
             <h2 className="font-display text-lg font-bold text-navy-950">Recent leads</h2>
             <ul className="mt-4 divide-y divide-hairline">
-              {leads.length === 0 && <li className="py-3 text-sm text-navy-400">No leads yet.</li>}
+              {leads.length === 0 && <li className="py-3 text-sm text-muted">No leads yet.</li>}
               {leads.map((lead) => (
                 <li key={lead.id} className="flex items-center justify-between gap-4 py-2.5">
                   <Link
@@ -159,7 +160,7 @@ export default async function PartnerDetailPage({ params }: { params: Promise<{ 
                   >
                     {lead.name ?? "—"}
                   </Link>
-                  <span className="text-xs text-navy-400">{productName(lead.productSlug)}</span>
+                  <span className="text-xs text-muted">{productName(lead.productSlug)}</span>
                 </li>
               ))}
             </ul>
@@ -181,7 +182,7 @@ export default async function PartnerDetailPage({ params }: { params: Promise<{ 
                   <Check className="h-4 w-4" aria-hidden /> Approve partner
                 </SubmitButton>
                 {!canApprove && (
-                  <p className="mt-2 text-xs text-navy-400">
+                  <p className="mt-2 text-xs text-muted">
                     {!partner.submittedAt
                       ? "Partner hasn't submitted their application yet."
                       : !detailsComplete
@@ -192,13 +193,16 @@ export default async function PartnerDetailPage({ params }: { params: Promise<{ 
               </form>
               <form action={rejectPartnerAction} className="mt-3 space-y-2">
                 <input type="hidden" name="partnerId" value={partner.userId} />
-                <Textarea
-                  name="reason"
-                  required
-                  maxLength={500}
-                  placeholder="Reason (shown to the partner)"
-                  className="min-h-16 text-sm"
-                />
+                <Field label="Rejection reason" htmlFor="rejection-reason" required>
+                  <Textarea
+                    id="rejection-reason"
+                    name="reason"
+                    required
+                    maxLength={500}
+                    placeholder="Shown to the partner"
+                    className="min-h-16 text-sm"
+                  />
+                </Field>
                 <SubmitButton
                   variant="outline"
                   className="w-full text-red-700 hover:bg-red-50"
@@ -242,7 +246,7 @@ export default async function PartnerDetailPage({ params }: { params: Promise<{ 
             <PayoutForm partnerId={partner.userId} noun={noun} />
 
             {payouts.length === 0 ? (
-              <p className="mt-5 border-t border-hairline pt-4 text-sm text-navy-400">
+              <p className="mt-5 border-t border-hairline pt-4 text-sm text-muted">
                 No entries yet.
               </p>
             ) : (

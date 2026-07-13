@@ -8,18 +8,9 @@ import {
   setRoleAction,
   toggleBanAction,
   removeUserAction,
-  setPasswordAction,
+  sendPasswordResetAction,
   type ActionResult,
 } from "@/lib/team-actions";
-
-// Unambiguous alphabet (no 0/O/1/l/I) for a share-once temporary password.
-function tempPassword() {
-  const chars = "ABCDEFGHJKMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
-  return Array.from(
-    crypto.getRandomValues(new Uint8Array(14)),
-    (b) => chars[b % chars.length],
-  ).join("");
-}
 
 export interface Member {
   id: string;
@@ -87,20 +78,17 @@ function TeamRow({ m, isSelf }: { m: Member; isSelf: boolean }) {
     });
   }
 
-  function resetPassword() {
-    if (
-      !window.confirm(`Reset ${m.name}'s password? You'll get a new temporary password to share.`)
-    )
-      return;
-    const pw = tempPassword();
+  function sendPasswordReset() {
+    if (!window.confirm(`Revoke ${m.name}'s sessions and email a password reset link?`)) return;
     const fd = new FormData();
     fd.set("userId", m.id);
-    fd.set("password", pw);
     setMsg(null);
     start(async () => {
-      const res = await setPasswordAction(fd);
+      const res = await sendPasswordResetAction(fd);
       setMsg(
-        res?.error ? { ok: false, text: res.error } : { ok: true, text: `New password: ${pw}` },
+        res?.error
+          ? { ok: false, text: res.error }
+          : { ok: true, text: "Sessions revoked and reset link sent" },
       );
     });
   }
@@ -109,12 +97,13 @@ function TeamRow({ m, isSelf }: { m: Member; isSelf: boolean }) {
     <tr className="border-b border-hairline align-top last:border-b-0 hover:bg-paper">
       <td className="px-5 py-3.5 font-semibold text-navy-950">
         {m.name}
-        {isSelf && <span className="ml-2 text-xs font-normal text-navy-400">(you)</span>}
+        {isSelf && <span className="ml-2 text-xs font-normal text-muted">(you)</span>}
       </td>
       <td className="px-5 py-3.5 text-navy-600">{m.email}</td>
       <td className="px-5 py-3.5">
         <div className="flex items-center gap-2">
           <Select
+            aria-label={`Role for ${m.name}`}
             value={role}
             onChange={(e) => setRole(e.target.value)}
             disabled={isSelf || pending}
@@ -140,7 +129,7 @@ function TeamRow({ m, isSelf }: { m: Member; isSelf: boolean }) {
       <td className="px-5 py-3.5 tabular-nums text-navy-500">{m.joined}</td>
       <td className="px-5 py-3.5">
         {isSelf ? (
-          <span className="text-xs text-navy-400">—</span>
+          <span className="text-xs text-muted">—</span>
         ) : (
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center gap-2">
@@ -190,12 +179,12 @@ function TeamRow({ m, isSelf }: { m: Member; isSelf: boolean }) {
               >
                 <Trash2 className="h-4 w-4" aria-hidden /> Delete
               </Button>
-              <Button size="sm" variant="ghost" disabled={pending} onClick={resetPassword}>
-                <KeyRound className="h-4 w-4" aria-hidden /> Password
+              <Button size="sm" variant="ghost" disabled={pending} onClick={sendPasswordReset}>
+                <KeyRound className="h-4 w-4" aria-hidden /> Reset link
               </Button>
             </div>
             {pending ? (
-              <span className="text-xs text-navy-400">Working…</span>
+              <span className="text-xs text-muted">Working…</span>
             ) : (
               msg && (
                 <span className={cx("text-xs", msg.ok ? "text-navy-500" : "text-red-600")}>

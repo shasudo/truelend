@@ -5,7 +5,12 @@ import type { ExecutionContext } from "@cloudflare/workers-types";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { eq } from "drizzle-orm";
 import { createDb, schema, type Database, type Partner } from "@truelend/db";
-import { createAuth, type Auth, type CreateAuthOptions, type Session } from "@truelend/auth";
+import {
+  createPartnerAuth,
+  type CreateAuthOptions,
+  type PartnerAuth,
+  type PartnerSession,
+} from "@truelend/auth";
 import { sendPasswordReset } from "@truelend/email";
 
 export function authOptions(env: CloudflareEnv): CreateAuthOptions {
@@ -14,14 +19,17 @@ export function authOptions(env: CloudflareEnv): CreateAuthOptions {
     baseURL: env.BETTER_AUTH_URL,
     allowSignUp: true,
     sendResetPassword: async ({ user, url }) => {
-      await sendPasswordReset(env, { to: user.email, name: user.name, url });
+      const result = await sendPasswordReset(env, { to: user.email, name: user.name, url });
+      if (!result.ok || result.skipped) {
+        throw new Error("Password reset email was not accepted for delivery");
+      }
     },
   };
 }
 
 interface AuthContext {
   db: Database;
-  auth: Auth;
+  auth: PartnerAuth;
   ctx: ExecutionContext;
   env: CloudflareEnv;
 }
@@ -32,17 +40,17 @@ interface AuthContext {
 export const getAuthContext = cache((): AuthContext => {
   const { env, ctx } = getCloudflareContext();
   const db = createDb(env.HYPERDRIVE.connectionString);
-  const auth = createAuth(db, authOptions(env));
+  const auth = createPartnerAuth(db, authOptions(env));
   return { db, auth, ctx, env };
 });
 
-export async function getSession(): Promise<Session | null> {
+export async function getSession(): Promise<PartnerSession | null> {
   const { auth } = getAuthContext();
   return auth.api.getSession({ headers: await headers() });
 }
 
 export interface PartnerContext {
-  session: Session;
+  session: PartnerSession;
   partner: Partner | null;
 }
 

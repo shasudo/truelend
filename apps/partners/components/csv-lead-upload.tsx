@@ -25,7 +25,7 @@ export function CsvLeadUpload() {
   const [state, action, pending] = useActionState<CsvState, FormData>(submitLeadsCsv, {});
 
   return (
-    <form action={action} className="space-y-4">
+    <form action={action} aria-busy={pending} className="space-y-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <p className="max-w-md text-sm text-navy-600">
           Upload a CSV with columns <code className="rounded bg-navy-800/[0.06] px-1">name</code>,{" "}
@@ -41,7 +41,11 @@ export function CsvLeadUpload() {
         </Button>
       </div>
 
+      <label htmlFor="lead-csv" className="block text-sm font-medium text-navy-800">
+        Lead CSV file <span className="text-red-600">*</span>
+      </label>
       <input
+        id="lead-csv"
         type="file"
         name="file"
         accept=".csv,text/csv"

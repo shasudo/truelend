@@ -1,0 +1,11 @@
+* @shasudo
+
+# Two approvals for these paths must be enforced in the protected branch rules.
+/.github/ @shasudo
+/apps/admin/ @shasudo
+/apps/partners/app/api/kyc/ @shasudo
+/apps/partners/lib/kyc-actions.ts @shasudo
+/packages/auth/ @shasudo
+/packages/db/drizzle/ @shasudo
+/packages/db/src/schema.ts @shasudo
+/**/wrangler.jsonc @shasudo

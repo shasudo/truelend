@@ -2,10 +2,11 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button, Checkbox, Field, Input, Select } from "@truelend/ui";
+import { products } from "@truelend/reference";
 import { referralSchema } from "@/lib/schemas";
-import { products } from "@/content/products";
 import {
   FormSuccess,
+  NoScriptFallback,
   RootError,
   TurnstileField,
   TurnstilePendingHint,
@@ -47,9 +48,7 @@ export function ReferralForm() {
 
   return (
     <form onSubmit={onSubmit} noValidate className="space-y-6">
-      <noscript>
-        <p className="text-sm text-red-700">This form needs JavaScript enabled to submit.</p>
-      </noscript>
+      <NoScriptFallback />
       <fieldset className="space-y-5">
         <legend className="font-display text-sm font-bold uppercase tracking-[0.14em] text-navy-500">
           About you
@@ -136,6 +135,7 @@ export function ReferralForm() {
 
       <TurnstileField
         resetKey={turnstileKey}
+        action="lead_referral"
         onToken={setToken}
         onExpire={resetToken}
         onError={failTurnstile}

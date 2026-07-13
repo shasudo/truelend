@@ -33,3 +33,4 @@ export default async function LeadsPage() {
     </div>
   );
 }
+export const metadata = { title: "Submit a lead" };

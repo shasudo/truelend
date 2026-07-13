@@ -104,7 +104,7 @@ export default async function LoanCasesPage({ searchParams }: { searchParams: Pr
           <tbody>
             {rows.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-5 py-12 text-center text-navy-400">
+                <td colSpan={7} className="px-5 py-12 text-center text-muted">
                   {hasFilters
                     ? "No loan cases match these filters."
                     : "No loan cases yet — create one from a lead."}
@@ -182,3 +182,4 @@ export default async function LoanCasesPage({ searchParams }: { searchParams: Pr
     </>
   );
 }
+export const metadata = { title: "Loan cases" };

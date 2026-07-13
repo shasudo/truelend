@@ -6,7 +6,7 @@ const PLOT = { left: 36, right: 12, top: 12, bottom: 32 };
 
 function Empty({ label }: { label: string }) {
   return (
-    <div className="flex h-[220px] items-center justify-center text-sm text-navy-300">{label}</div>
+    <div className="flex h-[220px] items-center justify-center text-sm text-muted">{label}</div>
   );
 }
 

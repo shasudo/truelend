@@ -5,6 +5,7 @@ import { Button, Checkbox, Field, Input, Textarea } from "@truelend/ui";
 import { contactSchema } from "@/lib/schemas";
 import {
   FormSuccess,
+  NoScriptFallback,
   RootError,
   TurnstileField,
   TurnstilePendingHint,
@@ -45,9 +46,7 @@ export function ContactForm() {
 
   return (
     <form onSubmit={onSubmit} noValidate className="space-y-5">
-      <noscript>
-        <p className="text-sm text-red-700">This form needs JavaScript enabled to submit.</p>
-      </noscript>
+      <NoScriptFallback />
       <div className="grid gap-5 sm:grid-cols-2">
         <Field label="Full name" htmlFor="con-name" required error={err.name?.message}>
           <Input
@@ -98,6 +97,7 @@ export function ContactForm() {
 
       <TurnstileField
         resetKey={turnstileKey}
+        action="lead_contact"
         onToken={setToken}
         onExpire={resetToken}
         onError={failTurnstile}

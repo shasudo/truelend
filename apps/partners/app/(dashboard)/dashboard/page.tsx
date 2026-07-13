@@ -52,7 +52,7 @@ export default async function DashboardPage() {
 
       <Card className="mt-6 flex items-center justify-between p-6">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.1em] text-navy-400">
+          <p className="text-xs font-semibold uppercase tracking-[0.1em] text-muted">
             {label} balance (earned − received)
           </p>
           <p className="mt-1 font-display text-2xl font-extrabold tabular-nums text-navy-950">
@@ -65,7 +65,7 @@ export default async function DashboardPage() {
         <h2 className="font-display text-lg font-bold text-navy-950">Your recent leads</h2>
         <ul className="mt-4 divide-y divide-hairline">
           {leads.length === 0 && (
-            <li className="py-4 text-sm text-navy-400">
+            <li className="py-4 text-sm text-muted">
               No leads yet —{" "}
               <Link href={submitHref} className="font-semibold text-red-600">
                 submit your first
@@ -84,7 +84,7 @@ export default async function DashboardPage() {
                   status={lead.status}
                   label={leadStatusLabels[lead.status] ?? lead.status}
                 />
-                <span className="w-20 text-right text-xs tabular-nums text-navy-400">
+                <span className="w-20 text-right text-xs tabular-nums text-muted">
                   {formatDate(lead.createdAt)}
                 </span>
               </div>
@@ -95,3 +95,4 @@ export default async function DashboardPage() {
     </>
   );
 }
+export const metadata = { title: "Dashboard" };

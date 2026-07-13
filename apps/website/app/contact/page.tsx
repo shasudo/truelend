@@ -8,6 +8,7 @@ import { site } from "@/content/site";
 export const metadata: Metadata = {
   title: "Contact Us",
   description: "Call, WhatsApp or write to the TrueLend team — we reply within a working day.",
+  alternates: { canonical: "/contact" },
 };
 
 export default function ContactPage() {

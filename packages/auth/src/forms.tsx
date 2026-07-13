@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button, Field, Input } from "@truelend/ui";
@@ -15,22 +15,27 @@ export function LoginForm({ redirectTo, children }: { redirectTo: string; childr
     e.preventDefault();
     setError(undefined);
     setPending(true);
-    const form = new FormData(e.currentTarget);
-    const { error } = await authClient.signIn.email({
-      email: String(form.get("email")),
-      password: String(form.get("password")),
-    });
-    if (error) {
-      setError(error.message ?? "Sign in failed — check your credentials.");
+    try {
+      const form = new FormData(e.currentTarget);
+      const { error } = await authClient.signIn.email({
+        email: String(form.get("email")),
+        password: String(form.get("password")),
+      });
+      if (error) {
+        setError("Sign in failed — check your credentials.");
+        return;
+      }
+      router.push(redirectTo);
+      router.refresh();
+    } catch {
+      setError("Sign in is temporarily unavailable. Please try again.");
+    } finally {
       setPending(false);
-      return;
     }
-    router.push(redirectTo);
-    router.refresh();
   }
 
   return (
-    <form onSubmit={onSubmit} className="mt-6 space-y-4">
+    <form onSubmit={onSubmit} aria-busy={pending} className="mt-6 space-y-4">
       <Field label="Email" htmlFor="email" required>
         <Input id="email" name="email" type="email" autoComplete="email" maxLength={254} required />
       </Field>
@@ -74,17 +79,23 @@ export function ForgotPasswordForm() {
     e.preventDefault();
     setError(undefined);
     setPending(true);
-    const form = new FormData(e.currentTarget);
-    const { error } = await authClient.requestPasswordReset({
-      email: String(form.get("email")),
-      redirectTo: "/reset-password",
-    });
-    setPending(false);
-    if (error) {
-      setError(error.message ?? "Couldn't send the reset link. Please try again.");
-      return;
+    try {
+      const form = new FormData(e.currentTarget);
+      const { error } = await authClient.requestPasswordReset({
+        email: String(form.get("email")),
+        redirectTo: "/reset-password",
+      });
+      if (error) {
+        setError("The request could not be completed. Please try again.");
+        return;
+      }
+      // The same response is shown for existing and unknown accounts.
+      setSent(true);
+    } catch {
+      setError("The request could not be completed. Please try again.");
+    } finally {
+      setPending(false);
     }
-    setSent(true);
   }
 
   if (sent) {
@@ -101,7 +112,7 @@ export function ForgotPasswordForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="mt-6 space-y-4">
+    <form onSubmit={onSubmit} aria-busy={pending} className="mt-6 space-y-4">
       <Field label="Email" htmlFor="email" required>
         <Input id="email" name="email" type="email" autoComplete="email" maxLength={254} required />
       </Field>
@@ -125,6 +136,10 @@ export function ResetPasswordForm({ token, tokenError }: { token?: string; token
   const [error, setError] = useState<string>();
   const [done, setDone] = useState(false);
 
+  useEffect(() => {
+    window.history.replaceState(null, "", window.location.pathname);
+  }, []);
+
   // better-auth redirects an invalid/expired link back here with ?error=…
   if (!token || tokenError) {
     return (
@@ -147,13 +162,18 @@ export function ResetPasswordForm({ token, tokenError }: { token?: string; token
       return setError("Password must be between 8 and 128 characters.");
     if (password !== String(form.get("confirm"))) return setError("The passwords don't match.");
     setPending(true);
-    const { error } = await authClient.resetPassword({ newPassword: password, token });
-    setPending(false);
-    if (error) {
-      setError(error.message ?? "Couldn't reset your password — the link may have expired.");
-      return;
+    try {
+      const { error } = await authClient.resetPassword({ newPassword: password, token });
+      if (error) {
+        setError("Couldn't reset your password — the link may have expired.");
+        return;
+      }
+      setDone(true);
+    } catch {
+      setError("The password could not be updated. Please try again.");
+    } finally {
+      setPending(false);
     }
-    setDone(true);
   }
 
   if (done) {
@@ -173,7 +193,7 @@ export function ResetPasswordForm({ token, tokenError }: { token?: string; token
   }
 
   return (
-    <form onSubmit={onSubmit} className="mt-6 space-y-4">
+    <form onSubmit={onSubmit} aria-busy={pending} className="mt-6 space-y-4">
       <Field label="New password" htmlFor="password" required>
         <Input
           id="password"

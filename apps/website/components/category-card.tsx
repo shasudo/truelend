@@ -18,7 +18,7 @@ export function CategoryCard({ product }: { product: ProductCategory }) {
           <span className="font-semibold tabular-nums text-navy-800">{minRateLabel(product)}</span>
           <MoveUpRight
             aria-hidden
-            className="h-4 w-4 text-navy-300 transition-all duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-red-600"
+            className="h-4 w-4 text-muted transition-all duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-red-600"
           />
         </span>
       </Card>

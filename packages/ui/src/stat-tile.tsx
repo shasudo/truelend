@@ -12,7 +12,7 @@ export interface StatTileProps {
 export function StatTile({ label, value, sub, accent }: StatTileProps) {
   return (
     <div className="rounded-xl border border-hairline bg-white p-5">
-      <p className="text-xs font-semibold uppercase tracking-[0.1em] text-navy-400">{label}</p>
+      <p className="text-xs font-semibold uppercase tracking-[0.1em] text-muted">{label}</p>
       <p
         className={cx(
           "mt-2 font-display text-3xl font-extrabold tracking-tight tabular-nums",

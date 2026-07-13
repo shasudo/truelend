@@ -18,6 +18,7 @@ import { Reveal } from "@/components/reveal";
 import { products, productBySlug } from "@/content/products";
 import { site } from "@/content/site";
 import { toRateTableRows } from "@/lib/format";
+import { canonical, completeDescription, jsonLd } from "@/lib/metadata";
 
 // Fully static: every product page is prerendered; unknown slugs 404.
 export const dynamicParams = false;
@@ -33,9 +34,19 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const product = productBySlug((await params).slug);
   if (!product) return {};
+  const description = completeDescription(`${product.tagline} ${product.description}`);
+  const url = canonical(`/products/${product.slug}`);
   return {
     title: product.name,
-    description: `${product.tagline} ${product.description}`.slice(0, 160),
+    description,
+    alternates: { canonical: url },
+    openGraph: {
+      type: "website",
+      url,
+      title: product.name,
+      description,
+      images: ["/opengraph-image.png"],
+    },
   };
 }
 
@@ -45,9 +56,36 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
   const Icon = product.icon;
   const enquiryHref = `/enquiry?product=${product.slug}`;
+  const url = canonical(`/products/${product.slug}`);
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: canonical("/") },
+      { "@type": "ListItem", position: 2, name: "Products", item: canonical("/products") },
+      { "@type": "ListItem", position: 3, name: product.name, item: url },
+    ],
+  };
+  const serviceJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Service",
+    name: `${product.name} comparison and advisory`,
+    description: completeDescription(`${product.tagline} ${product.description}`, 300),
+    provider: { "@type": "FinancialService", name: "TrueLend", url: canonical("/") },
+    areaServed: "IN",
+    url,
+  };
 
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: jsonLd(breadcrumbJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: jsonLd(serviceJsonLd) }}
+      />
       <section className="relative overflow-hidden border-b border-hairline">
         <HexPattern className="-right-32 -top-40 h-[420px] w-[420px] text-navy-800/[0.06]" />
         <Container className="py-14 sm:py-18">
@@ -116,7 +154,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             </Reveal>
             <Reveal delay={0.1}>
               <RateTable className="mt-10" rows={toRateTableRows(product.rates)} />
-              <p className="mt-4 text-xs leading-relaxed text-navy-400">
+              <p className="mt-4 text-xs leading-relaxed text-muted">
                 Rates, fees and limits are set by lenders, vary with your profile, and change with
                 the market. Treat this table as a starting point — your advisor confirms live
                 pricing before any application is filed.

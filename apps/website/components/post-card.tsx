@@ -9,7 +9,7 @@ export function PostCard({ post }: { post: PostMeta }) {
       <Card className="flex h-full flex-col p-6 transition-all duration-200 group-hover:-translate-y-0.5 group-hover:border-navy-800/35 group-hover:shadow-[0_8px_30px_-12px_rgba(20,32,74,0.25)]">
         <div className="flex items-center gap-3">
           <Badge>{post.tag}</Badge>
-          <time dateTime={post.date.toISOString()} className="text-xs text-navy-400">
+          <time dateTime={post.date.toISOString()} className="text-xs text-muted">
             {formatPostDate(post.date)}
           </time>
         </div>

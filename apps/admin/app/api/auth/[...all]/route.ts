@@ -1,6 +1,6 @@
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { createDb } from "@truelend/db";
-import { allowSensitiveAuthRequest, createAuth } from "@truelend/auth";
+import { allowSensitiveAuthRequest, createAdminAuth } from "@truelend/auth";
 import { authOptions } from "@/lib/auth";
 
 // Per-request auth instance (workerd forbids cross-request I/O reuse); this
@@ -15,7 +15,7 @@ async function handler(req: Request) {
     );
   }
   const db = createDb(env.HYPERDRIVE.connectionString);
-  const auth = createAuth(db, authOptions(env));
+  const auth = createAdminAuth(db, authOptions(env));
   try {
     return await auth.handler(req);
   } finally {

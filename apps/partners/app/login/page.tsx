@@ -3,7 +3,10 @@ import Link from "next/link";
 import { Card, Logo } from "@truelend/ui";
 import { LoginForm } from "@truelend/auth/forms";
 
-export const metadata: Metadata = { title: "Sign in" };
+export const metadata: Metadata = {
+  title: "Sign in",
+  robots: { index: false, follow: false },
+};
 
 export default function LoginPage() {
   return (

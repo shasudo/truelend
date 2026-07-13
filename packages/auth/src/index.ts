@@ -31,11 +31,26 @@ const EDGE_LIMITED_AUTH_PATHS = new Set([
   "/api/auth/forget-password",
 ]);
 
+function normalizedAuthPath(request: Request): string {
+  const path = new URL(request.url).pathname;
+  return path.length > 1 ? path.replace(/\/+$/, "") : path;
+}
+
+export function isPartnerAuthEndpointAllowed(request: Request): boolean {
+  const path = normalizedAuthPath(request);
+  return (
+    path !== "/api/auth/sign-up/email" &&
+    path !== "/api/auth/admin" &&
+    !path.startsWith("/api/auth/admin/")
+  );
+}
+
 export async function allowSensitiveAuthRequest(
   request: Request,
   limiter: EdgeRateLimiter | undefined,
 ): Promise<boolean> {
-  if (!limiter || !EDGE_LIMITED_AUTH_PATHS.has(new URL(request.url).pathname)) return true;
+  const path = normalizedAuthPath(request);
+  if (!limiter || !EDGE_LIMITED_AUTH_PATHS.has(path)) return true;
   let identity = request.headers.get("cf-connecting-ip") ?? "anonymous";
   try {
     const body: unknown = await request.clone().json();
@@ -46,7 +61,7 @@ export async function allowSensitiveAuthRequest(
     // Malformed requests still share a bounded fallback key.
   }
   const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(identity));
-  const key = `${new URL(request.url).pathname}:${Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("")}`;
+  const key = `${path}:${Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("")}`;
   return (await limiter.limit({ key })).success;
 }
 
@@ -62,8 +77,8 @@ export async function allowSensitiveAuthRequest(
  * (bypassing registerPartner, which sets business|referral) lands on the
  * default — it must never be a staff role, or that path mints admin access.
  */
-export function createAuth(db: Database, opts: CreateAuthOptions) {
-  return betterAuth({
+function baseAuthOptions(db: Database, opts: CreateAuthOptions) {
+  return {
     secret: opts.secret,
     baseURL: opts.baseURL,
     trustedOrigins: [opts.baseURL],
@@ -91,25 +106,55 @@ export function createAuth(db: Database, opts: CreateAuthOptions) {
         verification: schema.verification,
       },
     }),
+    verification: {
+      storeIdentifier: "hashed" as const,
+    },
     emailAndPassword: {
       enabled: true,
       minPasswordLength: 8,
       maxPasswordLength: 128,
-      // Accounts are created by an admin from the Team page, never self-serve.
       disableSignUp: !opts.allowSignUp,
+      revokeSessionsOnPasswordReset: true,
       // Reset is enabled only when the app wires a sender; the link is emailed,
       // never returned to the client. Default 1h token expiry is fine.
       sendResetPassword: opts.sendResetPassword
-        ? async ({ user, url }) => {
+        ? async ({ user, url }: { user: { email: string; name: string }; url: string }) => {
             await opts.sendResetPassword!({ user: { email: user.email, name: user.name }, url });
           }
         : undefined,
     },
+  };
+}
+
+export function createAdminAuth(db: Database, opts: CreateAuthOptions) {
+  return betterAuth({
+    ...baseAuthOptions(db, opts),
+    session: {
+      expiresIn: 60 * 60 * 8,
+      disableSessionRefresh: true,
+      freshAge: 60 * 5,
+    },
     // nextCookies() MUST be last — it lets signUpEmail/signIn set the session
-    // cookie from inside a Next server action (used by partner registration).
+    // cookie when this factory is used by the bootstrap flow.
     plugins: [admin({ defaultRole: "partner_pending" }), nextCookies()],
   });
 }
 
-export type Auth = ReturnType<typeof createAuth>;
-export type Session = Auth["$Infer"]["Session"];
+export function createPartnerAuth(db: Database, opts: CreateAuthOptions) {
+  return betterAuth({
+    ...baseAuthOptions(db, { ...opts, allowSignUp: true }),
+    session: {
+      expiresIn: 60 * 60 * 24 * 7,
+      updateAge: 60 * 60 * 24,
+      freshAge: 60 * 15,
+    },
+    // No admin plugin on the partner surface: enumeration, impersonation, role,
+    // ban and staff-provisioning endpoints are absent from this auth instance.
+    plugins: [nextCookies()],
+  });
+}
+
+export type AdminAuth = ReturnType<typeof createAdminAuth>;
+export type AdminSession = AdminAuth["$Infer"]["Session"];
+export type PartnerAuth = ReturnType<typeof createPartnerAuth>;
+export type PartnerSession = PartnerAuth["$Infer"]["Session"];

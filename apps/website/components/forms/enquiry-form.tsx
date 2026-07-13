@@ -1,22 +1,19 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button, Checkbox, Field, Input, Select, Textarea } from "@truelend/ui";
+import { products } from "@truelend/reference";
 import { enquirySchema } from "@/lib/schemas";
-import { products, productBySlug } from "@/content/products";
 import {
   FormSuccess,
+  NoScriptFallback,
   RootError,
   TurnstileField,
   TurnstilePendingHint,
   useLeadForm,
 } from "./lead-form";
 
-export function EnquiryForm() {
-  const requested = useSearchParams().get("product") ?? "";
-  const defaultProduct = productBySlug(requested)?.slug ?? "";
-
+export function EnquiryForm({ defaultProduct = "" }: { defaultProduct?: string }) {
   const {
     form,
     onSubmit,
@@ -52,9 +49,7 @@ export function EnquiryForm() {
 
   return (
     <form onSubmit={onSubmit} noValidate className="space-y-5">
-      <noscript>
-        <p className="text-sm text-red-700">This form needs JavaScript enabled to submit.</p>
-      </noscript>
+      <NoScriptFallback />
       <div className="grid gap-5 sm:grid-cols-2">
         <Field label="Full name" htmlFor="enq-name" required error={err.name?.message}>
           <Input
@@ -127,6 +122,7 @@ export function EnquiryForm() {
 
       <TurnstileField
         resetKey={turnstileKey}
+        action="lead_enquiry"
         onToken={setToken}
         onExpire={resetToken}
         onError={failTurnstile}

@@ -43,16 +43,12 @@ async function staffTarget(db: Database, userId: string) {
 export type ActionResult = { ok?: boolean; error?: string };
 
 export type CreateUserState = ActionResult & {
-  // Returned on success so the admin can copy the credentials to share — the
-  // temp password isn't stored anywhere retrievable afterward.
   createdEmail?: string;
-  tempPassword?: string;
 };
 
 const createSchema = z.object({
   name: z.string().trim().min(2, "Name is required").max(120),
   email: z.email("Enter a valid email"),
-  password: z.string().min(8, "Password must be at least 8 characters").max(128),
   role: z.enum(ROLES),
 });
 
@@ -61,6 +57,7 @@ export async function createUserAction(
   formData: FormData,
 ): Promise<CreateUserState> {
   const { auth, db, ctx, h, me } = await adminContext();
+  let createdUserId: string | undefined;
   try {
     if (me?.role !== "admin") return { error: "Not authorized" };
     const parsed = createSchema.safeParse(Object.fromEntries(formData));
@@ -71,9 +68,16 @@ export async function createUserAction(
       body: {
         name: parsed.data.name,
         email: parsed.data.email,
-        password: parsed.data.password,
+        // Never disclose or transport a staff password. This random credential
+        // is immediately superseded by the single-use activation/reset link.
+        password: `${crypto.randomUUID()}${crypto.randomUUID()}`,
         role: asRole(parsed.data.role),
       },
+      headers: h,
+    });
+    createdUserId = created.user.id;
+    await auth.api.requestPasswordReset({
+      body: { email: parsed.data.email, redirectTo: "/reset-password" },
       headers: h,
     });
     await db.insert(schema.auditLog).values({
@@ -82,12 +86,32 @@ export async function createUserAction(
       action: "team.create",
       entityType: "user",
       entityId: created.user.id,
-      after: { email: parsed.data.email, role: parsed.data.role },
+      after: { email: parsed.data.email, role: parsed.data.role, activationSent: true },
     });
     revalidatePath("/team");
-    return { ok: true, createdEmail: parsed.data.email, tempPassword: parsed.data.password };
-  } catch (err) {
-    return { error: (err as Error).message || "Could not create user (email may already exist)." };
+    return { ok: true, createdEmail: parsed.data.email };
+  } catch (error) {
+    if (createdUserId) {
+      try {
+        await auth.api.removeUser({ body: { userId: createdUserId }, headers: h });
+      } catch (cleanupError) {
+        console.error(
+          JSON.stringify({
+            event: "team_create_cleanup_failed",
+            userId: createdUserId,
+            error: cleanupError instanceof Error ? cleanupError.message : "unknown",
+          }),
+        );
+      }
+    }
+    console.error(
+      JSON.stringify({
+        event: "team_create_failed",
+        cleanupAttempted: Boolean(createdUserId),
+        error: error instanceof Error ? error.message : "unknown",
+      }),
+    );
+    return { error: "Could not create the teammate or send their activation link." };
   } finally {
     ctx.waitUntil(db.$client.end());
   }
@@ -121,8 +145,14 @@ export async function setRoleAction(formData: FormData): Promise<ActionResult> {
     });
     revalidatePath("/team");
     return { ok: true };
-  } catch (err) {
-    return { error: (err as Error).message || "Couldn't update the role." };
+  } catch (error) {
+    console.error(
+      JSON.stringify({
+        event: "team_role_update_failed",
+        error: error instanceof Error ? error.message : "unknown",
+      }),
+    );
+    return { error: "Couldn't update the role." };
   } finally {
     ctx.waitUntil(db.$client.end());
   }
@@ -158,43 +188,53 @@ export async function toggleBanAction(formData: FormData): Promise<ActionResult>
     });
     revalidatePath("/team");
     return { ok: true };
-  } catch (err) {
-    return { error: (err as Error).message || "Couldn't update access." };
+  } catch (error) {
+    console.error(
+      JSON.stringify({
+        event: "team_access_update_failed",
+        error: error instanceof Error ? error.message : "unknown",
+      }),
+    );
+    return { error: "Couldn't update access." };
   } finally {
     ctx.waitUntil(db.$client.end());
   }
 }
 
-const setPasswordSchema = z.object({
+const passwordResetSchema = z.object({
   userId: z.string().min(1),
-  password: z.string().min(8, "Password must be at least 8 characters").max(128),
 });
 
-export async function setPasswordAction(formData: FormData): Promise<ActionResult> {
+export async function sendPasswordResetAction(formData: FormData): Promise<ActionResult> {
   const { auth, db, ctx, h, me } = await adminContext();
   try {
     if (me?.role !== "admin") return { error: "Not authorized." };
-    const parsed = setPasswordSchema.safeParse(Object.fromEntries(formData));
-    if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid request." };
+    const parsed = passwordResetSchema.safeParse(Object.fromEntries(formData));
+    if (!parsed.success) return { error: "Invalid request." };
     const target = await staffTarget(db, parsed.data.userId);
     if (!target) return { error: "Teammate not found." };
-    await auth.api.setUserPassword({
-      body: { userId: parsed.data.userId, newPassword: parsed.data.password },
+    await auth.api.revokeUserSessions({ body: { userId: parsed.data.userId }, headers: h });
+    await auth.api.requestPasswordReset({
+      body: { email: target.email, redirectTo: "/reset-password" },
       headers: h,
     });
-    // Password reset is a security event: invalidate every existing device.
-    await auth.api.revokeUserSessions({ body: { userId: parsed.data.userId }, headers: h });
     await db.insert(schema.auditLog).values({
       actorId: me.id,
       actorEmail: me.email,
-      action: "team.password_reset",
+      action: "team.password_reset_requested",
       entityType: "user",
       entityId: target.id,
-      after: { sessionsRevoked: true },
+      after: { sessionsRevoked: true, resetLinkSent: true },
     });
     return { ok: true };
-  } catch (err) {
-    return { error: (err as Error).message || "Couldn't reset the password." };
+  } catch (error) {
+    console.error(
+      JSON.stringify({
+        event: "team_password_reset_request_failed",
+        error: error instanceof Error ? error.message : "unknown",
+      }),
+    );
+    return { error: "Couldn't send the password reset link." };
   } finally {
     ctx.waitUntil(db.$client.end());
   }
@@ -243,8 +283,14 @@ export async function removeUserAction(formData: FormData): Promise<ActionResult
     });
     revalidatePath("/team");
     return { ok: true };
-  } catch (err) {
-    return { error: (err as Error).message || "Couldn't delete this user." };
+  } catch (error) {
+    console.error(
+      JSON.stringify({
+        event: "team_remove_failed",
+        error: error instanceof Error ? error.message : "unknown",
+      }),
+    );
+    return { error: "Couldn't delete this user." };
   } finally {
     ctx.waitUntil(db.$client.end());
   }

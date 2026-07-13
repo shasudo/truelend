@@ -11,6 +11,7 @@ export const metadata: Metadata = {
   title: "Loan Products",
   description:
     "Home loans, business loans, LAP, vehicle and education finance, working capital, equipment finance and credit cards — compared bank-by-bank.",
+  alternates: { canonical: "/products" },
 };
 
 export default function ProductsPage() {
@@ -31,7 +32,7 @@ export default function ProductsPage() {
               </Reveal>
             ))}
           </div>
-          <p className="mt-10 max-w-3xl text-xs leading-relaxed text-navy-400">{site.disclaimer}</p>
+          <p className="mt-10 max-w-3xl text-xs leading-relaxed text-muted">{site.disclaimer}</p>
         </Container>
       </section>
 

@@ -10,6 +10,7 @@ export const metadata: Metadata = {
   title: "Blog",
   description:
     "Plain-speaking notes on credit scores, loan pricing and borrowing strategy from the TrueLend advisory desk.",
+  alternates: { canonical: "/blog" },
 };
 
 export default function BlogPage() {
