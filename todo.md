@@ -62,9 +62,11 @@ context to pick up cold. (MoM scope tracked here without dates, per decision.)
       (`packages/auth`) email+password with roles (admin/employee), leads inbox + pipeline + notes, loan cases (LMS-lite, paise money), team management,
       overview charts + MIS tables. Schema migration 0001 applied to Neon.
       First admin seeded (admin@truelend.in). Verified end-to-end on workerd.
-- [ ] **First production deploy of admin** — `wrangler secret put
-    BETTER_AUTH_SECRET` (apps/admin) then `pnpm deploy:admin` →
-      truelend-admin.truelend.workers.dev. Needs explicit go-ahead.
+- [x] **First production deploy of admin** — live at
+      https://truelend-admin.truelend.workers.dev. `BETTER_AUTH_SECRET` set as a
+      Worker secret. Smoke-tested in prod: unauth→/login, login returns admin
+      role (scrypt fits the CPU budget on the real worker), dashboard/leads/mis
+      200, robots noindex, website unaffected.
 - [ ] **Purge seeded test data** — 3 test leads + 2 loan cases tagged
       `utm_source='admin-test'` were inserted to build/demo against. Delete
       before real operational use: `delete from leads where utm_source='admin-test'`
