@@ -5,15 +5,20 @@ export async function verifyTurnstile(
   secret: string | undefined,
   ip?: string,
 ): Promise<boolean> {
-  // Turnstile needs BOTH keys. Unconfigured → fail CLOSED in production: a
-  // missing key must never wave real traffic through. Local/preview dev without
-  // keys still passes so forms stay testable. NODE_ENV is inlined at build, so
-  // this is a compile-time constant in the deployed Worker.
-  // ponytail: a CI assert that both keys are set would turn a misconfigured
-  // prod deploy into a build failure instead of a runtime lead-reject — add
-  // that env check to the deploy job if this ever bites.
+  // Turnstile needs BOTH keys. When they're configured we enforce for real
+  // (missing/invalid token → reject below). When they're NOT configured we pass
+  // through — rejecting here would silently drop every lead, which is worse than
+  // the no-captcha status quo. In production that gap is a real problem, so make
+  // it loud rather than silent.
+  // ponytail: the durable fix is a CI/deploy gate that FAILS the prod deploy
+  // when these keys are unset — turning "no spam protection" into a blocked
+  // release instead of a runtime warning. Wire that once the keys are set in
+  // prod (until then such a gate would block every deploy).
   if (!secret || !process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY) {
-    return process.env.NODE_ENV !== "production";
+    if (process.env.NODE_ENV === "production") {
+      console.error("[turnstile] NOT configured in production — lead spam protection is OFF");
+    }
+    return true;
   }
   if (!token) return false;
 
