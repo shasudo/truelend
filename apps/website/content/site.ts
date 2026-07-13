@@ -1,4 +1,3 @@
-// Single source of truth for site-wide copy and contact details.
 // NOTE: phone / whatsapp / email / address are PLACEHOLDERS until TrueLend
 // provides the real ones — tracked in todo.md.
 

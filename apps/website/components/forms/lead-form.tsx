@@ -8,9 +8,6 @@ import { Button } from "@truelend/ui";
 import { submitLead } from "@/lib/actions";
 import { site } from "@/content/site";
 
-/* Shared submit pipeline for all four lead forms: RHF + zod client-side,
- * UTM first-touch capture, env-gated Turnstile, typed server action. */
-
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 const UTM_STORAGE_KEY = "tl-utm";
 
@@ -150,7 +147,6 @@ export function FormSuccess({
   sub: string;
   showWhatsApp?: boolean;
 }) {
-  // Page slot is already a Card (enquiry/refer/contact/cibil-score) — stay a plain div.
   return (
     <div className="flex flex-col items-center gap-4 p-6 text-center sm:p-10">
       <CheckCircle2 className="h-12 w-12 text-red-600" aria-hidden />

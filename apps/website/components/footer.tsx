@@ -15,7 +15,6 @@ const companyLinks = [
 export function Footer() {
   return (
     <footer className="bg-navy-950 text-white">
-      {/* Utility strip */}
       <div className="border-b border-white/10">
         <Container className="grid grid-cols-2 gap-x-8 gap-y-3 py-5 sm:grid-cols-4">
           {site.utilityStrip.map((item) => (

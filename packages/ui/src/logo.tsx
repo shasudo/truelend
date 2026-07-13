@@ -16,10 +16,8 @@ export function LogoMark({ className }: { className?: string }) {
         strokeWidth="6"
         strokeLinejoin="round"
       />
-      {/* arrow shaft + head */}
       <polygon points="23.4,67.4 45.4,45.4 54.6,54.6 32.6,76.6" className="fill-red-600" />
       <polygon points="68,32 58.1,61.7 38.3,41.9" className="fill-red-600" />
-      {/* corner triangle the arrow drives toward */}
       <polygon points="77,23 65,23 77,35" fill="currentColor" />
     </svg>
   );
@@ -27,7 +25,6 @@ export function LogoMark({ className }: { className?: string }) {
 
 export interface LogoProps {
   className?: string;
-  /** Show the tagline line under the wordmark. */
   tagline?: boolean;
 }
 

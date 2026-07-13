@@ -1,11 +1,5 @@
 "use client";
 
-/*
- * Shared auth forms — identical across admin + partners, so they live here with
- * the auth client they drive. LoginForm takes the post-login redirect and an
- * optional footer slot (partners uses it for a "Create an account" link).
- */
-
 import { useState, type FormEvent, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";

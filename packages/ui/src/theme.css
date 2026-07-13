@@ -19,7 +19,6 @@
   --color-transparent: transparent;
   --color-current: currentColor;
 
-  /* Paper — the warm ground everything sits on */
   --color-paper: #faf8f3;
   --color-paper-deep: #f1ede3;
 
@@ -45,10 +44,8 @@
   --color-red-700: #a90d14;
   --color-red-800: #850a10;
 
-  /* Hairline — the ledger rule */
   --color-hairline: #14204a1f;
 
-  /* Motion */
   --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
 }
 

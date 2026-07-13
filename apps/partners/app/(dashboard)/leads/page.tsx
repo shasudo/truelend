@@ -8,7 +8,6 @@ export const dynamic = "force-dynamic";
 
 export default async function LeadsPage() {
   const { partner } = await requirePartner();
-  // Referral partners use /refer instead.
   if (partner?.type === "referral") redirect("/refer");
 
   return (

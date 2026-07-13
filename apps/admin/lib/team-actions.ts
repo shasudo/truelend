@@ -40,7 +40,6 @@ async function staffTarget(db: Database, userId: string) {
   return target ?? null;
 }
 
-/** Result surfaced back to the client so every action shows success/failure. */
 export type ActionResult = { ok?: boolean; error?: string };
 
 export type CreateUserState = ActionResult & {

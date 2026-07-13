@@ -14,7 +14,6 @@ export interface PartnerMetrics {
   paidPaise: number;
 }
 
-// All scoped to one partner. Cases join through the partner's own leads.
 export async function getPartnerMetrics(db: Database, partnerId: string): Promise<PartnerMetrics> {
   const sql = db.$client;
   const rows = (await sql`

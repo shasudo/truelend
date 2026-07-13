@@ -20,7 +20,6 @@ const profileSchema = z.object({
     .pipe(z.string().regex(/^[6-9]\d{9}$/, "Enter a valid 10-digit mobile number")),
 });
 
-/** Update the current partner's editable profile fields (name + phone). */
 export async function updateProfileAction(
   _prev: ProfileState,
   formData: FormData,

@@ -1,4 +1,3 @@
-// Branded skeleton shown during route transitions so navigation doesn't feel frozen.
 export default function Loading() {
   return (
     <div className="animate-pulse space-y-6" aria-hidden>

@@ -7,8 +7,6 @@ import { createDb, type Database } from "@truelend/db";
 import { createAuth, type Auth, type CreateAuthOptions, type Session } from "@truelend/auth";
 import { sendPasswordReset } from "@truelend/email";
 
-/** better-auth options for this app, incl. the reset-email sender. Shared by
- * getAuthContext (RSC/actions) and the /api/auth/[...all] route handler. */
 export function authOptions(env: CloudflareEnv): CreateAuthOptions {
   return {
     secret: env.BETTER_AUTH_SECRET,
@@ -53,7 +51,6 @@ function isStaff(role: string | null | undefined): boolean {
   return role != null && STAFF_ROLES.has(role);
 }
 
-/** Validate the session for real (middleware only checks cookie presence). */
 export async function requireSession(): Promise<Session> {
   const { auth } = getAuthContext();
   const session = await auth.api.getSession({ headers: await headers() });

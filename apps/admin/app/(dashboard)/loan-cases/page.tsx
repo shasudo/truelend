@@ -59,7 +59,6 @@ export default async function LoanCasesPage({ searchParams }: { searchParams: Pr
         subtitle={`${total} ${total === 1 ? "case" : "cases"} across all lenders`}
       />
 
-      {/* Filters — plain GET form, no client JS */}
       <Card className="mb-6 p-4">
         <form method="get" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <Select name="status" defaultValue={filters.status ?? ""} aria-label="Status">

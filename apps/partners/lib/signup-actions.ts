@@ -32,12 +32,6 @@ const registerSchema = z
     }
   });
 
-/*
- * Atomic partner registration: create the auth user (nextCookies() sets the
- * session cookie), mirror the type onto the user's role, and insert a pending
- * partner profile. They land on /dashboard, which shows the pending screen
- * until an admin verifies them.
- */
 export async function registerPartner(
   _prev: RegisterState,
   formData: FormData,

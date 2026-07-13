@@ -1,6 +1,5 @@
 import type { MetadataRoute } from "next";
 
-// Public marketing pages are indexable; the authenticated area is not.
 export default function robots(): MetadataRoute.Robots {
   return {
     rules: {

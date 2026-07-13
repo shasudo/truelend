@@ -112,8 +112,6 @@ export async function submitLead(_prev: LeadState, formData: FormData): Promise<
   }
 }
 
-/* ---- bulk CSV (business partners) ---- */
-
 export type CsvState = { ok?: boolean; error?: string; inserted?: number; rowErrors?: string[] };
 
 // Lenient per-row parse: name + phone required; product accepts a slug.

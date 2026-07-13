@@ -18,7 +18,6 @@ export interface RateTableProps {
   className?: string;
 }
 
-/** Bank-wise comparison in the ledger style: hairline rows, tabular numerals. */
 export function RateTable({ rows, compact, className }: RateTableProps) {
   const showAmount = !compact && rows.some((r) => r.amount);
   return (

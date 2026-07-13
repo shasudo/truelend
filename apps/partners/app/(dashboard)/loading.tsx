@@ -1,5 +1,3 @@
-// Branded skeleton shown during dashboard route transitions (inherits the
-// shell's content padding).
 export default function DashboardLoading() {
   return (
     <div className="animate-pulse space-y-6" aria-hidden>

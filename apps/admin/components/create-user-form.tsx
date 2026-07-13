@@ -8,8 +8,6 @@ export function CreateUserForm() {
   const [state, action, pending] = useActionState<CreateUserState, FormData>(createUserAction, {});
   const formRef = useRef<HTMLFormElement>(null);
 
-  // Clear the inputs after every successful create (new state object each time),
-  // while the returned credentials stay visible in the banner below.
   useEffect(() => {
     if (state.ok) formRef.current?.reset();
   }, [state]);

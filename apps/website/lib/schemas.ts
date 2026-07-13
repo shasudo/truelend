@@ -13,7 +13,6 @@ const optionalEmail = z.email("Enter a valid email address").max(254).or(z.liter
 
 const consent = z.boolean().refine((v) => v === true, "Please accept to proceed");
 
-// Shared by every kind; UTM fields are hidden inputs filled client-side.
 const base = {
   consent,
   turnstileToken: z.string().max(2048).optional(),

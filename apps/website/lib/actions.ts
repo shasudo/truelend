@@ -33,7 +33,6 @@ async function leadRateLimitKey(
   return `${data.kind}:${Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("")}`;
 }
 
-/** Single entry point for all four website forms. Never throws. */
 export async function submitLead(input: unknown): Promise<SubmitResult> {
   const parsed = leadSchema.safeParse(input);
   if (!parsed.success) {
@@ -95,7 +94,6 @@ export async function submitLead(input: unknown): Promise<SubmitResult> {
         after: { source: "website_form", kind: d.kind, consentVersion: CONSENT_VERSION },
       });
     });
-    // Alert the team (fire-and-forget; no-op without email config).
     ctx.waitUntil(
       notifyNewLead(env, {
         name: "name" in d ? d.name : undefined,

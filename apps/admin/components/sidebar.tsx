@@ -51,7 +51,7 @@ function useSignOut() {
       router.push("/login");
       router.refresh();
     } catch {
-      setPending(false); // let them retry; success navigates away
+      setPending(false);
     }
   }
   return { signOut, pending };
@@ -109,7 +109,6 @@ function UserCard({ user }: { user: SidebarUser }) {
   );
 }
 
-/** Desktop rail — hidden below lg, where MobileNav takes over. */
 export function Sidebar({ user }: { user: SidebarUser }) {
   const isAdmin = user.role === "admin";
   return (
@@ -125,7 +124,6 @@ export function Sidebar({ user }: { user: SidebarUser }) {
   );
 }
 
-/** Mobile top bar + slide-in drawer — shown below lg. */
 export function MobileNav({ user }: { user: SidebarUser }) {
   const [open, setOpen] = useState(false);
   const isAdmin = user.role === "admin";

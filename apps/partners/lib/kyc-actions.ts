@@ -42,8 +42,6 @@ const kycSchema = z.object({
     .pipe(z.string().regex(/^[A-Z]{4}0[A-Z0-9]{6}$/, "Enter a valid IFSC (e.g. HDFC0001234)")),
 });
 
-/** Save the partner's KYC details (PAN/GST/address/bank) — the text half of
- *  onboarding, collected before/alongside the document uploads. */
 export async function savePartnerKyc(_prev: KycState, formData: FormData): Promise<KycState> {
   const { db, ctx, auth } = getAuthContext();
   try {
@@ -95,7 +93,6 @@ export async function savePartnerKyc(_prev: KycState, formData: FormData): Promi
   }
 }
 
-/** Submit the completed application for review → redirect to the review screen. */
 export async function submitForReview() {
   const { db, ctx, auth } = getAuthContext();
   try {
@@ -135,7 +132,6 @@ export async function submitForReview() {
   }
 }
 
-/** Reopen a submitted application for editing (partner-initiated). */
 export async function reopenApplication() {
   const { db, ctx, auth } = getAuthContext();
   try {

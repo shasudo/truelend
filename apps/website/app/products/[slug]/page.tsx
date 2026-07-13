@@ -48,7 +48,6 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
   return (
     <>
-      {/* Product hero */}
       <section className="relative overflow-hidden border-b border-hairline">
         <HexPattern className="-right-32 -top-40 h-[420px] w-[420px] text-navy-800/[0.06]" />
         <Container className="py-14 sm:py-18">
@@ -89,7 +88,6 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         </Container>
       </section>
 
-      {/* Key facts */}
       <section>
         <Container className="grid grid-cols-1 gap-y-8 border-b border-hairline py-10 text-navy-950 sm:grid-cols-3">
           {product.highlights.map((h, i) => (
@@ -104,7 +102,6 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         </Container>
       </section>
 
-      {/* Bank-wise rates */}
       {product.rates.length > 0 && (
         <section>
           <Container className="py-16 sm:py-20">
@@ -129,7 +126,6 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         </section>
       )}
 
-      {/* Eligibility & documents */}
       <section className="bg-paper-deep/60">
         <Container className="grid gap-4 py-16 sm:py-20 lg:grid-cols-2">
           <Reveal>
@@ -167,7 +163,6 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         </Container>
       </section>
 
-      {/* FAQs */}
       <section>
         <Container className="grid gap-12 py-16 sm:py-20 lg:grid-cols-[0.8fr_1.2fr]">
           <Reveal>

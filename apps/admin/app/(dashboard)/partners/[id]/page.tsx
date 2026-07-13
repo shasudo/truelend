@@ -48,7 +48,6 @@ export default async function PartnerDetailPage({ params }: { params: Promise<{ 
   if (!data) notFound();
   const { partner, name, email, documents, payouts, leads, earnedPaise, paidPaise } = data;
   const balance = earnedPaise - paidPaise;
-  // "Payout" (business) / "Incentive" (referral) — inner labels echo the card.
   const noun = earningsLabel(partner.type);
   const uploadedDocTypes = new Set<string>(documents.map((document) => document.docType));
   const missingRequiredDocs = partnerDocTypes.filter(
@@ -167,7 +166,6 @@ export default async function PartnerDetailPage({ params }: { params: Promise<{ 
           </Card>
         </div>
 
-        {/* Right: verification + payouts */}
         <div className="space-y-6">
           {partner.status !== "verified" && (
             <Card className="p-6">

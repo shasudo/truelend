@@ -132,7 +132,6 @@ export default function Home() {
 
   return (
     <>
-      {/* Hero */}
       <section className="relative overflow-hidden">
         <HexPattern className="-right-36 -top-24 h-[620px] w-[620px] text-navy-800/[0.05]" />
         <Container className="grid items-center gap-14 py-16 sm:py-24 lg:grid-cols-[1.05fr_0.95fr]">
@@ -190,7 +189,6 @@ export default function Home() {
 
       <StatsBand />
 
-      {/* How it works */}
       <section id="how-it-works" className="scroll-mt-20">
         <Container className="py-20 sm:py-24">
           <Reveal>
@@ -218,7 +216,6 @@ export default function Home() {
         </Container>
       </section>
 
-      {/* Products */}
       <section className="bg-paper-deep/60">
         <Container className="py-20 sm:py-24">
           <Reveal>
@@ -238,7 +235,6 @@ export default function Home() {
         </Container>
       </section>
 
-      {/* Why TrueLend */}
       <section>
         <Container className="grid gap-12 py-20 sm:py-24 lg:grid-cols-[0.85fr_1.15fr]">
           <Reveal>
@@ -265,7 +261,6 @@ export default function Home() {
         </Container>
       </section>
 
-      {/* Rates teaser */}
       <section className="bg-paper-deep/60">
         <Container className="py-20 sm:py-24">
           <Reveal>
@@ -300,7 +295,6 @@ export default function Home() {
 
       <PartnerStrip />
 
-      {/* From the blog */}
       <section>
         <Container className="py-20 sm:py-24">
           <Reveal>

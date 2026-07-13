@@ -7,7 +7,6 @@ import { Card, cx } from "@truelend/ui";
 import { partnerDocTypes } from "@truelend/reference";
 import type { PartnerDocument } from "@truelend/db";
 
-// One <input> per doc type; uploads on selection (one file per request).
 export function KycUpload({
   documents,
   editable = true,

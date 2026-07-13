@@ -36,7 +36,7 @@ function useSignOut() {
       router.push("/login");
       router.refresh();
     } catch {
-      setPending(false); // let them retry; success navigates away
+      setPending(false);
     }
   }
   return { signOut, pending };
@@ -112,7 +112,6 @@ export function DashboardShell({
 
   return (
     <div className="lg:flex">
-      {/* Desktop rail */}
       <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-hairline bg-white lg:flex">
         <div className="flex h-16 items-center border-b border-hairline px-5 text-navy-800">
           <Logo />
@@ -124,7 +123,6 @@ export function DashboardShell({
       </aside>
 
       <div className="flex min-h-screen flex-1 flex-col">
-        {/* Mobile top bar + drawer */}
         <header className="sticky top-0 z-40 flex h-14 items-center justify-between border-b border-hairline bg-white/90 px-4 backdrop-blur-md lg:hidden">
           <span className="text-navy-800">
             <Logo />

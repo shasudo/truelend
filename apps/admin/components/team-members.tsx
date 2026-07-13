@@ -99,7 +99,6 @@ function TeamRow({ m, isSelf }: { m: Member; isSelf: boolean }) {
     setMsg(null);
     start(async () => {
       const res = await setPasswordAction(fd);
-      // Show the new password so the admin can copy it — it isn't stored anywhere.
       setMsg(
         res?.error ? { ok: false, text: res.error } : { ok: true, text: `New password: ${pw}` },
       );

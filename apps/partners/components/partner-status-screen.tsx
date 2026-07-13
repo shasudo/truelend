@@ -8,8 +8,6 @@ import { SignOutButton } from "@/components/sign-out-button";
 import { isApplicationComplete } from "@/lib/onboarding";
 import { submitForReview } from "@/lib/kyc-actions";
 
-// Shown by the dashboard layout until a partner is verified. Pending partners
-// upload their KYC here; rejected partners see the reason and can re-upload.
 export function PartnerStatusScreen({
   partner,
   name,

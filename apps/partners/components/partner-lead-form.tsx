@@ -5,7 +5,6 @@ import { Button, Field, Input, Select, Textarea } from "@truelend/ui";
 import { products } from "@truelend/reference";
 import { submitLead, type LeadState } from "@/lib/lead-actions";
 
-// Business partners submit a "customer"; referral partners refer a "friend".
 export function PartnerLeadForm({ variant }: { variant: "business" | "referral" }) {
   const [state, action, pending] = useActionState<LeadState, FormData>(submitLead, {});
   const formRef = useRef<HTMLFormElement>(null);

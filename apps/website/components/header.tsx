@@ -45,7 +45,6 @@ export function Header() {
             </Link>
           </Button>
 
-          {/* Mobile drawer */}
           <button
             className="rounded-md p-2 text-navy-800 hover:bg-navy-800/5 lg:hidden"
             aria-label="Open menu"

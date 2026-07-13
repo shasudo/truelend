@@ -13,7 +13,6 @@ interface Defaults {
   payoutPaise?: number | null;
 }
 
-/** Shared inputs for the create and edit loan-case forms. */
 export function LoanCaseFields({ defaults }: { defaults?: Defaults }) {
   return (
     <div className="grid gap-5 sm:grid-cols-2">

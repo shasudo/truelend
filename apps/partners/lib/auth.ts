@@ -8,8 +8,6 @@ import { createDb, schema, type Database, type Partner } from "@truelend/db";
 import { createAuth, type Auth, type CreateAuthOptions, type Session } from "@truelend/auth";
 import { sendPasswordReset } from "@truelend/email";
 
-/** better-auth options for the partner app (self-signup on + reset-email
- * sender). Shared by getAuthContext and the /api/auth/[...all] route handler. */
 export function authOptions(env: CloudflareEnv): CreateAuthOptions {
   return {
     secret: env.BETTER_AUTH_SECRET,
@@ -48,7 +46,6 @@ export interface PartnerContext {
   partner: Partner | null;
 }
 
-/** Dashboard pages: require a session + load the partner profile. */
 export async function requirePartner(): Promise<PartnerContext> {
   const { db } = getAuthContext();
   const session = await getSession();
@@ -61,7 +58,6 @@ export async function requirePartner(): Promise<PartnerContext> {
   return { session, partner: rows[0] ?? null };
 }
 
-/** Server actions: db + ctx + current user (null if unauthenticated). */
 export async function getMutationContext() {
   const { db, ctx } = getAuthContext();
   try {
@@ -73,7 +69,6 @@ export async function getMutationContext() {
   }
 }
 
-/** Route handlers (e.g. upload): returns the partner, or a 401 Response. */
 export async function requirePartnerApi(): Promise<
   { partner: Partner; db: Database; ctx: ExecutionContext; env: CloudflareEnv } | Response
 > {

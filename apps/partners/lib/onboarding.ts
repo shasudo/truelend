@@ -1,6 +1,5 @@
 import { partnerDocTypes } from "@truelend/reference";
 
-/** True when a partner has filled details AND uploaded every required document. */
 export function isApplicationComplete(
   partner: {
     pan: string | null;

@@ -31,7 +31,6 @@ const EDGE_LIMITED_AUTH_PATHS = new Set([
   "/api/auth/forget-password",
 ]);
 
-/** Cloudflare-edge throttle for credential and recovery endpoints. */
 export async function allowSensitiveAuthRequest(
   request: Request,
   limiter: EdgeRateLimiter | undefined,

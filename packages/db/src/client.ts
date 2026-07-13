@@ -16,7 +16,6 @@ export function createDb(connectionString: string) {
 
 export type Database = ReturnType<typeof createDb>;
 
-// Liveness probe — throws if the database is unreachable.
 export async function ping(db: Database): Promise<void> {
   await db.execute(sql`select 1`);
 }

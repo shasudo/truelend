@@ -103,10 +103,6 @@ export const verification = pgTable(
   (t) => [index("verification_identifier_idx").on(t.identifier)],
 );
 
-/* ------------------------------------------------------------------ */
-/* Leads — written by the public website, worked in the admin app.    */
-/* ------------------------------------------------------------------ */
-
 export const leadKind = pgEnum("lead_kind", ["enquiry", "referral", "contact", "cibil_notify"]);
 
 export const leadStatus = pgEnum("lead_status", [
@@ -138,11 +134,9 @@ export const leads = pgTable(
     productSlug: text("product_slug"),
     message: text("message"),
 
-    // referral-only
     referrerName: text("referrer_name"),
     referrerPhone: text("referrer_phone"),
 
-    // campaign attribution (first touch)
     utmSource: text("utm_source"),
     utmMedium: text("utm_medium"),
     utmCampaign: text("utm_campaign"),
@@ -154,7 +148,6 @@ export const leads = pgTable(
     consentSource: text("consent_source"),
     consentVersion: text("consent_version"),
 
-    // pipeline (admin app)
     status: leadStatus("status").notNull().default("new"),
     assignedTo: text("assigned_to").references(() => user.id, { onDelete: "set null" }),
 
@@ -186,7 +179,6 @@ export const leads = pgTable(
   ],
 );
 
-/** Append-only activity trail on a lead. */
 export const leadNotes = pgTable(
   "lead_notes",
   {
@@ -272,11 +264,6 @@ export const loanCases = pgTable(
   ],
 );
 
-/* ------------------------------------------------------------------ */
-/* Partners — business & referral partners (apps/partners). One app,   */
-/* two types. Self-register → upload KYC → admin verifies.             */
-/* ------------------------------------------------------------------ */
-
 export const partnerType = pgEnum("partner_type", ["business", "referral"]);
 export const partnerStatus = pgEnum("partner_status", ["pending", "verified", "rejected"]);
 export const partnerDocType = pgEnum("partner_doc_type", [
@@ -300,15 +287,12 @@ export const partners = pgTable(
     status: partnerStatus("status").notNull().default("pending"),
     phone: text("phone"),
     businessName: text("business_name"),
-    // KYC details (collected before document upload)
     pan: text("pan"),
     gst: text("gst"),
     address: text("address"),
-    // bank details for payouts (the cancelled-cheque document backs these)
     accountHolder: text("account_holder"),
     accountNumber: text("account_number"),
     ifsc: text("ifsc"),
-    // set when the partner submits their completed application for review
     submittedAt: timestamp("submitted_at", { withTimezone: true }),
     verifiedBy: text("verified_by").references(() => user.id, { onDelete: "set null" }),
     verifiedAt: timestamp("verified_at", { withTimezone: true }),

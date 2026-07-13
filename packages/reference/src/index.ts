@@ -49,7 +49,6 @@ export const productName = (slug: string | null | undefined) =>
 export const bankName = (slug: string | null | undefined) =>
   banks.find((b) => b.slug === slug)?.name ?? slug ?? "—";
 
-// Human labels for the DB enums (packages/db).
 export const leadKindLabels: Record<string, string> = {
   enquiry: "Enquiry",
   referral: "Referral",
@@ -76,7 +75,6 @@ export const loanCaseStatusLabels: Record<string, string> = {
   disbursed: "Disbursed",
 };
 
-/** Coarse channel from a website lead's kind (no partner attribution). */
 export const channelForKind = (kind: string) =>
   kind === "referral" ? "Website · Referral" : "Website · Direct";
 
@@ -111,7 +109,6 @@ export interface PartnerDoc {
   required: boolean;
 }
 
-// Drives the KYC upload UI (partners) and the verification checklist (admin).
 export const partnerDocTypes: PartnerDoc[] = [
   { type: "pan", label: "PAN Card", required: true },
   { type: "aadhaar", label: "Aadhaar Card", required: true },
@@ -124,5 +121,4 @@ export const partnerDocTypeLabels: Record<string, string> = Object.fromEntries(
   partnerDocTypes.map((d) => [d.type, d.label]),
 );
 
-/** "Payout" for business partners, "Incentive" for referral partners. */
 export const earningsLabel = (type: string) => (type === "business" ? "Payout" : "Incentive");

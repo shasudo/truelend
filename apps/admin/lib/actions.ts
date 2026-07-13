@@ -25,7 +25,7 @@ const pipelineSchema = z.object({
 export async function updateLeadPipelineAction(formData: FormData) {
   const { db, ctx, user } = await getMutationContext();
   try {
-    if (!user) redirect("/login"); // expired session → explain, don't eat the click
+    if (!user) redirect("/login");
     const parsed = pipelineSchema.safeParse({
       leadId: formData.get("leadId"),
       status: formData.get("status"),
@@ -85,7 +85,7 @@ const noteSchema = z.object({
 export async function addLeadNoteAction(formData: FormData) {
   const { db, ctx, user } = await getMutationContext();
   try {
-    if (!user) redirect("/login"); // expired session → explain, don't eat the click
+    if (!user) redirect("/login");
     const parsed = noteSchema.safeParse({
       leadId: formData.get("leadId"),
       body: formData.get("body"),

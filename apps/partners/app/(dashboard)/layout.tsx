@@ -14,13 +14,11 @@ export default async function DashboardLayout({ children }: { children: ReactNod
   if (!partner) redirect("/register");
 
   if (partner.status !== "verified") {
-    // Submitted (and not sent back) → clean "under review" confirmation.
     if (partner.submittedAt && partner.status !== "rejected") {
       return (
         <UnderReviewScreen partner={partner} name={session.user.name} email={session.user.email} />
       );
     }
-    // Otherwise → the fill-in-your-application screen (also for rejected).
     const { db } = getAuthContext();
     const documents = await getPartnerDocuments(db, partner.userId);
     return <PartnerStatusScreen partner={partner} name={session.user.name} documents={documents} />;

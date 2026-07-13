@@ -19,7 +19,6 @@ export function toRateTableRows(rates: RateRow[]): RateTableRow[] {
   });
 }
 
-/** "From 8.35% p.a." — or the first highlight for products without rate tables. */
 export function minRateLabel(product: ProductCategory): string {
   if (product.rates.length === 0) {
     const h = product.highlights[0];

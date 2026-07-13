@@ -1,7 +1,6 @@
 import { LogoMark } from "@truelend/ui";
 import { banks } from "@/content/banks";
 
-/** Typographic marquee of partner lenders (no licensed logo assets yet — todo.md). */
 export function PartnerStrip() {
   const names = [...banks.map((b) => b.name), "and many more"];
   return (

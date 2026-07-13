@@ -77,7 +77,6 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
         subtitle={`${total} ${total === 1 ? "lead" : "leads"} from the website`}
       />
 
-      {/* Filters — plain GET form, no client JS */}
       <Card className="mb-6 p-4">
         <form method="get" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
           <div className="relative lg:col-span-2">
