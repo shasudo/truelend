@@ -71,14 +71,13 @@ Full end-to-end review (52 confirmed findings). **High-severity code fixes done:
 - [ ] **Browser end-to-end form test** — DB insert path is verified via SQL and
       the health check; still submit all 4 forms in a browser once deployed and
       confirm rows land with correct `kind` + UTM values.
-- [x] **Turnstile keys** — widget created (hostnames: workers.dev + localhost);
-      site key in `apps/website/.env` (build-time), secret in `.dev.vars` +
-      `wrangler secret put TURNSTILE_SECRET_KEY`. Deployed and verified in prod
-      chunks. Remember to add `truelend.in` to the widget's hostnames when the
-      custom domain goes live.
-- [ ] **Custom domain** — site assumes `https://truelend.in`
-      (`content/site.ts`, sitemap, OG URLs). Attach the real domain to the
-      Worker and update if different.
+- [x] **Turnstile keys** — widget created; site key in `apps/website/.env`,
+      secret via `wrangler secret put`. `truelend.in` + `www.truelend.in` added
+      to the widget hostnames after the custom-domain cutover (done).
+- [x] **Custom domain — LIVE.** `truelend.in` + `www.truelend.in` (web),
+      `admin.truelend.in`, `partner.truelend.in` all serving via `custom_domain`
+      routes; `BETTER_AUTH_URL`/`PARTNERS_URL` point at the subdomains. The
+      `*.workers.dev` URLs are now disabled (expected — `routes` supersedes them).
 - [ ] **Legal copy** — privacy/terms are interim text; replace with
       counsel-approved versions before campaigns run.
 - [ ] **Partner-bank logos** — partner strip is typographic; swap in licensed
@@ -125,8 +124,8 @@ Full end-to-end review (52 confirmed findings). **High-severity code fixes done:
       product/bank slugs+names; `apps/website/content/{products,banks}.ts` still
       duplicate them (richer data). Have the website consume `@truelend/reference`
       for slugs/names to remove the duplication.
-- [ ] **Admin custom domain / Access** — currently a workers.dev URL, noindex.
-      Consider Cloudflare Access (extra network-level gate) or a real subdomain.
+- [~] **Admin domain / Access** — now on `admin.truelend.in` (noindex). Optional
+  hardening left: put Cloudflare Access in front for a network-level gate.
 
 ## Partner Portal (apps/partners) — pending
 
