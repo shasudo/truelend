@@ -94,9 +94,7 @@ Full end-to-end review (52 confirmed findings). **High-severity code fixes done:
       ops address like `leads@truelend.in`). Deployed + verified with a live send.
       Covers: new-lead alerts, partner verified/rejected, password reset. WhatsApp
       still a separate future add. **Rotate the API key** — it was shared in chat.
-- [ ] **Password reset emails** — DONE (see the audit section). Historical: needed the
-      email sender in packages/auth + forgot/reset pages in admin & partners).
-      Now that @truelend/email exists, this is a smaller add.
+- [x] **Password reset emails** — DONE (full flow in the audit section above).
 - [ ] **CIBIL score integration** — `/cibil-score` is a coming-soon page
       capturing notify-me emails; real bureau integration is a separate project.
 - [ ] **Blog authoring flow** — posts are MDX in `apps/website/content/blog/`
