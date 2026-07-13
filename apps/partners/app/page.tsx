@@ -1,58 +1,98 @@
+import Image from "next/image";
 import Link from "next/link";
 import {
-  Briefcase,
-  UserRoundPlus,
-  UserPlus,
+  ArrowRight,
+  BadgeIndianRupee,
+  BookOpenCheck,
+  BriefcaseBusiness,
+  ChartNoAxesCombined,
   FileCheck2,
-  BadgeCheck,
-  IndianRupee,
+  Handshake,
+  Headset,
+  Megaphone,
+  ShieldCheck,
+  Sparkles,
+  UserRoundPlus,
 } from "lucide-react";
 import { Button, Card, Container, HexPattern, SectionHeading } from "@truelend/ui";
+import { PartnerBenefitsPanel } from "@/components/partner-benefits-panel";
+import { PartnerPathCards } from "@/components/partner-path-cards";
 import { PublicHeader } from "@/components/public-header";
 
-const paths = [
-  {
-    icon: Briefcase,
-    title: "Business Partner",
-    who: "For DSAs, agents and professionals who distribute financial products.",
-    points: [
-      "Source loans across 50+ lenders",
-      "Bulk-upload leads",
-      "Earn payout on every disbursal",
-    ],
-  },
-  {
-    icon: UserRoundPlus,
-    title: "Referral Partner",
-    who: "For anyone with a strong network who wants to refer and earn.",
-    points: [
-      "Refer from your personal network",
-      "No paperwork to chase",
-      "Earn incentives on disbursal",
-    ],
-  },
+const heroBenefits = [
+  { icon: Headset, label: "Reliable support" },
+  { icon: ChartNoAxesCombined, label: "Transparent tracking" },
+  { icon: ShieldCheck, label: "Consent-led sharing" },
+  { icon: Handshake, label: "Two partner paths" },
 ];
 
 const steps = [
   {
-    icon: UserPlus,
-    title: "Register",
-    desc: "Create your account as a business or referral partner.",
+    icon: UserRoundPlus,
+    title: "Join",
+    description: "Choose the Business or Referral Partner path and create your account.",
   },
   {
     icon: FileCheck2,
-    title: "Upload KYC",
-    desc: "Submit your documents — PAN, Aadhaar, cheque and more.",
+    title: "Share or submit",
+    description: "Refer someone or submit a complete customer loan opportunity.",
   },
   {
-    icon: BadgeCheck,
-    title: "Get verified",
-    desc: "Our team reviews and activates your account, usually in a day.",
+    icon: Headset,
+    title: "We coordinate",
+    description: "The TrueLend team connects with the customer and manages the next steps.",
   },
   {
-    icon: IndianRupee,
+    icon: ChartNoAxesCombined,
+    title: "Track progress",
+    description: "Follow every introduction and status update from your partner dashboard.",
+  },
+  {
+    icon: BadgeIndianRupee,
     title: "Earn",
-    desc: "Submit leads, we take them to disbursal, you get paid.",
+    description: "Eligible successful cases generate business commissions or referral rewards.",
+  },
+];
+
+const assurances = [
+  {
+    icon: BriefcaseBusiness,
+    title: "Purpose-built paths",
+    description: "Different experiences for loan professionals and network-led referrers.",
+  },
+  {
+    icon: ShieldCheck,
+    title: "Responsible introductions",
+    description: "Customer details are shared with consent through a secure partner portal.",
+  },
+  {
+    icon: ChartNoAxesCombined,
+    title: "Clear visibility",
+    description: "Customers, referrals, statuses and earnings stay organized in one place.",
+  },
+  {
+    icon: Headset,
+    title: "Human support",
+    description: "TrueLend coordinates the loan journey and helps partners when needed.",
+  },
+];
+
+const resources = [
+  {
+    icon: Megaphone,
+    title: "Marketing materials",
+    description: "Ready-to-use outreach ideas and responsible sharing guidance.",
+  },
+  {
+    icon: BookOpenCheck,
+    title: "Partner learning",
+    description:
+      "Role-specific basics for better referrals, complete cases and clear expectations.",
+  },
+  {
+    icon: Headset,
+    title: "Partner support",
+    description: "Guidance for account verification, live opportunities and referral questions.",
   },
 ];
 
@@ -61,99 +101,262 @@ export default function Home() {
     <>
       <PublicHeader />
 
-      <section className="relative overflow-hidden border-b border-hairline">
-        <HexPattern className="-right-32 -top-24 h-[560px] w-[560px] text-navy-800/[0.05]" />
-        <Container className="py-20 sm:py-28">
-          <div className="max-w-2xl">
-            <p className="flex items-center gap-3 text-xs font-bold uppercase tracking-[0.18em] text-red-600">
-              <span aria-hidden className="h-px w-8 bg-red-600" />
-              TrueLend Partner Program
-            </p>
-            <h1 className="mt-5 text-balance font-display text-5xl font-extrabold leading-[1.03] tracking-tight text-navy-950 sm:text-6xl">
-              Distribute loans or refer customers.{" "}
-              <span className="text-red-600">Earn on every disbursal.</span>
-            </h1>
-            <p className="mt-6 text-lg leading-relaxed text-navy-600">
-              Bring us the borrower; we bring 50+ banks and NBFCs, take the file to disbursal, and
-              pay you transparently — all tracked on your own dashboard.
-            </p>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <Button size="lg" asChild>
-                <Link href="/register">Become a partner</Link>
-              </Button>
-              <Button size="lg" variant="outline" asChild>
-                <Link href="/login">Partner sign in</Link>
+      <main>
+        <section className="relative overflow-hidden border-b border-hairline">
+          <HexPattern className="-left-32 -top-24 h-[520px] w-[520px] text-navy-800/[0.04]" />
+          <div className="absolute inset-y-0 right-0 hidden w-[58%] lg:block">
+            <Image
+              src="/images/partner-handshake-hero.png"
+              alt="Two Indian business professionals shaking hands in a modern office"
+              fill
+              priority
+              sizes="58vw"
+              className="object-cover object-right"
+            />
+            <div
+              aria-hidden
+              className="absolute inset-0 bg-[linear-gradient(90deg,var(--color-paper)_0%,transparent_42%)]"
+            />
+          </div>
+          <Container className="relative z-10 flex min-h-[650px] max-w-[1380px] items-center py-14 sm:py-20 lg:py-24">
+            <div className="w-full max-w-2xl lg:max-w-[49%]">
+              <p className="inline-flex items-center gap-2 rounded-full border border-navy-800/10 bg-navy-50 px-4 py-2 text-xs font-bold uppercase tracking-[0.12em] text-navy-800">
+                <Handshake className="h-4 w-4 text-red-600" aria-hidden />
+                Join the TrueLend Partner Network™
+              </p>
+              <h1 className="mt-5 text-balance font-display text-5xl font-extrabold leading-[1.02] tracking-tight text-navy-950 sm:text-6xl">
+                Turn relationships into{" "}
+                <span className="text-red-600">meaningful opportunities.</span>
+              </h1>
+              <p className="mt-6 max-w-xl text-lg leading-relaxed text-navy-600">
+                Help more people navigate their loan journey while you build commission or
+                referral-reward opportunities through the partner path that fits you.
+              </p>
+              <div className="mt-8 flex flex-wrap gap-3">
+                <Button size="lg" asChild>
+                  <Link href="/register">
+                    Become a partner <ArrowRight className="h-4 w-4" aria-hidden />
+                  </Link>
+                </Button>
+                <Button size="lg" variant="outline" asChild>
+                  <Link href="#partner-types">Explore partner paths</Link>
+                </Button>
+              </div>
+
+              <ul className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4">
+                {heroBenefits.map((benefit) => (
+                  <li
+                    key={benefit.label}
+                    className="flex items-center gap-2.5 text-xs font-semibold text-navy-700"
+                  >
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-hairline bg-white text-navy-700">
+                      <benefit.icon className="h-4 w-4" aria-hidden />
+                    </span>
+                    {benefit.label}
+                  </li>
+                ))}
+              </ul>
+
+              <div className="relative mt-10 aspect-[2/1] overflow-hidden rounded-2xl border border-hairline bg-white shadow-[0_24px_60px_-40px_rgba(7,13,36,0.7)] lg:hidden">
+                <Image
+                  src="/images/partner-handshake-hero.png"
+                  alt="Two Indian business professionals shaking hands in a modern office"
+                  fill
+                  priority
+                  sizes="calc(100vw - 40px)"
+                  className="object-cover object-center"
+                />
+              </div>
+            </div>
+          </Container>
+
+          <div className="absolute right-8 top-16 z-20 hidden w-44 space-y-3 xl:block">
+            {[
+              { icon: Handshake, label: "Help your network", tone: "bg-white" },
+              { icon: BadgeIndianRupee, label: "Earn by your path", tone: "bg-navy-50" },
+              { icon: ShieldCheck, label: "We coordinate the rest", tone: "bg-sun-50" },
+            ].map((item) => (
+              <div
+                key={item.label}
+                className={`flex items-center gap-3 rounded-xl border border-hairline ${item.tone} p-3 shadow-[0_14px_32px_-24px_rgba(7,13,36,0.7)]`}
+              >
+                <item.icon className="h-5 w-5 shrink-0 text-red-600" aria-hidden />
+                <span className="text-xs font-bold leading-tight text-navy-950">{item.label}</span>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section id="partner-types" className="scroll-mt-16">
+          <Container className="max-w-[1380px] py-16 sm:py-20">
+            <SectionHeading
+              eyebrow="Two ways to partner with TrueLend"
+              title="Choose the path built around how you work"
+              lede="Bring complete loan business as an experienced professional, or simply introduce people from your trusted network."
+            />
+            <div className="mt-10 grid gap-5 xl:grid-cols-[minmax(0,3fr)_minmax(280px,1fr)]">
+              <PartnerPathCards />
+              <PartnerBenefitsPanel />
+            </div>
+          </Container>
+        </section>
+
+        <section
+          id="how-it-works"
+          className="scroll-mt-16 border-y border-hairline bg-paper-deep/55"
+        >
+          <Container className="max-w-[1380px] py-16 sm:py-20">
+            <div className="grid gap-8 lg:grid-cols-[240px_minmax(0,1fr)] lg:items-start">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.14em] text-red-600">
+                  How it works
+                </p>
+                <h2 className="mt-2 font-display text-3xl font-extrabold tracking-tight text-navy-950">
+                  Simple. Transparent. Partner-friendly.
+                </h2>
+                <p className="mt-3 text-sm leading-relaxed text-navy-600">
+                  The same five-step journey, adapted to your Business or Referral Partner path.
+                </p>
+              </div>
+              <ol className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+                {steps.map((step, index) => (
+                  <li
+                    key={step.title}
+                    className="relative rounded-xl border border-hairline bg-white p-5"
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="flex h-10 w-10 items-center justify-center rounded-full bg-navy-50 text-navy-700">
+                        <step.icon className="h-5 w-5" aria-hidden />
+                      </span>
+                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-red-600 text-xs font-bold text-white">
+                        {index + 1}
+                      </span>
+                    </div>
+                    <h3 className="mt-4 font-display font-bold text-navy-950">{step.title}</h3>
+                    <p className="mt-1.5 text-xs leading-relaxed text-navy-600">
+                      {step.description}
+                    </p>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          </Container>
+        </section>
+
+        <section id="benefits" className="scroll-mt-16">
+          <Container className="max-w-[1380px] py-16 sm:py-20">
+            <SectionHeading
+              eyebrow="Built for trust"
+              title="A partner experience that stays clear at every step"
+              lede="Useful tools, responsible sharing and human support—without making the portal harder than it needs to be."
+            />
+            <div className="mt-10 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              {assurances.map((assurance) => (
+                <Card key={assurance.title} className="p-6">
+                  <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-sun-100 text-navy-800">
+                    <assurance.icon className="h-5 w-5" aria-hidden />
+                  </span>
+                  <h3 className="mt-5 font-display text-lg font-bold text-navy-950">
+                    {assurance.title}
+                  </h3>
+                  <p className="mt-2 text-sm leading-relaxed text-navy-600">
+                    {assurance.description}
+                  </p>
+                </Card>
+              ))}
+            </div>
+          </Container>
+        </section>
+
+        <section className="border-y border-hairline bg-white">
+          <Container className="max-w-[1380px] py-16 sm:py-20">
+            <div className="flex flex-wrap items-end justify-between gap-4">
+              <div className="max-w-2xl">
+                <p className="text-xs font-bold uppercase tracking-[0.14em] text-red-600">
+                  Partner toolkit
+                </p>
+                <h2 className="mt-2 font-display text-3xl font-extrabold tracking-tight text-navy-950">
+                  Resources that help you act with confidence
+                </h2>
+              </div>
+              <Button variant="outline" asChild>
+                <Link href="/resources">
+                  Explore resources <ArrowRight className="h-4 w-4" aria-hidden />
+                </Link>
               </Button>
             </div>
-          </div>
-        </Container>
-      </section>
+            <div className="mt-8 grid gap-4 md:grid-cols-3">
+              {resources.map((resource) => (
+                <Card key={resource.title} className="flex gap-4 p-6">
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-navy-900 text-sun-400">
+                    <resource.icon className="h-5 w-5" aria-hidden />
+                  </span>
+                  <div>
+                    <h3 className="font-display text-lg font-bold text-navy-950">
+                      {resource.title}
+                    </h3>
+                    <p className="mt-1 text-sm leading-relaxed text-navy-600">
+                      {resource.description}
+                    </p>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          </Container>
+        </section>
 
-      <section>
-        <Container className="py-20 sm:py-24">
-          <SectionHeading
-            eyebrow="Two ways to partner"
-            title="Pick the path that fits you"
-            lede="Same platform, same transparency — different economics for how you work with us."
-          />
-          <div className="mt-12 grid gap-4 sm:grid-cols-2">
-            {paths.map((p) => (
-              <Card key={p.title} className="p-7">
-                <p.icon className="h-6 w-6 text-red-600" aria-hidden />
-                <h3 className="mt-4 font-display text-xl font-bold text-navy-950">{p.title}</h3>
-                <p className="mt-1.5 text-sm leading-relaxed text-navy-600">{p.who}</p>
-                <ul className="mt-4 space-y-2">
-                  {p.points.map((pt) => (
-                    <li key={pt} className="flex gap-2.5 text-sm text-navy-700">
-                      <BadgeCheck className="mt-0.5 h-4 w-4 shrink-0 text-red-600" aria-hidden />
-                      {pt}
-                    </li>
-                  ))}
-                </ul>
-              </Card>
-            ))}
-          </div>
-        </Container>
-      </section>
-
-      <section className="bg-paper-deep/60">
-        <Container className="py-20 sm:py-24">
-          <SectionHeading eyebrow="How it works" title="From sign-up to payout" />
-          <ol className="mt-12 grid gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-4">
-            {steps.map((step, i) => (
-              <li key={step.title} className="border-t border-hairline pt-5">
-                <span className="font-display text-2xl font-extrabold tabular-nums text-red-600">
-                  {String(i + 1).padStart(2, "0")}
-                </span>
-                <h3 className="mt-3 flex items-center gap-2 font-display text-lg font-bold text-navy-950">
-                  <step.icon className="h-4 w-4 text-navy-500" aria-hidden />
-                  {step.title}
-                </h3>
-                <p className="mt-1.5 text-sm leading-relaxed text-navy-600">{step.desc}</p>
-              </li>
-            ))}
-          </ol>
-        </Container>
-      </section>
-
-      <section className="relative overflow-hidden bg-navy-900 text-white">
-        <HexPattern className="-left-28 -top-44 h-[420px] w-[420px] text-white/[0.06]" />
-        <Container className="flex flex-col items-start gap-8 py-16 sm:py-20 lg:flex-row lg:items-center lg:justify-between">
-          <h2 className="max-w-xl text-balance font-display text-3xl font-extrabold tracking-tight sm:text-4xl">
-            Ready to start earning with TrueLend?
-          </h2>
-          <Button size="lg" asChild>
-            <Link href="/register">Create your partner account</Link>
-          </Button>
-        </Container>
-      </section>
+        <section className="relative overflow-hidden bg-navy-900 text-white">
+          <HexPattern className="-left-28 -top-44 h-[420px] w-[420px] text-white/[0.06]" />
+          <Container className="grid max-w-[1380px] items-center gap-8 py-14 sm:py-16 lg:grid-cols-[minmax(0,1fr)_420px]">
+            <div className="relative z-10">
+              <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.14em] text-sun-400">
+                <Sparkles className="h-4 w-4" aria-hidden /> Ready to get started?
+              </p>
+              <h2 className="mt-3 max-w-2xl text-balance font-display text-3xl font-extrabold tracking-tight sm:text-4xl">
+                Join the TrueLend Partner Network and make your next introduction count.
+              </h2>
+              <div className="mt-6 flex flex-wrap gap-3">
+                <Button size="lg" asChild>
+                  <Link href="/register">
+                    Become a partner <ArrowRight className="h-4 w-4" aria-hidden />
+                  </Link>
+                </Button>
+                <Button size="lg" variant="outline-inverse" asChild>
+                  <Link href="/login">Partner sign in</Link>
+                </Button>
+              </div>
+            </div>
+            <div className="relative hidden aspect-[2/1] overflow-hidden rounded-2xl border border-white/15 lg:block">
+              <Image
+                src="/images/partner-handshake-hero.png"
+                alt="TrueLend partnership handshake"
+                fill
+                sizes="420px"
+                className="object-cover object-center"
+              />
+              <div className="absolute inset-0 bg-navy-900/15" aria-hidden />
+            </div>
+          </Container>
+        </section>
+      </main>
 
       <footer className="border-t border-hairline">
-        <Container className="flex flex-col items-center justify-between gap-3 py-8 text-sm text-navy-500 sm:flex-row">
+        <Container className="flex max-w-[1380px] flex-col items-center justify-between gap-4 py-8 text-sm text-navy-500 sm:flex-row">
           <p>© {new Date().getFullYear()} TrueLend. All rights reserved.</p>
-          <Link href="/resources" className="hover:text-navy-800">
-            Partner resources
-          </Link>
+          <nav className="flex flex-wrap justify-center gap-x-5 gap-y-2" aria-label="Footer">
+            <Link href="/#partner-types" className="hover:text-navy-800">
+              Partner types
+            </Link>
+            <Link href="/#how-it-works" className="hover:text-navy-800">
+              How it works
+            </Link>
+            <Link href="/resources" className="hover:text-navy-800">
+              Partner resources
+            </Link>
+            <Link href="/login" className="hover:text-navy-800">
+              Sign in
+            </Link>
+          </nav>
         </Container>
       </footer>
     </>

@@ -3,6 +3,7 @@ import { Card } from "@truelend/ui";
 import { requirePartner } from "@/lib/auth";
 import { PartnerLeadForm } from "@/components/partner-lead-form";
 import { CsvLeadUpload } from "@/components/csv-lead-upload";
+import { PartnerPageHeader } from "@/components/partner-page-header";
 
 export const dynamic = "force-dynamic";
 
@@ -11,21 +12,22 @@ export default async function LeadsPage() {
   if (partner?.type === "referral") redirect("/refer");
 
   return (
-    <div className="max-w-2xl">
-      <h1 className="font-display text-2xl font-extrabold tracking-tight text-navy-950">
-        Submit a lead
-      </h1>
-      <p className="mt-1 text-navy-500">
-        Send us a customer and track it through to disbursal on your dashboard.
-      </p>
+    <div className="max-w-3xl">
+      <PartnerPageHeader
+        eyebrow="New business"
+        title="Submit New Loan Case"
+        description="Share a complete customer opportunity and coordinate its progress with the TrueLend Partner Support Team."
+      />
 
       <Card className="mt-6 p-6 sm:p-8">
         <PartnerLeadForm variant="business" />
       </Card>
 
       <Card className="mt-6 p-6 sm:p-8">
-        <h2 className="font-display text-lg font-bold text-navy-950">Bulk upload</h2>
-        <p className="mt-1 text-sm text-navy-500">Sourcing in volume? Import a CSV of leads.</p>
+        <h2 className="font-display text-lg font-bold text-navy-950">Submit multiple customers</h2>
+        <p className="mt-1 text-sm text-navy-500">
+          Already sourcing in volume? Import a CSV of complete customer opportunities.
+        </p>
         <div className="mt-5">
           <CsvLeadUpload />
         </div>
@@ -33,4 +35,4 @@ export default async function LeadsPage() {
     </div>
   );
 }
-export const metadata = { title: "Submit a lead" };
+export const metadata = { title: "Submit New Loan Case" };

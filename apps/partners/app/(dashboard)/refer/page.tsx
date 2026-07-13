@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { Card } from "@truelend/ui";
 import { requirePartner } from "@/lib/auth";
 import { PartnerLeadForm } from "@/components/partner-lead-form";
+import { PartnerPageHeader } from "@/components/partner-page-header";
 
 export const dynamic = "force-dynamic";
 
@@ -10,13 +11,12 @@ export default async function ReferPage() {
   if (partner?.type === "business") redirect("/leads");
 
   return (
-    <div className="max-w-2xl">
-      <h1 className="font-display text-2xl font-extrabold tracking-tight text-navy-950">
-        Refer a friend
-      </h1>
-      <p className="mt-1 text-navy-500">
-        Know someone looking for a loan? Refer them and earn when they&rsquo;re disbursed.
-      </p>
+    <div className="max-w-3xl">
+      <PartnerPageHeader
+        eyebrow="One simple introduction"
+        title="Refer Someone"
+        description="Know someone looking for a loan? Share their details with consent. TrueLend handles everything else."
+      />
 
       <Card className="mt-6 p-6 sm:p-8">
         <PartnerLeadForm variant="referral" />

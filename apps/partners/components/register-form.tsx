@@ -9,14 +9,14 @@ import { registerPartner, type RegisterState } from "@/lib/signup-actions";
 const types = [
   {
     value: "business",
-    label: "Business Partner",
-    desc: "I distribute financial products and want to source loans.",
+    label: "Business Partner™",
+    desc: "I already source loan business and want commissions, tracking and partner support.",
     icon: Briefcase,
   },
   {
     value: "referral",
-    label: "Referral Partner",
-    desc: "I want to refer people from my network and earn incentives.",
+    label: "Referral Partner™",
+    desc: "I want to introduce people from my network and earn referral rewards.",
     icon: UserRoundPlus,
   },
 ] as const;

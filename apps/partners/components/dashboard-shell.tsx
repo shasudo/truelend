@@ -5,9 +5,19 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import * as Dialog from "@radix-ui/react-dialog";
 import {
+  BadgeIndianRupee,
+  BookOpenCheck,
+  ChartNoAxesCombined,
+  CircleHelp,
+  FileCheck2,
+  FolderKanban,
+  Handshake,
   LayoutDashboard,
-  Upload,
+  LibraryBig,
+  Megaphone,
+  NotebookTabs,
   User,
+  UsersRound,
   LogOut,
   Briefcase,
   UserRoundPlus,
@@ -23,6 +33,11 @@ interface NavItem {
   label: string;
   href: string;
   icon: typeof LayoutDashboard;
+}
+
+interface NavGroup {
+  label: string;
+  items: NavItem[];
 }
 
 function useSignOut() {
@@ -43,27 +58,42 @@ function useSignOut() {
   return { signOut, pending };
 }
 
-function NavLinks({ nav, onNavigate }: { nav: NavItem[]; onNavigate?: () => void }) {
+function NavLinks({ groups, onNavigate }: { groups: NavGroup[]; onNavigate?: () => void }) {
   const pathname = usePathname();
   const active = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
   return (
     <>
-      {nav.map((item) => (
-        <Link
-          key={item.href}
-          href={item.href}
-          onClick={onNavigate}
-          aria-current={active(item.href) ? "page" : undefined}
-          className={cx(
-            "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
-            active(item.href)
-              ? "bg-navy-800 text-white"
-              : "text-navy-600 hover:bg-navy-800/[0.06] hover:text-navy-950",
-          )}
-        >
-          <item.icon className="h-4.5 w-4.5 shrink-0" aria-hidden />
-          {item.label}
-        </Link>
+      {groups.map((group, index) => (
+        <div key={group.label} className={cx(index > 0 && "mt-5")}>
+          <p className="mb-1.5 px-3 text-[0.65rem] font-bold uppercase tracking-[0.16em] text-muted">
+            {group.label}
+          </p>
+          <div className="space-y-0.5">
+            {group.items.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={onNavigate}
+                aria-current={active(item.href) ? "page" : undefined}
+                className={cx(
+                  "group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                  active(item.href)
+                    ? "bg-navy-800 text-white shadow-[0_8px_24px_-16px_rgba(7,13,36,0.85)]"
+                    : "text-navy-600 hover:bg-navy-800/[0.06] hover:text-navy-950",
+                )}
+              >
+                <item.icon
+                  className={cx(
+                    "h-4.5 w-4.5 shrink-0",
+                    active(item.href) ? "text-sun-400" : "text-navy-500 group-hover:text-red-600",
+                  )}
+                  aria-hidden
+                />
+                {item.label}
+              </Link>
+            ))}
+          </div>
+        </div>
       ))}
     </>
   );
@@ -103,14 +133,62 @@ export function DashboardShell({
   const [open, setOpen] = useState(false);
   const business = partner.type === "business";
 
-  const nav: NavItem[] = [
-    { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-    business
-      ? { label: "Submit a lead", href: "/leads", icon: Briefcase }
-      : { label: "Refer a friend", href: "/refer", icon: UserRoundPlus },
-    { label: "My KYC", href: "/kyc", icon: Upload },
-    { label: "Profile", href: "/profile", icon: User },
-  ];
+  const navGroups: NavGroup[] = business
+    ? [
+        {
+          label: "Business",
+          items: [
+            { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+            { label: "Submit New Loan Case", href: "/leads", icon: Briefcase },
+            { label: "My Customers", href: "/customers", icon: UsersRound },
+            { label: "Pipeline", href: "/pipeline", icon: FolderKanban },
+            { label: "Document Status", href: "/kyc", icon: FileCheck2 },
+          ],
+        },
+        {
+          label: "Grow",
+          items: [
+            { label: "Commission", href: "/earnings", icon: BadgeIndianRupee },
+            { label: "Marketing Resources", href: "/marketing", icon: Megaphone },
+            { label: "Training", href: "/training", icon: BookOpenCheck },
+            { label: "Reports", href: "/reports", icon: ChartNoAxesCombined },
+          ],
+        },
+        {
+          label: "Account",
+          items: [
+            { label: "Support", href: "/support", icon: CircleHelp },
+            { label: "Profile", href: "/profile", icon: User },
+          ],
+        },
+      ]
+    : [
+        {
+          label: "Referrals",
+          items: [
+            { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+            { label: "Refer Someone", href: "/refer", icon: UserRoundPlus },
+            { label: "My Referrals", href: "/customers", icon: Handshake },
+            { label: "Referral Status", href: "/pipeline", icon: NotebookTabs },
+            { label: "Rewards Earned", href: "/earnings", icon: BadgeIndianRupee },
+          ],
+        },
+        {
+          label: "Learn & share",
+          items: [
+            { label: "Marketing Materials", href: "/marketing", icon: LibraryBig },
+            { label: "Learn & Earn", href: "/training", icon: BookOpenCheck },
+            { label: "Support", href: "/support", icon: CircleHelp },
+          ],
+        },
+        {
+          label: "Account",
+          items: [
+            { label: "Document Status", href: "/kyc", icon: FileCheck2 },
+            { label: "Profile", href: "/profile", icon: User },
+          ],
+        },
+      ];
 
   return (
     <div className="lg:flex">
@@ -120,12 +198,12 @@ export function DashboardShell({
       >
         Skip to content
       </a>
-      <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-hairline bg-white lg:flex">
+      <aside className="sticky top-0 hidden h-screen w-72 shrink-0 flex-col border-r border-hairline bg-white lg:flex">
         <div className="flex h-16 items-center border-b border-hairline px-5 text-navy-800">
           <Logo />
         </div>
-        <nav className="flex-1 space-y-0.5 p-3" aria-label="Main">
-          <NavLinks nav={nav} />
+        <nav className="flex-1 overflow-y-auto p-3" aria-label="Main">
+          <NavLinks groups={navGroups} />
         </nav>
         <UserCard name={name} type={partner.type} />
       </aside>
@@ -161,8 +239,8 @@ export function DashboardShell({
                     </button>
                   </Dialog.Close>
                 </div>
-                <nav className="flex-1 space-y-0.5 overflow-y-auto p-3" aria-label="Main">
-                  <NavLinks nav={nav} onNavigate={() => setOpen(false)} />
+                <nav className="flex-1 overflow-y-auto p-3" aria-label="Main">
+                  <NavLinks groups={navGroups} onNavigate={() => setOpen(false)} />
                 </nav>
                 <UserCard name={name} type={partner.type} />
               </Dialog.Content>
@@ -170,7 +248,11 @@ export function DashboardShell({
           </Dialog.Root>
         </header>
 
-        <main id="main-content" tabIndex={-1} className="flex-1 px-6 py-8 sm:px-10">
+        <main
+          id="main-content"
+          tabIndex={-1}
+          className="flex-1 bg-[radial-gradient(circle_at_top_right,var(--color-sun-50),transparent_32rem)] px-5 py-6 sm:px-8 sm:py-8 xl:px-10"
+        >
           {children}
         </main>
       </div>

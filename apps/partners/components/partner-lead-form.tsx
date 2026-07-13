@@ -86,12 +86,13 @@ export function PartnerLeadForm({ variant }: { variant: "business" | "referral" 
           role="status"
           className="rounded-lg border border-navy-800/15 bg-navy-800/[0.05] px-4 py-3 text-sm text-navy-700"
         >
-          Lead submitted — our team will take it from here and you can track it on your dashboard.
+          {variant === "referral" ? "Referral" : "Loan case"} submitted — our team will take it from
+          here and you can track it on your dashboard.
         </p>
       )}
 
       <Button type="submit" size="lg" disabled={pending}>
-        {pending ? "Submitting…" : variant === "referral" ? "Submit referral" : "Submit lead"}
+        {pending ? "Submitting…" : variant === "referral" ? "Submit referral" : "Submit loan case"}
       </Button>
     </form>
   );

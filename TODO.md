@@ -19,6 +19,10 @@ All independently actionable repository changes completed in this pass are recor
 
 The implementation now covers substantial portions of P0-01, P0-02 (origin readiness only), P0-04, P0-05 (CI artifact safeguards only), P0-07 (regression invariant only), P0-08 (repository policy files/workflow only), and the repository-capable P1/P2 auth, registration, session, staff provisioning, KYC boundary, release health/rollback, testing, accessibility, SEO, performance, infrastructure configuration, and documentation items. These are **implemented pending their remaining section-specific deployment and verification gates**, not production-closed.
 
+### Partner Network experience — 2026-07-14
+
+The partner app now presents distinct Business Partner and Referral Partner experiences: role-specific navigation, live customer/referral tracking, business pipeline and reports, commission/reward ledgers, document status, marketing materials, training, and support. The public partner page follows a complete Partner Network journey with original campaign imagery, partner benefits, two-path comparison, five-step process, assurances, resources, and registration choices using the same canonical content. Evidence: [`apps/partners/app/page.tsx`](apps/partners/app/page.tsx), [`apps/partners/components/partner-path-cards.tsx`](apps/partners/components/partner-path-cards.tsx), [`apps/partners/components/dashboard-shell.tsx`](apps/partners/components/dashboard-shell.tsx), [`apps/partners/app/(dashboard)/dashboard/page.tsx`](<apps/partners/app/(dashboard)/dashboard/page.tsx>), and [`apps/partners/lib/dashboard-queries.ts`](apps/partners/lib/dashboard-queries.ts). The full verification sequence below passed locally; deployment and production verification remain separate release gates.
+
 ## P0 — Immediate production blockers
 
 ### P0-01 Restore production Turnstile protection

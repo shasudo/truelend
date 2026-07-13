@@ -22,6 +22,13 @@
   --color-paper: #faf8f3;
   --color-paper-deep: #f1ede3;
 
+  /* Sun — partner-network campaign highlight, sampled from the referral creative. */
+  --color-sun-50: #fffbea;
+  --color-sun-100: #fff2b8;
+  --color-sun-400: #ffd31a;
+  --color-sun-500: #eeb800;
+  --color-sun-600: #9a6500;
+
   /* Navy — brand ink. 800 is the logo navy. */
   --color-navy-50: #eef0f7;
   --color-navy-100: #dfe3ef;
