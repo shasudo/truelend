@@ -56,6 +56,7 @@ export function useLeadForm<T extends FieldValues>(
   const [rootError, setRootError] = useState<string>();
   const [turnstileKey, setTurnstileKey] = useState(0);
   const [turnstileToken, setTurnstileToken] = useState<string>();
+  const [turnstileError, setTurnstileError] = useState<string>();
   // No widget configured → always ready; otherwise wait for a solved token so
   // the user can't submit into a guaranteed "verification failed".
   const turnstileReady = !TURNSTILE_SITE_KEY || turnstileToken !== undefined;
@@ -69,6 +70,7 @@ export function useLeadForm<T extends FieldValues>(
       setRootError(result.error);
       // Turnstile tokens are single-use — remount the widget for a fresh one.
       setTurnstileToken(undefined);
+      setTurnstileError(undefined);
       setTurnstileKey((k) => k + 1);
     }
   });
@@ -80,16 +82,29 @@ export function useLeadForm<T extends FieldValues>(
     rootError,
     turnstileKey,
     turnstileReady,
-    setToken: setTurnstileToken,
+    turnstileError,
+    setToken: (token: string) => {
+      setTurnstileError(undefined);
+      setTurnstileToken(token);
+    },
+    resetToken: () => setTurnstileToken(undefined),
+    failTurnstile: () => {
+      setTurnstileToken(undefined);
+      setTurnstileError("Human verification could not load. Refresh the page and try again.");
+    },
   };
 }
 
 export function TurnstileField({
   resetKey,
   onToken,
+  onExpire,
+  onError,
 }: {
   resetKey: number;
   onToken: (token: string) => void;
+  onExpire: () => void;
+  onError: () => void;
 }) {
   if (!TURNSTILE_SITE_KEY) return null;
   return (
@@ -97,6 +112,9 @@ export function TurnstileField({
       key={resetKey}
       siteKey={TURNSTILE_SITE_KEY}
       onSuccess={onToken}
+      onExpire={onExpire}
+      onTimeout={onExpire}
+      onError={onError}
       options={{ theme: "light" }}
     />
   );

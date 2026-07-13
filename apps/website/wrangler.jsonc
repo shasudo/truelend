@@ -3,8 +3,9 @@
   "name": "truelend-website",
   "main": ".open-next/worker.js",
   // nodejs_compat + a recent date are required by OpenNext and postgres.js.
-  "compatibility_date": "2025-04-01",
+  "compatibility_date": "2026-07-13",
   "compatibility_flags": ["nodejs_compat"],
+  "upload_source_maps": true,
   // Custom domains — wrangler provisions the DNS record + edge cert on deploy.
   // Requires the truelend.in zone to be active on this Cloudflare account.
   "routes": [
@@ -17,7 +18,16 @@
   },
   "observability": {
     "enabled": true,
+    "logs": { "enabled": true, "invocation_logs": true, "head_sampling_rate": 1 },
+    "traces": { "enabled": true, "head_sampling_rate": 0.01 },
   },
+  "ratelimits": [
+    {
+      "name": "LEAD_RATE_LIMITER",
+      "namespace_id": "1002",
+      "simple": { "limit": 10, "period": 60 },
+    },
+  ],
   // Email (Resend). RESEND_API_KEY is a secret (wrangler secret put). EMAIL_FROM
   // must be a verified Resend sender; onboarding@resend.dev works for testing to
   // your own account email. Set TEAM_EMAIL to route new-lead alerts. Empty

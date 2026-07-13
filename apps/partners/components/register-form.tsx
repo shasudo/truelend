@@ -56,7 +56,7 @@ export function RegisterForm() {
 
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Full name" htmlFor="name" required>
-          <Input id="name" name="name" autoComplete="name" required />
+          <Input id="name" name="name" autoComplete="name" maxLength={120} required />
         </Field>
         <Field label="Mobile number" htmlFor="phone" required>
           <Input
@@ -69,7 +69,14 @@ export function RegisterForm() {
           />
         </Field>
         <Field label="Email" htmlFor="email" required>
-          <Input id="email" name="email" type="email" autoComplete="email" required />
+          <Input
+            id="email"
+            name="email"
+            type="email"
+            autoComplete="email"
+            maxLength={254}
+            required
+          />
         </Field>
         <Field label="Password" htmlFor="password" required>
           <Input
@@ -78,12 +85,24 @@ export function RegisterForm() {
             type="password"
             autoComplete="new-password"
             minLength={8}
+            maxLength={128}
             required
           />
         </Field>
         {type === "business" && (
-          <Field label="Business / firm name" htmlFor="businessName" className="sm:col-span-2">
-            <Input id="businessName" name="businessName" autoComplete="organization" />
+          <Field
+            label="Business / firm name"
+            htmlFor="businessName"
+            className="sm:col-span-2"
+            required
+          >
+            <Input
+              id="businessName"
+              name="businessName"
+              autoComplete="organization"
+              maxLength={160}
+              required
+            />
           </Field>
         )}
       </div>

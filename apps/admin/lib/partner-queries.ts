@@ -1,5 +1,5 @@
 import "server-only";
-import { and, desc, eq, sql } from "drizzle-orm";
+import { desc, eq, sql } from "drizzle-orm";
 import {
   schema,
   type Database,
@@ -69,7 +69,7 @@ export async function getPartnerDetail(db: Database, id: string): Promise<Partne
   const row = rows[0];
   if (!row) return null;
 
-  const [documents, payouts, leads] = await Promise.all([
+  const [documents, payouts, leads, [ledger]] = await Promise.all([
     db
       .select()
       .from(schema.partnerDocuments)
@@ -86,16 +86,14 @@ export async function getPartnerDetail(db: Database, id: string): Promise<Partne
       .where(eq(schema.leads.partnerId, id))
       .orderBy(desc(schema.leads.createdAt))
       .limit(10),
+    db
+      .select({
+        earned: sql<string>`coalesce(sum(${schema.partnerPayouts.amountPaise}) filter (where ${schema.partnerPayouts.kind} = 'earned'), 0)`,
+        paid: sql<string>`coalesce(sum(${schema.partnerPayouts.amountPaise}) filter (where ${schema.partnerPayouts.kind} = 'paid'), 0)`,
+      })
+      .from(schema.partnerPayouts)
+      .where(eq(schema.partnerPayouts.partnerId, id)),
   ]);
-
-  const earnedRows = await db
-    .select({ total: sql<string>`coalesce(sum(${schema.partnerPayouts.amountPaise}), 0)` })
-    .from(schema.partnerPayouts)
-    .where(and(eq(schema.partnerPayouts.partnerId, id), eq(schema.partnerPayouts.kind, "earned")));
-  const paidRows = await db
-    .select({ total: sql<string>`coalesce(sum(${schema.partnerPayouts.amountPaise}), 0)` })
-    .from(schema.partnerPayouts)
-    .where(and(eq(schema.partnerPayouts.partnerId, id), eq(schema.partnerPayouts.kind, "paid")));
 
   return {
     partner: row.partner,
@@ -104,7 +102,7 @@ export async function getPartnerDetail(db: Database, id: string): Promise<Partne
     documents,
     payouts,
     leads,
-    earnedPaise: num(earnedRows[0]?.total),
-    paidPaise: num(paidRows[0]?.total),
+    earnedPaise: num(ledger?.earned),
+    paidPaise: num(ledger?.paid),
   };
 }

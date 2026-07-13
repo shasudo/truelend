@@ -10,18 +10,17 @@
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
     "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
     "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
+    "cf:validate": "wrangler types /tmp/truelend-admin-env.d.ts --env-interface CloudflareEnv --include-runtime false --env-file /dev/null",
     "seed:admin": "tsx scripts/seed-admin.ts",
     "audit:roles": "tsx scripts/audit-roles.ts",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@hookform/resolvers": "catalog:",
     "@truelend/auth": "workspace:*",
     "@truelend/db": "workspace:*",
     "@truelend/email": "workspace:*",
     "@truelend/reference": "workspace:*",
-    "@truelend/types": "workspace:*",
     "@truelend/ui": "workspace:*",
     "better-auth": "catalog:",
     "drizzle-orm": "catalog:",
@@ -30,8 +29,6 @@
     "radix-ui": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
-    "react-hook-form": "catalog:",
-    "recharts": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {

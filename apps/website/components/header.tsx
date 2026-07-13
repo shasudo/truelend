@@ -1,15 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Dialog } from "radix-ui";
 import { Menu, X, Headset } from "lucide-react";
 import { Button, Container, Logo, cx } from "@truelend/ui";
 import { site } from "@/content/site";
 
 export function Header() {
-  const [open, setOpen] = useState(false);
+  const menuRef = useRef<HTMLDialogElement>(null);
   const pathname = usePathname();
 
   const isActive = (href: string) =>
@@ -47,58 +46,60 @@ export function Header() {
           </Button>
 
           {/* Mobile drawer */}
-          <Dialog.Root open={open} onOpenChange={setOpen}>
-            <Dialog.Trigger asChild>
+          <button
+            className="rounded-md p-2 text-navy-800 hover:bg-navy-800/5 lg:hidden"
+            aria-label="Open menu"
+            onClick={() => menuRef.current?.showModal()}
+          >
+            <Menu className="h-6 w-6" />
+          </button>
+          <dialog
+            ref={menuRef}
+            aria-labelledby="mobile-menu-title"
+            onClick={(event) => {
+              if (event.target === event.currentTarget) event.currentTarget.close();
+            }}
+            className="fixed inset-y-0 right-0 left-auto m-0 h-dvh w-80 max-w-[85vw] border-0 bg-navy-950 p-6 text-white backdrop:bg-navy-950/50 backdrop:backdrop-blur-sm open:flex open:flex-col open:animate-[drawer-in_250ms_var(--ease-out-quart)]"
+          >
+            <h2 id="mobile-menu-title" className="sr-only">
+              Menu
+            </h2>
+            <div className="flex items-center justify-between">
+              <Logo className="text-white" />
               <button
-                className="rounded-md p-2 text-navy-800 hover:bg-navy-800/5 lg:hidden"
-                aria-label="Open menu"
+                className="rounded-md p-2 text-white/70 hover:bg-white/10 hover:text-white"
+                aria-label="Close menu"
+                onClick={() => menuRef.current?.close()}
               >
-                <Menu className="h-6 w-6" />
+                <X className="h-6 w-6" />
               </button>
-            </Dialog.Trigger>
-            <Dialog.Portal>
-              <Dialog.Overlay className="fixed inset-0 z-50 bg-navy-950/50 backdrop-blur-sm data-[state=open]:animate-[fade-in_200ms_ease-out]" />
-              <Dialog.Content className="fixed inset-y-0 right-0 z-50 flex w-80 max-w-[85vw] flex-col bg-navy-950 p-6 text-white data-[state=open]:animate-[drawer-in_250ms_var(--ease-out-quart)]">
-                <Dialog.Title className="sr-only">Menu</Dialog.Title>
-                <div className="flex items-center justify-between">
-                  <Logo className="text-white" />
-                  <Dialog.Close asChild>
-                    <button
-                      className="rounded-md p-2 text-white/70 hover:bg-white/10 hover:text-white"
-                      aria-label="Close menu"
-                    >
-                      <X className="h-6 w-6" />
-                    </button>
-                  </Dialog.Close>
-                </div>
+            </div>
 
-                <nav className="mt-10 flex flex-col gap-1" aria-label="Mobile">
-                  {site.nav.map((item) => (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      onClick={() => setOpen(false)}
-                      className="rounded-lg px-3 py-3 font-display text-xl font-semibold text-white/85 transition-colors hover:bg-white/5 hover:text-white"
-                    >
-                      {item.label}
-                    </Link>
-                  ))}
-                </nav>
+            <nav className="mt-10 flex flex-col gap-1" aria-label="Mobile">
+              {site.nav.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => menuRef.current?.close()}
+                  className="rounded-lg px-3 py-3 font-display text-xl font-semibold text-white/85 transition-colors hover:bg-white/5 hover:text-white"
+                >
+                  {item.label}
+                </Link>
+              ))}
+            </nav>
 
-                <div className="mt-auto space-y-4 border-t border-white/10 pt-6">
-                  <Button asChild className="w-full">
-                    <Link href="/enquiry" onClick={() => setOpen(false)}>
-                      <Headset className="h-4 w-4" aria-hidden />
-                      Speak to an Advisor
-                    </Link>
-                  </Button>
-                  <p className="text-sm text-white/60">
-                    {site.phone} · {site.hours}
-                  </p>
-                </div>
-              </Dialog.Content>
-            </Dialog.Portal>
-          </Dialog.Root>
+            <div className="mt-auto space-y-4 border-t border-white/10 pt-6">
+              <Button asChild className="w-full">
+                <Link href="/enquiry" onClick={() => menuRef.current?.close()}>
+                  <Headset className="h-4 w-4" aria-hidden />
+                  Speak to an Advisor
+                </Link>
+              </Button>
+              <p className="text-sm text-white/60">
+                {site.phone} · {site.hours}
+              </p>
+            </div>
+          </dialog>
         </div>
       </Container>
     </header>

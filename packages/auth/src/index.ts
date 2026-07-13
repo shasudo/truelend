@@ -20,6 +20,37 @@ export interface CreateAuthOptions {
   }) => Promise<void>;
 }
 
+interface EdgeRateLimiter {
+  limit(options: { key: string }): Promise<{ success: boolean }>;
+}
+
+const EDGE_LIMITED_AUTH_PATHS = new Set([
+  "/api/auth/sign-in/email",
+  "/api/auth/sign-up/email",
+  "/api/auth/request-password-reset",
+  "/api/auth/forget-password",
+]);
+
+/** Cloudflare-edge throttle for credential and recovery endpoints. */
+export async function allowSensitiveAuthRequest(
+  request: Request,
+  limiter: EdgeRateLimiter | undefined,
+): Promise<boolean> {
+  if (!limiter || !EDGE_LIMITED_AUTH_PATHS.has(new URL(request.url).pathname)) return true;
+  let identity = request.headers.get("cf-connecting-ip") ?? "anonymous";
+  try {
+    const body: unknown = await request.clone().json();
+    if (body && typeof body === "object" && "email" in body && typeof body.email === "string") {
+      identity = body.email.trim().toLowerCase();
+    }
+  } catch {
+    // Malformed requests still share a bounded fallback key.
+  }
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(identity));
+  const key = `${new URL(request.url).pathname}:${Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("")}`;
+  return (await limiter.limit({ key })).success;
+}
+
 /*
  * Per-request factory — workerd forbids reusing I/O objects across requests,
  * so the caller creates a fresh db (createDb) per request and owns closing it.
@@ -36,6 +67,22 @@ export function createAuth(db: Database, opts: CreateAuthOptions) {
   return betterAuth({
     secret: opts.secret,
     baseURL: opts.baseURL,
+    trustedOrigins: [opts.baseURL],
+    advanced: {
+      // Cloudflare replaces this header at the edge. Do not trust X-Forwarded-For,
+      // which a direct client can spoof and use to evade auth throttles.
+      ipAddress: { ipAddressHeaders: ["cf-connecting-ip"] },
+    },
+    rateLimit: {
+      enabled: true,
+      window: 60,
+      max: 100,
+      customRules: {
+        "/sign-in/email": { window: 60, max: 10 },
+        "/sign-up/email": { window: 60, max: 5 },
+        "/request-password-reset": { window: 300, max: 5 },
+      },
+    },
     database: drizzleAdapter(db, {
       provider: "pg",
       schema: {
@@ -47,6 +94,8 @@ export function createAuth(db: Database, opts: CreateAuthOptions) {
     }),
     emailAndPassword: {
       enabled: true,
+      minPasswordLength: 8,
+      maxPasswordLength: 128,
       // Accounts are created by an admin from the Team page, never self-serve.
       disableSignUp: !opts.allowSignUp,
       // Reset is enabled only when the app wires a sender; the link is emailed,

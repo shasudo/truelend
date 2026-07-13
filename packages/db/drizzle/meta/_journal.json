@@ -36,6 +36,34 @@
       "when": 1783919430507,
       "tag": "0004_jazzy_hex",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1783946767088,
+      "tag": "0005_mighty_stranger",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1783947601630,
+      "tag": "0006_past_jane_foster",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1783948714427,
+      "tag": "0007_cold_dust",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1783949276735,
+      "tag": "0008_many_oracle",
+      "breakpoints": true
     }
   ]
 }

@@ -15,7 +15,6 @@ catalog:
   better-auth: ^1.6.23
   "@better-auth/drizzle-adapter": ^1.6.23
   # dashboards
-  recharts: ^3.9.2
   papaparse: ^5.4.1
   "@types/papaparse": ^5.3.14
   # ui / styling
@@ -24,7 +23,6 @@ catalog:
   "@tailwindcss/typography": ^0.5.16
   radix-ui: ^1.4.0
   lucide-react: ^0.525.0
-  motion: ^12.23.0
   # forms
   react-hook-form: ^7.60.0
   "@hookform/resolvers": ^5.2.2
@@ -40,7 +38,7 @@ catalog:
   # cloudflare / deploy
   "@opennextjs/cloudflare": ^1.0.0
   wrangler: ^4.86.0
-  "@cloudflare/workers-types": ^5.20260708.1
+  "@cloudflare/workers-types": 5.20260711.1
   drizzle-kit: ^0.31.10
   # build / dev tooling
   tsx: ^4.20.0

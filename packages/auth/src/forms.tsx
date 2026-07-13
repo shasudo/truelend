@@ -38,7 +38,7 @@ export function LoginForm({ redirectTo, children }: { redirectTo: string; childr
   return (
     <form onSubmit={onSubmit} className="mt-6 space-y-4">
       <Field label="Email" htmlFor="email" required>
-        <Input id="email" name="email" type="email" autoComplete="email" required />
+        <Input id="email" name="email" type="email" autoComplete="email" maxLength={254} required />
       </Field>
       <Field label="Password" htmlFor="password" required>
         <Input
@@ -46,6 +46,7 @@ export function LoginForm({ redirectTo, children }: { redirectTo: string; childr
           name="password"
           type="password"
           autoComplete="current-password"
+          maxLength={128}
           required
         />
       </Field>
@@ -108,7 +109,7 @@ export function ForgotPasswordForm() {
   return (
     <form onSubmit={onSubmit} className="mt-6 space-y-4">
       <Field label="Email" htmlFor="email" required>
-        <Input id="email" name="email" type="email" autoComplete="email" required />
+        <Input id="email" name="email" type="email" autoComplete="email" maxLength={254} required />
       </Field>
       {error && (
         <p
@@ -148,7 +149,8 @@ export function ResetPasswordForm({ token, tokenError }: { token?: string; token
     setError(undefined);
     const form = new FormData(e.currentTarget);
     const password = String(form.get("password"));
-    if (password.length < 8) return setError("Password must be at least 8 characters.");
+    if (password.length < 8 || password.length > 128)
+      return setError("Password must be between 8 and 128 characters.");
     if (password !== String(form.get("confirm"))) return setError("The passwords don't match.");
     setPending(true);
     const { error } = await authClient.resetPassword({ newPassword: password, token });
@@ -185,6 +187,7 @@ export function ResetPasswordForm({ token, tokenError }: { token?: string; token
           type="password"
           autoComplete="new-password"
           minLength={8}
+          maxLength={128}
           required
         />
       </Field>
@@ -195,6 +198,7 @@ export function ResetPasswordForm({ token, tokenError }: { token?: string; token
           type="password"
           autoComplete="new-password"
           minLength={8}
+          maxLength={128}
           required
         />
       </Field>

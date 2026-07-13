@@ -6,6 +6,7 @@ import {
   partnerTypeLabels,
   partnerStatusLabels,
   partnerDocTypeLabels,
+  partnerDocTypes,
   productName,
   earningsLabel,
   formatPaise,
@@ -49,7 +50,19 @@ export default async function PartnerDetailPage({ params }: { params: Promise<{ 
   const balance = earnedPaise - paidPaise;
   // "Payout" (business) / "Incentive" (referral) — inner labels echo the card.
   const noun = earningsLabel(partner.type);
-  const canApprove = Boolean(partner.submittedAt) && documents.length > 0;
+  const uploadedDocTypes = new Set<string>(documents.map((document) => document.docType));
+  const missingRequiredDocs = partnerDocTypes.filter(
+    (document) => document.required && !uploadedDocTypes.has(document.type),
+  );
+  const detailsComplete = Boolean(
+    partner.pan &&
+    partner.address &&
+    partner.accountHolder &&
+    partner.accountNumber &&
+    partner.ifsc,
+  );
+  const canApprove =
+    Boolean(partner.submittedAt) && detailsComplete && missingRequiredDocs.length === 0;
 
   return (
     <>
@@ -173,7 +186,9 @@ export default async function PartnerDetailPage({ params }: { params: Promise<{ 
                   <p className="mt-2 text-xs text-navy-400">
                     {!partner.submittedAt
                       ? "Partner hasn't submitted their application yet."
-                      : "No documents uploaded."}
+                      : !detailsComplete
+                        ? "Required KYC and bank details are incomplete."
+                        : `Missing: ${missingRequiredDocs.map((document) => document.label).join(", ")}.`}
                   </p>
                 )}
               </form>

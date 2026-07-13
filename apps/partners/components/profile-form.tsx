@@ -16,7 +16,14 @@ export function ProfileForm({
   return (
     <form action={action} className="space-y-5">
       <Field label="Name" htmlFor="name" required>
-        <Input id="name" name="name" defaultValue={defaultName} autoComplete="name" required />
+        <Input
+          id="name"
+          name="name"
+          defaultValue={defaultName}
+          autoComplete="name"
+          maxLength={120}
+          required
+        />
       </Field>
       <Field label="Phone" htmlFor="phone" required>
         <Input

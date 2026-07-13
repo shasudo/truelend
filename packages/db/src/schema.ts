@@ -7,70 +7,101 @@ import {
   bigint,
   integer,
   timestamp,
+  jsonb,
   index,
+  uniqueIndex,
+  check,
 } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 
 /* ------------------------------------------------------------------ */
 /* Auth — table shapes owned by better-auth (admin plugin included).  */
 /* Ids are text: better-auth generates its own ids. Do not redesign.  */
 /* ------------------------------------------------------------------ */
 
-export const user = pgTable("user", {
-  id: text("id").primaryKey(),
-  name: text("name").notNull(),
-  email: text("email").notNull().unique(),
-  emailVerified: boolean("email_verified").notNull().default(false),
-  image: text("image"),
-  // admin plugin
-  role: text("role"),
-  banned: boolean("banned"),
-  banReason: text("ban_reason"),
-  banExpires: timestamp("ban_expires", { withTimezone: true }),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-});
+export const user = pgTable(
+  "user",
+  {
+    id: text("id").primaryKey(),
+    name: text("name").notNull(),
+    email: text("email").notNull().unique(),
+    emailVerified: boolean("email_verified").notNull().default(false),
+    image: text("image"),
+    // admin plugin
+    role: text("role"),
+    banned: boolean("banned"),
+    banReason: text("ban_reason"),
+    banExpires: timestamp("ban_expires", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    check(
+      "user_role_valid",
+      sql`${t.role} is null or ${t.role} in ('admin', 'employee', 'business', 'referral', 'partner_pending')`,
+    ),
+  ],
+);
 
-export const session = pgTable("session", {
-  id: text("id").primaryKey(),
-  token: text("token").notNull().unique(),
-  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
-  ipAddress: text("ip_address"),
-  userAgent: text("user_agent"),
-  userId: text("user_id")
-    .notNull()
-    .references(() => user.id, { onDelete: "cascade" }),
-  // admin plugin
-  impersonatedBy: text("impersonated_by"),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-});
+export const session = pgTable(
+  "session",
+  {
+    id: text("id").primaryKey(),
+    token: text("token").notNull().unique(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    ipAddress: text("ip_address"),
+    userAgent: text("user_agent"),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    // admin plugin
+    impersonatedBy: text("impersonated_by"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("session_user_id_idx").on(t.userId),
+    index("session_expires_at_idx").on(t.expiresAt),
+  ],
+);
 
-export const account = pgTable("account", {
-  id: text("id").primaryKey(),
-  accountId: text("account_id").notNull(),
-  providerId: text("provider_id").notNull(),
-  userId: text("user_id")
-    .notNull()
-    .references(() => user.id, { onDelete: "cascade" }),
-  accessToken: text("access_token"),
-  refreshToken: text("refresh_token"),
-  idToken: text("id_token"),
-  accessTokenExpiresAt: timestamp("access_token_expires_at", { withTimezone: true }),
-  refreshTokenExpiresAt: timestamp("refresh_token_expires_at", { withTimezone: true }),
-  scope: text("scope"),
-  password: text("password"),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-});
+export const account = pgTable(
+  "account",
+  {
+    id: text("id").primaryKey(),
+    accountId: text("account_id").notNull(),
+    providerId: text("provider_id").notNull(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    accessToken: text("access_token"),
+    refreshToken: text("refresh_token"),
+    idToken: text("id_token"),
+    accessTokenExpiresAt: timestamp("access_token_expires_at", { withTimezone: true }),
+    refreshTokenExpiresAt: timestamp("refresh_token_expires_at", { withTimezone: true }),
+    scope: text("scope"),
+    password: text("password"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("account_user_id_idx").on(t.userId),
+    uniqueIndex("account_provider_account_idx").on(t.providerId, t.accountId),
+  ],
+);
 
-export const verification = pgTable("verification", {
-  id: text("id").primaryKey(),
-  identifier: text("identifier").notNull(),
-  value: text("value").notNull(),
-  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-});
+export const verification = pgTable(
+  "verification",
+  {
+    id: text("id").primaryKey(),
+    identifier: text("identifier").notNull(),
+    value: text("value").notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("verification_identifier_idx").on(t.identifier)],
+);
 
 /* ------------------------------------------------------------------ */
 /* Leads — written by the public website, worked in the admin app.    */
@@ -117,6 +148,11 @@ export const leads = pgTable(
     utmCampaign: text("utm_campaign"),
 
     consent: boolean("consent").notNull().default(false),
+    // Proof of the consent above: when it was captured, from where (website
+    // form, partner submission, CSV bulk), and which terms/privacy version.
+    consentAt: timestamp("consent_at", { withTimezone: true }),
+    consentSource: text("consent_source"),
+    consentVersion: text("consent_version"),
 
     // pipeline (admin app)
     status: leadStatus("status").notNull().default("new"),
@@ -135,6 +171,18 @@ export const leads = pgTable(
     index("leads_status_idx").on(t.status),
     index("leads_assigned_to_idx").on(t.assignedTo),
     index("leads_partner_id_idx").on(t.partnerId),
+    index("leads_created_at_idx").on(t.createdAt),
+    check(
+      "leads_required_fields",
+      sql`(${t.kind} = 'enquiry' and ${t.name} is not null and ${t.phone} is not null)
+        or (${t.kind} = 'referral' and ${t.name} is not null and ${t.phone} is not null and ${t.referrerName} is not null and ${t.referrerPhone} is not null)
+        or (${t.kind} = 'contact' and ${t.name} is not null and ${t.phone} is not null and ${t.message} is not null)
+        or (${t.kind} = 'cibil_notify' and ${t.email} is not null)`,
+    ),
+    check(
+      "leads_consent_proof",
+      sql`${t.consent} = false or (${t.consentAt} is not null and ${t.consentSource} is not null and ${t.consentVersion} is not null)`,
+    ),
   ],
 );
 
@@ -205,7 +253,23 @@ export const loanCases = pgTable(
       .defaultNow()
       .$onUpdate(() => new Date()),
   },
-  (t) => [index("loan_cases_lead_id_idx").on(t.leadId)],
+  (t) => [
+    index("loan_cases_lead_id_idx").on(t.leadId),
+    index("loan_cases_created_at_idx").on(t.createdAt),
+    check(
+      "loan_cases_amounts_nonnegative",
+      sql`(${t.requestedAmountPaise} is null or ${t.requestedAmountPaise} >= 0)
+        and (${t.sanctionedAmountPaise} is null or ${t.sanctionedAmountPaise} >= 0)
+        and (${t.disbursedAmountPaise} is null or ${t.disbursedAmountPaise} >= 0)
+        and (${t.revenuePaise} is null or ${t.revenuePaise} >= 0)
+        and (${t.payoutPaise} is null or ${t.payoutPaise} >= 0)
+        and (${t.requestedAmountPaise} is null or ${t.requestedAmountPaise} <= 9007199254740991)
+        and (${t.sanctionedAmountPaise} is null or ${t.sanctionedAmountPaise} <= 9007199254740991)
+        and (${t.disbursedAmountPaise} is null or ${t.disbursedAmountPaise} <= 9007199254740991)
+        and (${t.revenuePaise} is null or ${t.revenuePaise} <= 9007199254740991)
+        and (${t.payoutPaise} is null or ${t.payoutPaise} <= 9007199254740991)`,
+    ),
+  ],
 );
 
 /* ------------------------------------------------------------------ */
@@ -226,33 +290,58 @@ export const payoutKind = pgEnum("payout_kind", ["earned", "paid"]);
 
 // 1:1 with a better-auth user (user_id is the PK). The user's `role` column
 // mirrors `type` (business|referral) for auth; this row holds partner data.
-export const partners = pgTable("partners", {
-  userId: text("user_id")
-    .primaryKey()
-    .references(() => user.id, { onDelete: "cascade" }),
-  type: partnerType("type").notNull(),
-  status: partnerStatus("status").notNull().default("pending"),
-  phone: text("phone"),
-  businessName: text("business_name"),
-  // KYC details (collected before document upload)
-  pan: text("pan"),
-  gst: text("gst"),
-  address: text("address"),
-  // bank details for payouts (the cancelled-cheque document backs these)
-  accountHolder: text("account_holder"),
-  accountNumber: text("account_number"),
-  ifsc: text("ifsc"),
-  // set when the partner submits their completed application for review
-  submittedAt: timestamp("submitted_at", { withTimezone: true }),
-  verifiedBy: text("verified_by").references(() => user.id, { onDelete: "set null" }),
-  verifiedAt: timestamp("verified_at", { withTimezone: true }),
-  rejectionReason: text("rejection_reason"),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true })
-    .notNull()
-    .defaultNow()
-    .$onUpdate(() => new Date()),
-});
+export const partners = pgTable(
+  "partners",
+  {
+    userId: text("user_id")
+      .primaryKey()
+      .references(() => user.id, { onDelete: "cascade" }),
+    type: partnerType("type").notNull(),
+    status: partnerStatus("status").notNull().default("pending"),
+    phone: text("phone"),
+    businessName: text("business_name"),
+    // KYC details (collected before document upload)
+    pan: text("pan"),
+    gst: text("gst"),
+    address: text("address"),
+    // bank details for payouts (the cancelled-cheque document backs these)
+    accountHolder: text("account_holder"),
+    accountNumber: text("account_number"),
+    ifsc: text("ifsc"),
+    // set when the partner submits their completed application for review
+    submittedAt: timestamp("submitted_at", { withTimezone: true }),
+    verifiedBy: text("verified_by").references(() => user.id, { onDelete: "set null" }),
+    verifiedAt: timestamp("verified_at", { withTimezone: true }),
+    rejectionReason: text("rejection_reason"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (t) => [
+    check(
+      "partners_review_state_valid",
+      sql`(${t.status} <> 'verified' or (
+          ${t.verifiedBy} is not null
+          and ${t.verifiedAt} is not null
+          and ${t.submittedAt} is not null
+          and ${t.rejectionReason} is null
+          and ${t.pan} is not null and length(trim(${t.pan})) > 0
+          and ${t.address} is not null and length(trim(${t.address})) > 0
+          and ${t.accountHolder} is not null and length(trim(${t.accountHolder})) > 0
+          and ${t.accountNumber} is not null and length(trim(${t.accountNumber})) > 0
+          and ${t.ifsc} is not null and length(trim(${t.ifsc})) > 0
+        ))
+        and (${t.status} <> 'rejected' or (
+          ${t.verifiedBy} is not null
+          and ${t.verifiedAt} is not null
+          and ${t.rejectionReason} is not null
+          and length(trim(${t.rejectionReason})) > 0
+        ))`,
+    ),
+  ],
+);
 
 // KYC uploads, kept in R2 (r2_key); one row per uploaded document.
 export const partnerDocuments = pgTable(
@@ -268,7 +357,15 @@ export const partnerDocuments = pgTable(
     sizeBytes: integer("size_bytes").notNull(),
     uploadedAt: timestamp("uploaded_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [index("partner_documents_partner_id_idx").on(t.partnerId)],
+  (t) => [
+    index("partner_documents_partner_id_idx").on(t.partnerId),
+    uniqueIndex("partner_documents_partner_type_idx").on(t.partnerId, t.docType),
+    check("partner_documents_size_positive", sql`${t.sizeBytes} > 0 and ${t.sizeBytes} <= 5242880`),
+    check(
+      "partner_documents_storage_valid",
+      sql`${t.r2Key} like 'kyc/%' and ${t.contentType} in ('image/jpeg', 'image/png', 'application/pdf')`,
+    ),
+  ],
 );
 
 // Manual ledger: admin records `earned` and `paid` entries; balance = sum diff.
@@ -283,9 +380,42 @@ export const partnerPayouts = pgTable(
     amountPaise: bigint("amount_paise", { mode: "number" }).notNull(),
     kind: payoutKind("kind").notNull(),
     note: text("note"),
+    // Which admin recorded this entry (set null if that user is later removed —
+    // the audit_log keeps a denormalized copy regardless).
+    recordedBy: text("recorded_by").references(() => user.id, { onDelete: "set null" }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [index("partner_payouts_partner_id_idx").on(t.partnerId)],
+  (t) => [
+    index("partner_payouts_partner_id_idx").on(t.partnerId),
+    check("partner_payouts_amount_positive", sql`${t.amountPaise} > 0`),
+  ],
+);
+
+/*
+ * Append-only audit trail: who did what to which entity, with optional
+ * before/after snapshots. Insert-only in application code — never updated or
+ * deleted. actor_id is NOT a foreign key and actor_email is denormalized so the
+ * record survives (and stays truthful) even if the user is later removed.
+ * Migration 0005 installs a trigger that rejects UPDATE and DELETE.
+ */
+export const auditLog = pgTable(
+  "audit_log",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    actorId: text("actor_id"),
+    actorEmail: text("actor_email"),
+    action: text("action").notNull(),
+    entityType: text("entity_type").notNull(),
+    entityId: text("entity_id"),
+    before: jsonb("before"),
+    after: jsonb("after"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("audit_log_entity_idx").on(t.entityType, t.entityId),
+    index("audit_log_actor_idx").on(t.actorId),
+    index("audit_log_created_at_idx").on(t.createdAt),
+  ],
 );
 
 export type Lead = typeof leads.$inferSelect;
@@ -298,3 +428,5 @@ export type Partner = typeof partners.$inferSelect;
 export type NewPartner = typeof partners.$inferInsert;
 export type PartnerDocument = typeof partnerDocuments.$inferSelect;
 export type PartnerPayout = typeof partnerPayouts.$inferSelect;
+export type AuditLog = typeof auditLog.$inferSelect;
+export type NewAuditLog = typeof auditLog.$inferInsert;

@@ -9,22 +9,28 @@ export async function GET() {
   const { env, ctx } = getCloudflareContext();
 
   let db: HealthResponse["db"] = "error";
+  let conn: ReturnType<typeof createDb> | null = null;
   try {
-    const conn = createDb(env.HYPERDRIVE.connectionString);
+    conn = createDb(env.HYPERDRIVE.connectionString);
     await ping(conn);
-    ctx.waitUntil(conn.$client.end());
     db = "ok";
   } catch {
     db = "error";
+  } finally {
+    if (conn) ctx.waitUntil(conn.$client.end());
   }
 
+  const turnstile =
+    env.TURNSTILE_SECRET_KEY && process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ? "ok" : "error";
+  const status = db === "ok" && turnstile === "ok" ? "ok" : "error";
+
   const body: HealthResponse = {
-    status: db === "ok" ? "ok" : "error",
+    status,
     service: "website",
     timestamp: new Date().toISOString(),
     db,
+    turnstile,
   };
-  // 503 when the DB is down so uptime checks/load balancers see the failure
-  // rather than a misleading 200.
-  return Response.json(body, { status: db === "ok" ? 200 : 503 });
+  // A missing CAPTCHA key pair is a production incident, not a healthy lead path.
+  return Response.json(body, { status: status === "ok" ? 200 : 503 });
 }

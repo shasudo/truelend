@@ -1,18 +1,22 @@
 import type { NextConfig } from "next";
 import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
 
+const csp =
+  "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; " +
+  `script-src 'self' 'unsafe-inline'${process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""}; ` +
+  `style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'${process.env.NODE_ENV === "development" ? " ws: http:" : ""}; ` +
+  `worker-src 'self' blob:; manifest-src 'self'${process.env.NODE_ENV === "development" ? "" : "; upgrade-insecure-requests"}`;
+
 const nextConfig: NextConfig = {
   transpilePackages: [
     "@truelend/auth",
     "@truelend/db",
     "@truelend/email",
     "@truelend/reference",
-    "@truelend/types",
     "@truelend/ui",
   ],
-  // Security headers on every response. Partner portal → DENY all framing.
-  // HSTS has no `preload` on purpose (see website config). CSP sets only
-  // frame-ancestors; a full CSP is a follow-up.
+  // Security headers on every response. Next emits inline bootstrap scripts,
+  // hence unsafe-inline; all network and embedding destinations stay closed.
   async headers() {
     return [
       {
@@ -21,7 +25,13 @@ const nextConfig: NextConfig = {
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
           { key: "X-Frame-Options", value: "DENY" },
-          { key: "Content-Security-Policy", value: "frame-ancestors 'none'" },
+          {
+            key: "Content-Security-Policy",
+            value: csp,
+          },
+          { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
+          { key: "Cross-Origin-Resource-Policy", value: "same-origin" },
+          { key: "X-Permitted-Cross-Domain-Policies", value: "none" },
           {
             key: "Permissions-Policy",
             value: "camera=(), microphone=(), geolocation=(), interest-cohort=()",

@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { eq } from "drizzle-orm";
+import { and, eq, inArray, isNull, or } from "drizzle-orm";
 import { z } from "zod";
 import { schema } from "@truelend/db";
 import { getMutationContext } from "./auth";
@@ -24,20 +24,52 @@ const pipelineSchema = z.object({
 // so saving one control must not discard an unsaved change to the other.
 export async function updateLeadPipelineAction(formData: FormData) {
   const { db, ctx, user } = await getMutationContext();
-  if (!user) redirect("/login"); // expired session → explain, don't eat the click
-  const parsed = pipelineSchema.safeParse({
-    leadId: formData.get("leadId"),
-    status: formData.get("status"),
-    assignedTo: formData.get("assignedTo"),
-  });
-  if (!parsed.success) return;
-  const assignedTo =
-    parsed.data.assignedTo && parsed.data.assignedTo.length > 0 ? parsed.data.assignedTo : null;
   try {
-    await db
-      .update(schema.leads)
-      .set({ status: parsed.data.status, assignedTo })
-      .where(eq(schema.leads.id, parsed.data.leadId));
+    if (!user) redirect("/login"); // expired session → explain, don't eat the click
+    const parsed = pipelineSchema.safeParse({
+      leadId: formData.get("leadId"),
+      status: formData.get("status"),
+      assignedTo: formData.get("assignedTo"),
+    });
+    if (!parsed.success) return;
+    const assignedTo =
+      parsed.data.assignedTo && parsed.data.assignedTo.length > 0 ? parsed.data.assignedTo : null;
+    if (assignedTo) {
+      const [staff] = await db
+        .select({ id: schema.user.id })
+        .from(schema.user)
+        .where(
+          and(
+            eq(schema.user.id, assignedTo),
+            inArray(schema.user.role, ["admin", "employee"]),
+            or(isNull(schema.user.banned), eq(schema.user.banned, false)),
+          ),
+        )
+        .limit(1);
+      if (!staff) return;
+    }
+    await db.transaction(async (tx) => {
+      const [lead] = await tx
+        .select({ status: schema.leads.status, assignedTo: schema.leads.assignedTo })
+        .from(schema.leads)
+        .where(eq(schema.leads.id, parsed.data.leadId))
+        .limit(1)
+        .for("update");
+      if (!lead) return;
+      await tx
+        .update(schema.leads)
+        .set({ status: parsed.data.status, assignedTo })
+        .where(eq(schema.leads.id, parsed.data.leadId));
+      await tx.insert(schema.auditLog).values({
+        actorId: user.id,
+        actorEmail: user.email,
+        action: "lead.pipeline_update",
+        entityType: "lead",
+        entityId: parsed.data.leadId,
+        before: lead,
+        after: { status: parsed.data.status, assignedTo },
+      });
+    });
     revalidatePath(`/leads/${parsed.data.leadId}`);
     revalidatePath("/leads");
   } finally {
@@ -52,17 +84,30 @@ const noteSchema = z.object({
 
 export async function addLeadNoteAction(formData: FormData) {
   const { db, ctx, user } = await getMutationContext();
-  if (!user) redirect("/login"); // expired session → explain, don't eat the click
-  const parsed = noteSchema.safeParse({
-    leadId: formData.get("leadId"),
-    body: formData.get("body"),
-  });
-  if (!parsed.success) return;
   try {
-    await db.insert(schema.leadNotes).values({
-      leadId: parsed.data.leadId,
-      authorId: user.id,
-      body: parsed.data.body,
+    if (!user) redirect("/login"); // expired session → explain, don't eat the click
+    const parsed = noteSchema.safeParse({
+      leadId: formData.get("leadId"),
+      body: formData.get("body"),
+    });
+    if (!parsed.success) return;
+    await db.transaction(async (tx) => {
+      const [note] = await tx
+        .insert(schema.leadNotes)
+        .values({
+          leadId: parsed.data.leadId,
+          authorId: user.id,
+          body: parsed.data.body,
+        })
+        .returning({ id: schema.leadNotes.id });
+      await tx.insert(schema.auditLog).values({
+        actorId: user.id,
+        actorEmail: user.email,
+        action: "lead.note_add",
+        entityType: "lead_note",
+        entityId: note?.id,
+        after: { leadId: parsed.data.leadId },
+      });
     });
     revalidatePath(`/leads/${parsed.data.leadId}`);
   } finally {

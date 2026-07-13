@@ -12,15 +12,25 @@ import {
 } from "./lead-form";
 
 export function ContactForm() {
-  const { form, onSubmit, succeeded, rootError, turnstileKey, turnstileReady, setToken } =
-    useLeadForm(zodResolver(contactSchema), {
-      kind: "contact",
-      name: "",
-      phone: "",
-      email: "",
-      message: "",
-      consent: false,
-    });
+  const {
+    form,
+    onSubmit,
+    succeeded,
+    rootError,
+    turnstileKey,
+    turnstileReady,
+    turnstileError,
+    setToken,
+    resetToken,
+    failTurnstile,
+  } = useLeadForm(zodResolver(contactSchema), {
+    kind: "contact",
+    name: "",
+    phone: "",
+    email: "",
+    message: "",
+    consent: false,
+  });
   const { register, formState } = form;
   const err = formState.errors;
 
@@ -86,8 +96,13 @@ export function ContactForm() {
         </p>
       )}
 
-      <TurnstileField resetKey={turnstileKey} onToken={setToken} />
-      <RootError message={rootError} />
+      <TurnstileField
+        resetKey={turnstileKey}
+        onToken={setToken}
+        onExpire={resetToken}
+        onError={failTurnstile}
+      />
+      <RootError message={rootError ?? turnstileError} />
 
       <div className="space-y-2">
         <Button
@@ -98,7 +113,7 @@ export function ContactForm() {
         >
           {formState.isSubmitting ? "Sending…" : "Send Message"}
         </Button>
-        <TurnstilePendingHint show={!turnstileReady} />
+        <TurnstilePendingHint show={!turnstileReady && !turnstileError} />
       </div>
     </form>
   );

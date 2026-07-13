@@ -19,22 +19,48 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm format:check
+      - run: pnpm cf:validate
       - run: pnpm lint
       - run: pnpm typecheck
+      - run: pnpm test
+      - run: pnpm audit --audit-level high
       - run: pnpm build
         env:
           NEXT_TELEMETRY_DISABLED: "1"
 
-  deploy:
+  migrate:
     needs: ci
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    concurrency:
+      group: database-migration
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm db:preflight
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      - run: pnpm db:migrate
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+  deploy:
+    needs: [ci, migrate]
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -48,9 +74,9 @@ jobs:
       group: deploy-${{ matrix.app }}
       cancel-in-progress: false # let an in-flight deploy finish; the next push supersedes after
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version-file: .nvmrc
           cache: pnpm

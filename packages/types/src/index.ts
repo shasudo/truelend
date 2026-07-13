@@ -10,4 +10,5 @@ export interface HealthResponse {
   service: string;
   timestamp: string;
   db: "ok" | "error";
+  turnstile: "ok" | "error";
 }

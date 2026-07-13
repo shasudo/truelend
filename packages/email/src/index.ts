@@ -29,7 +29,7 @@ export type SendResult = { ok: true; skipped?: boolean } | { ok: false; error: s
 // ponytail: logging only. Queue + retry + alerting is the real fix once email
 // delivery becomes load-bearing (password resets, partner decisions).
 function logSkip(context: string): SendResult {
-  console.warn(`[email] skipped ${context} — not configured`);
+  console.warn(JSON.stringify({ event: "email_skipped", context, reason: "not_configured" }));
   return { ok: true, skipped: true };
 }
 
@@ -49,16 +49,18 @@ export async function sendEmail(
         html: opts.html,
         reply_to: opts.replyTo,
       }),
+      signal: AbortSignal.timeout(10_000),
     });
     if (!res.ok) {
-      const error = `Resend ${res.status}: ${await res.text()}`;
-      console.error(`[email] send failed for "${opts.subject}" → ${error}`);
+      const detail = (await res.text()).slice(0, 1_000);
+      const error = `Resend ${res.status}: ${detail}`;
+      console.error(JSON.stringify({ event: "email_send_failed", status: res.status, detail }));
       return { ok: false, error };
     }
     return { ok: true };
   } catch (err) {
     const error = (err as Error).message;
-    console.error(`[email] send threw for "${opts.subject}" → ${error}`);
+    console.error(JSON.stringify({ event: "email_send_error", error }));
     return { ok: false, error };
   }
 }
@@ -139,6 +141,27 @@ export function notifyNewLead(env: EmailEnv, lead: NewLeadInfo): Promise<SendRes
     to: env.TEAM_EMAIL,
     replyTo: lead.email ?? undefined,
     subject: `New lead: ${lead.name ?? "Unknown"} · ${lead.source}`,
+    html,
+  });
+}
+
+/** One escaped summary for a partner CSV import (never one email per row). */
+export function notifyBulkLeadImport(
+  env: EmailEnv,
+  info: { source: string; count: number },
+): Promise<SendResult> {
+  if (!env.EMAIL_FROM || !env.TEAM_EMAIL)
+    return Promise.resolve(logSkip("bulk-lead alert (EMAIL_FROM/TEAM_EMAIL unset)"));
+  const html = emailLayout(
+    heading("Bulk lead upload") +
+      para(
+        `<strong>${esc(info.source)}</strong> imported <strong>${info.count}</strong> new ${info.count === 1 ? "lead" : "leads"}.`,
+      ),
+  );
+  return sendEmail(env.RESEND_API_KEY, {
+    from: env.EMAIL_FROM,
+    to: env.TEAM_EMAIL,
+    subject: `Bulk lead import: ${info.count} ${info.count === 1 ? "lead" : "leads"}`,
     html,
   });
 }

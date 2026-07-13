@@ -9,6 +9,7 @@
     "build": "turbo build",
     "dev": "turbo dev",
     "lint": "turbo lint",
+    "test": "tsx --test tests/**/*.test.ts",
     "typecheck": "turbo typecheck",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
@@ -19,7 +20,9 @@
     "cf-typegen": "pnpm --filter @truelend/website cf-typegen",
     "cf-typegen:admin": "pnpm --filter @truelend/admin cf-typegen",
     "cf-typegen:partners": "pnpm --filter @truelend/partners cf-typegen",
+    "cf:validate": "pnpm --parallel --filter './apps/*' cf:validate",
     "db:generate": "pnpm --filter @truelend/db db:generate",
+    "db:preflight": "pnpm --filter @truelend/db db:preflight",
     "db:migrate": "pnpm --filter @truelend/db db:migrate",
     "db:studio": "pnpm --filter @truelend/db db:studio",
     "prepare": "husky"
@@ -28,6 +31,7 @@
     "husky": "catalog:",
     "lint-staged": "catalog:",
     "prettier": "catalog:",
+    "tsx": "catalog:",
     "turbo": "catalog:",
     "typescript": "catalog:"
   }

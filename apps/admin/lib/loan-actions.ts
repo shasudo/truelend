@@ -2,15 +2,18 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { and, eq, ne } from "drizzle-orm";
+import { and, eq, ne, sql } from "drizzle-orm";
 import { z } from "zod";
 import { schema, type Database, type NewLoanCase } from "@truelend/db";
 import { getMutationContext } from "./auth";
-import { rupeesToPaise } from "@truelend/reference";
+import { banks, products, rupeesToPaise } from "@truelend/reference";
 
 type CaseStatus = (typeof schema.loanCaseStatus.enumValues)[number];
 
 // A loan case's status drives the parent lead's pipeline position.
+// The root db or a transaction handle — recomputeLeadStatus runs inside both.
+type Executor = Database | Parameters<Parameters<Database["transaction"]>[0]>[0];
+
 const leadStatusForCase: Record<CaseStatus, (typeof schema.leadStatus.enumValues)[number]> = {
   logged_in: "logged_in",
   approved: "approved",
@@ -34,7 +37,7 @@ function bestCaseOutcome(statuses: CaseStatus[]): CaseStatus | null {
 // Recompute the parent lead's status from ALL its lender cases. Runs on every
 // case create/update, so editing an old case reflects the true aggregate rather
 // than rewinding or clobbering the lead from a single case.
-async function recomputeLeadStatus(db: Database, leadId: string) {
+async function recomputeLeadStatus(db: Executor, leadId: string) {
   const cases = await db
     .select({ status: schema.loanCases.status })
     .from(schema.loanCases)
@@ -59,13 +62,23 @@ const timestampField: Record<
   disbursed: "disbursedAt",
 };
 
+const optionalAmount = z
+  .string()
+  .trim()
+  .max(24)
+  .optional()
+  .refine((value) => !value || rupeesToPaise(value) !== null, "Enter a valid amount");
+
 const amounts = {
-  requestedAmount: z.string().optional(),
-  sanctionedAmount: z.string().optional(),
-  disbursedAmount: z.string().optional(),
-  revenue: z.string().optional(),
-  payout: z.string().optional(),
+  requestedAmount: optionalAmount,
+  sanctionedAmount: optionalAmount,
+  disbursedAmount: optionalAmount,
+  revenue: optionalAmount,
+  payout: optionalAmount,
 };
+
+const lenderSlugs = banks.map((bank) => bank.slug) as [string, ...string[]];
+const productSlugs = products.map((product) => product.slug) as [string, ...string[]];
 
 function amountPaise(d: Record<string, string | undefined>) {
   return {
@@ -79,21 +92,20 @@ function amountPaise(d: Record<string, string | undefined>) {
 
 const createSchema = z.object({
   leadId: z.string().uuid(),
-  lenderSlug: z.string().min(1),
-  productSlug: z.string().min(1),
+  lenderSlug: z.enum(lenderSlugs),
+  productSlug: z.enum(productSlugs),
   status: z.enum(schema.loanCaseStatus.enumValues),
   ...amounts,
 });
 
 export async function createLoanCaseAction(formData: FormData) {
   const { db, ctx, user } = await getMutationContext();
-  if (!user) redirect("/login"); // expired session → explain, don't eat the click
-  const parsed = createSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) return;
-  const d = parsed.data;
-
   let newId: string | undefined;
   try {
+    if (!user) redirect("/login"); // expired session → explain, don't eat the click
+    const parsed = createSchema.safeParse(Object.fromEntries(formData));
+    if (!parsed.success) return;
+    const d = parsed.data;
     const values: NewLoanCase = {
       leadId: d.leadId,
       lenderSlug: d.lenderSlug,
@@ -103,12 +115,29 @@ export async function createLoanCaseAction(formData: FormData) {
       ...amountPaise(d),
       [timestampField[d.status]]: new Date(),
     };
-    const inserted = await db
-      .insert(schema.loanCases)
-      .values(values)
-      .returning({ id: schema.loanCases.id });
-    newId = inserted[0]?.id;
-    await recomputeLeadStatus(db, d.leadId);
+    // Case insert + parent-lead recompute must land together, or the lead's
+    // pipeline position can disagree with its cases.
+    await db.transaction(async (tx) => {
+      // Serialize all case changes for the same lead so two concurrent writes
+      // cannot each recompute from an incomplete view and leave a stale status.
+      await tx.execute(
+        sql`select 1 from ${schema.leads} where ${schema.leads.id} = ${d.leadId} for update`,
+      );
+      const inserted = await tx
+        .insert(schema.loanCases)
+        .values(values)
+        .returning({ id: schema.loanCases.id });
+      newId = inserted[0]?.id;
+      await recomputeLeadStatus(tx, d.leadId);
+      await tx.insert(schema.auditLog).values({
+        actorId: user.id,
+        actorEmail: user.email,
+        action: "loan_case.create",
+        entityType: "loan_case",
+        entityId: newId,
+        after: values,
+      });
+    });
     revalidatePath(`/leads/${d.leadId}`);
     revalidatePath("/loan-cases");
   } finally {
@@ -119,40 +148,58 @@ export async function createLoanCaseAction(formData: FormData) {
 
 const updateSchema = z.object({
   caseId: z.string().uuid(),
-  lenderSlug: z.string().min(1),
-  productSlug: z.string().min(1),
+  lenderSlug: z.enum(lenderSlugs),
+  productSlug: z.enum(productSlugs),
   status: z.enum(schema.loanCaseStatus.enumValues),
   ...amounts,
 });
 
 export async function updateLoanCaseAction(formData: FormData) {
   const { db, ctx, user } = await getMutationContext();
-  if (!user) redirect("/login"); // expired session → explain, don't eat the click
-  const parsed = updateSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) return;
-  const d = parsed.data;
-
   try {
-    const existing = (
-      await db.select().from(schema.loanCases).where(eq(schema.loanCases.id, d.caseId)).limit(1)
-    )[0];
-    if (!existing) return;
+    if (!user) redirect("/login"); // expired session → explain, don't eat the click
+    const parsed = updateSchema.safeParse(Object.fromEntries(formData));
+    if (!parsed.success) return;
+    const d = parsed.data;
+    let leadId: string | undefined;
 
-    const tsField = timestampField[d.status];
-    const set: Partial<NewLoanCase> = {
-      lenderSlug: d.lenderSlug,
-      productSlug: d.productSlug,
-      status: d.status,
-      ...amountPaise(d),
-    };
-    // Stamp the status timestamp the first time it's reached.
-    if (!existing[tsField]) set[tsField] = new Date();
+    await db.transaction(async (tx) => {
+      const [existing] = await tx
+        .select()
+        .from(schema.loanCases)
+        .where(eq(schema.loanCases.id, d.caseId))
+        .limit(1)
+        .for("update");
+      if (!existing) return;
+      leadId = existing.leadId;
+      await tx.execute(
+        sql`select 1 from ${schema.leads} where ${schema.leads.id} = ${existing.leadId} for update`,
+      );
+      const tsField = timestampField[d.status];
+      const set: Partial<NewLoanCase> = {
+        lenderSlug: d.lenderSlug,
+        productSlug: d.productSlug,
+        status: d.status,
+        ...amountPaise(d),
+      };
+      // Stamp the status timestamp the first time it's reached.
+      if (!existing[tsField]) set[tsField] = new Date();
+      await tx.update(schema.loanCases).set(set).where(eq(schema.loanCases.id, d.caseId));
+      await recomputeLeadStatus(tx, existing.leadId);
+      await tx.insert(schema.auditLog).values({
+        actorId: user.id,
+        actorEmail: user.email,
+        action: "loan_case.update",
+        entityType: "loan_case",
+        entityId: d.caseId,
+        before: existing,
+        after: set,
+      });
+    });
 
-    await db.update(schema.loanCases).set(set).where(eq(schema.loanCases.id, d.caseId));
-    await recomputeLeadStatus(db, existing.leadId);
-
+    if (!leadId) return;
     revalidatePath(`/loan-cases/${d.caseId}`);
-    revalidatePath(`/leads/${existing.leadId}`);
+    revalidatePath(`/leads/${leadId}`);
     revalidatePath("/loan-cases");
   } finally {
     ctx.waitUntil(db.$client.end());

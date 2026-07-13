@@ -23,7 +23,7 @@ export function PartnerLeadForm({ variant }: { variant: "business" | "referral" 
           htmlFor="name"
           required
         >
-          <Input id="name" name="name" autoComplete="off" required />
+          <Input id="name" name="name" autoComplete="off" maxLength={120} required />
         </Field>
         <Field label="Mobile number" htmlFor="phone" required>
           <Input
@@ -36,10 +36,10 @@ export function PartnerLeadForm({ variant }: { variant: "business" | "referral" 
           />
         </Field>
         <Field label="Email" htmlFor="email">
-          <Input id="email" name="email" type="email" autoComplete="off" />
+          <Input id="email" name="email" type="email" autoComplete="off" maxLength={254} />
         </Field>
         <Field label="City" htmlFor="city">
-          <Input id="city" name="city" autoComplete="off" />
+          <Input id="city" name="city" autoComplete="off" maxLength={100} />
         </Field>
       </div>
       <Field label="Product they need" htmlFor="productSlug">
@@ -56,9 +56,23 @@ export function PartnerLeadForm({ variant }: { variant: "business" | "referral" 
         <Textarea
           id="message"
           name="message"
+          maxLength={2000}
           placeholder={`Loan amount, timelines, why the ${who} is a good fit…`}
         />
       </Field>
+
+      <label className="flex items-start gap-3 text-sm leading-relaxed text-navy-600">
+        <input
+          type="checkbox"
+          name="consent"
+          required
+          className="mt-1 h-4 w-4 shrink-0 accent-navy-800"
+        />
+        <span>
+          I confirm that this {who} authorized me to share these details with TrueLend and agreed to
+          be contacted about lending products.
+        </span>
+      </label>
 
       {state.error && (
         <p

@@ -2,8 +2,9 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "truelend-partners",
   "main": ".open-next/worker.js",
-  "compatibility_date": "2025-04-01",
+  "compatibility_date": "2026-07-13",
   "compatibility_flags": ["nodejs_compat"],
+  "upload_source_maps": true,
   // Custom domain — wrangler provisions the DNS record + edge cert on deploy.
   "routes": [{ "pattern": "partner.truelend.in", "custom_domain": true }],
   "assets": {
@@ -12,7 +13,27 @@
   },
   "observability": {
     "enabled": true,
+    "logs": { "enabled": true, "invocation_logs": true, "head_sampling_rate": 1 },
+    "traces": { "enabled": true, "head_sampling_rate": 0.01 },
   },
+  "ratelimits": [
+    {
+      "name": "AUTH_RATE_LIMITER",
+      // Shared with admin so the same credential cannot bypass the limit by host.
+      "namespace_id": "1001",
+      "simple": { "limit": 10, "period": 60 },
+    },
+    {
+      "name": "PARTNER_WRITE_RATE_LIMITER",
+      "namespace_id": "1003",
+      "simple": { "limit": 20, "period": 60 },
+    },
+    {
+      "name": "CSV_IMPORT_RATE_LIMITER",
+      "namespace_id": "1004",
+      "simple": { "limit": 2, "period": 60 },
+    },
+  ],
   "vars": {
     // Overridden to http://localhost:3002 in .dev.vars for local dev.
     "BETTER_AUTH_URL": "https://partner.truelend.in",

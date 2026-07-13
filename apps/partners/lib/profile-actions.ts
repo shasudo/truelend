@@ -12,7 +12,7 @@ export type ProfileState = { ok?: boolean; error?: string };
 // Same 10-digit Indian mobile rule as registration/leads (can't import the const
 // from a "use server" module, which may only export async functions).
 const profileSchema = z.object({
-  name: z.string().trim().min(2, "Please enter your name"),
+  name: z.string().trim().min(2, "Please enter your name").max(120),
   phone: z
     .string()
     .trim()
@@ -26,20 +26,20 @@ export async function updateProfileAction(
   formData: FormData,
 ): Promise<ProfileState> {
   const { db, ctx, auth } = getAuthContext();
-  const session = await auth.api.getSession({ headers: await headers() });
-  if (!session) return { error: "Please sign in again." };
-
-  const parsed = profileSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success)
-    return { error: parsed.error.issues[0]?.message ?? "Please check the fields." };
-  const d = parsed.data;
-
   try {
-    await db.update(schema.user).set({ name: d.name }).where(eq(schema.user.id, session.user.id));
-    await db
-      .update(schema.partners)
-      .set({ phone: d.phone })
-      .where(eq(schema.partners.userId, session.user.id));
+    const session = await auth.api.getSession({ headers: await headers() });
+    if (!session) return { error: "Please sign in again." };
+    const parsed = profileSchema.safeParse(Object.fromEntries(formData));
+    if (!parsed.success)
+      return { error: parsed.error.issues[0]?.message ?? "Please check the fields." };
+    const d = parsed.data;
+    await db.transaction(async (tx) => {
+      await tx.update(schema.user).set({ name: d.name }).where(eq(schema.user.id, session.user.id));
+      await tx
+        .update(schema.partners)
+        .set({ phone: d.phone })
+        .where(eq(schema.partners.userId, session.user.id));
+    });
     revalidatePath("/profile");
     revalidatePath("/dashboard");
     return { ok: true };

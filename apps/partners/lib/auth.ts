@@ -64,8 +64,13 @@ export async function requirePartner(): Promise<PartnerContext> {
 /** Server actions: db + ctx + current user (null if unauthenticated). */
 export async function getMutationContext() {
   const { db, ctx } = getAuthContext();
-  const session = await getSession();
-  return { db, ctx, user: session?.user ?? null };
+  try {
+    const session = await getSession();
+    return { db, ctx, user: session?.user ?? null };
+  } catch (error) {
+    ctx.waitUntil(db.$client.end());
+    throw error;
+  }
 }
 
 /** Route handlers (e.g. upload): returns the partner, or a 401 Response. */
@@ -73,14 +78,25 @@ export async function requirePartnerApi(): Promise<
   { partner: Partner; db: Database; ctx: ExecutionContext; env: CloudflareEnv } | Response
 > {
   const { db, ctx, env } = getAuthContext();
-  const session = await getSession();
-  if (!session) return new Response("Unauthorized", { status: 401 });
-  const rows = await db
-    .select()
-    .from(schema.partners)
-    .where(eq(schema.partners.userId, session.user.id))
-    .limit(1);
-  const partner = rows[0];
-  if (!partner) return new Response("No partner profile", { status: 403 });
-  return { partner, db, ctx, env };
+  try {
+    const session = await getSession();
+    if (!session) {
+      ctx.waitUntil(db.$client.end());
+      return new Response("Unauthorized", { status: 401 });
+    }
+    const rows = await db
+      .select()
+      .from(schema.partners)
+      .where(eq(schema.partners.userId, session.user.id))
+      .limit(1);
+    const partner = rows[0];
+    if (!partner) {
+      ctx.waitUntil(db.$client.end());
+      return new Response("No partner profile", { status: 403 });
+    }
+    return { partner, db, ctx, env };
+  } catch (error) {
+    ctx.waitUntil(db.$client.end());
+    throw error;
+  }
 }

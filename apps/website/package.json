@@ -10,6 +10,7 @@
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
     "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
     "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
+    "cf:validate": "wrangler types /tmp/truelend-website-env.d.ts --env-interface CloudflareEnv --include-runtime false --env-file /dev/null",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit"
   },
@@ -26,9 +27,7 @@
     "@truelend/ui": "workspace:*",
     "gray-matter": "catalog:",
     "lucide-react": "catalog:",
-    "motion": "catalog:",
     "next": "catalog:",
-    "radix-ui": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
     "react-hook-form": "catalog:",

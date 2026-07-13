@@ -17,17 +17,27 @@ export function EnquiryForm() {
   const requested = useSearchParams().get("product") ?? "";
   const defaultProduct = productBySlug(requested)?.slug ?? "";
 
-  const { form, onSubmit, succeeded, rootError, turnstileKey, turnstileReady, setToken } =
-    useLeadForm(zodResolver(enquirySchema), {
-      kind: "enquiry",
-      name: "",
-      phone: "",
-      email: "",
-      city: "",
-      productSlug: defaultProduct,
-      message: "",
-      consent: false,
-    });
+  const {
+    form,
+    onSubmit,
+    succeeded,
+    rootError,
+    turnstileKey,
+    turnstileReady,
+    turnstileError,
+    setToken,
+    resetToken,
+    failTurnstile,
+  } = useLeadForm(zodResolver(enquirySchema), {
+    kind: "enquiry",
+    name: "",
+    phone: "",
+    email: "",
+    city: "",
+    productSlug: defaultProduct,
+    message: "",
+    consent: false,
+  });
   const { register, formState } = form;
   const err = formState.errors;
 
@@ -115,8 +125,13 @@ export function EnquiryForm() {
         </p>
       )}
 
-      <TurnstileField resetKey={turnstileKey} onToken={setToken} />
-      <RootError message={rootError} />
+      <TurnstileField
+        resetKey={turnstileKey}
+        onToken={setToken}
+        onExpire={resetToken}
+        onError={failTurnstile}
+      />
+      <RootError message={rootError ?? turnstileError} />
 
       <div className="space-y-2">
         <Button
@@ -127,7 +142,7 @@ export function EnquiryForm() {
         >
           {formState.isSubmitting ? "Submitting…" : "Request a Callback"}
         </Button>
-        <TurnstilePendingHint show={!turnstileReady} />
+        <TurnstilePendingHint show={!turnstileReady && !turnstileError} />
       </div>
     </form>
   );

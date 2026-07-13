@@ -49,6 +49,19 @@ export function CsvLeadUpload() {
         className="block w-full text-sm text-navy-700 file:mr-4 file:cursor-pointer file:rounded-lg file:border file:border-navy-800/20 file:bg-white file:px-4 file:py-2 file:text-sm file:font-medium file:text-navy-800 hover:file:border-navy-800/50"
       />
 
+      <label className="flex items-start gap-3 text-sm leading-relaxed text-navy-600">
+        <input
+          type="checkbox"
+          name="consent"
+          required
+          className="mt-1 h-4 w-4 shrink-0 accent-navy-800"
+        />
+        <span>
+          I confirm that every person in this file authorized sharing their details with TrueLend
+          and agreed to be contacted about lending products.
+        </span>
+      </label>
+
       {state.error && (
         <p
           role="alert"

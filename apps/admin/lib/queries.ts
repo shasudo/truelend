@@ -1,5 +1,5 @@
 import "server-only";
-import { and, or, eq, ilike, isNull, desc, count, type SQL } from "drizzle-orm";
+import { and, or, eq, ilike, isNull, desc, count, inArray, type SQL } from "drizzle-orm";
 import { schema, type Database, type Lead } from "@truelend/db";
 
 export const PAGE_SIZE = 20;
@@ -45,7 +45,8 @@ function leadWhere(f: LeadFilters): SQL | undefined {
 export async function listLeads(db: Database, f: LeadFilters) {
   const where = leadWhere(f);
 
-  const totalRows = await db.select({ total: count() }).from(schema.leads).where(where);
+  const totalPromise = db.select({ total: count() }).from(schema.leads).where(where);
+  const totalRows = await totalPromise;
   const total = totalRows[0]?.total ?? 0;
 
   // Clamp the requested page so paging past the last page can't dead-end on a
@@ -78,33 +79,32 @@ export async function getLead(db: Database, id: string) {
   const [lead] = await db.select().from(schema.leads).where(eq(schema.leads.id, id)).limit(1);
   if (!lead) return null;
 
-  const notes = await db
-    .select({ note: schema.leadNotes, authorName: schema.user.name })
-    .from(schema.leadNotes)
-    .leftJoin(schema.user, eq(schema.leadNotes.authorId, schema.user.id))
-    .where(eq(schema.leadNotes.leadId, id))
-    .orderBy(desc(schema.leadNotes.createdAt));
+  const [notes, cases] = await Promise.all([
+    db
+      .select({ note: schema.leadNotes, authorName: schema.user.name })
+      .from(schema.leadNotes)
+      .leftJoin(schema.user, eq(schema.leadNotes.authorId, schema.user.id))
+      .where(eq(schema.leadNotes.leadId, id))
+      .orderBy(desc(schema.leadNotes.createdAt)),
+    db
+      .select()
+      .from(schema.loanCases)
+      .where(eq(schema.loanCases.leadId, id))
+      .orderBy(desc(schema.loanCases.createdAt)),
+  ]);
 
-  const cases = await db
-    .select()
-    .from(schema.loanCases)
-    .where(eq(schema.loanCases.leadId, id))
-    .orderBy(desc(schema.loanCases.createdAt));
-
-  const assignee = lead.assignedTo
-    ? (((await db
-        .select({ name: schema.user.name })
-        .from(schema.user)
-        .where(eq(schema.user.id, lead.assignedTo))
-        .limit(1)) ?? [])[0]?.name ?? null)
-    : null;
-
-  return { lead, notes, cases, assignee };
+  return { lead, notes, cases };
 }
 
 export async function listEmployees(db: Database) {
   return db
     .select({ id: schema.user.id, name: schema.user.name, role: schema.user.role })
     .from(schema.user)
+    .where(
+      and(
+        inArray(schema.user.role, ["admin", "employee"]),
+        or(isNull(schema.user.banned), eq(schema.user.banned, false)),
+      ),
+    )
     .orderBy(schema.user.name);
 }

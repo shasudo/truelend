@@ -1,41 +1,8 @@
-"use client";
-
-import {
-  ResponsiveContainer,
-  AreaChart,
-  Area,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  CartesianGrid,
-} from "recharts";
 import type { TimePoint, NamedCount } from "@/lib/mis-queries";
 
-// Single brand hue — these are single-series magnitude/trend charts, so no
-// categorical palette (and no CVD concern). Navy mark on white surface.
-const NAVY = "#14204a";
-const GRID = "rgba(20,32,74,0.08)";
-const AXIS = "#6d7dac";
-
-const tooltip = {
-  contentStyle: {
-    background: "#fff",
-    border: "1px solid rgba(20,32,74,0.12)",
-    borderRadius: 12,
-    fontSize: 12,
-    boxShadow: "0 8px 30px -12px rgba(20,32,74,0.25)",
-  },
-  labelStyle: { color: "#14204a", fontWeight: 600 },
-  itemStyle: { color: "#46578f" },
-} as const;
-
-const axisProps = {
-  tick: { fill: AXIS, fontSize: 12 },
-  axisLine: false,
-  tickLine: false,
-} as const;
+const WIDTH = 720;
+const HEIGHT = 220;
+const PLOT = { left: 36, right: 12, top: 12, bottom: 32 };
 
 function Empty({ label }: { label: string }) {
   return (
@@ -43,50 +10,121 @@ function Empty({ label }: { label: string }) {
   );
 }
 
-const shortDay = (d: string) =>
-  new Date(`${d}T00:00:00`).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+const shortDay = (day: string) =>
+  new Date(`${day}T00:00:00+05:30`).toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "short",
+    timeZone: "Asia/Kolkata",
+  });
 
+/** Server-rendered SVG keeps the trend visual without shipping a chart runtime. */
 export function TrendChart({ data }: { data: TimePoint[] }) {
   if (data.length === 0) return <Empty label="No leads in the last 30 days" />;
+  const plotWidth = WIDTH - PLOT.left - PLOT.right;
+  const plotHeight = HEIGHT - PLOT.top - PLOT.bottom;
+  const max = Math.max(1, ...data.map((point) => point.count));
+  const points = data.map((point, index) => ({
+    ...point,
+    x: PLOT.left + (data.length === 1 ? plotWidth / 2 : (index / (data.length - 1)) * plotWidth),
+    y: PLOT.top + plotHeight - (point.count / max) * plotHeight,
+  }));
+  const line = points.map((point) => `${point.x},${point.y}`).join(" ");
+  const area = `M ${PLOT.left} ${PLOT.top + plotHeight} L ${line.replaceAll(" ", " L ")} L ${PLOT.left + plotWidth} ${PLOT.top + plotHeight} Z`;
+  const labels = [...new Set([0, Math.floor((data.length - 1) / 2), data.length - 1])];
+
   return (
-    <ResponsiveContainer width="100%" height={220}>
-      <AreaChart data={data} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
+    <figure>
+      <svg
+        viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
+        className="h-[220px] w-full"
+        role="img"
+        aria-labelledby="lead-trend-title lead-trend-desc"
+      >
+        <title id="lead-trend-title">Leads over the last 30 days</title>
+        <desc id="lead-trend-desc">Daily lead counts. The highest daily count is {max}.</desc>
         <defs>
-          <linearGradient id="trendFill" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={NAVY} stopOpacity={0.18} />
-            <stop offset="100%" stopColor={NAVY} stopOpacity={0} />
+          <linearGradient id="lead-trend-fill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#14204a" stopOpacity="0.18" />
+            <stop offset="100%" stopColor="#14204a" stopOpacity="0" />
           </linearGradient>
         </defs>
-        <CartesianGrid stroke={GRID} vertical={false} />
-        <XAxis dataKey="day" tickFormatter={shortDay} {...axisProps} minTickGap={24} />
-        <YAxis allowDecimals={false} width={32} {...axisProps} />
-        <Tooltip {...tooltip} labelFormatter={(d) => shortDay(String(d))} />
-        <Area
-          type="monotone"
-          dataKey="count"
-          name="Leads"
-          stroke={NAVY}
-          strokeWidth={2}
-          fill="url(#trendFill)"
-          dot={false}
-          activeDot={{ r: 4, fill: NAVY }}
+        {[0, 0.5, 1].map((ratio) => {
+          const y = PLOT.top + plotHeight * ratio;
+          return (
+            <g key={ratio}>
+              <line
+                x1={PLOT.left}
+                x2={PLOT.left + plotWidth}
+                y1={y}
+                y2={y}
+                stroke="rgba(20,32,74,0.08)"
+              />
+              <text
+                x={PLOT.left - 8}
+                y={y + 4}
+                textAnchor="end"
+                className="fill-navy-400 text-[11px]"
+              >
+                {Math.round(max * (1 - ratio))}
+              </text>
+            </g>
+          );
+        })}
+        <path d={area} fill="url(#lead-trend-fill)" />
+        <polyline
+          points={line}
+          fill="none"
+          stroke="#14204a"
+          strokeWidth="2.5"
+          strokeLinejoin="round"
+          strokeLinecap="round"
         />
-      </AreaChart>
-    </ResponsiveContainer>
+        {labels.map((index) => {
+          const point = points[index];
+          if (!point) return null;
+          return (
+            <text
+              key={point.day}
+              x={point.x}
+              y={HEIGHT - 8}
+              textAnchor={index === 0 ? "start" : index === data.length - 1 ? "end" : "middle"}
+              className="fill-navy-400 text-[11px]"
+            >
+              {shortDay(point.day)}
+            </text>
+          );
+        })}
+      </svg>
+      <figcaption className="sr-only">
+        {data.map((point) => `${shortDay(point.day)}: ${point.count} leads`).join("; ")}
+      </figcaption>
+    </figure>
   );
 }
 
+/** Exact labels and values stay visible and screen-reader friendly. */
 export function CategoryBars({ data }: { data: NamedCount[] }) {
   if (data.length === 0) return <Empty label="No data yet" />;
+  const max = Math.max(1, ...data.map((item) => item.count));
   return (
-    <ResponsiveContainer width="100%" height={Math.max(160, data.length * 40)}>
-      <BarChart data={data} layout="vertical" margin={{ top: 4, right: 16, left: 8, bottom: 4 }}>
-        <CartesianGrid stroke={GRID} horizontal={false} />
-        <XAxis type="number" allowDecimals={false} {...axisProps} />
-        <YAxis type="category" dataKey="name" width={110} {...axisProps} />
-        <Tooltip {...tooltip} cursor={{ fill: "rgba(20,32,74,0.04)" }} />
-        <Bar dataKey="count" name="Leads" fill={NAVY} radius={[0, 4, 4, 0]} barSize={16} />
-      </BarChart>
-    </ResponsiveContainer>
+    <ul className="space-y-3" aria-label="Lead counts">
+      {data.map((item) => (
+        <li
+          key={item.name}
+          className="grid grid-cols-[minmax(7rem,1fr)_minmax(8rem,2fr)_3rem] items-center gap-3 text-sm"
+        >
+          <span className="truncate text-navy-600" title={item.name}>
+            {item.name}
+          </span>
+          <span className="h-4 overflow-hidden rounded-r bg-navy-800/[0.06]">
+            <span
+              className="block h-full min-w-0.5 rounded-r bg-navy-800"
+              style={{ width: `${(item.count / max) * 100}%` }}
+            />
+          </span>
+          <span className="text-right tabular-nums font-medium text-navy-800">{item.count}</span>
+        </li>
+      ))}
+    </ul>
   );
 }

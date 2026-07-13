@@ -8,6 +8,7 @@
   },
   "scripts": {
     "db:generate": "drizzle-kit generate",
+    "db:preflight": "tsx scripts/migration-preflight.ts",
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
     "lint": "eslint .",

@@ -1,6 +1,6 @@
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { createDb } from "@truelend/db";
-import { createAuth } from "@truelend/auth";
+import { allowSensitiveAuthRequest, createAuth } from "@truelend/auth";
 import { authOptions } from "@/lib/auth";
 
 // Per-request auth instance (workerd forbids cross-request I/O reuse); this
@@ -8,6 +8,12 @@ import { authOptions } from "@/lib/auth";
 // authOptions so the reset-password email sender is wired here too.
 async function handler(req: Request) {
   const { env, ctx } = getCloudflareContext();
+  if (!(await allowSensitiveAuthRequest(req, env.AUTH_RATE_LIMITER))) {
+    return Response.json(
+      { error: "Too many attempts. Please wait a minute and try again." },
+      { status: 429, headers: { "retry-after": "60" } },
+    );
+  }
   const db = createDb(env.HYPERDRIVE.connectionString);
   const auth = createAuth(db, authOptions(env));
   try {

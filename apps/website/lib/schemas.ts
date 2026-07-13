@@ -9,14 +9,14 @@ const phone = z
   .transform((s) => s.replace(/[\s-]/g, ""))
   .pipe(z.string().regex(/^[6-9]\d{9}$/, "Enter a valid 10-digit mobile number"));
 
-const optionalEmail = z.email("Enter a valid email address").or(z.literal("")).optional();
+const optionalEmail = z.email("Enter a valid email address").max(254).or(z.literal("")).optional();
 
 const consent = z.boolean().refine((v) => v === true, "Please accept to proceed");
 
 // Shared by every kind; UTM fields are hidden inputs filled client-side.
 const base = {
   consent,
-  turnstileToken: z.string().optional(),
+  turnstileToken: z.string().max(2048).optional(),
   utmSource: z.string().max(100).optional(),
   utmMedium: z.string().max(100).optional(),
   utmCampaign: z.string().max(100).optional(),
@@ -54,7 +54,7 @@ export const contactSchema = z.object({
 
 export const cibilNotifySchema = z.object({
   kind: z.literal("cibil_notify"),
-  email: z.email("Enter a valid email address"),
+  email: z.email("Enter a valid email address").max(254),
   ...base,
 });
 

@@ -3,6 +3,56 @@
 Living checklist. Tick items off as they land; add new ones with enough
 context to pick up cold. (MoM scope tracked here without dates, per decision.)
 
+## Engineering audit (2026-07-13)
+
+The complete monorepo was reviewed across application code, database integrity,
+authentication/authorization, uploads, email, browser UX, accessibility,
+Cloudflare configuration, dependencies, and CI/CD.
+
+- [x] **Data integrity and concurrency** — serialized lead/loan-case updates,
+      atomic partner payouts, state-locked KYC review/upload flows, safe-integer
+      money validation, stronger foreign-key indexes/uniques/check constraints,
+      and append-only mutation audit logging.
+- [x] **Security hardening** — staff/partner role boundaries, DB-authorized KYC
+      downloads, file signature/type/size validation, full security headers/CSP,
+      session revocation on password changes, explicit auth limits, and
+      Cloudflare rate-limit bindings for public leads, auth, KYC, partner writes,
+      and CSV imports.
+- [x] **Consent and abuse prevention** — required partner/public consent with
+      timestamp/source/version provenance, stronger Turnstile validation and
+      failure states, idempotency, request timeouts, hostname checking, and
+      fail-closed production health reporting when the Turnstile key pair is
+      incomplete.
+- [x] **Performance/accessibility** — removed Motion and Recharts, replaced
+      them with a small IntersectionObserver reveal and accessible server-rendered
+      charts, replaced the website mobile menu dependency with a native dialog,
+      and verified the core mobile menu, labels, buttons, and console locally.
+      First-load JS fell from ~221 kB to ~182 kB on animated public pages and
+      from ~293 kB to ~181 kB on the admin overview.
+- [x] **Release engineering** — pinned GitHub Actions by commit, added format,
+      Cloudflare config, tests, audit, and migration gates, refreshed Wrangler
+      types/config, enabled source maps/observability, and verified all three
+      Next.js/OpenNext builds plus Wrangler dry-runs.
+- [x] **Regression coverage** — added automated money-safety, KYC immutability,
+      and approval-completeness tests. Formatting, lint, forced typechecking,
+      dependency audit, schema drift check, and production builds all pass.
+- [ ] **Add GitHub `DATABASE_URL` secret and apply migrations 0005–0008** — CI
+      now runs migrations before any Worker deploy. Rotate the Neon password
+      first, store the new direct connection URL as the repository secret, then
+      let the migration job complete before deploying these code changes.
+- [ ] **Post-deploy production verification** — exercise public forms,
+      registration/auth/password reset, KYC replace/submit/review/download,
+      partner lead/CSV submission, loan cases, payouts, and the health endpoint
+      against the migrated production database. Capture live Web Vitals after
+      deployment; this audit had browser/console checks but no live DevTools
+      performance-trace capability.
+- [ ] **Optional deeper KYC controls** — add malware scanning and application-
+      layer encryption/key rotation if the legal/security model requires them;
+      both need external infrastructure and operating policy, not only code.
+- [ ] **Durable email delivery** — current sends are bounded and failure-logged;
+      add a queue/outbox, retry policy, dead-letter handling, and alerting if
+      email must be guaranteed across provider or network failures.
+
 ## UX / workflow audit (2026-07-13)
 
 Full end-to-end review (52 confirmed findings). **High-severity code fixes done:**
@@ -61,9 +111,10 @@ Full end-to-end review (52 confirmed findings). **High-severity code fixes done:
 - [ ] **Rotate the Neon password** — the connection string was shared in chat;
       reset it in the Neon dashboard, then update both `.env` files and
       `pnpm exec wrangler hyperdrive update` with the new string.
-- [x] **Apply DB migration** — migration 0000 applied to Neon; insert/select
-      round-trip verified; workerd preview health reports `db: ok` through the
-      Hyperdrive binding.
+- [x] **Initial DB migrations** — migrations through the previously deployed
+      baseline are applied to Neon; insert/select round-trip verified; workerd
+      preview health reports `db: ok` through the Hyperdrive binding. New audit
+      migrations 0005–0008 are tracked separately above and are not yet applied.
 - [x] **First production deploy** — live at
       https://truelend-website.truelend.workers.dev (workers.dev subdomain
       `truelend` registered account-wide). Health reports `db: ok` through
@@ -118,8 +169,9 @@ Full end-to-end review (52 confirmed findings). **High-severity code fixes done:
       Now one click: Team page → the user's **Password** button generates a
       share-once temp password (better-auth `setUserPassword`). Do this for
       admin@truelend.in.
-- [ ] **Visual chart check** — the recharts charts render client-side; open the
-      deployed overview in a browser and eyeball the trend/bars for layout.
+- [~] **Visual chart check** — Recharts was replaced with accessible
+  server-rendered SVG/CSS charts and checked locally. Eyeball the deployed
+  overview once more after the next production release.
 - [ ] **Website ↔ reference sync** — `packages/reference` now holds canonical
       product/bank slugs+names; `apps/website/content/{products,banks}.ts` still
       duplicate them (richer data). Have the website consume `@truelend/reference`
@@ -149,8 +201,10 @@ Full end-to-end review (52 confirmed findings). **High-severity code fixes done:
 - [~] **CSV column mapping UX** — template **Download** button added (fixed
   columns name/phone/email/city/product/message with a valid sample). A
   full arbitrary-export column-mapping step is still open if ever needed.
-- [x] **Orphaned R2 cleanup** — re-uploading a KYC doc now supersedes the prior
-      row and deletes its R2 object (best-effort via waitUntil). One doc per type.
+- [x] **Orphaned R2 cleanup** — upload + row replacement is now state-locked and
+      compensating: a failed DB write deletes the newly uploaded object, while a
+      successful replacement deletes every superseded legacy object. A database
+      unique constraint enforces one document per partner/type.
 - [ ] **Partner training content** — /resources is placeholder cards; real
       decks/videos/collateral from TrueLend.
 
@@ -179,7 +233,9 @@ runtime — use a null-guard WHERE (`where (${s}::text is null or col = ${s})`).
   Worker, sharing `packages/ui`, `packages/db`, `packages/types`.
 - All shared dependency versions live in the `catalog:` of `pnpm-workspace.yaml`.
 - **Push to `main` = deploy to prod.** CI (`.github/workflows/ci.yml`) runs
-  format:check → lint → typecheck → build, then a parallel matrix deploys all
-  three Workers. Needs repo secrets `CLOUDFLARE_API_TOKEN` +
-  `CLOUDFLARE_ACCOUNT_ID`. A pre-commit hook (husky + lint-staged) formats
-  staged files with prettier.
+  format:check → Cloudflare validation → lint → typecheck → tests → dependency
+  audit → build → database migration, then a parallel matrix deploys all three
+  Workers. Needs repo secrets `CLOUDFLARE_API_TOKEN`,
+  `CLOUDFLARE_ACCOUNT_ID`, and `DATABASE_URL`; website public build variables
+  are described in the workflow. A pre-commit hook (husky + lint-staged)
+  formats staged files with prettier.

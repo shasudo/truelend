@@ -25,7 +25,8 @@ export function rupeesToPaise(input: string | null | undefined): number | null {
   if (trimmed === "") return null;
   const rupees = Number(trimmed);
   if (!Number.isFinite(rupees) || rupees < 0) return null;
-  return Math.round(rupees * 100);
+  const paise = Math.round(rupees * 100);
+  return Number.isSafeInteger(paise) ? paise : null;
 }
 
 /** Integer paise → a plain rupees string for a number input default ("" if null). */

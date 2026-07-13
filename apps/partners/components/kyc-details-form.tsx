@@ -28,6 +28,7 @@ export function KycDetailsForm({
               defaultValue={partner.pan ?? ""}
               placeholder="ABCDE1234F"
               autoCapitalize="characters"
+              maxLength={10}
               className="uppercase"
               required
             />
@@ -40,6 +41,7 @@ export function KycDetailsForm({
                 defaultValue={partner.gst ?? ""}
                 placeholder="22ABCDE1234F1Z5"
                 autoCapitalize="characters"
+                maxLength={15}
                 className="uppercase"
               />
             </Field>
@@ -53,6 +55,7 @@ export function KycDetailsForm({
             defaultValue={partner.address ?? ""}
             placeholder="House / office, street, city, state, PIN"
             className="min-h-20"
+            maxLength={500}
             required
           />
         </Field>
@@ -67,6 +70,7 @@ export function KycDetailsForm({
                 id="accountHolder"
                 name="accountHolder"
                 defaultValue={partner.accountHolder ?? ""}
+                maxLength={160}
                 required
               />
             </Field>
@@ -75,6 +79,8 @@ export function KycDetailsForm({
                 id="accountNumber"
                 name="accountNumber"
                 inputMode="numeric"
+                minLength={9}
+                maxLength={18}
                 defaultValue={partner.accountNumber ?? ""}
                 required
               />
@@ -86,6 +92,7 @@ export function KycDetailsForm({
                 defaultValue={partner.ifsc ?? ""}
                 placeholder="HDFC0001234"
                 autoCapitalize="characters"
+                maxLength={11}
                 className="uppercase"
                 required
               />

@@ -13,16 +13,26 @@ import {
 } from "./lead-form";
 
 export function ReferralForm() {
-  const { form, onSubmit, succeeded, rootError, turnstileKey, turnstileReady, setToken } =
-    useLeadForm(zodResolver(referralSchema), {
-      kind: "referral",
-      referrerName: "",
-      referrerPhone: "",
-      name: "",
-      phone: "",
-      productSlug: "",
-      consent: false,
-    });
+  const {
+    form,
+    onSubmit,
+    succeeded,
+    rootError,
+    turnstileKey,
+    turnstileReady,
+    turnstileError,
+    setToken,
+    resetToken,
+    failTurnstile,
+  } = useLeadForm(zodResolver(referralSchema), {
+    kind: "referral",
+    referrerName: "",
+    referrerPhone: "",
+    name: "",
+    phone: "",
+    productSlug: "",
+    consent: false,
+  });
   const { register, formState } = form;
   const err = formState.errors;
 
@@ -124,8 +134,13 @@ export function ReferralForm() {
         </p>
       )}
 
-      <TurnstileField resetKey={turnstileKey} onToken={setToken} />
-      <RootError message={rootError} />
+      <TurnstileField
+        resetKey={turnstileKey}
+        onToken={setToken}
+        onExpire={resetToken}
+        onError={failTurnstile}
+      />
+      <RootError message={rootError ?? turnstileError} />
 
       <div className="space-y-2">
         <Button
@@ -136,7 +151,7 @@ export function ReferralForm() {
         >
           {formState.isSubmitting ? "Submitting…" : "Submit Referral"}
         </Button>
-        <TurnstilePendingHint show={!turnstileReady} />
+        <TurnstilePendingHint show={!turnstileReady && !turnstileError} />
       </div>
     </form>
   );

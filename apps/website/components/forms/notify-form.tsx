@@ -12,12 +12,22 @@ import {
 } from "./lead-form";
 
 export function NotifyForm() {
-  const { form, onSubmit, succeeded, rootError, turnstileKey, turnstileReady, setToken } =
-    useLeadForm(zodResolver(cibilNotifySchema), {
-      kind: "cibil_notify",
-      email: "",
-      consent: false,
-    });
+  const {
+    form,
+    onSubmit,
+    succeeded,
+    rootError,
+    turnstileKey,
+    turnstileReady,
+    turnstileError,
+    setToken,
+    resetToken,
+    failTurnstile,
+  } = useLeadForm(zodResolver(cibilNotifySchema), {
+    kind: "cibil_notify",
+    email: "",
+    consent: false,
+  });
   const { register, formState } = form;
   const err = formState.errors;
 
@@ -62,8 +72,6 @@ export function NotifyForm() {
           {formState.isSubmitting ? "Adding…" : "Notify Me"}
         </Button>
       </div>
-      <TurnstilePendingHint show={!turnstileReady} />
-
       <label className="flex gap-3 text-sm leading-relaxed text-navy-600">
         <Checkbox
           aria-invalid={!!err.consent}
@@ -78,8 +86,14 @@ export function NotifyForm() {
         </p>
       )}
 
-      <TurnstileField resetKey={turnstileKey} onToken={setToken} />
-      <RootError message={rootError} />
+      <TurnstileField
+        resetKey={turnstileKey}
+        onToken={setToken}
+        onExpire={resetToken}
+        onError={failTurnstile}
+      />
+      <TurnstilePendingHint show={!turnstileReady && !turnstileError} />
+      <RootError message={rootError ?? turnstileError} />
     </form>
   );
 }

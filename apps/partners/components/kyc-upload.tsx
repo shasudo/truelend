@@ -102,7 +102,9 @@ function DocRow({
             {!doc.required && <span className="ml-2 text-xs text-navy-400">Optional</span>}
           </p>
           {error ? (
-            <p className="text-xs text-red-600">{error}</p>
+            <p role="alert" className="text-xs text-red-600">
+              {error}
+            </p>
           ) : (
             <p className="text-xs text-navy-400">{done ? "Uploaded" : "Not uploaded"}</p>
           )}

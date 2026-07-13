@@ -95,7 +95,12 @@ interface MutationContext {
  */
 export async function getMutationContext(): Promise<MutationContext> {
   const { db, auth, ctx } = getAuthContext();
-  const session = await auth.api.getSession({ headers: await headers() });
-  const user = session?.user ?? null;
-  return { db, ctx, user: isStaff(user?.role) ? user : null };
+  try {
+    const session = await auth.api.getSession({ headers: await headers() });
+    const user = session?.user ?? null;
+    return { db, ctx, user: isStaff(user?.role) ? user : null };
+  } catch (error) {
+    ctx.waitUntil(db.$client.end());
+    throw error;
+  }
 }

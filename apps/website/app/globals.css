@@ -24,6 +24,29 @@
   }
 }
 
+/* Lightweight scroll reveal: a tiny IntersectionObserver toggles one attribute. */
+.tl-reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition:
+    opacity 550ms var(--ease-out-quart),
+    transform 550ms var(--ease-out-quart);
+  transition-delay: var(--reveal-delay, 0s);
+}
+
+.tl-reveal[data-visible="true"] {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tl-reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
 /* Partner strip — content is duplicated, so -50% loops seamlessly. */
 @keyframes marquee {
   to {

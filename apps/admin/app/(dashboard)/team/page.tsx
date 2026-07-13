@@ -1,4 +1,4 @@
-import { desc } from "drizzle-orm";
+import { desc, inArray } from "drizzle-orm";
 import { Card } from "@truelend/ui";
 import { schema } from "@truelend/db";
 import { PageTitle } from "@/components/page-title";
@@ -22,6 +22,7 @@ export default async function TeamPage() {
       createdAt: schema.user.createdAt,
     })
     .from(schema.user)
+    .where(inArray(schema.user.role, ["admin", "employee"]))
     .orderBy(desc(schema.user.createdAt));
 
   const members = users.map((u) => ({

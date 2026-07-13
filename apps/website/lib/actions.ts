@@ -9,8 +9,29 @@ import { leadSchema } from "./schemas";
 import { verifyTurnstile } from "./turnstile";
 
 export type SubmitResult = { ok: true } | { ok: false; error: string };
+const CONSENT_VERSION = "2026-07-13";
 
 const blank = (v: string | undefined) => (v && v.length > 0 ? v : undefined);
+
+async function leadRateLimitKey(
+  data: {
+    kind: string;
+    phone?: string;
+    email?: string;
+    referrerPhone?: string;
+  },
+  ip: string,
+) {
+  const identity = data.phone || data.email || data.referrerPhone || "anonymous";
+  // Combine identity with the edge-authenticated IP: a caller cannot exhaust a
+  // victim's phone/email bucket from a different network, while the separate IP
+  // bucket below still prevents rotating form identities to evade the limit.
+  const digest = await crypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(`${ip}:${identity}`),
+  );
+  return `${data.kind}:${Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("")}`;
+}
 
 /** Single entry point for all four website forms. Never throws. */
 export async function submitLead(input: unknown): Promise<SubmitResult> {
@@ -20,9 +41,23 @@ export async function submitLead(input: unknown): Promise<SubmitResult> {
   }
 
   const { env, ctx } = getCloudflareContext();
-  const ip = (await headers()).get("cf-connecting-ip") ?? undefined;
+  const requestHeaders = await headers();
+  const ip = requestHeaders.get("cf-connecting-ip") ?? "anonymous";
+  const hostname = requestHeaders.get("host") ?? undefined;
+  const [ipLimit, identityLimit] = await Promise.all([
+    env.LEAD_RATE_LIMITER.limit({ key: `ip:${ip}` }),
+    env.LEAD_RATE_LIMITER.limit({ key: await leadRateLimitKey(parsed.data, ip) }),
+  ]);
+  if (!ipLimit.success || !identityLimit.success) {
+    return { ok: false, error: "Too many requests. Please wait a minute and try again." };
+  }
 
-  const human = await verifyTurnstile(parsed.data.turnstileToken, env.TURNSTILE_SECRET_KEY, ip);
+  const human = await verifyTurnstile(
+    parsed.data.turnstileToken,
+    env.TURNSTILE_SECRET_KEY,
+    ip === "anonymous" ? undefined : ip,
+    hostname,
+  );
   if (!human) {
     return { ok: false, error: "Human verification failed — please try once more." };
   }
@@ -30,20 +65,35 @@ export async function submitLead(input: unknown): Promise<SubmitResult> {
   const d = parsed.data;
   const db = createDb(env.HYPERDRIVE.connectionString);
   try {
-    await db.insert(schema.leads).values({
-      kind: d.kind,
-      name: "name" in d ? blank(d.name) : undefined,
-      phone: "phone" in d ? blank(d.phone) : undefined,
-      email: "email" in d ? blank(d.email) : undefined,
-      city: "city" in d ? blank(d.city) : undefined,
-      productSlug: "productSlug" in d ? blank(d.productSlug) : undefined,
-      message: "message" in d ? blank(d.message) : undefined,
-      referrerName: "referrerName" in d ? blank(d.referrerName) : undefined,
-      referrerPhone: "referrerPhone" in d ? blank(d.referrerPhone) : undefined,
-      utmSource: blank(d.utmSource),
-      utmMedium: blank(d.utmMedium),
-      utmCampaign: blank(d.utmCampaign),
-      consent: d.consent,
+    const consentAt = new Date();
+    await db.transaction(async (tx) => {
+      const [lead] = await tx
+        .insert(schema.leads)
+        .values({
+          kind: d.kind,
+          name: "name" in d ? blank(d.name) : undefined,
+          phone: "phone" in d ? blank(d.phone) : undefined,
+          email: "email" in d ? blank(d.email) : undefined,
+          city: "city" in d ? blank(d.city) : undefined,
+          productSlug: "productSlug" in d ? blank(d.productSlug) : undefined,
+          message: "message" in d ? blank(d.message) : undefined,
+          referrerName: "referrerName" in d ? blank(d.referrerName) : undefined,
+          referrerPhone: "referrerPhone" in d ? blank(d.referrerPhone) : undefined,
+          utmSource: blank(d.utmSource),
+          utmMedium: blank(d.utmMedium),
+          utmCampaign: blank(d.utmCampaign),
+          consent: d.consent,
+          consentAt,
+          consentSource: "website_form",
+          consentVersion: CONSENT_VERSION,
+        })
+        .returning({ id: schema.leads.id });
+      await tx.insert(schema.auditLog).values({
+        action: "lead.create",
+        entityType: "lead",
+        entityId: lead?.id,
+        after: { source: "website_form", kind: d.kind, consentVersion: CONSENT_VERSION },
+      });
     });
     // Alert the team (fire-and-forget; no-op without email config).
     ctx.waitUntil(
@@ -59,7 +109,13 @@ export async function submitLead(input: unknown): Promise<SubmitResult> {
     );
     return { ok: true };
   } catch (err) {
-    console.error("lead insert failed", err);
+    console.error(
+      JSON.stringify({
+        event: "lead_insert_failed",
+        kind: d.kind,
+        error: err instanceof Error ? err.message : "unknown",
+      }),
+    );
     return {
       ok: false,
       error: "Something went wrong on our side. Please try again, or call us directly.",
