@@ -22,6 +22,11 @@ export function rupeesToPaise(input: string | null | undefined): number | null {
   return Math.round(rupees * 100);
 }
 
+/** Integer paise → a plain rupees string for a number input default ("" if null). */
+export function paiseToRupeesInput(paise: number | null | undefined): string {
+  return paise == null ? "" : String(paise / 100);
+}
+
 const dateFmt = new Intl.DateTimeFormat("en-IN", {
   day: "numeric",
   month: "short",

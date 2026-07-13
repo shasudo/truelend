@@ -45,3 +45,19 @@ export async function requireAdmin(): Promise<Session> {
   if (session.user.role !== "admin") redirect("/");
   return session;
 }
+
+interface MutationContext {
+  db: Database;
+  ctx: ExecutionContext;
+  user: Session["user"] | null;
+}
+
+/**
+ * For server actions: db + ctx + the current user (null if unauthenticated).
+ * The action owns this connection and must close it via ctx.waitUntil.
+ */
+export async function getMutationContext(): Promise<MutationContext> {
+  const { db, auth, ctx } = getAuthContext();
+  const session = await auth.api.getSession({ headers: await headers() });
+  return { db, ctx, user: session?.user ?? null };
+}
