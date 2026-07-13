@@ -46,9 +46,16 @@ context to pick up cold. (MoM scope tracked here without dates, per decision.)
       logo assets when permissions exist (`components/partner-strip.tsx`).
 - [ ] **Analytics** — none wired. Cloudflare Web Analytics is the zero-config
       option; Meta pixel etc. only alongside campaign work.
-- [ ] **Lead notifications** — leads currently land in Postgres only. Add
-      email/WhatsApp alert to the advisory team (e.g. Resend / WhatsApp API)
-      so leads aren't discovered by polling.
+- [~] **Email (Resend)** — wired but INACTIVE until configured. `@truelend/email` + triggers are deployed: new-lead alerts to the team (website + partner
+  leads) and partner verified/rejected emails. Env-gated (no key = no-op).
+  **To activate:** (1) create a Resend account + API key; (2) verify a
+  sending domain (or use `onboarding@resend.dev` to test to your own inbox);
+  (3) on each worker set `wrangler secret put RESEND_API_KEY` and set
+  `EMAIL_FROM` + `TEAM_EMAIL` (admin also `PARTNERS_URL`) vars in
+  wrangler.jsonc; redeploy. WhatsApp alerts still a separate future add.
+- [ ] **Password reset emails** — better-auth reset flow not wired (needs the
+      email sender in packages/auth + forgot/reset pages in admin & partners).
+      Now that @truelend/email exists, this is a smaller add.
 - [ ] **CIBIL score integration** — `/cibil-score` is a coming-soon page
       capturing notify-me emails; real bureau integration is a separate project.
 - [ ] **Blog authoring flow** — posts are MDX in `apps/website/content/blog/`
