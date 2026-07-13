@@ -3,13 +3,21 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button, Checkbox, Field, Input } from "@truelend/ui";
 import { cibilNotifySchema } from "@/lib/schemas";
-import { FormSuccess, RootError, TurnstileField, useLeadForm } from "./lead-form";
+import {
+  FormSuccess,
+  RootError,
+  TurnstileField,
+  TurnstilePendingHint,
+  useLeadForm,
+} from "./lead-form";
 
 export function NotifyForm() {
-  const { form, onSubmit, succeeded, rootError, turnstileKey, setToken } = useLeadForm(
-    zodResolver(cibilNotifySchema),
-    { kind: "cibil_notify", email: "", consent: false },
-  );
+  const { form, onSubmit, succeeded, rootError, turnstileKey, turnstileReady, setToken } =
+    useLeadForm(zodResolver(cibilNotifySchema), {
+      kind: "cibil_notify",
+      email: "",
+      consent: false,
+    });
   const { register, formState } = form;
   const err = formState.errors;
 
@@ -44,12 +52,13 @@ export function NotifyForm() {
         <Button
           type="submit"
           size="lg"
-          disabled={formState.isSubmitting}
+          disabled={formState.isSubmitting || !turnstileReady}
           className="sm:mt-7 sm:self-start"
         >
           {formState.isSubmitting ? "Adding…" : "Notify Me"}
         </Button>
       </div>
+      <TurnstilePendingHint show={!turnstileReady} />
 
       <label className="flex gap-3 text-sm leading-relaxed text-navy-600">
         <Checkbox aria-invalid={!!err.consent} {...register("consent")} />

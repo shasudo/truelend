@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
-import { Button, Card } from "@truelend/ui";
+import { Button, Card, SubmitButton } from "@truelend/ui";
 import { PageTitle } from "@/components/page-title";
 import { LoanCaseFields } from "@/components/loan-case-fields";
 import { getAuthContext } from "@/lib/auth";
@@ -38,7 +38,7 @@ export default async function NewLoanCasePage({
           <input type="hidden" name="leadId" value={lead.id} />
           <LoanCaseFields defaults={{ productSlug: lead.productSlug ?? undefined }} />
           <div className="flex gap-2 border-t border-hairline pt-6">
-            <Button type="submit">Create loan case</Button>
+            <SubmitButton pendingText="Creating…">Create loan case</SubmitButton>
             <Button type="button" variant="ghost" asChild>
               <Link href={`/leads/${lead.id}`}>Cancel</Link>
             </Button>

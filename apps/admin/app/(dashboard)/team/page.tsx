@@ -1,6 +1,6 @@
 import { desc } from "drizzle-orm";
 import { Ban, Undo2 } from "lucide-react";
-import { Button, Card, Select } from "@truelend/ui";
+import { Card, Select, SubmitButton } from "@truelend/ui";
 import { schema } from "@truelend/db";
 import { PageTitle } from "@/components/page-title";
 import { CreateUserForm } from "@/components/create-user-form";
@@ -71,9 +71,9 @@ export default async function TeamPage() {
                         <option value="admin">Admin</option>
                       </Select>
                       {!isSelf && (
-                        <Button type="submit" size="sm" variant="ghost">
+                        <SubmitButton size="sm" variant="ghost">
                           Save
-                        </Button>
+                        </SubmitButton>
                       )}
                     </form>
                   </td>
@@ -87,11 +87,16 @@ export default async function TeamPage() {
                       <form action={toggleBanAction}>
                         <input type="hidden" name="userId" value={u.id} />
                         <input type="hidden" name="currentlyBanned" value={String(banned)} />
-                        <Button
-                          type="submit"
+                        <SubmitButton
                           size="sm"
                           variant={banned ? "outline" : "ghost"}
                           className={banned ? "" : "text-red-700 hover:bg-red-50"}
+                          pendingText={banned ? "Unbanning…" : "Banning…"}
+                          confirm={
+                            banned
+                              ? undefined
+                              : `Ban ${u.name}? They'll be signed out immediately and blocked from logging in.`
+                          }
                         >
                           {banned ? (
                             <>
@@ -102,7 +107,7 @@ export default async function TeamPage() {
                               <Ban className="h-4 w-4" aria-hidden /> Ban
                             </>
                           )}
-                        </Button>
+                        </SubmitButton>
                       </form>
                     )}
                   </td>

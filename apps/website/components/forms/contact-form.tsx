@@ -3,13 +3,24 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button, Checkbox, Field, Input, Textarea } from "@truelend/ui";
 import { contactSchema } from "@/lib/schemas";
-import { FormSuccess, RootError, TurnstileField, useLeadForm } from "./lead-form";
+import {
+  FormSuccess,
+  RootError,
+  TurnstileField,
+  TurnstilePendingHint,
+  useLeadForm,
+} from "./lead-form";
 
 export function ContactForm() {
-  const { form, onSubmit, succeeded, rootError, turnstileKey, setToken } = useLeadForm(
-    zodResolver(contactSchema),
-    { kind: "contact", name: "", phone: "", email: "", message: "", consent: false },
-  );
+  const { form, onSubmit, succeeded, rootError, turnstileKey, turnstileReady, setToken } =
+    useLeadForm(zodResolver(contactSchema), {
+      kind: "contact",
+      name: "",
+      phone: "",
+      email: "",
+      message: "",
+      consent: false,
+    });
   const { register, formState } = form;
   const err = formState.errors;
 
@@ -71,14 +82,17 @@ export function ContactForm() {
       <TurnstileField resetKey={turnstileKey} onToken={setToken} />
       <RootError message={rootError} />
 
-      <Button
-        type="submit"
-        size="lg"
-        disabled={formState.isSubmitting}
-        className="w-full sm:w-auto"
-      >
-        {formState.isSubmitting ? "Sending…" : "Send Message"}
-      </Button>
+      <div className="space-y-2">
+        <Button
+          type="submit"
+          size="lg"
+          disabled={formState.isSubmitting || !turnstileReady}
+          className="w-full sm:w-auto"
+        >
+          {formState.isSubmitting ? "Sending…" : "Send Message"}
+        </Button>
+        <TurnstilePendingHint show={!turnstileReady} />
+      </div>
     </form>
   );
 }

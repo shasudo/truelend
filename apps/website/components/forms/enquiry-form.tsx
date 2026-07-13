@@ -5,15 +5,20 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Button, Checkbox, Field, Input, Select, Textarea } from "@truelend/ui";
 import { enquirySchema } from "@/lib/schemas";
 import { products, productBySlug } from "@/content/products";
-import { FormSuccess, RootError, TurnstileField, useLeadForm } from "./lead-form";
+import {
+  FormSuccess,
+  RootError,
+  TurnstileField,
+  TurnstilePendingHint,
+  useLeadForm,
+} from "./lead-form";
 
 export function EnquiryForm() {
   const requested = useSearchParams().get("product") ?? "";
   const defaultProduct = productBySlug(requested)?.slug ?? "";
 
-  const { form, onSubmit, succeeded, rootError, turnstileKey, setToken } = useLeadForm(
-    zodResolver(enquirySchema),
-    {
+  const { form, onSubmit, succeeded, rootError, turnstileKey, turnstileReady, setToken } =
+    useLeadForm(zodResolver(enquirySchema), {
       kind: "enquiry",
       name: "",
       phone: "",
@@ -22,8 +27,7 @@ export function EnquiryForm() {
       productSlug: defaultProduct,
       message: "",
       consent: false,
-    },
-  );
+    });
   const { register, formState } = form;
   const err = formState.errors;
 
@@ -107,14 +111,17 @@ export function EnquiryForm() {
       <TurnstileField resetKey={turnstileKey} onToken={setToken} />
       <RootError message={rootError} />
 
-      <Button
-        type="submit"
-        size="lg"
-        disabled={formState.isSubmitting}
-        className="w-full sm:w-auto"
-      >
-        {formState.isSubmitting ? "Submitting…" : "Request a Callback"}
-      </Button>
+      <div className="space-y-2">
+        <Button
+          type="submit"
+          size="lg"
+          disabled={formState.isSubmitting || !turnstileReady}
+          className="w-full sm:w-auto"
+        >
+          {formState.isSubmitting ? "Submitting…" : "Request a Callback"}
+        </Button>
+        <TurnstilePendingHint show={!turnstileReady} />
+      </div>
     </form>
   );
 }

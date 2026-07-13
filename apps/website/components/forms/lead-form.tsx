@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm, type DefaultValues, type FieldValues, type Resolver } from "react-hook-form";
 import { Turnstile } from "@marsidev/react-turnstile";
 import { CheckCircle2, MessageCircle } from "lucide-react";
@@ -55,26 +55,33 @@ export function useLeadForm<T extends FieldValues>(
   const [succeeded, setSucceeded] = useState(false);
   const [rootError, setRootError] = useState<string>();
   const [turnstileKey, setTurnstileKey] = useState(0);
-  const token = useRef<string>(undefined);
+  const [turnstileToken, setTurnstileToken] = useState<string>();
+  // No widget configured → always ready; otherwise wait for a solved token so
+  // the user can't submit into a guaranteed "verification failed".
+  const turnstileReady = !TURNSTILE_SITE_KEY || turnstileToken !== undefined;
 
   const onSubmit = form.handleSubmit(async (values) => {
     setRootError(undefined);
-    const result = await submitLead({ ...values, ...utm, turnstileToken: token.current });
+    const result = await submitLead({ ...values, ...utm, turnstileToken });
     if (result.ok) {
       setSucceeded(true);
     } else {
       setRootError(result.error);
       // Turnstile tokens are single-use — remount the widget for a fresh one.
-      token.current = undefined;
+      setTurnstileToken(undefined);
       setTurnstileKey((k) => k + 1);
     }
   });
 
-  const setToken = (t: string) => {
-    token.current = t;
+  return {
+    form,
+    onSubmit,
+    succeeded,
+    rootError,
+    turnstileKey,
+    turnstileReady,
+    setToken: setTurnstileToken,
   };
-
-  return { form, onSubmit, succeeded, rootError, turnstileKey, setToken };
 }
 
 export function TurnstileField({
@@ -92,6 +99,15 @@ export function TurnstileField({
       onSuccess={onToken}
       options={{ theme: "light" }}
     />
+  );
+}
+
+export function TurnstilePendingHint({ show }: { show: boolean }) {
+  if (!show) return null;
+  return (
+    <p className="text-xs text-navy-400" aria-live="polite">
+      Verifying you&rsquo;re human — one moment…
+    </p>
   );
 }
 

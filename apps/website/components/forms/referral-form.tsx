@@ -4,12 +4,17 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Button, Checkbox, Field, Input, Select } from "@truelend/ui";
 import { referralSchema } from "@/lib/schemas";
 import { products } from "@/content/products";
-import { FormSuccess, RootError, TurnstileField, useLeadForm } from "./lead-form";
+import {
+  FormSuccess,
+  RootError,
+  TurnstileField,
+  TurnstilePendingHint,
+  useLeadForm,
+} from "./lead-form";
 
 export function ReferralForm() {
-  const { form, onSubmit, succeeded, rootError, turnstileKey, setToken } = useLeadForm(
-    zodResolver(referralSchema),
-    {
+  const { form, onSubmit, succeeded, rootError, turnstileKey, turnstileReady, setToken } =
+    useLeadForm(zodResolver(referralSchema), {
       kind: "referral",
       referrerName: "",
       referrerPhone: "",
@@ -17,8 +22,7 @@ export function ReferralForm() {
       phone: "",
       productSlug: "",
       consent: false,
-    },
-  );
+    });
   const { register, formState } = form;
   const err = formState.errors;
 
@@ -116,14 +120,17 @@ export function ReferralForm() {
       <TurnstileField resetKey={turnstileKey} onToken={setToken} />
       <RootError message={rootError} />
 
-      <Button
-        type="submit"
-        size="lg"
-        disabled={formState.isSubmitting}
-        className="w-full sm:w-auto"
-      >
-        {formState.isSubmitting ? "Submitting…" : "Submit Referral"}
-      </Button>
+      <div className="space-y-2">
+        <Button
+          type="submit"
+          size="lg"
+          disabled={formState.isSubmitting || !turnstileReady}
+          className="w-full sm:w-auto"
+        >
+          {formState.isSubmitting ? "Submitting…" : "Submit Referral"}
+        </Button>
+        <TurnstilePendingHint show={!turnstileReady} />
+      </div>
     </form>
   );
 }

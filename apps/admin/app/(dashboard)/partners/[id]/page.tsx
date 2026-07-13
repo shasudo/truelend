@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, FileText, Check, X } from "lucide-react";
-import { Button, Card, Field, Input, Select, Textarea, Stat, cx } from "@truelend/ui";
+import { Card, Field, Input, Select, Textarea, Stat, SubmitButton, cx } from "@truelend/ui";
 import {
   partnerTypeLabels,
   partnerStatusLabels,
@@ -158,24 +158,30 @@ export default async function PartnerDetailPage({ params }: { params: Promise<{ 
               <h2 className="font-display text-lg font-bold text-navy-950">Verification</h2>
               <form action={approvePartnerAction} className="mt-4">
                 <input type="hidden" name="partnerId" value={partner.userId} />
-                <Button type="submit" className="w-full">
+                <SubmitButton
+                  className="w-full"
+                  pendingText="Approving…"
+                  confirm={`Approve ${partner.businessName || name} and grant them portal access? They'll be emailed a confirmation.`}
+                >
                   <Check className="h-4 w-4" aria-hidden /> Approve partner
-                </Button>
+                </SubmitButton>
               </form>
               <form action={rejectPartnerAction} className="mt-3 space-y-2">
                 <input type="hidden" name="partnerId" value={partner.userId} />
                 <Textarea
                   name="reason"
+                  required
                   placeholder="Reason (shown to the partner)"
                   className="min-h-16 text-sm"
                 />
-                <Button
-                  type="submit"
+                <SubmitButton
                   variant="outline"
                   className="w-full text-red-700 hover:bg-red-50"
+                  pendingText="Rejecting…"
+                  confirm={`Reject ${partner.businessName || name} and email them this reason? This can't be undone.`}
                 >
                   <X className="h-4 w-4" aria-hidden /> Reject
-                </Button>
+                </SubmitButton>
               </form>
             </Card>
           )}
@@ -217,9 +223,14 @@ export default async function PartnerDetailPage({ params }: { params: Promise<{ 
               <Field label="Note" htmlFor="note">
                 <Input id="note" name="note" placeholder="e.g. Case #… disbursed" />
               </Field>
-              <Button type="submit" size="sm" variant="secondary" className="w-full">
+              <SubmitButton
+                size="sm"
+                variant="secondary"
+                className="w-full"
+                pendingText="Recording…"
+              >
                 Record entry
-              </Button>
+              </SubmitButton>
             </form>
 
             {payouts.length > 0 && (

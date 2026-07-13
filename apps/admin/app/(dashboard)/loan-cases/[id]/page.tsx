@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
-import { Button, Card, Stat } from "@truelend/ui";
+import { Card, Stat, SubmitButton } from "@truelend/ui";
 import { bankName, productName } from "@truelend/reference";
 import { PageTitle } from "@/components/page-title";
 import { StatusBadge } from "@/components/status-badge";
@@ -53,7 +53,7 @@ export default async function LoanCaseDetailPage({ params }: { params: Promise<{
             <input type="hidden" name="caseId" value={c.id} />
             <LoanCaseFields defaults={c} />
             <div className="border-t border-hairline pt-6">
-              <Button type="submit">Save changes</Button>
+              <SubmitButton pendingText="Saving…">Save changes</SubmitButton>
             </div>
           </form>
         </Card>

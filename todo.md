@@ -3,6 +3,32 @@
 Living checklist. Tick items off as they land; add new ones with enough
 context to pick up cold. (MoM scope tracked here without dates, per decision.)
 
+## UX / workflow audit (2026-07-13)
+
+Full end-to-end review (52 confirmed findings). **High-severity code fixes done:**
+
+- [x] **Shared `SubmitButton`** (`packages/ui`, useFormStatus) — pending/disabled + optional `confirm`. Wired into every admin mutation (leads, loan cases,
+      partners approve/reject/payout, team role/ban) and the partner "Submit
+      application" — kills double-submit dup writes (incl. duplicate payout rows).
+- [x] **Approve/Reject/Ban confirmations** — `window.confirm` before the
+      irreversible partner-email and teammate-ban actions. Reject reason now
+      `required`.
+- [x] **Turnstile submit gate** — token tracked in state; submit disabled until
+      solved + "Verifying you're human…" hint (fixes the self-blaming error).
+- [x] **Mobile nav** — both dashboards: desktop rail `hidden lg:flex` + a Radix
+      drawer top bar below lg. Sign-out now has a pending state. Partner nav
+      labels aligned to page titles; admin "Partners" link is now admin-only.
+- [ ] **Password recovery** (high) — see the "Password reset emails" item below;
+      the audit escalated it (a forgotten password = permanent lockout).
+- [ ] **Placeholder-as-real content** (high) — needs YOUR real values, can't be
+      invented: contact phone/WhatsApp/email (`content/site.ts`), the stats band
+      figures (`stats-band.tsx`), "Our lending partners" bank claim, and the
+      "interim / pending legal review" note on privacy/terms. Tracked under
+      "Real content" / "Real contact details" / "Legal copy" below.
+- [ ] **~35 medium/low polish items** — loading/empty/error states, loan-case
+      edit silently rewinding lead status, verified-partner can't be un-verified,
+      MIS financials visible to employees, terminology drift, a11y on KYC upload + consent, card-in-card success screen. Full list in the audit report.
+
 ## Website — before go-live
 
 - [ ] **Real content from LinchPin/TrueLend** — every product description, rate

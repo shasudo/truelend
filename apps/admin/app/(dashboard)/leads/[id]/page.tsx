@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Plus, Phone, Mail, MapPin } from "lucide-react";
-import { Button, Card, Field, Select, Textarea } from "@truelend/ui";
+import { Button, Card, Field, Select, Textarea, SubmitButton } from "@truelend/ui";
 import {
   leadKindLabels,
   leadStatusLabels,
@@ -111,9 +111,9 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
                 placeholder="Log a call, note next steps…"
                 className="min-h-20"
               />
-              <Button type="submit" size="sm">
+              <SubmitButton size="sm" pendingText="Adding…">
                 Add note
-              </Button>
+              </SubmitButton>
             </form>
             <ul className="mt-6 space-y-4">
               {notes.length === 0 && <li className="text-sm text-navy-400">No notes yet.</li>}
@@ -145,9 +145,14 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
                   ))}
                 </Select>
               </Field>
-              <Button type="submit" size="sm" variant="secondary" className="mt-3 w-full">
+              <SubmitButton
+                size="sm"
+                variant="secondary"
+                className="mt-3 w-full"
+                pendingText="Updating…"
+              >
                 Update status
-              </Button>
+              </SubmitButton>
             </form>
 
             <form action={assignLeadAction} className="mt-5 border-t border-hairline pt-5">
@@ -162,9 +167,14 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
                   ))}
                 </Select>
               </Field>
-              <Button type="submit" size="sm" variant="outline" className="mt-3 w-full">
+              <SubmitButton
+                size="sm"
+                variant="outline"
+                className="mt-3 w-full"
+                pendingText="Updating…"
+              >
                 Update assignee
-              </Button>
+              </SubmitButton>
             </form>
 
             <p className="mt-5 border-t border-hairline pt-4 text-xs text-navy-400">

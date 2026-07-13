@@ -1,5 +1,5 @@
 import { Clock, XCircle, Send, CheckCircle2 } from "lucide-react";
-import { Button, Card, Container, Logo } from "@truelend/ui";
+import { Card, Container, Logo, SubmitButton } from "@truelend/ui";
 import { partnerTypeLabels } from "@truelend/reference";
 import type { Partner, PartnerDocument } from "@truelend/db";
 import { KycDetailsForm } from "@/components/kyc-details-form";
@@ -95,10 +95,10 @@ export function PartnerStatusScreen({
                   Everything looks complete. Submit and our team will review it.
                 </p>
                 <form action={submitForReview}>
-                  <Button type="submit" size="lg">
+                  <SubmitButton size="lg" pendingText="Submitting…">
                     <Send className="h-4 w-4" aria-hidden />
                     Submit application
-                  </Button>
+                  </SubmitButton>
                 </form>
               </div>
             ) : (
