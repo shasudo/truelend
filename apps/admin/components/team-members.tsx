@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { Ban, Undo2, Trash2 } from "lucide-react";
 import { Button, Select, cx } from "@truelend/ui";
 import {
@@ -49,6 +50,7 @@ export function TeamMembers({
 }
 
 function TeamRow({ m, isSelf }: { m: Member; isSelf: boolean }) {
+  const router = useRouter();
   const [pending, start] = useTransition();
   const [role, setRole] = useState(m.role);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
@@ -64,7 +66,14 @@ function TeamRow({ m, isSelf }: { m: Member; isSelf: boolean }) {
     setMsg(null);
     start(async () => {
       const res = await action(fd);
-      setMsg(res?.error ? { ok: false, text: res.error } : { ok: true, text: opts.success });
+      if (res?.error) {
+        setMsg({ ok: false, text: res.error });
+        return;
+      }
+      setMsg({ ok: true, text: opts.success });
+      // Imperative server-action calls don't auto-apply the action's
+      // revalidatePath to the client, so pull the fresh row state ourselves.
+      router.refresh();
     });
   }
 
