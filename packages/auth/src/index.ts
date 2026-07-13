@@ -26,7 +26,11 @@ export interface CreateAuthOptions {
  * betterAuth() construction itself does no I/O.
  *
  * Roles come from the admin plugin's plain-text `role` column: admin|employee
- * today; partner|referral later are just new strings — no migration.
+ * (internal staff), business|referral (partners set explicitly at registration).
+ * The default below is deliberately a NON-staff role: the partner app has
+ * signup enabled, so anyone hitting the raw /api/auth/sign-up/email endpoint
+ * (bypassing registerPartner, which sets business|referral) lands on the
+ * default — it must never be a staff role, or that path mints admin access.
  */
 export function createAuth(db: Database, opts: CreateAuthOptions) {
   return betterAuth({
@@ -55,7 +59,7 @@ export function createAuth(db: Database, opts: CreateAuthOptions) {
     },
     // nextCookies() MUST be last — it lets signUpEmail/signIn set the session
     // cookie from inside a Next server action (used by partner registration).
-    plugins: [admin({ defaultRole: "employee" }), nextCookies()],
+    plugins: [admin({ defaultRole: "partner_pending" }), nextCookies()],
   });
 }
 

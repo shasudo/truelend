@@ -6,7 +6,7 @@ import { schema } from "@truelend/db";
 import { PageTitle } from "@/components/page-title";
 import { StatusBadge } from "@/components/status-badge";
 import { TrendChart, CategoryBars } from "@/components/dashboard-charts";
-import { requireSession, getAuthContext } from "@/lib/auth";
+import { requireStaff, getAuthContext } from "@/lib/auth";
 import {
   getOverviewStats,
   getLeadsOverTime,
@@ -17,7 +17,7 @@ import {
 export const dynamic = "force-dynamic";
 
 export default async function OverviewPage() {
-  const session = await requireSession();
+  const session = await requireStaff();
   const { db } = getAuthContext();
 
   const [stats, overTime, byProduct, byChannel, recent] = await Promise.all([

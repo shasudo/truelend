@@ -42,11 +42,35 @@ export const getAuthContext = cache((): AuthContext => {
   return { db, auth, ctx, env };
 });
 
+/*
+ * Staff = the two internal roles. This is the load-bearing boundary: partners
+ * share these auth tables and can authenticate here (they self-register in the
+ * partner app), so "a valid session exists" is NOT staff. A partner session
+ * must never reach admin data or mutations — gate on role, not on presence.
+ */
+const STAFF_ROLES = new Set(["admin", "employee"]);
+function isStaff(role: string | null | undefined): boolean {
+  return role != null && STAFF_ROLES.has(role);
+}
+
 /** Validate the session for real (middleware only checks cookie presence). */
 export async function requireSession(): Promise<Session> {
   const { auth } = getAuthContext();
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) redirect("/login");
+  return session;
+}
+
+/**
+ * Page/layout guard for all internal staff. Non-staff (partners, or a raw-signup
+ * account) are bounced to /login — the login page never auto-forwards, so this
+ * is a hard denial, not a loop.
+ * ponytail: bounce-to-login leaves the partner's admin-domain session live but
+ * useless. Clear it on rejection if the half-signed-in state confuses anyone.
+ */
+export async function requireStaff(): Promise<Session> {
+  const session = await requireSession();
+  if (!isStaff(session.user.role)) redirect("/login");
   return session;
 }
 
@@ -63,11 +87,15 @@ interface MutationContext {
 }
 
 /**
- * For server actions: db + ctx + the current user (null if unauthenticated).
+ * For server actions: db + ctx + the current STAFF user (null otherwise).
+ * Server actions never run the layout, so this is the boundary for writes —
+ * a non-staff session is surfaced as `user: null` so callers deny it exactly
+ * like an expired session (`if (!user) redirect("/login")`).
  * The action owns this connection and must close it via ctx.waitUntil.
  */
 export async function getMutationContext(): Promise<MutationContext> {
   const { db, auth, ctx } = getAuthContext();
   const session = await auth.api.getSession({ headers: await headers() });
-  return { db, ctx, user: session?.user ?? null };
+  const user = session?.user ?? null;
+  return { db, ctx, user: isStaff(user?.role) ? user : null };
 }

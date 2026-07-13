@@ -19,10 +19,12 @@ export async function GET() {
   }
 
   const body: HealthResponse = {
-    status: "ok",
+    status: db === "ok" ? "ok" : "error",
     service: "website",
     timestamp: new Date().toISOString(),
     db,
   };
-  return Response.json(body);
+  // 503 when the DB is down so uptime checks/load balancers see the failure
+  // rather than a misleading 200.
+  return Response.json(body, { status: db === "ok" ? 200 : 503 });
 }

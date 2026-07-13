@@ -30,6 +30,9 @@ export async function GET(_req: Request, { params }: { params: Promise<{ key: st
       "content-type": obj.httpMetadata?.contentType ?? "application/octet-stream",
       "cache-control": "private, no-store",
       "content-disposition": "inline",
+      // Serve the bytes as exactly their stored type — no sniffing into
+      // something executable. Uploads are magic-byte-validated at write time.
+      "x-content-type-options": "nosniff",
     },
   });
 }

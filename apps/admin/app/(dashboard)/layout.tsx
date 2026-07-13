@@ -1,11 +1,12 @@
 import type { ReactNode } from "react";
 import { Sidebar, MobileNav } from "@/components/sidebar";
-import { requireSession } from "@/lib/auth";
+import { requireStaff } from "@/lib/auth";
 
-// Real session validation for every dashboard page (middleware only checks
-// the cookie exists). Redirects to /login when there's no valid session.
+// Real auth for every dashboard page (middleware only checks the cookie exists).
+// requireStaff, not requireSession: partners share these auth tables, so a valid
+// session isn't enough — only admin|employee may see the dashboard.
 export default async function DashboardLayout({ children }: { children: ReactNode }) {
-  const session = await requireSession();
+  const session = await requireStaff();
   const user = {
     name: session.user.name,
     email: session.user.email,

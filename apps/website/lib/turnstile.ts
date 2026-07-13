@@ -5,11 +5,16 @@ export async function verifyTurnstile(
   secret: string | undefined,
   ip?: string,
 ): Promise<boolean> {
-  // Turnstile needs BOTH keys. If the secret is set but the public site key is
-  // missing on a deploy, the widget never renders and no token can exist, so
-  // enforcing here would reject every legitimate submission — pass through
-  // instead of turning the misconfig into a silent lead-losing dead end.
-  if (!secret || !process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY) return true;
+  // Turnstile needs BOTH keys. Unconfigured → fail CLOSED in production: a
+  // missing key must never wave real traffic through. Local/preview dev without
+  // keys still passes so forms stay testable. NODE_ENV is inlined at build, so
+  // this is a compile-time constant in the deployed Worker.
+  // ponytail: a CI assert that both keys are set would turn a misconfigured
+  // prod deploy into a build failure instead of a runtime lead-reject — add
+  // that env check to the deploy job if this ever bites.
+  if (!secret || !process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY) {
+    return process.env.NODE_ENV !== "production";
+  }
   if (!token) return false;
 
   const res = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {

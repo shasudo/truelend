@@ -6,7 +6,10 @@ import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { schema } from "@truelend/db";
 import { getAuthContext } from "./auth";
-import { isApplicationComplete } from "./onboarding";
+import { isApplicationComplete, kycEditable } from "./onboarding";
+
+const LOCKED_MSG =
+  "Your KYC is locked while it's under review or after verification. Contact us to make changes.";
 
 export type KycState = { ok?: boolean; error?: string };
 
@@ -52,6 +55,13 @@ export async function savePartnerKyc(_prev: KycState, formData: FormData): Promi
   const d = parsed.data;
 
   try {
+    const [partner] = await db
+      .select()
+      .from(schema.partners)
+      .where(eq(schema.partners.userId, session.user.id))
+      .limit(1);
+    if (!partner) return { error: "Please sign in again." };
+    if (!kycEditable(partner)) return { error: LOCKED_MSG };
     await db
       .update(schema.partners)
       .set({
@@ -83,6 +93,8 @@ export async function submitForReview() {
       .where(eq(schema.partners.userId, session.user.id))
       .limit(1);
     if (!partner) return;
+    // Can't (re)submit a verified profile or one already under review.
+    if (!kycEditable(partner)) return;
     const docs = await db
       .select({ docType: schema.partnerDocuments.docType })
       .from(schema.partnerDocuments)
@@ -107,6 +119,14 @@ export async function reopenApplication() {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) return;
   try {
+    const [partner] = await db
+      .select({ status: schema.partners.status })
+      .from(schema.partners)
+      .where(eq(schema.partners.userId, session.user.id))
+      .limit(1);
+    // A verified partner can't reopen to edit — that would bypass the review
+    // they already passed. Reopen only withdraws an undecided submission.
+    if (!partner || partner.status === "verified") return;
     await db
       .update(schema.partners)
       .set({ submittedAt: null })

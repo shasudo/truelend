@@ -2,23 +2,17 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { headers } from "next/headers";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { schema } from "@truelend/db";
-import { getAuthContext } from "./auth";
+import { getMutationContext } from "./auth";
 
 /*
- * Form-action mutations. Each owns the request, so it validates the session,
- * writes, and closes its connection via ctx.waitUntil (getAuthContext is
- * React.cache'd per request — here that request is the action's own POST).
+ * Form-action mutations. Each owns the request, writes, and closes its
+ * connection via ctx.waitUntil. Auth is getMutationContext, which yields a
+ * user only for staff — a non-staff session reads as `user: null` and is
+ * denied below, same as an expired one.
  */
-async function session() {
-  const { db, auth, ctx } = getAuthContext();
-  const s = await auth.api.getSession({ headers: await headers() });
-  return { db, ctx, user: s?.user ?? null };
-}
-
 const pipelineSchema = z.object({
   leadId: z.string().uuid(),
   status: z.enum(schema.leadStatus.enumValues),
@@ -29,7 +23,7 @@ const pipelineSchema = z.object({
 // Status + assignee update in one write — the Pipeline card is a single form,
 // so saving one control must not discard an unsaved change to the other.
 export async function updateLeadPipelineAction(formData: FormData) {
-  const { db, ctx, user } = await session();
+  const { db, ctx, user } = await getMutationContext();
   if (!user) redirect("/login"); // expired session → explain, don't eat the click
   const parsed = pipelineSchema.safeParse({
     leadId: formData.get("leadId"),
@@ -57,7 +51,7 @@ const noteSchema = z.object({
 });
 
 export async function addLeadNoteAction(formData: FormData) {
-  const { db, ctx, user } = await session();
+  const { db, ctx, user } = await getMutationContext();
   if (!user) redirect("/login"); // expired session → explain, don't eat the click
   const parsed = noteSchema.safeParse({
     leadId: formData.get("leadId"),
