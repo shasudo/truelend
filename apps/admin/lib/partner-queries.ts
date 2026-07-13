@@ -25,13 +25,13 @@ export interface PartnerListRow {
 }
 
 export async function listPartners(db: Database, status?: string): Promise<PartnerListRow[]> {
-  const client = db.$client;
-  const rows = (await client`
+  const s = status ?? null;
+  const rows = (await db.$client`
     select p.user_id, p.type, p.status, p.business_name, p.created_at, u.name, u.email,
       (select count(*)::int from leads l where l.partner_id = p.user_id) as lead_count,
       (select count(*)::int from partner_documents d where d.partner_id = p.user_id) as doc_count
     from partners p join "user" u on u.id = p.user_id
-    ${status ? client`where p.status = ${status}` : client``}
+    where (${s}::text is null or p.status::text = ${s})
     order by p.created_at desc
   `) as Row[];
   return rows.map((r) => ({
