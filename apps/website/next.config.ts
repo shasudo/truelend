@@ -12,6 +12,31 @@ const nextConfig: NextConfig = {
     "@truelend/types",
     "@truelend/ui",
   ],
+  // Security headers on every response. HSTS has no `preload` on purpose —
+  // preload is an irreversible commitment for the whole apex + subdomains;
+  // add it once you're sure every subdomain is HTTPS-only. The CSP here only
+  // sets frame-ancestors (clickjacking) — a full script/style CSP needs nonce
+  // wiring + testing, so it's left as a follow-up.
+  // ponytail: this block is duplicated in the admin/partners configs — a
+  // config-time shared import is fragile, so 3 copies of a static list it is.
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          { key: "X-Frame-Options", value: "SAMEORIGIN" },
+          { key: "Content-Security-Policy", value: "frame-ancestors 'self'" },
+          {
+            key: "Permissions-Policy",
+            value: "camera=(), microphone=(), geolocation=(), interest-cohort=()",
+          },
+          { key: "Strict-Transport-Security", value: "max-age=31536000; includeSubDomains" },
+        ],
+      },
+    ];
+  },
 };
 
 // Blog posts are .mdx files compiled into the bundle at build time — no
