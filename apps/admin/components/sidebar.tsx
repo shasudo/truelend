@@ -6,10 +6,9 @@ import {
   LayoutDashboard,
   Inbox,
   Banknote,
+  Handshake,
   BarChart3,
   Users,
-  Building2,
-  UserRoundPlus,
   LogOut,
 } from "lucide-react";
 import { Logo, cx } from "@truelend/ui";
@@ -26,14 +25,9 @@ const nav: NavItem[] = [
   { label: "Overview", href: "/", icon: LayoutDashboard },
   { label: "Leads", href: "/leads", icon: Inbox },
   { label: "Loan Cases", href: "/loan-cases", icon: Banknote },
+  { label: "Partners", href: "/partners", icon: Handshake },
   { label: "MIS", href: "/mis", icon: BarChart3 },
   { label: "Team", href: "/team", icon: Users, adminOnly: true },
-];
-
-// Partner platforms don't exist yet — shown disabled so the roadmap is visible.
-const upcoming = [
-  { label: "Business Partners", icon: Building2 },
-  { label: "Referral Partners", icon: UserRoundPlus },
 ];
 
 export interface SidebarUser {
@@ -80,20 +74,6 @@ export function Sidebar({ user }: { user: SidebarUser }) {
               {item.label}
             </Link>
           ))}
-
-        <p className="px-3 pb-1 pt-5 text-xs font-bold uppercase tracking-[0.14em] text-navy-300">
-          Coming soon
-        </p>
-        {upcoming.map((item) => (
-          <span
-            key={item.label}
-            aria-disabled
-            className="flex cursor-not-allowed items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-navy-300"
-          >
-            <item.icon className="h-4.5 w-4.5 shrink-0" aria-hidden />
-            {item.label}
-          </span>
-        ))}
       </nav>
 
       <div className="border-t border-hairline p-3">

@@ -24,4 +24,12 @@
       "localConnectionString": "postgres://postgres:postgres@localhost:5432/truelend",
     },
   ],
+  // Read-only here: partners upload KYC docs to this bucket; admin serves them
+  // back through an authenticated route.
+  "r2_buckets": [
+    {
+      "binding": "BUCKET",
+      "bucket_name": "truelend",
+    },
+  ],
 }
