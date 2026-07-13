@@ -83,8 +83,11 @@ Full end-to-end review (52 confirmed findings). **High-severity code fixes done:
       counsel-approved versions before campaigns run.
 - [ ] **Partner-bank logos** — partner strip is typographic; swap in licensed
       logo assets when permissions exist (`components/partner-strip.tsx`).
-- [ ] **Analytics** — none wired. Cloudflare Web Analytics is the zero-config
-      option; Meta pixel etc. only alongside campaign work.
+- [~] **Analytics** — Cloudflare Web Analytics beacon is wired into the site
+  layout, env-gated on `NEXT_PUBLIC_CF_BEACON_TOKEN` (build-time, in
+  `apps/website/.env`). Absent = no beacon. To activate: create a Web
+  Analytics site in the CF dashboard, paste its token, rebuild/redeploy.
+  Meta pixel etc. only alongside campaign work.
 - [x] **Email (Resend) — LIVE.** Domain `truelend.in` verified; `RESEND_API_KEY`
       set as a secret on all three workers; `EMAIL_FROM="TrueLend <hello@truelend.in>"`;
       `TEAM_EMAIL="shathwik@icloud.com"` (⚠️ personal inbox for now — change to a real
@@ -98,8 +101,8 @@ Full end-to-end review (52 confirmed findings). **High-severity code fixes done:
       capturing notify-me emails; real bureau integration is a separate project.
 - [ ] **Blog authoring flow** — posts are MDX in `apps/website/content/blog/`
       (dev commits content). Revisit a CMS if the content team needs self-serve.
-- [ ] **Old worker cleanup** — if `truelend-web` was ever deployed, delete it
-      in the Cloudflare dash after `truelend-website` ships.
+- [x] **Old worker cleanup** — checked; `truelend-web` was never deployed
+      (API 10007). Nothing to remove. Only the three real workers exist.
 
 ## Admin dashboard (apps/admin) — pending
 
@@ -112,12 +115,12 @@ Full end-to-end review (52 confirmed findings). **High-severity code fixes done:
       Worker secret. Smoke-tested in prod: unauth→/login, login returns admin
       role (scrypt fits the CPU budget on the real worker), dashboard/leads/mis
       200, robots noindex, website unaffected.
-- [ ] **Purge seeded test data** — 3 test leads + 2 loan cases tagged
-      `utm_source='admin-test'` were inserted to build/demo against. Delete
-      before real operational use: `delete from leads where utm_source='admin-test'`
-      (cascades to their loan cases).
-- [ ] **Change the seeded admin password** — set to a throwaway during seeding
-      (shared in chat). Reset via the Team page or re-seed.
+- [x] **Purge seeded test data** — done; the 3 `admin-test` leads + 2 loan cases
+      deleted. Leads table is empty (clean slate for real ops).
+- [ ] **Change the seeded admin password** — set to a throwaway during seeding.
+      Now one click: Team page → the user's **Password** button generates a
+      share-once temp password (better-auth `setUserPassword`). Do this for
+      admin@truelend.in.
 - [ ] **Visual chart check** — the recharts charts render client-side; open the
       deployed overview in a browser and eyeball the trend/bars for layout.
 - [ ] **Website ↔ reference sync** — `packages/reference` now holds canonical
@@ -146,11 +149,11 @@ Full end-to-end review (52 confirmed findings). **High-severity code fixes done:
 - [ ] **Commission auto-calc** — payouts are a manual admin ledger (earned/
       paid). If TrueLend defines commission %s, add a rate + auto-accrue on
       disbursal (schema hook noted in mis/partner-actions).
-- [ ] **CSV column mapping UX** — bulk import expects fixed columns
-      (name/phone/email/city/product/message); add a template download + a
-      column-mapping step if partners upload arbitrary exports.
-- [ ] **Orphaned R2 cleanup** — re-uploading a KYC doc keeps the old R2 object
-      (only the newest DB row is shown). Add a cleanup or overwrite-by-key later.
+- [~] **CSV column mapping UX** — template **Download** button added (fixed
+  columns name/phone/email/city/product/message with a valid sample). A
+  full arbitrary-export column-mapping step is still open if ever needed.
+- [x] **Orphaned R2 cleanup** — re-uploading a KYC doc now supersedes the prior
+      row and deletes its R2 object (best-effort via waitUntil). One doc per type.
 - [ ] **Partner training content** — /resources is placeholder cards; real
       decks/videos/collateral from TrueLend.
 
