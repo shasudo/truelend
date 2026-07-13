@@ -15,8 +15,10 @@
     "deploy": "pnpm --filter @truelend/website deploy",
     "deploy:website": "pnpm --filter @truelend/website deploy",
     "deploy:admin": "pnpm --filter @truelend/admin deploy",
+    "deploy:partners": "pnpm --filter @truelend/partners deploy",
     "cf-typegen": "pnpm --filter @truelend/website cf-typegen",
     "cf-typegen:admin": "pnpm --filter @truelend/admin cf-typegen",
+    "cf-typegen:partners": "pnpm --filter @truelend/partners cf-typegen",
     "db:generate": "pnpm --filter @truelend/db db:generate",
     "db:migrate": "pnpm --filter @truelend/db db:migrate",
     "db:studio": "pnpm --filter @truelend/db db:studio"

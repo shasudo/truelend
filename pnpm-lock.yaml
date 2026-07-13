@@ -48,6 +48,9 @@ catalogs:
     '@types/node':
       specifier: ^22.10.0
       version: 22.20.1
+    '@types/papaparse':
+      specifier: ^5.3.14
+      version: 5.5.2
     '@types/react':
       specifier: ^19.0.0
       version: 19.2.17
@@ -87,6 +90,9 @@ catalogs:
     next:
       specifier: ^15.5.18
       version: 15.5.20
+    papaparse:
+      specifier: ^5.4.1
+      version: 5.5.4
     postgres:
       specifier: ^3.4.5
       version: 3.4.9
@@ -234,6 +240,100 @@ importers:
       tsx:
         specifier: 'catalog:'
         version: 4.23.0
+      typescript:
+        specifier: 'catalog:'
+        version: 5.9.3
+      wrangler:
+        specifier: 'catalog:'
+        version: 4.110.0(@cloudflare/workers-types@5.20260711.1)
+
+  apps/partners:
+    dependencies:
+      '@hookform/resolvers':
+        specifier: 'catalog:'
+        version: 5.4.0(react-hook-form@7.81.0(react@19.2.7))
+      '@truelend/auth':
+        specifier: workspace:*
+        version: link:../../packages/auth
+      '@truelend/db':
+        specifier: workspace:*
+        version: link:../../packages/db
+      '@truelend/reference':
+        specifier: workspace:*
+        version: link:../../packages/reference
+      '@truelend/types':
+        specifier: workspace:*
+        version: link:../../packages/types
+      '@truelend/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
+      better-auth:
+        specifier: 'catalog:'
+        version: 1.6.23(@cloudflare/workers-types@5.20260711.1)(drizzle-kit@0.31.10)(drizzle-orm@0.45.2(@cloudflare/workers-types@5.20260711.1)(gel@2.2.0)(kysely@0.29.3)(postgres@3.4.9))(next@15.5.20(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      drizzle-orm:
+        specifier: 'catalog:'
+        version: 0.45.2(@cloudflare/workers-types@5.20260711.1)(gel@2.2.0)(kysely@0.29.3)(postgres@3.4.9)
+      lucide-react:
+        specifier: 'catalog:'
+        version: 0.525.0(react@19.2.7)
+      next:
+        specifier: 'catalog:'
+        version: 15.5.20(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      papaparse:
+        specifier: 'catalog:'
+        version: 5.5.4
+      radix-ui:
+        specifier: 'catalog:'
+        version: 1.6.2(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      react:
+        specifier: 'catalog:'
+        version: 19.2.7
+      react-dom:
+        specifier: 'catalog:'
+        version: 19.2.7(react@19.2.7)
+      react-hook-form:
+        specifier: 'catalog:'
+        version: 7.81.0(react@19.2.7)
+      zod:
+        specifier: 'catalog:'
+        version: 4.4.3
+    devDependencies:
+      '@cloudflare/workers-types':
+        specifier: 'catalog:'
+        version: 5.20260711.1
+      '@eslint/eslintrc':
+        specifier: 'catalog:'
+        version: 3.3.6
+      '@opennextjs/cloudflare':
+        specifier: 'catalog:'
+        version: 1.20.1(next@15.5.20(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(wrangler@4.110.0(@cloudflare/workers-types@5.20260711.1))
+      '@tailwindcss/postcss':
+        specifier: 'catalog:'
+        version: 4.3.2
+      '@truelend/typescript-config':
+        specifier: workspace:*
+        version: link:../../packages/typescript-config
+      '@types/node':
+        specifier: 'catalog:'
+        version: 22.20.1
+      '@types/papaparse':
+        specifier: 'catalog:'
+        version: 5.5.2
+      '@types/react':
+        specifier: 'catalog:'
+        version: 19.2.17
+      '@types/react-dom':
+        specifier: 'catalog:'
+        version: 19.2.3(@types/react@19.2.17)
+      eslint:
+        specifier: 'catalog:'
+        version: 9.39.5(jiti@2.7.0)
+      eslint-config-next:
+        specifier: 'catalog:'
+        version: 15.5.20(eslint@9.39.5(jiti@2.7.0))(typescript@5.9.3)
+      tailwindcss:
+        specifier: 'catalog:'
+        version: 4.3.2
       typescript:
         specifier: 'catalog:'
         version: 5.9.3
@@ -2844,6 +2944,9 @@ packages:
   '@types/node@22.20.1':
     resolution: {integrity: sha512-EANqOCF9QFyra+4pfxUcX9STKJpCLjMbObVzljIJomAWSnuSIEAvyzEU53GaajbXJEgdh0iEcPL+DGvpUd4k1Q==}
 
+  '@types/papaparse@5.5.2':
+    resolution: {integrity: sha512-gFnFp/JMzLHCwRf7tQHrNnfhN4eYBVYYI897CGX4MY1tzY9l2aLkVyx2IlKZ/SAqDbB3I1AOZW5gTMGGsqWliA==}
+
   '@types/react-dom@19.2.3':
     resolution: {integrity: sha512-jp2L/eY6fn+KgVVQAOqYItbF0VY/YApe5Mz2F0aykSO8gx31bYCZyvSeYxCHKvzHG5eZjc+zyaS5BrBWya2+kQ==}
     peerDependencies:
@@ -4875,6 +4978,9 @@ packages:
 
   package-json-from-dist@1.0.1:
     resolution: {integrity: sha512-UEZIS3/by4OC8vL3P2dTXRETpebLI2NiI5vIrjaD/5UtrkFX/tNbwjTSRAGC/+7CAo2pIcBaRgWmcBBHcsaCIw==}
+
+  papaparse@5.5.4:
+    resolution: {integrity: sha512-SwzWD9gl/ElwYLCI0nUja1mFJzjq2D8ziShfNBa7zCHzkOozeOGDwHWQ+tvCzEZcewecWZ5U7kUopDnG+DFYEQ==}
 
   parent-module@1.0.1:
     resolution: {integrity: sha512-GQ2EWRpQV8/o+Aw8YqtfZZPfNRWZYkbidE9k5rpl/hC3vtHHBfGm2Ifi6qWV+coDGkrUKZAxE3Lot5kcsRlh+g==}
@@ -8105,6 +8211,10 @@ snapshots:
     dependencies:
       undici-types: 6.21.0
 
+  '@types/papaparse@5.5.2':
+    dependencies:
+      '@types/node': 22.20.1
+
   '@types/react-dom@19.2.3(@types/react@19.2.17)':
     dependencies:
       '@types/react': 19.2.17
@@ -10427,6 +10537,8 @@ snapshots:
       p-limit: 3.1.0
 
   package-json-from-dist@1.0.1: {}
+
+  papaparse@5.5.4: {}
 
   parent-module@1.0.1:
     dependencies:

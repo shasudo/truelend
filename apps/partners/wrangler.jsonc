@@ -1,0 +1,33 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "truelend-partners",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2025-04-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS",
+  },
+  "observability": {
+    "enabled": true,
+  },
+  "vars": {
+    // Overridden to http://localhost:3002 in .dev.vars for local dev.
+    "BETTER_AUTH_URL": "https://truelend-partners.truelend.workers.dev",
+  },
+  // Same account-level Hyperdrive config (shared Neon pool) the other apps use.
+  "hyperdrive": [
+    {
+      "binding": "HYPERDRIVE",
+      "id": "88ae362ffaea4695b72a99731389a543",
+      "localConnectionString": "postgres://postgres:postgres@localhost:5432/truelend",
+    },
+  ],
+  // KYC document storage — same bucket the admin app reads from.
+  "r2_buckets": [
+    {
+      "binding": "BUCKET",
+      "bucket_name": "truelend",
+    },
+  ],
+}
