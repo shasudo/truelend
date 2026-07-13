@@ -1,7 +1,9 @@
+import Link from "next/link";
 import { Card } from "@truelend/ui";
+import { partnerTypeLabels } from "@truelend/reference";
 import { PageTitle } from "@/components/page-title";
 import { getAuthContext } from "@/lib/auth";
-import { getMisByProduct, getMisByChannel, type MisRow } from "@/lib/mis-queries";
+import { getMisByProduct, getMisByChannel, getMisByPartner, type MisRow } from "@/lib/mis-queries";
 import { formatPaise } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
@@ -111,24 +113,79 @@ function MisTable({ dimension, rows }: { dimension: string; rows: MisRow[] }) {
 
 export default async function MisPage() {
   const { db } = getAuthContext();
-  const [byProduct, byChannel] = await Promise.all([getMisByProduct(db), getMisByChannel(db)]);
+  const [byProduct, byChannel, byPartner] = await Promise.all([
+    getMisByProduct(db),
+    getMisByChannel(db),
+    getMisByPartner(db),
+  ]);
 
   return (
     <>
-      <PageTitle title="MIS" subtitle="Product- and channel-wise performance" />
+      <PageTitle title="MIS" subtitle="Product-, channel- and partner-wise performance" />
 
       <section className="mb-8">
         <h2 className="mb-3 font-display text-lg font-bold text-navy-950">By product</h2>
         <MisTable dimension="Product" rows={byProduct} />
       </section>
 
-      <section>
+      <section className="mb-8">
         <h2 className="mb-3 font-display text-lg font-bold text-navy-950">By channel</h2>
         <MisTable dimension="Channel" rows={byChannel} />
-        <p className="mt-3 text-xs text-navy-400">
-          Channels currently cover website leads (direct and referral). Business- and
-          referral-partner channels will appear here once those platforms are live.
-        </p>
+      </section>
+
+      <section>
+        <h2 className="mb-3 font-display text-lg font-bold text-navy-950">By partner</h2>
+        <Card className="overflow-x-auto">
+          <table className="w-full min-w-[720px] text-left text-sm">
+            <thead>
+              <tr className="border-b border-hairline text-xs font-semibold uppercase tracking-[0.1em] text-navy-500">
+                <th className="px-5 py-3 font-semibold">Partner</th>
+                <th className="px-5 py-3 font-semibold">Type</th>
+                <th className="px-5 py-3 text-right font-semibold">Leads</th>
+                <th className="px-5 py-3 text-right font-semibold">Disbursed</th>
+                <th className="px-5 py-3 text-right font-semibold">Volume</th>
+                <th className="px-5 py-3 text-right font-semibold">Earned</th>
+                <th className="px-5 py-3 text-right font-semibold">Paid</th>
+                <th className="px-5 py-3 text-right font-semibold">Balance</th>
+              </tr>
+            </thead>
+            <tbody>
+              {byPartner.length === 0 && (
+                <tr>
+                  <td colSpan={8} className="px-5 py-12 text-center text-navy-400">
+                    No partner-sourced leads yet.
+                  </td>
+                </tr>
+              )}
+              {byPartner.map((p) => (
+                <tr key={p.key} className="border-b border-hairline last:border-b-0 hover:bg-paper">
+                  <td className="px-5 py-3.5 font-medium text-navy-950">
+                    <Link href={`/partners/${p.key}`} className="hover:text-red-600">
+                      {p.label}
+                    </Link>
+                  </td>
+                  <td className="px-5 py-3.5 text-navy-600">{partnerTypeLabels[p.type]}</td>
+                  <td className="px-5 py-3.5 text-right tabular-nums text-navy-700">{p.leads}</td>
+                  <td className="px-5 py-3.5 text-right tabular-nums text-navy-700">
+                    {p.disbursed}
+                  </td>
+                  <td className="px-5 py-3.5 text-right tabular-nums text-navy-700">
+                    {formatPaise(p.disbursedVolumePaise)}
+                  </td>
+                  <td className="px-5 py-3.5 text-right tabular-nums text-navy-700">
+                    {formatPaise(p.earnedPaise)}
+                  </td>
+                  <td className="px-5 py-3.5 text-right tabular-nums text-navy-700">
+                    {formatPaise(p.paidPaise)}
+                  </td>
+                  <td className="px-5 py-3.5 text-right font-semibold tabular-nums text-navy-950">
+                    {formatPaise(p.balancePaise)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </Card>
       </section>
     </>
   );

@@ -1,6 +1,6 @@
 import "server-only";
 import type { Database } from "@truelend/db";
-import { products, channelForKind } from "@truelend/reference";
+import { products } from "@truelend/reference";
 
 // These aggregates are gnarly (FILTER clauses, date_trunc, cross-table joins),
 // so they use the raw postgres.js client (db.$client) rather than the query
@@ -73,15 +73,18 @@ export async function getLeadsByProduct(db: Database): Promise<NamedCount[]> {
 
 export async function getLeadsByChannel(db: Database): Promise<NamedCount[]> {
   const rows = (await db.$client`
-    select kind, count(*)::int as n from leads group by 1
+    select
+      case
+        when le.partner_id is not null and pt.type = 'business' then 'Business Partner'
+        when le.partner_id is not null and pt.type = 'referral' then 'Referral Partner'
+        when le.kind = 'referral' then 'Website · Referral'
+        else 'Website · Direct'
+      end as channel,
+      count(*)::int as n
+    from leads le left join partners pt on pt.user_id = le.partner_id
+    group by 1
   `) as Row[];
-  // Fold the four kinds into the two coarse channels.
-  const totals = new Map<string, number>();
-  for (const r of rows) {
-    const ch = channelForKind(String(r.kind));
-    totals.set(ch, (totals.get(ch) ?? 0) + num(r.n));
-  }
-  return [...totals].map(([name, count]) => ({ name, count }));
+  return rows.map((r) => ({ name: String(r.channel), count: num(r.n) }));
 }
 
 export interface MisRow {
@@ -98,33 +101,14 @@ export interface MisRow {
   netPaise: number;
 }
 
-async function caseAggregates(db: Database, groupExpr: "product_slug" | "channel") {
-  const sql = db.$client;
-  if (groupExpr === "product_slug") {
-    return (await sql`
-      select product_slug as k,
-        count(*)::int as cases,
-        count(*) filter (where status='approved')::int as approved,
-        count(*) filter (where status='declined')::int as declined,
-        count(*) filter (where status='disbursed')::int as disbursed,
-        coalesce(sum(disbursed_amount_paise) filter (where status='disbursed'),0) as volume,
-        coalesce(sum(revenue_paise),0) as revenue,
-        coalesce(sum(payout_paise),0) as payout
-      from loan_cases group by 1
-    `) as Row[];
-  }
-  return (await sql`
-    select (case when le.kind='referral' then 'referral' else 'direct' end) as k,
-      count(lc.*)::int as cases,
-      count(lc.*) filter (where lc.status='approved')::int as approved,
-      count(lc.*) filter (where lc.status='declined')::int as declined,
-      count(lc.*) filter (where lc.status='disbursed')::int as disbursed,
-      coalesce(sum(lc.disbursed_amount_paise) filter (where lc.status='disbursed'),0) as volume,
-      coalesce(sum(lc.revenue_paise),0) as revenue,
-      coalesce(sum(lc.payout_paise),0) as payout
-    from loan_cases lc join leads le on le.id = lc.lead_id group by 1
-  `) as Row[];
-}
+// Channel is derived in SQL (below, inlined so it can be a GROUP BY key):
+// partner attribution (le.partner_id → partner type) wins over website kind.
+const CHANNEL_ORDER = [
+  "Website · Direct",
+  "Website · Referral",
+  "Business Partner",
+  "Referral Partner",
+];
 
 export async function getMisByProduct(db: Database): Promise<MisRow[]> {
   const sql = db.$client;
@@ -132,7 +116,17 @@ export async function getMisByProduct(db: Database): Promise<MisRow[]> {
     select product_slug as k, count(*)::int as n from leads
     where product_slug is not null group by 1
   `) as Row[];
-  const caseRows = await caseAggregates(db, "product_slug");
+  const caseRows = (await sql`
+    select product_slug as k,
+      count(*)::int as cases,
+      count(*) filter (where status='approved')::int as approved,
+      count(*) filter (where status='declined')::int as declined,
+      count(*) filter (where status='disbursed')::int as disbursed,
+      coalesce(sum(disbursed_amount_paise) filter (where status='disbursed'),0) as volume,
+      coalesce(sum(revenue_paise),0) as revenue,
+      coalesce(sum(payout_paise),0) as payout
+    from loan_cases group by 1
+  `) as Row[];
 
   const leadsByKey = new Map(leadRows.map((r) => [String(r.k), num(r.n)]));
   const casesByKey = new Map(caseRows.map((r) => [String(r.k), r]));
@@ -161,36 +155,104 @@ export async function getMisByProduct(db: Database): Promise<MisRow[]> {
 
 export async function getMisByChannel(db: Database): Promise<MisRow[]> {
   const sql = db.$client;
-  const leadRows = (await sql`select kind, count(*)::int as n from leads group by 1`) as Row[];
-  const caseRows = await caseAggregates(db, "channel");
+  const leadRows = (await sql`
+    select
+      case
+        when le.partner_id is not null and pt.type = 'business' then 'Business Partner'
+        when le.partner_id is not null and pt.type = 'referral' then 'Referral Partner'
+        when le.kind = 'referral' then 'Website · Referral'
+        else 'Website · Direct'
+      end as channel,
+      count(*)::int as n
+    from leads le left join partners pt on pt.user_id = le.partner_id
+    group by 1
+  `) as Row[];
+  const caseRows = (await sql`
+    select
+      case
+        when le.partner_id is not null and pt.type = 'business' then 'Business Partner'
+        when le.partner_id is not null and pt.type = 'referral' then 'Referral Partner'
+        when le.kind = 'referral' then 'Website · Referral'
+        else 'Website · Direct'
+      end as channel,
+      count(lc.*)::int as cases,
+      count(lc.*) filter (where lc.status='approved')::int as approved,
+      count(lc.*) filter (where lc.status='declined')::int as declined,
+      count(lc.*) filter (where lc.status='disbursed')::int as disbursed,
+      coalesce(sum(lc.disbursed_amount_paise) filter (where lc.status='disbursed'),0) as volume,
+      coalesce(sum(lc.revenue_paise),0) as revenue,
+      coalesce(sum(lc.payout_paise),0) as payout
+    from loan_cases lc
+      join leads le on le.id = lc.lead_id
+      left join partners pt on pt.user_id = le.partner_id
+    group by 1
+  `) as Row[];
 
-  const leadsByCh = new Map<string, number>();
-  for (const r of leadRows) {
-    const ch = channelForKind(String(r.kind));
-    leadsByCh.set(ch, (leadsByCh.get(ch) ?? 0) + num(r.n));
-  }
-  const casesByKey = new Map(caseRows.map((r) => [channelForKind(String(r.k)), r]));
+  const leadsByCh = new Map(leadRows.map((r) => [String(r.channel), num(r.n)]));
+  const casesByCh = new Map(caseRows.map((r) => [String(r.channel), r]));
 
-  const channels = ["Website · Direct", "Website · Referral"];
-  return channels
-    .map((label, i): MisRow => {
-      const rawKey = i === 0 ? "direct" : "referral";
-      const c = casesByKey.get(channelForKind(rawKey)) ?? {};
-      const revenue = num(c.revenue);
-      const payout = num(c.payout);
-      return {
-        key: rawKey,
-        label,
-        leads: leadsByCh.get(label) ?? 0,
-        cases: num(c.cases),
-        approved: num(c.approved),
-        declined: num(c.declined),
-        disbursed: num(c.disbursed),
-        disbursedVolumePaise: num(c.volume),
-        revenuePaise: revenue,
-        payoutPaise: payout,
-        netPaise: revenue - payout,
-      };
-    })
-    .filter((r) => r.leads > 0 || r.cases > 0);
+  return CHANNEL_ORDER.map((label): MisRow => {
+    const c = casesByCh.get(label) ?? {};
+    const revenue = num(c.revenue);
+    const payout = num(c.payout);
+    return {
+      key: label,
+      label,
+      leads: leadsByCh.get(label) ?? 0,
+      cases: num(c.cases),
+      approved: num(c.approved),
+      declined: num(c.declined),
+      disbursed: num(c.disbursed),
+      disbursedVolumePaise: num(c.volume),
+      revenuePaise: revenue,
+      payoutPaise: payout,
+      netPaise: revenue - payout,
+    };
+  }).filter((r) => r.leads > 0 || r.cases > 0);
+}
+
+export interface PartnerMisRow {
+  key: string;
+  label: string;
+  type: string;
+  leads: number;
+  disbursed: number;
+  disbursedVolumePaise: number;
+  earnedPaise: number;
+  paidPaise: number;
+  balancePaise: number;
+}
+
+// Per-partner business summary (only partners who've sourced a lead).
+export async function getMisByPartner(db: Database): Promise<PartnerMisRow[]> {
+  const rows = (await db.$client`
+    select p.user_id as key, coalesce(p.business_name, u.name) as label, p.type,
+      (select count(*)::int from leads where partner_id = p.user_id) as leads,
+      (select count(*)::int from loan_cases lc join leads le on le.id = lc.lead_id
+        where le.partner_id = p.user_id and lc.status = 'disbursed') as disbursed,
+      (select coalesce(sum(lc.disbursed_amount_paise), 0) from loan_cases lc join leads le on le.id = lc.lead_id
+        where le.partner_id = p.user_id and lc.status = 'disbursed') as volume,
+      (select coalesce(sum(amount_paise) filter (where kind='earned'), 0)
+        from partner_payouts where partner_id = p.user_id) as earned,
+      (select coalesce(sum(amount_paise) filter (where kind='paid'), 0)
+        from partner_payouts where partner_id = p.user_id) as paid
+    from partners p join "user" u on u.id = p.user_id
+    where exists (select 1 from leads where partner_id = p.user_id)
+    order by leads desc
+  `) as Row[];
+  return rows.map((r) => {
+    const earned = num(r.earned);
+    const paid = num(r.paid);
+    return {
+      key: String(r.key),
+      label: String(r.label),
+      type: String(r.type),
+      leads: num(r.leads),
+      disbursed: num(r.disbursed),
+      disbursedVolumePaise: num(r.volume),
+      earnedPaise: earned,
+      paidPaise: paid,
+      balancePaise: earned - paid,
+    };
+  });
 }
