@@ -5,7 +5,21 @@ import type { ExecutionContext } from "@cloudflare/workers-types";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { eq } from "drizzle-orm";
 import { createDb, schema, type Database, type Partner } from "@truelend/db";
-import { createAuth, type Auth, type Session } from "@truelend/auth";
+import { createAuth, type Auth, type CreateAuthOptions, type Session } from "@truelend/auth";
+import { sendPasswordReset } from "@truelend/email";
+
+/** better-auth options for the partner app (self-signup on + reset-email
+ * sender). Shared by getAuthContext and the /api/auth/[...all] route handler. */
+export function authOptions(env: CloudflareEnv): CreateAuthOptions {
+  return {
+    secret: env.BETTER_AUTH_SECRET,
+    baseURL: env.BETTER_AUTH_URL,
+    allowSignUp: true,
+    sendResetPassword: async ({ user, url }) => {
+      await sendPasswordReset(env, { to: user.email, name: user.name, url });
+    },
+  };
+}
 
 interface AuthContext {
   db: Database;
@@ -20,11 +34,7 @@ interface AuthContext {
 export const getAuthContext = cache((): AuthContext => {
   const { env, ctx } = getCloudflareContext();
   const db = createDb(env.HYPERDRIVE.connectionString);
-  const auth = createAuth(db, {
-    secret: env.BETTER_AUTH_SECRET,
-    baseURL: env.BETTER_AUTH_URL,
-    allowSignUp: true,
-  });
+  const auth = createAuth(db, authOptions(env));
   return { db, auth, ctx, env };
 });
 

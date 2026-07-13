@@ -1,14 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Button, Field, Input } from "@truelend/ui";
 import { authClient } from "@truelend/auth/client";
 
-export function LoginForm() {
-  const router = useRouter();
+export function ForgotPasswordForm() {
   const [pending, setPending] = useState(false);
+  const [sent, setSent] = useState(false);
   const [error, setError] = useState<string>();
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -16,32 +14,35 @@ export function LoginForm() {
     setError(undefined);
     setPending(true);
     const form = new FormData(e.currentTarget);
-    const { error } = await authClient.signIn.email({
+    const { error } = await authClient.requestPasswordReset({
       email: String(form.get("email")),
-      password: String(form.get("password")),
+      redirectTo: "/reset-password",
     });
+    setPending(false);
     if (error) {
-      setError(error.message ?? "Sign in failed — check your credentials.");
-      setPending(false);
+      setError(error.message ?? "Couldn't send the reset link. Please try again.");
       return;
     }
-    router.push("/");
-    router.refresh();
+    setSent(true);
+  }
+
+  if (sent) {
+    // Generic wording — don't reveal whether an account exists for that email.
+    return (
+      <p
+        role="status"
+        className="mt-6 rounded-lg border border-navy-800/15 bg-navy-800/[0.05] px-4 py-3 text-sm text-navy-700"
+      >
+        If an account exists for that email, we&rsquo;ve sent a link to reset your password. Check
+        your inbox.
+      </p>
+    );
   }
 
   return (
     <form onSubmit={onSubmit} className="mt-6 space-y-4">
       <Field label="Email" htmlFor="email" required>
         <Input id="email" name="email" type="email" autoComplete="email" required />
-      </Field>
-      <Field label="Password" htmlFor="password" required>
-        <Input
-          id="password"
-          name="password"
-          type="password"
-          autoComplete="current-password"
-          required
-        />
       </Field>
       {error && (
         <p
@@ -52,13 +53,8 @@ export function LoginForm() {
         </p>
       )}
       <Button type="submit" disabled={pending} className="w-full">
-        {pending ? "Signing in…" : "Sign in"}
+        {pending ? "Sending…" : "Send reset link"}
       </Button>
-      <p className="text-center text-sm text-navy-500">
-        <Link href="/forgot-password" className="font-semibold text-navy-700 hover:text-navy-950">
-          Forgot your password?
-        </Link>
-      </p>
     </form>
   );
 }

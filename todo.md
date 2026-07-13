@@ -18,16 +18,29 @@ Full end-to-end review (52 confirmed findings). **High-severity code fixes done:
 - [x] **Mobile nav** — both dashboards: desktop rail `hidden lg:flex` + a Radix
       drawer top bar below lg. Sign-out now has a pending state. Partner nav
       labels aligned to page titles; admin "Partners" link is now admin-only.
-- [ ] **Password recovery** (high) — see the "Password reset emails" item below;
-      the audit escalated it (a forgotten password = permanent lockout).
+- [x] **Password recovery** (high) — DONE. better-auth reset wired end to end:
+      `sendResetPassword` in `packages/auth` (sender injected by each app via
+      `authOptions(env)`), `sendPasswordReset` template in `@truelend/email`,
+      `/forgot-password` + `/reset-password` pages + forms in admin AND partners,
+      "Forgot your password?" on both logins, admin middleware exempts the new
+      routes. **Delivers only once Resend is active** (env-gated like all email).
 - [ ] **Placeholder-as-real content** (high) — needs YOUR real values, can't be
       invented: contact phone/WhatsApp/email (`content/site.ts`), the stats band
       figures (`stats-band.tsx`), "Our lending partners" bank claim, and the
       "interim / pending legal review" note on privacy/terms. Tracked under
       "Real content" / "Real contact details" / "Legal copy" below.
-- [ ] **~35 medium/low polish items** — loading/empty/error states, loan-case
-      edit silently rewinding lead status, verified-partner can't be un-verified,
-      MIS financials visible to employees, terminology drift, a11y on KYC upload + consent, card-in-card success screen. Full list in the audit report.
+- [x] **Medium/low polish sweep** — DONE across all three apps (loading/empty/
+      error states, loan-case edit no longer rewinds lead status, verified-partner
+      revoke, MIS gated to admins, Approve gated on submission+docs, inert
+      pagination, loan-case filters, KYC-upload + consent a11y, card-in-card
+      success, Kind→Channel, editable partner profile, and more).
+- [x] **Admin action feedback (#14)** — expired-session clicks redirect to /login
+      instead of a silent no-op; native constraints (required/min/maxLength) close
+      the blank/0/over-long silent-ignore traps; create-user echoes credentials.
+- [ ] **Still owner-blocked (need real values, can't invent)** — real contact
+      phone/WhatsApp/email (`content/site.ts`), real borrower stats
+      (`stats-band.tsx`), counsel-approved privacy/terms text, and the Turnstile
+      env-pair coupling. Tracked under "Real content" / "Legal copy" below.
 
 ## Website — before go-live
 

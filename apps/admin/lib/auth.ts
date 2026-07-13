@@ -4,7 +4,20 @@ import { redirect } from "next/navigation";
 import type { ExecutionContext } from "@cloudflare/workers-types";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { createDb, type Database } from "@truelend/db";
-import { createAuth, type Auth, type Session } from "@truelend/auth";
+import { createAuth, type Auth, type CreateAuthOptions, type Session } from "@truelend/auth";
+import { sendPasswordReset } from "@truelend/email";
+
+/** better-auth options for this app, incl. the reset-email sender. Shared by
+ * getAuthContext (RSC/actions) and the /api/auth/[...all] route handler. */
+export function authOptions(env: CloudflareEnv): CreateAuthOptions {
+  return {
+    secret: env.BETTER_AUTH_SECRET,
+    baseURL: env.BETTER_AUTH_URL,
+    sendResetPassword: async ({ user, url }) => {
+      await sendPasswordReset(env, { to: user.email, name: user.name, url });
+    },
+  };
+}
 
 interface AuthContext {
   db: Database;
@@ -25,10 +38,7 @@ interface AuthContext {
 export const getAuthContext = cache((): AuthContext => {
   const { env, ctx } = getCloudflareContext();
   const db = createDb(env.HYPERDRIVE.connectionString);
-  const auth = createAuth(db, {
-    secret: env.BETTER_AUTH_SECRET,
-    baseURL: env.BETTER_AUTH_URL,
-  });
+  const auth = createAuth(db, authOptions(env));
   return { db, auth, ctx, env };
 });
 

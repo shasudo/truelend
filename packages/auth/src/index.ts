@@ -9,6 +9,15 @@ export interface CreateAuthOptions {
   baseURL: string;
   /** Bootstrap/seed only — permits email signup. Production leaves this off. */
   allowSignUp?: boolean;
+  /**
+   * Send the password-reset email. Passed in by the app (which owns the email
+   * env) so this package stays decoupled from @truelend/email. Omit to leave
+   * reset disabled (e.g. local dev without email configured).
+   */
+  sendResetPassword?: (data: {
+    user: { email: string; name: string };
+    url: string;
+  }) => Promise<void>;
 }
 
 /*
@@ -36,6 +45,13 @@ export function createAuth(db: Database, opts: CreateAuthOptions) {
       enabled: true,
       // Accounts are created by an admin from the Team page, never self-serve.
       disableSignUp: !opts.allowSignUp,
+      // Reset is enabled only when the app wires a sender; the link is emailed,
+      // never returned to the client. Default 1h token expiry is fine.
+      sendResetPassword: opts.sendResetPassword
+        ? async ({ user, url }) => {
+            await opts.sendResetPassword!({ user: { email: user.email, name: user.name }, url });
+          }
+        : undefined,
     },
     // nextCookies() MUST be last — it lets signUpEmail/signIn set the session
     // cookie from inside a Next server action (used by partner registration).
