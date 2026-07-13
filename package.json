@@ -21,9 +21,12 @@
     "cf-typegen:partners": "pnpm --filter @truelend/partners cf-typegen",
     "db:generate": "pnpm --filter @truelend/db db:generate",
     "db:migrate": "pnpm --filter @truelend/db db:migrate",
-    "db:studio": "pnpm --filter @truelend/db db:studio"
+    "db:studio": "pnpm --filter @truelend/db db:studio",
+    "prepare": "husky"
   },
   "devDependencies": {
+    "husky": "catalog:",
+    "lint-staged": "catalog:",
     "prettier": "catalog:",
     "turbo": "catalog:",
     "typescript": "catalog:"

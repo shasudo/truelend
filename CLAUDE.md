@@ -30,7 +30,7 @@ pnpm deploy:partners # deploy the partners Worker
 
 Apps run on ports 3000 (website), 3001 (admin), 3002 (partners).
 
-Single-package runs: `pnpm --filter @truelend/website <script>` (or `@truelend/admin`). The admin app runs on port 3001 (`pnpm dev` runs both). Seed the first admin: `DATABASE_URL=… BETTER_AUTH_SECRET=… pnpm --filter @truelend/admin seed:admin <email> <password> [name]`. There are no unit tests yet (deliberate); verification is done by driving the apps on the workerd preview against Neon. CI (`.github/workflows/ci.yml`) runs lint → typecheck → build.
+Single-package runs: `pnpm --filter @truelend/website <script>` (or `@truelend/admin`). The admin app runs on port 3001 (`pnpm dev` runs both). Seed the first admin: `DATABASE_URL=… BETTER_AUTH_SECRET=… pnpm --filter @truelend/admin seed:admin <email> <password> [name]`. There are no unit tests yet (deliberate); verification is done by driving the apps on the workerd preview against Neon. CI (`.github/workflows/ci.yml`) runs format:check → lint → typecheck → build on every push/PR, then **auto-deploys all three Workers** (parallel matrix) on push to `main`.
 
 ## Architecture
 
@@ -154,5 +154,7 @@ Schema changes: edit `packages/db/src/schema.ts` → `pnpm db:generate` → `pnp
 
 ## Workflow
 
-- Commit directly to `main` — no feature branches (solo local repo, no remote).
+- Commit directly to `main` — no feature branches. Remote is `github.com/shasudo/truelend`; **pushing to `main` deploys to prod** via the CI `deploy` job, so keep `main` releasable (order schema migrations before the code that needs them). Manual `pnpm deploy:*` still works for a first deploy or hotfix.
+- **Pre-commit** (husky + lint-staged) runs `prettier --write` on staged files — run `pnpm install` once after cloning to activate it. Lint/typecheck/build stay in CI (too slow for a hook).
+- **CI deploy secrets** (GitHub → repo Settings): secrets `CLOUDFLARE_API_TOKEN` (an "Edit Cloudflare Workers" token) + `CLOUDFLARE_ACCOUNT_ID`; optional vars `NEXT_PUBLIC_TURNSTILE_SITE_KEY` / `NEXT_PUBLIC_CF_BEACON_TOKEN` bake into the website build (unset = Turnstile/analytics off). Runtime secrets stay in Cloudflare via `wrangler secret put` — CI never sees them.
 - First-time deploy needs real Cloudflare resources: `wrangler login`, `wrangler hyperdrive create` (paste id into `wrangler.jsonc`), `wrangler r2 bucket create truelend`.

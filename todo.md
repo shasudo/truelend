@@ -178,3 +178,8 @@ runtime — use a null-guard WHERE (`where (${s}::text is null or col = ${s})`).
 - Dashboards = separate Next.js apps in this monorepo (`apps/*`), each its own
   Worker, sharing `packages/ui`, `packages/db`, `packages/types`.
 - All shared dependency versions live in the `catalog:` of `pnpm-workspace.yaml`.
+- **Push to `main` = deploy to prod.** CI (`.github/workflows/ci.yml`) runs
+  format:check → lint → typecheck → build, then a parallel matrix deploys all
+  three Workers. Needs repo secrets `CLOUDFLARE_API_TOKEN` +
+  `CLOUDFLARE_ACCOUNT_ID`. A pre-commit hook (husky + lint-staged) formats
+  staged files with prettier.
