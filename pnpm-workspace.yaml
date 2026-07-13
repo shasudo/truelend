@@ -63,6 +63,14 @@ catalog:
   "@types/react": ^19.0.0
   "@types/react-dom": ^19.0.0
 
+# Force-patch transitive advisories upstream hasn't bumped yet (applied tree-wide).
+# Re-check with `pnpm audit`; drop an entry once the real dependents catch up.
+overrides:
+  postcss: ">=8.5.10" # GHSA-qx2v-qp2m-jg93: build-time CSS XSS; next/tailwind pin an older 8.x
+  # GHSA-67mh-4wv8-2f99: drizzle-kit's deprecated @esbuild-kit loader pins esbuild 0.18.
+  # Scope to that path only (modern tsx/wrangler esbuild untouched); 0.25.4 is already in-tree.
+  "@esbuild-kit/core-utils>esbuild": "0.25.4"
+
 # Postinstall scripts are blocked by default. Allow only the native binaries we
 # use: esbuild (drizzle-kit/tsx), workerd (wrangler dev/preview/deploy),
 # unrs-resolver (eslint's TS import resolver). sharp isn't needed on Workers.
