@@ -3,9 +3,10 @@ import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
 
 const csp =
   "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; " +
-  `script-src 'self' 'unsafe-inline'${process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""}; ` +
-  `style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'${process.env.NODE_ENV === "development" ? " ws: http:" : ""}; ` +
-  `worker-src 'self' blob:; manifest-src 'self'${process.env.NODE_ENV === "development" ? "" : "; upgrade-insecure-requests"}`;
+  `script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com https://static.cloudflareinsights.com${process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""}; ` +
+  "style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; " +
+  `connect-src 'self' https://challenges.cloudflare.com https://cloudflareinsights.com${process.env.NODE_ENV === "development" ? " ws: http:" : ""}; ` +
+  `frame-src https://challenges.cloudflare.com; worker-src 'self' blob:; manifest-src 'self'${process.env.NODE_ENV === "development" ? "" : "; upgrade-insecure-requests"}`;
 
 const nextConfig: NextConfig = {
   transpilePackages: [
@@ -19,7 +20,8 @@ const nextConfig: NextConfig = {
     "@truelend/ui",
   ],
   // Security headers on every response. Next emits inline bootstrap scripts,
-  // hence unsafe-inline; all network and embedding destinations stay closed.
+  // hence unsafe-inline; third-party allowances are limited to Turnstile and
+  // Cloudflare Web Analytics.
   async headers() {
     return [
       {
