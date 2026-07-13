@@ -4,6 +4,8 @@
   "main": ".open-next/worker.js",
   "compatibility_date": "2025-04-01",
   "compatibility_flags": ["nodejs_compat"],
+  // Custom domain — wrangler provisions the DNS record + edge cert on deploy.
+  "routes": [{ "pattern": "admin.truelend.in", "custom_domain": true }],
   "assets": {
     "directory": ".open-next/assets",
     "binding": "ASSETS",
@@ -13,13 +15,13 @@
   },
   "vars": {
     // Overridden to http://localhost:3001 in .dev.vars for local dev.
-    "BETTER_AUTH_URL": "https://truelend-admin.truelend.workers.dev",
+    "BETTER_AUTH_URL": "https://admin.truelend.in",
     // Email (Resend). RESEND_API_KEY is a secret. EMAIL_FROM must be a verified
     // sender; TEAM_EMAIL receives new-lead alerts. PARTNERS_URL links the
     // partner in verified/rejected emails. Missing key = no-op.
     "EMAIL_FROM": "TrueLend <hello@truelend.in>",
     "TEAM_EMAIL": "shathwik@icloud.com",
-    "PARTNERS_URL": "https://truelend-partners.truelend.workers.dev",
+    "PARTNERS_URL": "https://partner.truelend.in",
   },
   // Same account-level Hyperdrive config the website uses (shared Neon pool).
   // Secrets (wrangler secret put / .dev.vars): BETTER_AUTH_SECRET.

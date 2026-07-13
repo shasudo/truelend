@@ -4,6 +4,8 @@
   "main": ".open-next/worker.js",
   "compatibility_date": "2025-04-01",
   "compatibility_flags": ["nodejs_compat"],
+  // Custom domain — wrangler provisions the DNS record + edge cert on deploy.
+  "routes": [{ "pattern": "partner.truelend.in", "custom_domain": true }],
   "assets": {
     "directory": ".open-next/assets",
     "binding": "ASSETS",
@@ -13,7 +15,7 @@
   },
   "vars": {
     // Overridden to http://localhost:3002 in .dev.vars for local dev.
-    "BETTER_AUTH_URL": "https://truelend-partners.truelend.workers.dev",
+    "BETTER_AUTH_URL": "https://partner.truelend.in",
     // Email (Resend). RESEND_API_KEY is a secret; TEAM_EMAIL receives partner
     // lead alerts. Missing key = no-op.
     "EMAIL_FROM": "TrueLend <hello@truelend.in>",

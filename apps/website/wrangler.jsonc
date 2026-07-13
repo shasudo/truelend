@@ -5,6 +5,12 @@
   // nodejs_compat + a recent date are required by OpenNext and postgres.js.
   "compatibility_date": "2025-04-01",
   "compatibility_flags": ["nodejs_compat"],
+  // Custom domains — wrangler provisions the DNS record + edge cert on deploy.
+  // Requires the truelend.in zone to be active on this Cloudflare account.
+  "routes": [
+    { "pattern": "truelend.in", "custom_domain": true },
+    { "pattern": "www.truelend.in", "custom_domain": true },
+  ],
   "assets": {
     "directory": ".open-next/assets",
     "binding": "ASSETS",
