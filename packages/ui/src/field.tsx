@@ -1,4 +1,10 @@
-import type { ComponentProps, ReactNode } from "react";
+import {
+  cloneElement,
+  isValidElement,
+  type ComponentProps,
+  type ReactElement,
+  type ReactNode,
+} from "react";
 import { ChevronDown } from "lucide-react";
 import { cx } from "./cx";
 
@@ -55,20 +61,35 @@ export interface FieldProps {
 }
 
 export function Field({ label, htmlFor, required, error, children, className }: FieldProps) {
+  // Link the error text to the control (Input/Select/Textarea all spread props
+  // onto the real element) and mark it invalid so screen readers announce both.
+  const errorId = error && htmlFor ? `${htmlFor}-error` : undefined;
+  const control =
+    errorId && isValidElement(children)
+      ? cloneElement(
+          children as ReactElement<{ "aria-describedby"?: string; "aria-invalid"?: boolean }>,
+          { "aria-describedby": errorId, "aria-invalid": true },
+        )
+      : children;
+
   return (
     <div className={cx("space-y-1.5", className)}>
       <label htmlFor={htmlFor} className="block text-sm font-medium text-navy-800">
         {label}
         {required && (
-          <span aria-hidden className="text-red-600">
-            {" "}
-            *
-          </span>
+          <>
+            <span aria-hidden className="text-red-600">
+              {" "}
+              *
+            </span>
+            {/* The asterisk is decorative; give SR users the word. */}
+            <span className="sr-only"> (required)</span>
+          </>
         )}
       </label>
-      {children}
+      {control}
       {error && (
-        <p role="alert" className="text-sm text-red-600">
+        <p id={errorId} role="alert" className="text-sm text-red-600">
           {error}
         </p>
       )}

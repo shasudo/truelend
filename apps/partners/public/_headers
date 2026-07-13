@@ -1,0 +1,4 @@
+# Hashed build assets are immutable — cache them hard (OpenNext recommends this;
+# Next serves them with max-age=0 by default). Content changes ⇒ new hash ⇒ new URL.
+/_next/static/*
+  Cache-Control: public, max-age=31536000, immutable

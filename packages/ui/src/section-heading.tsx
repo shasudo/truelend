@@ -7,6 +7,9 @@ export interface SectionHeadingProps {
   center?: boolean;
   /** For navy surfaces — flips text to light. */
   inverse?: boolean;
+  /** Heading level. Page-level headers pass "h1"; in-page sections keep h2 so
+   *  each page has exactly one h1. */
+  as?: "h1" | "h2";
   className?: string;
 }
 
@@ -16,6 +19,7 @@ export function SectionHeading({
   lede,
   center,
   inverse,
+  as: Heading = "h2",
   className,
 }: SectionHeadingProps) {
   return (
@@ -31,14 +35,14 @@ export function SectionHeading({
           {eyebrow}
         </p>
       )}
-      <h2
+      <Heading
         className={cx(
           "mt-3 text-balance font-display text-3xl font-extrabold tracking-tight sm:text-4xl",
           inverse ? "text-white" : "text-navy-950",
         )}
       >
         {title}
-      </h2>
+      </Heading>
       {lede && (
         <p className={cx("mt-4 leading-relaxed", inverse ? "text-white/70" : "text-navy-600")}>
           {lede}
