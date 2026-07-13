@@ -56,30 +56,46 @@ context to pick up cold. (MoM scope tracked here without dates, per decision.)
 - [ ] **Old worker cleanup** — if `truelend-web` was ever deployed, delete it
       in the Cloudflare dash after `truelend-website` ships.
 
+## Admin dashboard (apps/admin) — pending
+
+- [x] **Built + auth** — `apps/admin` (Worker `truelend-admin`), better-auth
+      (`packages/auth`) email+password with roles (admin/employee), leads inbox + pipeline + notes, loan cases (LMS-lite, paise money), team management,
+      overview charts + MIS tables. Schema migration 0001 applied to Neon.
+      First admin seeded (admin@truelend.in). Verified end-to-end on workerd.
+- [ ] **First production deploy of admin** — `wrangler secret put
+    BETTER_AUTH_SECRET` (apps/admin) then `pnpm deploy:admin` →
+      truelend-admin.truelend.workers.dev. Needs explicit go-ahead.
+- [ ] **Purge seeded test data** — 3 test leads + 2 loan cases tagged
+      `utm_source='admin-test'` were inserted to build/demo against. Delete
+      before real operational use: `delete from leads where utm_source='admin-test'`
+      (cascades to their loan cases).
+- [ ] **Change the seeded admin password** — set to a throwaway during seeding
+      (shared in chat). Reset via the Team page or re-seed.
+- [ ] **Visual chart check** — the recharts charts render client-side; open the
+      deployed overview in a browser and eyeball the trend/bars for layout.
+- [ ] **Website ↔ reference sync** — `packages/reference` now holds canonical
+      product/bank slugs+names; `apps/website/content/{products,banks}.ts` still
+      duplicate them (richer data). Have the website consume `@truelend/reference`
+      for slugs/names to remove the duplication.
+- [ ] **Admin custom domain / Access** — currently a workers.dev URL, noindex.
+      Consider Cloudflare Access (extra network-level gate) or a real subdomain.
+
 ## Platform — upcoming (from the partnership MoM)
 
-- [ ] **CRM & LMS** (`apps/crm`) — lead management (assign/convert), loan
-      pipeline (login → approval → disbursal), telecalling + customer-relationship
-      dashboards, per-channel lead buckets (digital, corporate events, direct).
-      Reads the same `leads` table this website writes.
-- [ ] **Business Partner platform** (`apps/partner` or within CRM) —
-      registration with document upload (PAN/Aadhaar/photo/cheque/GST → R2,
-      camera capture + upload), verification workflow, login, lead upload,
-      dashboard (leads/logins, product-wise business, approved/declined/
-      disbursed, payout earned vs received), training & marketing collateral.
-- [ ] **Referral Partner platform** — registration + docs, referral dashboard
-      (leads, product-wise, disbursement volume, incentives earned/received).
-- [ ] **Admin dashboard** (`apps/admin`) — cross-channel MIS: direct business,
-      partner analytics (active/inactive, partner-wise payout, P&L),
-      product-wise metrics by sourcing channel (direct/partner/referral/employee).
-- [ ] **Auth** — none exists yet; required before any dashboard app. Pick one
-      approach for all apps (e.g. better-auth or Auth.js) with role-based access
-      (admin, employee, business partner, referral partner).
+- [ ] **Business Partner platform** (`apps/partner`) — registration with document
+      upload (PAN/Aadhaar/photo/cheque/GST → R2, camera capture + upload),
+      verification workflow, login (reuse `packages/auth`, add `partner` role),
+      lead upload, dashboard (leads/logins, product-wise business, approved/
+      declined/disbursed, payout earned vs received), training & collateral.
+- [ ] **Referral Partner platform** (`apps/referral`) — registration + docs,
+      referral dashboard (leads, product-wise, disbursement volume, incentives
+      earned/received). `referral` role in `packages/auth`.
+- [ ] **Partner attribution in schema** — add `source_channel` enum +
+      `partner_id` FK to `leads` (and a partners table + payout ledger) when the
+      partner apps land; MIS `channelForKind` is a placeholder until then.
 - [ ] **Mobile application** — scope undefined beyond the MoM line item.
 - [ ] **TRAI/DLT compliance** — DLT registration, SMS template + sender-ID
       approval; prerequisite for SMS campaigns (LinchPin-owned).
-- [ ] **Attribution beyond UTM** — partner/employee lead-source attribution for
-      revenue share; extend `leads` when the partner platforms exist.
 
 ## Conventions
 

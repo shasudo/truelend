@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-pnpm + Turborepo monorepo for the TrueLend lending platform. Currently one Next.js 15 (App Router) app — the public website — deploying to **Cloudflare Workers** via OpenNext, backed by **Postgres through Cloudflare Hyperdrive** (Drizzle + postgres.js) and **R2** object storage. There is no separate API service — route handlers and server actions in `apps/website` are the API. Future dashboards (CRM, admin, partner) are additional `apps/*` in this repo, each its own Worker, sharing `packages/*`. Pending work is tracked in `todo.md` (keep it updated).
+pnpm + Turborepo monorepo for the TrueLend lending platform. Two Next.js 15 (App Router) apps — the public **website** and the internal **admin** dashboard — each deploying as its own **Cloudflare Worker** via OpenNext, backed by a shared **Postgres through Cloudflare Hyperdrive** (Drizzle + postgres.js) and **R2**. No separate API service — route handlers and server actions in each app are its API. Future partner dashboards are more `apps/*`, each its own Worker, sharing `packages/*`. Pending work is tracked in `todo.md` (keep it updated).
 
 ## Commands
 
@@ -23,25 +23,39 @@ pnpm db:migrate      # apply migrations (needs DATABASE_URL in packages/db/.env)
 pnpm db:studio       # drizzle studio
 
 pnpm cf-typegen      # regenerate apps/website/cloudflare-env.d.ts from wrangler.jsonc
-pnpm deploy          # opennextjs-cloudflare build && deploy → Workers
+pnpm deploy          # deploy the website Worker
+pnpm deploy:admin    # deploy the admin Worker
 ```
 
-Single-package runs: `pnpm --filter @truelend/website <script>`. There are no tests yet (deliberate — add vitest when the first real domain module lands). CI (`.github/workflows/ci.yml`) runs lint → typecheck → build.
+Single-package runs: `pnpm --filter @truelend/website <script>` (or `@truelend/admin`). The admin app runs on port 3001 (`pnpm dev` runs both). Seed the first admin: `DATABASE_URL=… BETTER_AUTH_SECRET=… pnpm --filter @truelend/admin seed:admin <email> <password> [name]`. There are no unit tests yet (deliberate); verification is done by driving the apps on the workerd preview against Neon. CI (`.github/workflows/ci.yml`) runs lint → typecheck → build.
 
 ## Architecture
 
 ```
-apps/website/        Public site: Next.js → Workers (OpenNext)
-  app/               routes; api/health; sitemap/robots/OG
-  components/        site chrome + composites (Header, Footer, forms/, CtaBand…)
-  content/           typed content: site.ts, products.ts, banks.ts, blog/*.mdx
-  lib/               schemas.ts (zod), actions.ts (server actions), blog.ts, format.ts
+apps/website/        Public site: Next.js → Workers (OpenNext); writes leads
+  app/ components/ content/ lib/   (routes, chrome, typed content + mdx blog, zod/actions)
+apps/admin/          Internal ops dashboard: Next.js → Workers (truelend-admin, port 3001, noindex)
+  app/(dashboard)/   leads, loan-cases, mis, team, overview — all force-dynamic
+  app/login, app/api/auth/[...all]   better-auth
+  lib/               auth.ts (request context + guards), queries, *-actions (server actions)
+  components/        sidebar, forms, charts (recharts), status-badge
 packages/ui/         design system: theme.css (Tailwind v4 @theme tokens) + brand primitives
-packages/db/         Drizzle ORM + postgres.js; schema.ts is the source of truth (leads table)
+packages/db/         Drizzle ORM + postgres.js; schema.ts = source of truth (leads, notes, loan_cases, auth tables)
+packages/auth/       shared better-auth: createAuth(db,{secret,baseURL}) factory + React client
+packages/reference/  canonical product/bank slugs+names + enum labels (used by admin, future partner apps)
 packages/types/      type-only package (import type only)
 packages/eslint-config/, packages/typescript-config/   shared flat config / tsconfig bases
 branding/            logo JPEGs + OG image SVG source (reference assets)
 ```
+
+### Auth (packages/auth + apps/admin)
+
+- **better-auth**, email+password, no self-signup (admin creates users via the Team page; `role` is a plain text column: `admin`/`employee` now, `partner`/`referral` later — no migration).
+- **Per-request factory**: `createAuth(db, {secret, baseURL})` — never a singleton (workerd forbids cross-request I/O reuse). The catch-all route `app/api/auth/[...all]/route.ts` and every server action build their own db+auth and close it with `ctx.waitUntil(db.$client.end())`. RSC reads go through `getAuthContext()` (React.cache) and do NOT close (layout+page share it).
+- **Gating**: `middleware.ts` only checks the session cookie exists; real validation is `requireSession()`/`requireAdmin()` in the dashboard layout/pages. Secrets: `BETTER_AUTH_SECRET` via `.dev.vars` + `wrangler secret put`.
+- Auth-table ids are `text` (better-auth generates them); people-FKs (`leads.assigned_to`, `lead_notes.author_id`, `loan_cases.created_by`) are text.
+- Money is **integer paise** in `bigint({mode:"number"})`; convert rupees↔paise only at the form boundary (`lib/format.ts`), format with `Intl` en-IN. Never floats.
+- Charts: single-series recharts, one brand hue, per the dataviz skill — read it before adding charts.
 
 ### Design system (packages/ui + Tailwind v4)
 
