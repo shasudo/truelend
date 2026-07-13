@@ -5,6 +5,7 @@ import {
   text,
   boolean,
   bigint,
+  integer,
   timestamp,
   index,
 } from "drizzle-orm/pg-core";
@@ -121,13 +122,20 @@ export const leads = pgTable(
     status: leadStatus("status").notNull().default("new"),
     assignedTo: text("assigned_to").references(() => user.id, { onDelete: "set null" }),
 
+    // sourced by a partner (null = website/direct). Channel derives from this.
+    partnerId: text("partner_id").references(() => partners.userId, { onDelete: "set null" }),
+
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .notNull()
       .defaultNow()
       .$onUpdate(() => new Date()),
   },
-  (t) => [index("leads_status_idx").on(t.status), index("leads_assigned_to_idx").on(t.assignedTo)],
+  (t) => [
+    index("leads_status_idx").on(t.status),
+    index("leads_assigned_to_idx").on(t.assignedTo),
+    index("leads_partner_id_idx").on(t.partnerId),
+  ],
 );
 
 /** Append-only activity trail on a lead. */
@@ -201,6 +209,78 @@ export const loanCases = pgTable(
 );
 
 /* ------------------------------------------------------------------ */
+/* Partners — business & referral partners (apps/partners). One app,   */
+/* two types. Self-register → upload KYC → admin verifies.             */
+/* ------------------------------------------------------------------ */
+
+export const partnerType = pgEnum("partner_type", ["business", "referral"]);
+export const partnerStatus = pgEnum("partner_status", ["pending", "verified", "rejected"]);
+export const partnerDocType = pgEnum("partner_doc_type", [
+  "pan",
+  "aadhaar",
+  "photo",
+  "cheque",
+  "gst",
+]);
+export const payoutKind = pgEnum("payout_kind", ["earned", "paid"]);
+
+// 1:1 with a better-auth user (user_id is the PK). The user's `role` column
+// mirrors `type` (business|referral) for auth; this row holds partner data.
+export const partners = pgTable("partners", {
+  userId: text("user_id")
+    .primaryKey()
+    .references(() => user.id, { onDelete: "cascade" }),
+  type: partnerType("type").notNull(),
+  status: partnerStatus("status").notNull().default("pending"),
+  phone: text("phone"),
+  businessName: text("business_name"),
+  pan: text("pan"),
+  gst: text("gst"),
+  verifiedBy: text("verified_by").references(() => user.id, { onDelete: "set null" }),
+  verifiedAt: timestamp("verified_at", { withTimezone: true }),
+  rejectionReason: text("rejection_reason"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow()
+    .$onUpdate(() => new Date()),
+});
+
+// KYC uploads, kept in R2 (r2_key); one row per uploaded document.
+export const partnerDocuments = pgTable(
+  "partner_documents",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    partnerId: text("partner_id")
+      .notNull()
+      .references(() => partners.userId, { onDelete: "cascade" }),
+    docType: partnerDocType("doc_type").notNull(),
+    r2Key: text("r2_key").notNull(),
+    contentType: text("content_type").notNull(),
+    sizeBytes: integer("size_bytes").notNull(),
+    uploadedAt: timestamp("uploaded_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("partner_documents_partner_id_idx").on(t.partnerId)],
+);
+
+// Manual ledger: admin records `earned` and `paid` entries; balance = sum diff.
+export const partnerPayouts = pgTable(
+  "partner_payouts",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    partnerId: text("partner_id")
+      .notNull()
+      .references(() => partners.userId, { onDelete: "cascade" }),
+    loanCaseId: uuid("loan_case_id").references(() => loanCases.id, { onDelete: "set null" }),
+    amountPaise: bigint("amount_paise", { mode: "number" }).notNull(),
+    kind: payoutKind("kind").notNull(),
+    note: text("note"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("partner_payouts_partner_id_idx").on(t.partnerId)],
+);
+
+/* ------------------------------------------------------------------ */
 
 export type Lead = typeof leads.$inferSelect;
 export type NewLead = typeof leads.$inferInsert;
@@ -208,3 +288,7 @@ export type LeadNote = typeof leadNotes.$inferSelect;
 export type LoanCase = typeof loanCases.$inferSelect;
 export type NewLoanCase = typeof loanCases.$inferInsert;
 export type User = typeof user.$inferSelect;
+export type Partner = typeof partners.$inferSelect;
+export type NewPartner = typeof partners.$inferInsert;
+export type PartnerDocument = typeof partnerDocuments.$inferSelect;
+export type PartnerPayout = typeof partnerPayouts.$inferSelect;
