@@ -5,6 +5,8 @@
  * — deferred refactor tracked in todo.md.
  */
 
+export * from "./format";
+
 export interface ProductRef {
   slug: string;
   name: string;

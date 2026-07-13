@@ -1,7 +1,13 @@
 import Link from "next/link";
 import { Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button, Card, Input, Select, cx } from "@truelend/ui";
-import { products, leadKindLabels, leadStatusLabels, productName } from "@truelend/reference";
+import {
+  products,
+  leadKindLabels,
+  leadStatusLabels,
+  productName,
+  formatDate,
+} from "@truelend/reference";
 import { schema } from "@truelend/db";
 import { PageTitle } from "@/components/page-title";
 import { StatusBadge } from "@/components/status-badge";
@@ -13,7 +19,6 @@ import {
   type LeadStatus,
   type LeadKind,
 } from "@/lib/queries";
-import { formatDate } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 

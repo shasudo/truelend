@@ -1,3 +1,9 @@
+/*
+ * Money + date display helpers, shared by admin and partners. Money is integer
+ * paise everywhere in the DB; convert rupees↔paise only at the form boundary
+ * and format with Intl en-IN. Never floats.
+ */
+
 const inr = new Intl.NumberFormat("en-IN", {
   style: "currency",
   currency: "INR",

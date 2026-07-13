@@ -6,7 +6,7 @@ import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { schema, type Database, type NewLoanCase } from "@truelend/db";
 import { getMutationContext } from "./auth";
-import { rupeesToPaise } from "./format";
+import { rupeesToPaise } from "@truelend/reference";
 
 type CaseStatus = (typeof schema.loanCaseStatus.enumValues)[number];
 

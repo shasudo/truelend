@@ -5,7 +5,8 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./client": "./src/client.ts"
+    "./client": "./src/client.ts",
+    "./forms": "./src/forms.tsx"
   },
   "scripts": {
     "lint": "eslint .",
@@ -14,10 +15,12 @@
   "dependencies": {
     "@better-auth/drizzle-adapter": "catalog:",
     "@truelend/db": "workspace:*",
+    "@truelend/ui": "workspace:*",
     "better-auth": "catalog:",
     "zod": "catalog:"
   },
   "peerDependencies": {
+    "next": "^15.5.18",
     "react": "^19.0.0"
   },
   "devDependencies": {
@@ -25,6 +28,7 @@
     "@truelend/typescript-config": "workspace:*",
     "@types/react": "catalog:",
     "eslint": "catalog:",
+    "next": "catalog:",
     "react": "catalog:",
     "typescript": "catalog:"
   }

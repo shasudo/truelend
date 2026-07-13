@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Card, Logo } from "@truelend/ui";
-import { LoginForm } from "@/components/login-form";
+import { LoginForm } from "@truelend/auth/forms";
 
 export const metadata: Metadata = { title: "Sign in" };
 
@@ -16,7 +16,14 @@ export default function LoginPage() {
           Partner sign in
         </h1>
         <p className="mt-1 text-sm text-navy-500">Access your partner dashboard.</p>
-        <LoginForm />
+        <LoginForm redirectTo="/dashboard">
+          <p className="text-center text-sm text-navy-500">
+            New partner?{" "}
+            <Link href="/register" className="font-semibold text-red-600 hover:text-red-700">
+              Create an account
+            </Link>
+          </p>
+        </LoginForm>
       </Card>
     </main>
   );

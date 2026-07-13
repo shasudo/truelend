@@ -7,7 +7,7 @@ import { z } from "zod";
 import { schema, type Database } from "@truelend/db";
 import { notifyPartnerDecision } from "@truelend/email";
 import { getAuthContext, getMutationContext } from "./auth";
-import { rupeesToPaise } from "./format";
+import { rupeesToPaise } from "@truelend/reference";
 
 async function admin() {
   const { db, ctx, user } = await getMutationContext();

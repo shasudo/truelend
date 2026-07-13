@@ -47,8 +47,8 @@ apps/partners/       Partner portal: Next.js → Workers (truelend-partners, por
   self-register (allowSignUp) → KYC upload to R2 → admin verifies → dashboard
   one app, two roles (business|referral); differs only in payout|incentive labels + bulk CSV
 packages/db/         Drizzle ORM + postgres.js; schema.ts = source of truth (leads, notes, loan_cases, partners, partner_documents, partner_payouts, auth tables)
-packages/auth/       shared better-auth: createAuth(db,{secret,baseURL}) factory + React client
-packages/reference/  canonical product/bank slugs+names + enum labels (used by admin, future partner apps)
+packages/auth/       shared better-auth: createAuth(db,{secret,baseURL}) factory + React client + `/forms` (shared login/forgot/reset UI for admin + partners)
+packages/reference/  canonical product/bank slugs+names + enum labels + money/date format helpers (formatPaise, rupeesToPaise, formatDate…) — shared by admin + partners
 packages/types/      type-only package (import type only)
 packages/eslint-config/, packages/typescript-config/   shared flat config / tsconfig bases
 branding/            logo JPEGs + OG image SVG source (reference assets)
@@ -60,7 +60,7 @@ branding/            logo JPEGs + OG image SVG source (reference assets)
 - **Per-request factory**: `createAuth(db, {secret, baseURL})` — never a singleton (workerd forbids cross-request I/O reuse). The catch-all route `app/api/auth/[...all]/route.ts` and every server action build their own db+auth and close it with `ctx.waitUntil(db.$client.end())`. RSC reads go through `getAuthContext()` (React.cache) and do NOT close (layout+page share it).
 - **Gating**: `middleware.ts` only checks the session cookie exists; real validation is `requireSession()`/`requireAdmin()` in the dashboard layout/pages. Secrets: `BETTER_AUTH_SECRET` via `.dev.vars` + `wrangler secret put`.
 - Auth-table ids are `text` (better-auth generates them); people-FKs (`leads.assigned_to`, `lead_notes.author_id`, `loan_cases.created_by`) are text.
-- Money is **integer paise** in `bigint({mode:"number"})`; convert rupees↔paise only at the form boundary (`lib/format.ts`), format with `Intl` en-IN. Never floats.
+- Money is **integer paise** in `bigint({mode:"number"})`; convert rupees↔paise only at the form boundary (`@truelend/reference` — `rupeesToPaise`/`formatPaise`), format with `Intl` en-IN. Never floats.
 - Charts: single-series recharts, one brand hue, per the dataviz skill — read it before adding charts.
 
 ### R2 file uploads (KYC — apps/partners writes, apps/admin reads)

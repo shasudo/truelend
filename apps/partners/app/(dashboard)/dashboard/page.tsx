@@ -1,22 +1,16 @@
 import Link from "next/link";
 import { Button, Card, StatTile, StatusBadge } from "@truelend/ui";
-import { earningsLabel, productName, leadStatusLabels } from "@truelend/reference";
+import {
+  earningsLabel,
+  productName,
+  leadStatusLabels,
+  formatPaise,
+  formatDate,
+} from "@truelend/reference";
 import { requirePartner, getAuthContext } from "@/lib/auth";
 import { getPartnerMetrics, getPartnerLeads } from "@/lib/dashboard-queries";
 
 export const dynamic = "force-dynamic";
-
-const inr = new Intl.NumberFormat("en-IN", {
-  style: "currency",
-  currency: "INR",
-  maximumFractionDigits: 0,
-});
-const rupees = (paise: number) => inr.format(Math.round(paise / 100));
-const dateFmt = new Intl.DateTimeFormat("en-IN", {
-  day: "numeric",
-  month: "short",
-  year: "numeric",
-});
 
 export default async function DashboardPage() {
   const { session, partner } = await requirePartner();
@@ -51,9 +45,9 @@ export default async function DashboardPage() {
         <StatTile label="Leads submitted" value={m.totalLeads.toLocaleString("en-IN")} />
         <StatTile label="Approved" value={m.approved.toLocaleString("en-IN")} />
         <StatTile label="Disbursed" value={m.disbursed.toLocaleString("en-IN")} />
-        <StatTile label="Disbursed volume" value={rupees(m.disbursedVolumePaise)} />
-        <StatTile label={`${label} earned`} value={rupees(m.earnedPaise)} />
-        <StatTile label={`${label} received`} value={rupees(m.paidPaise)} accent />
+        <StatTile label="Disbursed volume" value={formatPaise(m.disbursedVolumePaise)} />
+        <StatTile label={`${label} earned`} value={formatPaise(m.earnedPaise)} />
+        <StatTile label={`${label} received`} value={formatPaise(m.paidPaise)} accent />
       </div>
 
       <Card className="mt-6 flex items-center justify-between p-6">
@@ -62,7 +56,7 @@ export default async function DashboardPage() {
             {label} balance (earned − received)
           </p>
           <p className="mt-1 font-display text-2xl font-extrabold tabular-nums text-navy-950">
-            {rupees(balance)}
+            {formatPaise(balance)}
           </p>
         </div>
       </Card>
@@ -91,7 +85,7 @@ export default async function DashboardPage() {
                   label={leadStatusLabels[lead.status] ?? lead.status}
                 />
                 <span className="w-20 text-right text-xs tabular-nums text-navy-400">
-                  {dateFmt.format(lead.createdAt)}
+                  {formatDate(lead.createdAt)}
                 </span>
               </div>
             </li>

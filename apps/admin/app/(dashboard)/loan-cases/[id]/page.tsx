@@ -2,14 +2,13 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { Card, Stat, SubmitButton } from "@truelend/ui";
-import { bankName, productName } from "@truelend/reference";
+import { bankName, productName, formatPaise, formatDateTime } from "@truelend/reference";
 import { PageTitle } from "@/components/page-title";
 import { StatusBadge } from "@/components/status-badge";
 import { getAuthContext } from "@/lib/auth";
 import { getLoanCase } from "@/lib/loan-queries";
 import { updateLoanCaseAction } from "@/lib/loan-actions";
 import { LoanCaseFields } from "@/components/loan-case-fields";
-import { formatPaise, formatDateTime } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 

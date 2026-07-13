@@ -8,13 +8,14 @@ import {
   productName,
   bankName,
   channelForKind,
+  formatDateTime,
+  formatPaise,
 } from "@truelend/reference";
 import { schema } from "@truelend/db";
 import { PageTitle } from "@/components/page-title";
 import { StatusBadge } from "@/components/status-badge";
 import { getAuthContext } from "@/lib/auth";
 import { getLead, listEmployees } from "@/lib/queries";
-import { formatDateTime, formatPaise } from "@/lib/format";
 import { updateLeadPipelineAction, addLeadNoteAction } from "@/lib/actions";
 
 export const dynamic = "force-dynamic";

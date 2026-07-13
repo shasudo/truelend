@@ -464,6 +464,9 @@ importers:
       '@truelend/db':
         specifier: workspace:*
         version: link:../db
+      '@truelend/ui':
+        specifier: workspace:*
+        version: link:../ui
       better-auth:
         specifier: 'catalog:'
         version: 1.6.23(@cloudflare/workers-types@5.20260711.1)(drizzle-kit@0.31.10)(drizzle-orm@0.45.2(@cloudflare/workers-types@5.20260711.1)(gel@2.2.0)(kysely@0.29.3)(postgres@3.4.9))(next@15.5.20(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -483,6 +486,9 @@ importers:
       eslint:
         specifier: 'catalog:'
         version: 9.39.5(jiti@2.7.0)
+      next:
+        specifier: 'catalog:'
+        version: 15.5.20(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       react:
         specifier: 'catalog:'
         version: 19.2.7

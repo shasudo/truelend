@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Card, Logo } from "@truelend/ui";
-import { LoginForm } from "@/components/login-form";
+import { LoginForm } from "@truelend/auth/forms";
 
 export const metadata: Metadata = { title: "Sign in" };
 
@@ -15,7 +15,7 @@ export default function LoginPage() {
           Admin sign in
         </h1>
         <p className="mt-1 text-sm text-navy-500">Internal access only.</p>
-        <LoginForm />
+        <LoginForm redirectTo="/" />
       </Card>
     </main>
   );

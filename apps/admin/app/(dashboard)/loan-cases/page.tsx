@@ -1,13 +1,19 @@
 import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button, Card, Select, cx } from "@truelend/ui";
-import { banks, productName, bankName, loanCaseStatusLabels } from "@truelend/reference";
+import {
+  banks,
+  productName,
+  bankName,
+  loanCaseStatusLabels,
+  formatDate,
+  formatPaise,
+} from "@truelend/reference";
 import { schema } from "@truelend/db";
 import { PageTitle } from "@/components/page-title";
 import { StatusBadge } from "@/components/status-badge";
 import { getAuthContext } from "@/lib/auth";
 import { listLoanCases, type LoanCaseFilters, type LoanCaseStatus } from "@/lib/loan-queries";
-import { formatDate, formatPaise } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 

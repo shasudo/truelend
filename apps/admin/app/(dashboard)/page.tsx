@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { desc } from "drizzle-orm";
 import { Card, SectionHeading, StatTile } from "@truelend/ui";
-import { productName, leadKindLabels } from "@truelend/reference";
+import { productName, leadKindLabels, formatPaise, formatDate } from "@truelend/reference";
 import { schema } from "@truelend/db";
 import { PageTitle } from "@/components/page-title";
 import { StatusBadge } from "@/components/status-badge";
@@ -13,7 +13,6 @@ import {
   getLeadsByProduct,
   getLeadsByChannel,
 } from "@/lib/mis-queries";
-import { formatPaise, formatDate } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 

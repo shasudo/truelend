@@ -1,7 +1,6 @@
 import { Field, Input, Select } from "@truelend/ui";
-import { banks, products, loanCaseStatusLabels } from "@truelend/reference";
+import { banks, products, loanCaseStatusLabels, paiseToRupeesInput } from "@truelend/reference";
 import { schema, type LoanCase } from "@truelend/db";
-import { paiseToRupeesInput } from "@/lib/format";
 
 interface Defaults {
   lenderSlug?: string;

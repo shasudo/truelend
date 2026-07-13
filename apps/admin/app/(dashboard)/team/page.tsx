@@ -5,7 +5,7 @@ import { PageTitle } from "@/components/page-title";
 import { CreateUserForm } from "@/components/create-user-form";
 import { TeamMembers } from "@/components/team-members";
 import { requireAdmin, getAuthContext } from "@/lib/auth";
-import { formatDate } from "@/lib/format";
+import { formatDate } from "@truelend/reference";
 
 export const dynamic = "force-dynamic";
 

@@ -1,11 +1,10 @@
 import Link from "next/link";
 import { Card } from "@truelend/ui";
-import { partnerTypeLabels, partnerStatusLabels } from "@truelend/reference";
+import { partnerTypeLabels, partnerStatusLabels, formatDate } from "@truelend/reference";
 import { schema } from "@truelend/db";
 import { PageTitle } from "@/components/page-title";
 import { requireAdmin, getAuthContext } from "@/lib/auth";
 import { listPartners } from "@/lib/partner-queries";
-import { formatDate } from "@/lib/format";
 import { cx } from "@truelend/ui";
 
 export const dynamic = "force-dynamic";

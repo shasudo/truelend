@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Card, Logo } from "@truelend/ui";
-import { ForgotPasswordForm } from "@/components/forgot-password-form";
+import { ForgotPasswordForm } from "@truelend/auth/forms";
 
 export const metadata: Metadata = { title: "Reset password" };
 

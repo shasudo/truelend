@@ -8,11 +8,13 @@ import {
   partnerDocTypeLabels,
   productName,
   earningsLabel,
+  formatPaise,
+  formatDate,
+  formatDateTime,
 } from "@truelend/reference";
 import { PageTitle } from "@/components/page-title";
 import { requireAdmin, getAuthContext } from "@/lib/auth";
 import { getPartnerDetail } from "@/lib/partner-queries";
-import { formatPaise, formatDate, formatDateTime } from "@/lib/format";
 import {
   approvePartnerAction,
   rejectPartnerAction,
