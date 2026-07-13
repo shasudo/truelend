@@ -1,3 +1,4 @@
+import { and, eq, inArray } from "drizzle-orm";
 import { schema } from "@truelend/db";
 import { requirePartnerApi } from "@/lib/auth";
 
@@ -41,7 +42,19 @@ export async function POST(req: Request) {
   });
 
   try {
-    // Newest row per doc type is the current one.
+    // A partner keeps exactly one doc per type: supersede any prior upload of
+    // this type — insert the new row, then drop the old rows and their R2
+    // objects (so re-uploads don't leave orphaned files in the bucket).
+    const superseded = await db
+      .select({ id: schema.partnerDocuments.id, r2Key: schema.partnerDocuments.r2Key })
+      .from(schema.partnerDocuments)
+      .where(
+        and(
+          eq(schema.partnerDocuments.partnerId, partner.userId),
+          eq(schema.partnerDocuments.docType, docType),
+        ),
+      );
+
     await db.insert(schema.partnerDocuments).values({
       partnerId: partner.userId,
       docType,
@@ -49,6 +62,17 @@ export async function POST(req: Request) {
       contentType: file.type,
       sizeBytes: file.size,
     });
+
+    if (superseded.length > 0) {
+      await db.delete(schema.partnerDocuments).where(
+        inArray(
+          schema.partnerDocuments.id,
+          superseded.map((d) => d.id),
+        ),
+      );
+      // Best-effort object cleanup — don't block the response on it.
+      ctx.waitUntil(Promise.all(superseded.map((d) => env.BUCKET.delete(d.r2Key))));
+    }
   } finally {
     ctx.waitUntil(db.$client.end());
   }

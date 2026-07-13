@@ -1,23 +1,45 @@
 "use client";
 
 import { useActionState } from "react";
-import { Upload } from "lucide-react";
+import { Upload, Download } from "lucide-react";
 import { Button } from "@truelend/ui";
+import { products } from "@truelend/reference";
 import { submitLeadsCsv, type CsvState } from "@/lib/lead-actions";
+
+// Fixed column order the parser expects; sample row uses a real product slug.
+const TEMPLATE_CSV = `name,phone,email,city,product,message
+Ravi Kumar,9876543210,ravi@example.com,Mumbai,${products[0]?.slug ?? ""},Looking for a personal loan
+Priya Shah,9812345678,,Pune,,Call back after 6pm
+`;
+
+function downloadTemplate() {
+  const url = URL.createObjectURL(new Blob([TEMPLATE_CSV], { type: "text/csv" }));
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "truelend-leads-template.csv";
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
 export function CsvLeadUpload() {
   const [state, action, pending] = useActionState<CsvState, FormData>(submitLeadsCsv, {});
 
   return (
     <form action={action} className="space-y-4">
-      <p className="text-sm text-navy-600">
-        Upload a CSV with columns <code className="rounded bg-navy-800/[0.06] px-1">name</code>,{" "}
-        <code className="rounded bg-navy-800/[0.06] px-1">phone</code>, and optionally{" "}
-        <code className="rounded bg-navy-800/[0.06] px-1">email</code>,{" "}
-        <code className="rounded bg-navy-800/[0.06] px-1">city</code>,{" "}
-        <code className="rounded bg-navy-800/[0.06] px-1">product</code>,{" "}
-        <code className="rounded bg-navy-800/[0.06] px-1">message</code>.
-      </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <p className="max-w-md text-sm text-navy-600">
+          Upload a CSV with columns <code className="rounded bg-navy-800/[0.06] px-1">name</code>,{" "}
+          <code className="rounded bg-navy-800/[0.06] px-1">phone</code>, and optionally{" "}
+          <code className="rounded bg-navy-800/[0.06] px-1">email</code>,{" "}
+          <code className="rounded bg-navy-800/[0.06] px-1">city</code>,{" "}
+          <code className="rounded bg-navy-800/[0.06] px-1">product</code>,{" "}
+          <code className="rounded bg-navy-800/[0.06] px-1">message</code>.
+        </p>
+        <Button type="button" variant="ghost" size="sm" onClick={downloadTemplate}>
+          <Download className="h-4 w-4" aria-hidden />
+          Template
+        </Button>
+      </div>
 
       <input
         type="file"

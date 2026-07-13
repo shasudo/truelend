@@ -46,6 +46,15 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <Header />
         <main className="flex-1">{children}</main>
         <Footer />
+        {/* Cloudflare Web Analytics — set NEXT_PUBLIC_CF_BEACON_TOKEN in
+            apps/website/.env (build-time). Absent = no beacon, no-op. */}
+        {process.env.NEXT_PUBLIC_CF_BEACON_TOKEN && (
+          <script
+            defer
+            src="https://static.cloudflareinsights.com/beacon.min.js"
+            data-cf-beacon={`{"token": "${process.env.NEXT_PUBLIC_CF_BEACON_TOKEN}"}`}
+          />
+        )}
       </body>
     </html>
   );

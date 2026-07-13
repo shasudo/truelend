@@ -5,7 +5,11 @@ export async function verifyTurnstile(
   secret: string | undefined,
   ip?: string,
 ): Promise<boolean> {
-  if (!secret) return true;
+  // Turnstile needs BOTH keys. If the secret is set but the public site key is
+  // missing on a deploy, the widget never renders and no token can exist, so
+  // enforcing here would reject every legitimate submission — pass through
+  // instead of turning the misconfig into a silent lead-losing dead end.
+  if (!secret || !process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY) return true;
   if (!token) return false;
 
   const res = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {

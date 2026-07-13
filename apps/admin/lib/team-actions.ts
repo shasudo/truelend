@@ -118,6 +118,29 @@ export async function toggleBanAction(formData: FormData): Promise<ActionResult>
   }
 }
 
+const setPasswordSchema = z.object({
+  userId: z.string().min(1),
+  password: z.string().min(8, "Password must be at least 8 characters"),
+});
+
+export async function setPasswordAction(formData: FormData): Promise<ActionResult> {
+  const { auth, db, ctx, h, me } = await adminContext();
+  if (me?.role !== "admin") return { error: "Not authorized." };
+  const parsed = setPasswordSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid request." };
+  try {
+    await auth.api.setUserPassword({
+      body: { userId: parsed.data.userId, newPassword: parsed.data.password },
+      headers: h,
+    });
+    return { ok: true };
+  } catch (err) {
+    return { error: (err as Error).message || "Couldn't reset the password." };
+  } finally {
+    ctx.waitUntil(db.$client.end());
+  }
+}
+
 const removeSchema = z.object({ userId: z.string().min(1) });
 
 export async function removeUserAction(formData: FormData): Promise<ActionResult> {

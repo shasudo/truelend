@@ -2,14 +2,24 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Ban, Undo2, Trash2 } from "lucide-react";
+import { Ban, Undo2, Trash2, KeyRound } from "lucide-react";
 import { Button, Select, cx } from "@truelend/ui";
 import {
   setRoleAction,
   toggleBanAction,
   removeUserAction,
+  setPasswordAction,
   type ActionResult,
 } from "@/lib/team-actions";
+
+// Unambiguous alphabet (no 0/O/1/l/I) for a share-once temporary password.
+function tempPassword() {
+  const chars = "ABCDEFGHJKMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
+  return Array.from(
+    crypto.getRandomValues(new Uint8Array(14)),
+    (b) => chars[b % chars.length],
+  ).join("");
+}
 
 export interface Member {
   id: string;
@@ -74,6 +84,25 @@ function TeamRow({ m, isSelf }: { m: Member; isSelf: boolean }) {
       // Imperative server-action calls don't auto-apply the action's
       // revalidatePath to the client, so pull the fresh row state ourselves.
       router.refresh();
+    });
+  }
+
+  function resetPassword() {
+    if (
+      !window.confirm(`Reset ${m.name}'s password? You'll get a new temporary password to share.`)
+    )
+      return;
+    const pw = tempPassword();
+    const fd = new FormData();
+    fd.set("userId", m.id);
+    fd.set("password", pw);
+    setMsg(null);
+    start(async () => {
+      const res = await setPasswordAction(fd);
+      // Show the new password so the admin can copy it — it isn't stored anywhere.
+      setMsg(
+        res?.error ? { ok: false, text: res.error } : { ok: true, text: `New password: ${pw}` },
+      );
     });
   }
 
@@ -161,6 +190,9 @@ function TeamRow({ m, isSelf }: { m: Member; isSelf: boolean }) {
                 }
               >
                 <Trash2 className="h-4 w-4" aria-hidden /> Delete
+              </Button>
+              <Button size="sm" variant="ghost" disabled={pending} onClick={resetPassword}>
+                <KeyRound className="h-4 w-4" aria-hidden /> Password
               </Button>
             </div>
             {pending ? (
