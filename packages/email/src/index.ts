@@ -23,11 +23,21 @@ export interface SendEmailOptions {
 
 export type SendResult = { ok: true; skipped?: boolean } | { ok: false; error: string };
 
+// Callers fire-and-forget through ctx.waitUntil, so a failed SendResult is
+// never read. Log at the send boundary so failures/skips still surface in
+// Worker logs instead of vanishing.
+// ponytail: logging only. Queue + retry + alerting is the real fix once email
+// delivery becomes load-bearing (password resets, partner decisions).
+function logSkip(context: string): SendResult {
+  console.warn(`[email] skipped ${context} — not configured`);
+  return { ok: true, skipped: true };
+}
+
 export async function sendEmail(
   apiKey: string | undefined,
   opts: SendEmailOptions,
 ): Promise<SendResult> {
-  if (!apiKey) return { ok: true, skipped: true };
+  if (!apiKey) return logSkip(`"${opts.subject}" (RESEND_API_KEY unset)`);
   try {
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
@@ -40,10 +50,16 @@ export async function sendEmail(
         reply_to: opts.replyTo,
       }),
     });
-    if (!res.ok) return { ok: false, error: `Resend ${res.status}: ${await res.text()}` };
+    if (!res.ok) {
+      const error = `Resend ${res.status}: ${await res.text()}`;
+      console.error(`[email] send failed for "${opts.subject}" → ${error}`);
+      return { ok: false, error };
+    }
     return { ok: true };
   } catch (err) {
-    return { ok: false, error: (err as Error).message };
+    const error = (err as Error).message;
+    console.error(`[email] send threw for "${opts.subject}" → ${error}`);
+    return { ok: false, error };
   }
 }
 
@@ -96,7 +112,8 @@ export interface NewLeadInfo {
 
 /** Alerts the internal team that a new lead arrived. No-op without config. */
 export function notifyNewLead(env: EmailEnv, lead: NewLeadInfo): Promise<SendResult> {
-  if (!env.EMAIL_FROM || !env.TEAM_EMAIL) return Promise.resolve({ ok: true, skipped: true });
+  if (!env.EMAIL_FROM || !env.TEAM_EMAIL)
+    return Promise.resolve(logSkip("new-lead alert (EMAIL_FROM/TEAM_EMAIL unset)"));
   const rows = [
     ["Name", lead.name],
     ["Phone", lead.phone],
@@ -139,7 +156,7 @@ export function notifyPartnerDecision(
   env: EmailEnv,
   info: PartnerDecisionInfo,
 ): Promise<SendResult> {
-  if (!env.EMAIL_FROM) return Promise.resolve({ ok: true, skipped: true });
+  if (!env.EMAIL_FROM) return Promise.resolve(logSkip("partner-decision email (EMAIL_FROM unset)"));
   const first = info.name.split(" ")[0] ?? info.name;
   const html =
     info.decision === "verified"
@@ -176,7 +193,7 @@ export interface PasswordResetInfo {
 
 /** Emails a user a password-reset link. No-op without EMAIL_FROM configured. */
 export function sendPasswordReset(env: EmailEnv, info: PasswordResetInfo): Promise<SendResult> {
-  if (!env.EMAIL_FROM) return Promise.resolve({ ok: true, skipped: true });
+  if (!env.EMAIL_FROM) return Promise.resolve(logSkip("password-reset email (EMAIL_FROM unset)"));
   const first = info.name.split(" ")[0] ?? info.name;
   const html = emailLayout(
     heading("Reset your password") +
