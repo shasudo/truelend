@@ -41,7 +41,8 @@ export async function listPartners(db: Database, status?: string): Promise<Partn
     type: String(r.type),
     status: String(r.status),
     businessName: (r.business_name as string | null) ?? null,
-    createdAt: r.created_at as Date,
+    // Raw postgres.js (fetch_types:false) returns timestamptz as a string.
+    createdAt: new Date(String(r.created_at)),
     leadCount: num(r.lead_count),
     docCount: num(r.doc_count),
   }));
