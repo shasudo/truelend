@@ -4,6 +4,7 @@ import { getPartnerDocuments } from "@/lib/partner-queries";
 import { kycEditable } from "@/lib/onboarding";
 import { KycDetailsForm } from "@/components/kyc-details-form";
 import { KycUpload } from "@/components/kyc-upload";
+import { PartnerPageHeader } from "@/components/partner-page-header";
 
 export const dynamic = "force-dynamic";
 
@@ -14,9 +15,12 @@ export default async function KycPage() {
   const editable = partner ? kycEditable(partner) : true;
 
   return (
-    <div className="max-w-2xl">
-      <h1 className="font-display text-2xl font-extrabold tracking-tight text-navy-950">My KYC</h1>
-      <p className="mt-1 text-navy-500">Keep your details and documents up to date.</p>
+    <div className="max-w-3xl">
+      <PartnerPageHeader
+        eyebrow="Account verification"
+        title="Document Status"
+        description="Review your KYC details, required documents and verification state."
+      />
 
       {!editable && (
         <p className="mt-5 rounded-lg border border-navy-800/15 bg-navy-800/[0.05] px-4 py-3 text-sm text-navy-700">
@@ -42,4 +46,4 @@ export default async function KycPage() {
     </div>
   );
 }
-export const metadata = { title: "KYC" };
+export const metadata = { title: "Document Status" };
