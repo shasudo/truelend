@@ -137,7 +137,6 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
         </form>
       </Card>
 
-      {/* Table */}
       <Card className="overflow-x-auto">
         <table className="w-full min-w-[820px] text-left text-sm">
           <thead>
@@ -190,7 +189,6 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
         </table>
       </Card>
 
-      {/* Pagination */}
       {pageCount > 1 && (
         <div className="mt-5 flex items-center justify-between text-sm text-navy-500">
           <span>

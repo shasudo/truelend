@@ -83,8 +83,6 @@ function para(text: string): string {
   return `<p style="margin:0 0 14px 0;font-size:15px;line-height:1.6;color:#2d3d74;">${text}</p>`;
 }
 
-/* ---- higher-level notifications ---- */
-
 export interface NewLeadInfo {
   name?: string | null;
   phone?: string | null;

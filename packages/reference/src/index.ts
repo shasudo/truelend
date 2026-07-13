@@ -94,8 +94,6 @@ export function channelForLead(
   return channelForKind(lead.kind);
 }
 
-/* Partners (apps/partners) ----------------------------------------- */
-
 export const partnerTypeLabels: Record<string, string> = {
   business: "Business Partner",
   referral: "Referral Partner",

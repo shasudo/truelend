@@ -142,7 +142,6 @@ export default async function LoanCasesPage({ searchParams }: { searchParams: Pr
         </table>
       </Card>
 
-      {/* Pagination */}
       {pageCount > 1 && (
         <div className="mt-5 flex items-center justify-between text-sm text-navy-500">
           <span>

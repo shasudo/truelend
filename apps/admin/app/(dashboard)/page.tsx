@@ -32,7 +32,6 @@ export default async function OverviewPage() {
     <>
       <PageTitle title={`Welcome back, ${session.user.name.split(" ")[0]}`} subtitle="Overview" />
 
-      {/* Stat tiles */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-5">
         <StatTile label="Total leads" value={stats.totalLeads.toLocaleString("en-IN")} />
         <StatTile label="In pipeline" value={stats.inPipeline.toLocaleString("en-IN")} />
@@ -41,7 +40,6 @@ export default async function OverviewPage() {
         <StatTile label="Net to TrueLend" value={formatPaise(stats.netPaise)} accent />
       </div>
 
-      {/* Trend */}
       <Card className="mt-6 p-6">
         <SectionHeading eyebrow="Last 30 days" title="Leads over time" />
         <div className="mt-6">
@@ -49,7 +47,6 @@ export default async function OverviewPage() {
         </div>
       </Card>
 
-      {/* Breakdowns */}
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
         <Card className="p-6">
           <h2 className="font-display text-lg font-bold text-navy-950">Leads by product</h2>
@@ -65,7 +62,6 @@ export default async function OverviewPage() {
         </Card>
       </div>
 
-      {/* Recent leads */}
       <Card className="mt-6 p-6">
         <div className="flex items-center justify-between">
           <h2 className="font-display text-lg font-bold text-navy-950">Recent leads</h2>

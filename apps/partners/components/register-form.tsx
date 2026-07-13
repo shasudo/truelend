@@ -26,7 +26,6 @@ export function RegisterForm() {
 
   return (
     <form action={action} className="space-y-6">
-      {/* Type selector */}
       <fieldset>
         <legend className="mb-2 text-sm font-medium text-navy-800">I want to join as</legend>
         <input type="hidden" name="type" value={type} />

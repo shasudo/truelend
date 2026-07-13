@@ -36,8 +36,6 @@ async function verifiedPartner() {
 const partnerSource = (p: { type: string; businessName: string | null }) =>
   `${partnerTypeLabels[p.type]}${p.businessName ? `: ${p.businessName}` : ""}`;
 
-/* ---- single lead ---- */
-
 const leadSchema = z.object({
   name: z.string().trim().min(2, "Name is required"),
   phone,

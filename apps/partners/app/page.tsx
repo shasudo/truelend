@@ -61,7 +61,6 @@ export default function Home() {
     <>
       <PublicHeader />
 
-      {/* Hero */}
       <section className="relative overflow-hidden border-b border-hairline">
         <HexPattern className="-right-32 -top-24 h-[560px] w-[560px] text-navy-800/[0.05]" />
         <Container className="py-20 sm:py-28">
@@ -90,7 +89,6 @@ export default function Home() {
         </Container>
       </section>
 
-      {/* Two paths */}
       <section>
         <Container className="py-20 sm:py-24">
           <SectionHeading
@@ -118,7 +116,6 @@ export default function Home() {
         </Container>
       </section>
 
-      {/* How it works */}
       <section className="bg-paper-deep/60">
         <Container className="py-20 sm:py-24">
           <SectionHeading eyebrow="How it works" title="From sign-up to payout" />
@@ -139,7 +136,6 @@ export default function Home() {
         </Container>
       </section>
 
-      {/* CTA */}
       <section className="relative overflow-hidden bg-navy-900 text-white">
         <HexPattern className="-left-28 -top-44 h-[420px] w-[420px] text-white/[0.06]" />
         <Container className="flex flex-col items-start gap-8 py-16 sm:py-20 lg:flex-row lg:items-center lg:justify-between">

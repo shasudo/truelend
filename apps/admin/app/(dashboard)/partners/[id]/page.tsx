@@ -77,7 +77,6 @@ export default async function PartnerDetailPage({ params }: { params: Promise<{ 
 
       <div className="grid gap-6 lg:grid-cols-[1.5fr_1fr]">
         <div className="space-y-6">
-          {/* Profile */}
           <Card className="p-6">
             <h2 className="font-display text-lg font-bold text-navy-950">Profile</h2>
             <dl className="mt-5 grid grid-cols-2 gap-5">
@@ -96,7 +95,6 @@ export default async function PartnerDetailPage({ params }: { params: Promise<{ 
             </dl>
           </Card>
 
-          {/* KYC details */}
           <Card className="p-6">
             <h2 className="font-display text-lg font-bold text-navy-950">KYC details</h2>
             <dl className="mt-5 grid grid-cols-2 gap-5">
@@ -110,7 +108,6 @@ export default async function PartnerDetailPage({ params }: { params: Promise<{ 
             </dl>
           </Card>
 
-          {/* KYC documents */}
           <Card className="p-6">
             <h2 className="font-display text-lg font-bold text-navy-950">KYC documents</h2>
             <ul className="mt-4 space-y-2">
@@ -138,7 +135,6 @@ export default async function PartnerDetailPage({ params }: { params: Promise<{ 
             </ul>
           </Card>
 
-          {/* Recent leads */}
           <Card className="p-6">
             <h2 className="font-display text-lg font-bold text-navy-950">Recent leads</h2>
             <ul className="mt-4 divide-y divide-hairline">

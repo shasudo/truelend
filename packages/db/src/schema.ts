@@ -288,8 +288,6 @@ export const partnerPayouts = pgTable(
   (t) => [index("partner_payouts_partner_id_idx").on(t.partnerId)],
 );
 
-/* ------------------------------------------------------------------ */
-
 export type Lead = typeof leads.$inferSelect;
 export type NewLead = typeof leads.$inferInsert;
 export type LeadNote = typeof leadNotes.$inferSelect;

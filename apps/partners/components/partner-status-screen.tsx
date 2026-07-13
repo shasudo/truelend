@@ -60,7 +60,6 @@ export function PartnerStatusScreen({
           </div>
         </Card>
 
-        {/* Step 1: KYC details */}
         <div className="mt-8">
           <h2 className="font-display text-lg font-bold text-navy-950">
             <span className="mr-2 text-red-600">1.</span>Your details
@@ -73,7 +72,6 @@ export function PartnerStatusScreen({
           </Card>
         </div>
 
-        {/* Step 2: documents */}
         <div className="mt-8">
           <h2 className="font-display text-lg font-bold text-navy-950">
             <span className="mr-2 text-red-600">2.</span>Your documents
@@ -82,7 +80,6 @@ export function PartnerStatusScreen({
           <KycUpload documents={documents} />
         </div>
 
-        {/* Step 3: submit */}
         <div className="mt-8">
           <h2 className="font-display text-lg font-bold text-navy-950">
             <span className="mr-2 text-red-600">3.</span>Submit for review

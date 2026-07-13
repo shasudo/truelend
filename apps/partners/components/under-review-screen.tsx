@@ -47,7 +47,6 @@ export function UnderReviewScreen({
           you&rsquo;re verified.
         </p>
 
-        {/* What happens next */}
         <Card className="mt-10 w-full max-w-md p-6 text-left">
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-navy-400">
             What happens next

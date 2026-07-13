@@ -52,7 +52,6 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
       />
 
       <div className="grid gap-6 lg:grid-cols-[1.6fr_1fr]">
-        {/* Left: contact + notes */}
         <div className="space-y-6">
           <Card className="p-6">
             <h2 className="font-display text-lg font-bold text-navy-950">Contact & enquiry</h2>
@@ -101,7 +100,6 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
             )}
           </Card>
 
-          {/* Notes */}
           <Card className="p-6">
             <h2 className="font-display text-lg font-bold text-navy-950">Notes</h2>
             <form action={addLeadNoteAction} className="mt-4 space-y-3">
@@ -131,7 +129,6 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
           </Card>
         </div>
 
-        {/* Right: pipeline controls + loan cases */}
         <div className="space-y-6">
           <Card className="p-6">
             <h2 className="font-display text-lg font-bold text-navy-950">Pipeline</h2>
