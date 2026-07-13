@@ -1,5 +1,6 @@
 import { betterAuth } from "better-auth";
 import { admin } from "better-auth/plugins";
+import { nextCookies } from "better-auth/next-js";
 import { drizzleAdapter } from "@better-auth/drizzle-adapter";
 import { schema, type Database } from "@truelend/db";
 
@@ -36,7 +37,9 @@ export function createAuth(db: Database, opts: CreateAuthOptions) {
       // Accounts are created by an admin from the Team page, never self-serve.
       disableSignUp: !opts.allowSignUp,
     },
-    plugins: [admin({ defaultRole: "employee" })],
+    // nextCookies() MUST be last — it lets signUpEmail/signIn set the session
+    // cookie from inside a Next server action (used by partner registration).
+    plugins: [admin({ defaultRole: "employee" }), nextCookies()],
   });
 }
 

@@ -16,6 +16,8 @@ catalog:
   "@better-auth/drizzle-adapter": ^1.6.23
   # dashboards
   recharts: ^3.9.2
+  papaparse: ^5.4.1
+  "@types/papaparse": ^5.3.14
   # ui / styling
   tailwindcss: ^4.1.0
   "@tailwindcss/postcss": ^4.1.0
