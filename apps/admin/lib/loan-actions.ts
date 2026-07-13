@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { eq } from "drizzle-orm";
+import { and, eq, ne } from "drizzle-orm";
 import { z } from "zod";
 import { schema, type Database, type NewLoanCase } from "@truelend/db";
 import { getMutationContext } from "./auth";
@@ -18,20 +18,34 @@ const leadStatusForCase: Record<CaseStatus, (typeof schema.leadStatus.enumValues
   disbursed: "disbursed",
 };
 
-const leadOrder = schema.leadStatus.enumValues;
+// Business precedence of a loan-case outcome, best first. A lead can have many
+// lender cases; its pipeline position is the BEST outcome across all of them —
+// one lender declining must never override another approving or disbursing.
+// (The old code used enum declaration order as precedence, which put declined
+// after approved and looked at only the edited case — both wrong.)
+const CASE_OUTCOME_RANK = ["disbursed", "approved", "logged_in", "declined"] as const;
 
-// Move the parent lead forward to match a case's status — never backward, so
-// editing an old case can't rewind a lead that's already further along.
-async function advanceLeadStatus(db: Database, leadId: string, caseStatus: CaseStatus) {
-  const target = leadStatusForCase[caseStatus];
-  const rows = await db
-    .select({ status: schema.leads.status })
-    .from(schema.leads)
-    .where(eq(schema.leads.id, leadId))
-    .limit(1);
-  const current = rows[0]?.status;
-  if (!current || leadOrder.indexOf(target) <= leadOrder.indexOf(current)) return;
-  await db.update(schema.leads).set({ status: target }).where(eq(schema.leads.id, leadId));
+// Best outcome among a lead's cases, or null if it has none. Pure; kept local
+// because this is a "use server" module (every export must be an async action).
+function bestCaseOutcome(statuses: CaseStatus[]): CaseStatus | null {
+  return CASE_OUTCOME_RANK.find((s) => statuses.includes(s)) ?? null;
+}
+
+// Recompute the parent lead's status from ALL its lender cases. Runs on every
+// case create/update, so editing an old case reflects the true aggregate rather
+// than rewinding or clobbering the lead from a single case.
+async function recomputeLeadStatus(db: Database, leadId: string) {
+  const cases = await db
+    .select({ status: schema.loanCases.status })
+    .from(schema.loanCases)
+    .where(eq(schema.loanCases.leadId, leadId));
+  const best = bestCaseOutcome(cases.map((c) => c.status));
+  if (!best) return;
+  const target = leadStatusForCase[best];
+  await db
+    .update(schema.leads)
+    .set({ status: target })
+    .where(and(eq(schema.leads.id, leadId), ne(schema.leads.status, target)));
 }
 
 // Which timestamp column records when a case reached each status.
@@ -94,7 +108,7 @@ export async function createLoanCaseAction(formData: FormData) {
       .values(values)
       .returning({ id: schema.loanCases.id });
     newId = inserted[0]?.id;
-    await advanceLeadStatus(db, d.leadId, d.status);
+    await recomputeLeadStatus(db, d.leadId);
     revalidatePath(`/leads/${d.leadId}`);
     revalidatePath("/loan-cases");
   } finally {
@@ -135,7 +149,7 @@ export async function updateLoanCaseAction(formData: FormData) {
     if (!existing[tsField]) set[tsField] = new Date();
 
     await db.update(schema.loanCases).set(set).where(eq(schema.loanCases.id, d.caseId));
-    await advanceLeadStatus(db, existing.leadId, d.status);
+    await recomputeLeadStatus(db, existing.leadId);
 
     revalidatePath(`/loan-cases/${d.caseId}`);
     revalidatePath(`/leads/${existing.leadId}`);

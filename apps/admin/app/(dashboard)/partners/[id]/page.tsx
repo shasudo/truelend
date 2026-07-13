@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, FileText, Check, X } from "lucide-react";
-import { Card, Field, Input, Select, Textarea, Stat, SubmitButton, cx } from "@truelend/ui";
+import { Card, Textarea, Stat, SubmitButton, cx } from "@truelend/ui";
 import {
   partnerTypeLabels,
   partnerStatusLabels,
@@ -13,13 +13,13 @@ import {
   formatDateTime,
 } from "@truelend/reference";
 import { PageTitle } from "@/components/page-title";
+import { PayoutForm } from "@/components/payout-form";
 import { requireAdmin, getAuthContext } from "@/lib/auth";
 import { getPartnerDetail } from "@/lib/partner-queries";
 import {
   approvePartnerAction,
   rejectPartnerAction,
   revokePartnerAction,
-  recordPayoutAction,
 } from "@/lib/partner-actions";
 
 export const dynamic = "force-dynamic";
@@ -226,43 +226,7 @@ export default async function PartnerDetailPage({ params }: { params: Promise<{ 
               <Stat value={formatPaise(balance)} label="Balance" accent />
             </div>
 
-            <form
-              action={recordPayoutAction}
-              className="mt-5 space-y-3 border-t border-hairline pt-5"
-            >
-              <input type="hidden" name="partnerId" value={partner.userId} />
-              <div className="grid grid-cols-2 gap-3">
-                <Field label="Entry" htmlFor="kind">
-                  <Select id="kind" name="kind" defaultValue="earned">
-                    <option value="earned">Earned</option>
-                    <option value="paid">Paid</option>
-                  </Select>
-                </Field>
-                <Field label="Amount (₹)" htmlFor="amount">
-                  <Input
-                    id="amount"
-                    name="amount"
-                    type="number"
-                    required
-                    min="1"
-                    step="1"
-                    inputMode="numeric"
-                    placeholder="0"
-                  />
-                </Field>
-              </div>
-              <Field label="Note" htmlFor="note">
-                <Input id="note" name="note" placeholder="e.g. Case #… disbursed" />
-              </Field>
-              <SubmitButton
-                size="sm"
-                variant="secondary"
-                className="w-full"
-                pendingText="Recording…"
-              >
-                Record {noun.toLowerCase()}
-              </SubmitButton>
-            </form>
+            <PayoutForm partnerId={partner.userId} noun={noun} />
 
             {payouts.length === 0 ? (
               <p className="mt-5 border-t border-hairline pt-4 text-sm text-navy-400">

@@ -2,12 +2,14 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { schema, type Database } from "@truelend/db";
 import { notifyPartnerDecision } from "@truelend/email";
 import { getAuthContext, getMutationContext } from "./auth";
-import { rupeesToPaise } from "@truelend/reference";
+import { formatPaise, rupeesToPaise } from "@truelend/reference";
+
+export type PayoutResult = { ok?: boolean; error?: string };
 
 async function admin() {
   const { db, ctx, user } = await getMutationContext();
@@ -125,14 +127,37 @@ const payoutSchema = z.object({
   note: z.string().trim().max(500).optional(),
 });
 
-export async function recordPayoutAction(formData: FormData) {
+export async function recordPayoutAction(
+  _prev: PayoutResult,
+  formData: FormData,
+): Promise<PayoutResult> {
   const { db, ctx, isAdmin } = await admin();
-  if (!isAdmin) redirect("/login");
+  if (!isAdmin) return { error: "Not authorized." };
   const parsed = payoutSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) return;
+  if (!parsed.success) return { error: "Please check the fields." };
   const amountPaise = rupeesToPaise(parsed.data.amount);
-  if (amountPaise == null || amountPaise <= 0) return;
+  if (amountPaise == null || amountPaise <= 0) return { error: "Enter a valid amount." };
   try {
+    if (parsed.data.kind === "paid") {
+      // Never pay out more than earned-minus-already-paid. The ledger is
+      // append-only, so this sum is the whole truth. ponytail: this read +
+      // insert isn't atomic — two concurrent "paid" entries could both pass;
+      // add a per-partner lock or a ledger balance-check constraint if payouts
+      // ever get recorded concurrently.
+      const [sums] = await db
+        .select({
+          earned: sql<string>`coalesce(sum(${schema.partnerPayouts.amountPaise}) filter (where ${schema.partnerPayouts.kind} = 'earned'), 0)`,
+          paid: sql<string>`coalesce(sum(${schema.partnerPayouts.amountPaise}) filter (where ${schema.partnerPayouts.kind} = 'paid'), 0)`,
+        })
+        .from(schema.partnerPayouts)
+        .where(eq(schema.partnerPayouts.partnerId, parsed.data.partnerId));
+      const outstanding = Number(sums?.earned ?? 0) - Number(sums?.paid ?? 0);
+      if (amountPaise > outstanding) {
+        return {
+          error: `That exceeds the outstanding balance of ${formatPaise(Math.max(0, outstanding))}.`,
+        };
+      }
+    }
     await db.insert(schema.partnerPayouts).values({
       partnerId: parsed.data.partnerId,
       kind: parsed.data.kind,
@@ -140,6 +165,7 @@ export async function recordPayoutAction(formData: FormData) {
       note: parsed.data.note || null,
     });
     revalidatePath(`/partners/${parsed.data.partnerId}`);
+    return { ok: true };
   } finally {
     ctx.waitUntil(db.$client.end());
   }
