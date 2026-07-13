@@ -3,6 +3,8 @@
 import { headers } from "next/headers";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { createDb, schema } from "@truelend/db";
+import { notifyNewLead } from "@truelend/email";
+import { leadKindLabels, productName } from "@truelend/reference";
 import { leadSchema } from "./schemas";
 import { verifyTurnstile } from "./turnstile";
 
@@ -43,6 +45,18 @@ export async function submitLead(input: unknown): Promise<SubmitResult> {
       utmCampaign: blank(d.utmCampaign),
       consent: d.consent,
     });
+    // Alert the team (fire-and-forget; no-op without email config).
+    ctx.waitUntil(
+      notifyNewLead(env, {
+        name: "name" in d ? d.name : undefined,
+        phone: "phone" in d ? d.phone : undefined,
+        email: "email" in d ? d.email : undefined,
+        city: "city" in d ? d.city : undefined,
+        product: "productSlug" in d && d.productSlug ? productName(d.productSlug) : undefined,
+        message: "message" in d ? d.message : undefined,
+        source: `Website · ${leadKindLabels[d.kind]}`,
+      }),
+    );
     return { ok: true };
   } catch (err) {
     console.error("lead insert failed", err);

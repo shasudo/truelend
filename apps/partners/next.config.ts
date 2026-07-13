@@ -5,6 +5,7 @@ const nextConfig: NextConfig = {
   transpilePackages: [
     "@truelend/auth",
     "@truelend/db",
+    "@truelend/email",
     "@truelend/reference",
     "@truelend/types",
     "@truelend/ui",

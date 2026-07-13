@@ -5,7 +5,13 @@ import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
 
 const nextConfig: NextConfig = {
   // Workspace packages ship TypeScript source — let Next transpile them.
-  transpilePackages: ["@truelend/db", "@truelend/types", "@truelend/ui"],
+  transpilePackages: [
+    "@truelend/db",
+    "@truelend/email",
+    "@truelend/reference",
+    "@truelend/types",
+    "@truelend/ui",
+  ],
 };
 
 // Blog posts are .mdx files compiled into the bundle at build time — no

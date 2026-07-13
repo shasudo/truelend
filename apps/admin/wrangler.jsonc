@@ -14,6 +14,12 @@
   "vars": {
     // Overridden to http://localhost:3001 in .dev.vars for local dev.
     "BETTER_AUTH_URL": "https://truelend-admin.truelend.workers.dev",
+    // Email (Resend). RESEND_API_KEY is a secret. EMAIL_FROM must be a verified
+    // sender; TEAM_EMAIL receives new-lead alerts. PARTNERS_URL links the
+    // partner in verified/rejected emails. Missing key = no-op.
+    "EMAIL_FROM": "TrueLend <onboarding@resend.dev>",
+    "TEAM_EMAIL": "",
+    "PARTNERS_URL": "https://truelend-partners.truelend.workers.dev",
   },
   // Same account-level Hyperdrive config the website uses (shared Neon pool).
   // Secrets (wrangler secret put / .dev.vars): BETTER_AUTH_SECRET.

@@ -6,7 +6,8 @@ import { eq } from "drizzle-orm";
 import Papa from "papaparse";
 import { z } from "zod";
 import { schema, type NewLead } from "@truelend/db";
-import { products } from "@truelend/reference";
+import { products, productName, partnerTypeLabels } from "@truelend/reference";
+import { notifyNewLead, sendEmail, emailLayout } from "@truelend/email";
 import { getAuthContext } from "./auth";
 
 const productSlugs = products.map((p) => p.slug) as [string, ...string[]];
@@ -20,17 +21,20 @@ const phone = z
 const blank = (v: string | undefined) => (v && v.length > 0 ? v : null);
 
 async function verifiedPartner() {
-  const { db, ctx, auth } = getAuthContext();
+  const { db, ctx, auth, env } = getAuthContext();
   const session = await auth.api.getSession({ headers: await headers() });
-  if (!session) return { db, ctx, partner: null };
+  if (!session) return { db, ctx, env, partner: null };
   const rows = await db
     .select()
     .from(schema.partners)
     .where(eq(schema.partners.userId, session.user.id))
     .limit(1);
   const partner = rows[0];
-  return { db, ctx, partner: partner?.status === "verified" ? partner : null };
+  return { db, ctx, env, partner: partner?.status === "verified" ? partner : null };
 }
+
+const partnerSource = (p: { type: string; businessName: string | null }) =>
+  `${partnerTypeLabels[p.type]}${p.businessName ? `: ${p.businessName}` : ""}`;
 
 /* ---- single lead ---- */
 
@@ -46,7 +50,7 @@ const leadSchema = z.object({
 export type LeadState = { ok?: boolean; error?: string };
 
 export async function submitLead(_prev: LeadState, formData: FormData): Promise<LeadState> {
-  const { db, ctx, partner } = await verifiedPartner();
+  const { db, ctx, env, partner } = await verifiedPartner();
   if (!partner) return { error: "Your account isn't verified yet." };
   const parsed = leadSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success)
@@ -64,6 +68,17 @@ export async function submitLead(_prev: LeadState, formData: FormData): Promise<
       productSlug: blank(d.productSlug),
       message: blank(d.message),
     });
+    ctx.waitUntil(
+      notifyNewLead(env, {
+        name: d.name,
+        phone: d.phone,
+        email: blank(d.email),
+        city: blank(d.city),
+        product: d.productSlug ? productName(d.productSlug) : undefined,
+        message: blank(d.message),
+        source: partnerSource(partner),
+      }),
+    );
     revalidatePath("/dashboard");
     return { ok: true };
   } finally {
@@ -86,7 +101,7 @@ const csvRow = z.object({
 });
 
 export async function submitLeadsCsv(_prev: CsvState, formData: FormData): Promise<CsvState> {
-  const { db, ctx, partner } = await verifiedPartner();
+  const { db, ctx, env, partner } = await verifiedPartner();
   if (!partner) return { error: "Your account isn't verified yet." };
 
   const file = formData.get("file");
@@ -130,6 +145,21 @@ export async function submitLeadsCsv(_prev: CsvState, formData: FormData): Promi
 
   try {
     await db.insert(schema.leads).values(values);
+    // One summary alert for the whole batch (not N emails).
+    if (env.EMAIL_FROM && env.TEAM_EMAIL) {
+      const source = partnerSource(partner);
+      ctx.waitUntil(
+        sendEmail(env.RESEND_API_KEY, {
+          from: env.EMAIL_FROM,
+          to: env.TEAM_EMAIL,
+          subject: `${values.length} leads imported · ${source}`,
+          html: emailLayout(
+            `<h1 style="margin:0 0 12px 0;font-size:22px;font-weight:800;color:#14204a;">Bulk lead upload</h1>` +
+              `<p style="margin:0;font-size:15px;line-height:1.6;color:#2d3d74;"><strong>${source}</strong> imported <strong>${values.length}</strong> new leads.</p>`,
+          ),
+        }),
+      );
+    }
     revalidatePath("/dashboard");
     return { ok: true, inserted: values.length, rowErrors };
   } finally {

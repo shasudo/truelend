@@ -10,6 +10,10 @@ declare global {
     BUCKET: R2Bucket;
     /** Optional — set via .dev.vars locally, `wrangler secret put` in prod. */
     TURNSTILE_SECRET_KEY?: string;
+    // Email (Resend) — see @truelend/email. Missing key = no-op.
+    RESEND_API_KEY?: string;
+    EMAIL_FROM?: string;
+    TEAM_EMAIL?: string;
   }
 }
 

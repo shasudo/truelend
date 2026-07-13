@@ -12,6 +12,14 @@
   "observability": {
     "enabled": true,
   },
+  // Email (Resend). RESEND_API_KEY is a secret (wrangler secret put). EMAIL_FROM
+  // must be a verified Resend sender; onboarding@resend.dev works for testing to
+  // your own account email. Set TEAM_EMAIL to route new-lead alerts. Empty
+  // TEAM_EMAIL / missing key = email is a silent no-op.
+  "vars": {
+    "EMAIL_FROM": "TrueLend <onboarding@resend.dev>",
+    "TEAM_EMAIL": "",
+  },
   // Postgres (Neon), pooled by Hyperdrive. The id is not a secret — credentials
   // live inside the Hyperdrive config on Cloudflare. For local dev/preview the
   // connection string comes from apps/website/.env via

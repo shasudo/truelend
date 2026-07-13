@@ -18,6 +18,7 @@
     "@hookform/resolvers": "catalog:",
     "@truelend/auth": "workspace:*",
     "@truelend/db": "workspace:*",
+    "@truelend/email": "workspace:*",
     "@truelend/reference": "workspace:*",
     "@truelend/types": "workspace:*",
     "@truelend/ui": "workspace:*",

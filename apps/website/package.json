@@ -20,6 +20,8 @@
     "@mdx-js/react": "catalog:",
     "@next/mdx": "catalog:",
     "@truelend/db": "workspace:*",
+    "@truelend/email": "workspace:*",
+    "@truelend/reference": "workspace:*",
     "@truelend/types": "workspace:*",
     "@truelend/ui": "workspace:*",
     "gray-matter": "catalog:",

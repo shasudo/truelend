@@ -164,6 +164,9 @@ importers:
       '@truelend/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@truelend/email':
+        specifier: workspace:*
+        version: link:../../packages/email
       '@truelend/reference':
         specifier: workspace:*
         version: link:../../packages/reference
@@ -258,6 +261,9 @@ importers:
       '@truelend/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@truelend/email':
+        specifier: workspace:*
+        version: link:../../packages/email
       '@truelend/reference':
         specifier: workspace:*
         version: link:../../packages/reference
@@ -361,6 +367,12 @@ importers:
       '@truelend/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@truelend/email':
+        specifier: workspace:*
+        version: link:../../packages/email
+      '@truelend/reference':
+        specifier: workspace:*
+        version: link:../../packages/reference
       '@truelend/types':
         specifier: workspace:*
         version: link:../../packages/types
