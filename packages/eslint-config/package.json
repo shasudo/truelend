@@ -4,14 +4,18 @@
   "private": true,
   "type": "module",
   "files": [
-    "base.js"
+    "base.js",
+    "react.js"
   ],
   "exports": {
-    "./base": "./base.js"
+    "./base": "./base.js",
+    "./react": "./react.js"
   },
   "dependencies": {
     "@eslint/js": "catalog:",
     "eslint-config-prettier": "catalog:",
+    "eslint-plugin-jsx-a11y": "catalog:",
+    "eslint-plugin-react-hooks": "catalog:",
     "globals": "catalog:",
     "typescript-eslint": "catalog:"
   }

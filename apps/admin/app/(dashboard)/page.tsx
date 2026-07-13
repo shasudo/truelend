@@ -70,7 +70,7 @@ export default async function OverviewPage() {
           </Link>
         </div>
         <ul className="mt-4 divide-y divide-hairline">
-          {recent.length === 0 && <li className="py-4 text-sm text-navy-400">No leads yet.</li>}
+          {recent.length === 0 && <li className="py-4 text-sm text-muted">No leads yet.</li>}
           {recent.map((lead) => (
             <li key={lead.id}>
               <Link
@@ -85,7 +85,7 @@ export default async function OverviewPage() {
                 </div>
                 <div className="flex shrink-0 items-center gap-4">
                   <StatusBadge status={lead.status} />
-                  <span className="w-20 text-right text-xs tabular-nums text-navy-400">
+                  <span className="w-20 text-right text-xs tabular-nums text-muted">
                     {formatDate(lead.createdAt)}
                   </span>
                 </div>
@@ -97,3 +97,4 @@ export default async function OverviewPage() {
     </>
   );
 }
+export const metadata = { title: "Overview" };

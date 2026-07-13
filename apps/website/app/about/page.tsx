@@ -10,6 +10,7 @@ export const metadata: Metadata = {
   title: "About Us",
   description:
     "TrueLend exists so borrowers stop paying for information asymmetry. Meet the philosophy behind 'Before You Borrow. Think TrueLend.'",
+  alternates: { canonical: "/about" },
 };
 
 const values = [

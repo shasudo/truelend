@@ -6,6 +6,7 @@ import { PublicHeader } from "@/components/public-header";
 export const metadata: Metadata = {
   title: "Partner resources",
   description: "Training, product guidelines and marketing collateral for TrueLend partners.",
+  alternates: { canonical: "/resources" },
 };
 
 // Placeholder collateral — real training/decks/PDFs added by the TrueLend team.
@@ -52,7 +53,7 @@ export default function ResourcesPage() {
               <s.icon className="h-6 w-6 text-red-600" aria-hidden />
               <h2 className="mt-4 font-display text-lg font-bold text-navy-950">{s.title}</h2>
               <p className="mt-2 text-sm leading-relaxed text-navy-600">{s.desc}</p>
-              <p className="mt-4 text-xs font-semibold uppercase tracking-[0.1em] text-navy-300">
+              <p className="mt-4 text-xs font-semibold uppercase tracking-[0.1em] text-muted">
                 Coming soon
               </p>
             </Card>

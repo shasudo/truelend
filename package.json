@@ -3,13 +3,15 @@
   "private": true,
   "packageManager": "pnpm@11.10.0",
   "engines": {
-    "node": ">=20"
+    "node": ">=24 <25"
   },
   "scripts": {
+    "bootstrap:local": "node scripts/bootstrap-local.mjs",
     "build": "turbo build",
     "dev": "turbo dev",
     "lint": "turbo lint",
-    "test": "tsx --test tests/**/*.test.ts",
+    "test": "pnpm test:central && turbo test",
+    "test:central": "tsx --test tests/**/*.test.ts",
     "typecheck": "turbo typecheck",
     "format": "prettier --write .",
     "format:check": "prettier --check .",

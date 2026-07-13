@@ -1,5 +1,5 @@
 import type { ButtonHTMLAttributes } from "react";
-import { Slot } from "radix-ui";
+import { Slot } from "@radix-ui/react-slot";
 import { cx } from "./cx";
 
 const variants = {
@@ -32,7 +32,7 @@ export function Button({
   className,
   ...props
 }: ButtonProps) {
-  const Comp = asChild ? Slot.Root : "button";
+  const Comp = asChild ? Slot : "button";
   return (
     <Comp
       className={cx(

@@ -15,7 +15,9 @@ const nextConfig: NextConfig = {
   transpilePackages: [
     "@truelend/db",
     "@truelend/email",
+    "@truelend/health",
     "@truelend/reference",
+    "@truelend/turnstile",
     "@truelend/types",
     "@truelend/ui",
   ],
@@ -59,6 +61,8 @@ const withMDX = createMDX({ options: { remarkPlugins: [remarkFrontmatter] } });
 
 export default withMDX(nextConfig);
 
-// Makes Cloudflare bindings (Hyperdrive, R2, …) available via
-// getCloudflareContext() during `next dev`. No-op in production builds.
-initOpenNextCloudflareForDev();
+// Development binding injection can inline local connection strings when it is
+// evaluated during a production build, so never initialize it outside next dev.
+if (process.env.NODE_ENV === "development") {
+  void initOpenNextCloudflareForDev();
+}

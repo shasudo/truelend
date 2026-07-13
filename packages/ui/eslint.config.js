@@ -1,3 +1,3 @@
-import base from "@truelend/eslint-config/base";
+import base from "@truelend/eslint-config/react";
 
 export default base;

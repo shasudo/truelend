@@ -3,7 +3,10 @@ import Link from "next/link";
 import { Card, Logo } from "@truelend/ui";
 import { ForgotPasswordForm } from "@truelend/auth/forms";
 
-export const metadata: Metadata = { title: "Reset password" };
+export const metadata: Metadata = {
+  title: "Reset password",
+  robots: { index: false, follow: false },
+};
 
 export default function ForgotPasswordPage() {
   return (

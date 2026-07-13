@@ -48,3 +48,4 @@ export default async function NewLoanCasePage({
     </>
   );
 }
+export const metadata = { title: "New loan case" };

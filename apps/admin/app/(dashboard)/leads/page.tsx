@@ -81,7 +81,7 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
         <form method="get" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
           <div className="relative lg:col-span-2">
             <Search
-              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-navy-400"
+              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted"
               aria-hidden
             />
             <Input
@@ -152,7 +152,7 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
           <tbody>
             {rows.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-5 py-12 text-center text-navy-400">
+                <td colSpan={7} className="px-5 py-12 text-center text-muted">
                   {hasFilters
                     ? "No leads match these filters."
                     : "No leads yet — they'll appear here as the website captures them."}
@@ -171,7 +171,7 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
                 </td>
                 <td className="px-5 py-3.5 text-navy-600">
                   <div className="tabular-nums">{lead.phone ?? "—"}</div>
-                  {lead.email && <div className="text-xs text-navy-400">{lead.email}</div>}
+                  {lead.email && <div className="text-xs text-muted">{lead.email}</div>}
                 </td>
                 <td className="px-5 py-3.5 text-navy-600">{productName(lead.productSlug)}</td>
                 <td className="px-5 py-3.5 text-navy-600">{leadKindLabels[lead.kind]}</td>
@@ -229,3 +229,4 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
     </>
   );
 }
+export const metadata = { title: "Leads" };

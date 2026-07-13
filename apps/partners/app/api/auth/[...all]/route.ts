@@ -1,12 +1,19 @@
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { createDb } from "@truelend/db";
-import { allowSensitiveAuthRequest, createAuth } from "@truelend/auth";
+import {
+  allowSensitiveAuthRequest,
+  createPartnerAuth,
+  isPartnerAuthEndpointAllowed,
+} from "@truelend/auth";
 import { authOptions } from "@/lib/auth";
 
 // Per-request auth instance; signup enabled (partners self-register). Shared
 // authOptions also wires the reset-password email sender.
 async function handler(req: Request) {
   const { env, ctx } = getCloudflareContext();
+  if (!isPartnerAuthEndpointAllowed(req)) {
+    return Response.json({ code: "not_found", error: "Not found." }, { status: 404 });
+  }
   if (!(await allowSensitiveAuthRequest(req, env.AUTH_RATE_LIMITER))) {
     return Response.json(
       { error: "Too many attempts. Please wait a minute and try again." },
@@ -14,7 +21,7 @@ async function handler(req: Request) {
     );
   }
   const db = createDb(env.HYPERDRIVE.connectionString);
-  const auth = createAuth(db, authOptions(env));
+  const auth = createPartnerAuth(db, authOptions(env));
   try {
     return await auth.handler(req);
   } finally {

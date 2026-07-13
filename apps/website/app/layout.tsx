@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { Bricolage_Grotesque, Instrument_Sans } from "next/font/google";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
+import { canonical, jsonLd } from "@/lib/metadata";
 import "./globals.css";
 
 const bricolage = Bricolage_Grotesque({
@@ -25,6 +26,7 @@ export const metadata: Metadata = {
   },
   description:
     "TrueLend helps you make the right borrowing decision by matching your financial profile with lenders whose policies best fit your needs.",
+  alternates: { canonical: "/" },
   openGraph: {
     siteName: "TrueLend",
     type: "website",
@@ -36,9 +38,22 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
+  const organization = {
+    "@context": "https://schema.org",
+    "@type": ["Organization", "FinancialService"],
+    name: "TrueLend",
+    url: canonical("/"),
+    logo: canonical("/icon.svg"),
+    description:
+      "Loan comparison and borrower advisory across banks and non-banking financial companies in India.",
+  };
   return (
     <html lang="en" className={`${bricolage.variable} ${instrument.variable}`}>
       <body className="flex min-h-screen flex-col bg-paper font-sans text-navy-900 antialiased">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: jsonLd(organization) }}
+        />
         {/* Scroll-reveal content is SSR'd at opacity:0; keep it visible without JS. */}
         <noscript>
           <style>{`.tl-reveal{opacity:1 !important;transform:none !important}`}</style>

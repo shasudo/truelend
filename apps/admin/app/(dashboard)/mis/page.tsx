@@ -53,7 +53,7 @@ function MisTable({ dimension, rows }: { dimension: string; rows: MisRow[] }) {
         <tbody>
           {rows.length === 0 && (
             <tr>
-              <td colSpan={10} className="px-5 py-12 text-center text-navy-400">
+              <td colSpan={10} className="px-5 py-12 text-center text-muted">
                 No activity yet.
               </td>
             </tr>
@@ -152,7 +152,7 @@ export default async function MisPage() {
             <tbody>
               {byPartner.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="px-5 py-12 text-center text-navy-400">
+                  <td colSpan={8} className="px-5 py-12 text-center text-muted">
                     No partner-sourced leads yet.
                   </td>
                 </tr>
@@ -190,3 +190,4 @@ export default async function MisPage() {
     </>
   );
 }
+export const metadata = { title: "MIS" };

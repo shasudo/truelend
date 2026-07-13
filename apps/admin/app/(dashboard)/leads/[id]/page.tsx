@@ -19,11 +19,12 @@ import { getLead, listEmployees } from "@/lib/queries";
 import { updateLeadPipelineAction, addLeadNoteAction } from "@/lib/actions";
 
 export const dynamic = "force-dynamic";
+export const metadata = { title: "Lead details" };
 
 function Detail({ label, value }: { label: string; value: string | null | undefined }) {
   return (
     <div>
-      <dt className="text-xs font-semibold uppercase tracking-[0.1em] text-navy-400">{label}</dt>
+      <dt className="text-xs font-semibold uppercase tracking-[0.1em] text-muted">{label}</dt>
       <dd className="mt-0.5 text-navy-900">{value || "—"}</dd>
     </div>
   );
@@ -65,7 +66,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
             </dl>
             {lead.message && (
               <div className="mt-5 border-t border-hairline pt-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.1em] text-navy-400">
+                <p className="text-xs font-semibold uppercase tracking-[0.1em] text-muted">
                   Message
                 </p>
                 <p className="mt-1 leading-relaxed text-navy-700">{lead.message}</p>
@@ -87,13 +88,13 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
                 </Button>
               )}
               {lead.city && (
-                <span className="inline-flex items-center gap-1.5 px-2 text-sm text-navy-400">
+                <span className="inline-flex items-center gap-1.5 px-2 text-sm text-muted">
                   <MapPin className="h-4 w-4" aria-hidden /> {lead.city}
                 </span>
               )}
             </div>
             {(lead.utmSource || lead.utmMedium || lead.utmCampaign) && (
-              <p className="mt-4 text-xs text-navy-400">
+              <p className="mt-4 text-xs text-muted">
                 Attribution:{" "}
                 {[lead.utmSource, lead.utmMedium, lead.utmCampaign].filter(Boolean).join(" / ")}
               </p>
@@ -104,23 +105,26 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
             <h2 className="font-display text-lg font-bold text-navy-950">Notes</h2>
             <form action={addLeadNoteAction} className="mt-4 space-y-3">
               <input type="hidden" name="leadId" value={lead.id} />
-              <Textarea
-                name="body"
-                required
-                maxLength={4000}
-                placeholder="Log a call, note next steps…"
-                className="min-h-20"
-              />
+              <Field label="Note" htmlFor="lead-note" required>
+                <Textarea
+                  id="lead-note"
+                  name="body"
+                  required
+                  maxLength={4000}
+                  placeholder="Log a call, note next steps…"
+                  className="min-h-20"
+                />
+              </Field>
               <SubmitButton size="sm" pendingText="Adding…">
                 Add note
               </SubmitButton>
             </form>
             <ul className="mt-6 space-y-4">
-              {notes.length === 0 && <li className="text-sm text-navy-400">No notes yet.</li>}
+              {notes.length === 0 && <li className="text-sm text-muted">No notes yet.</li>}
               {notes.map(({ note, authorName }) => (
                 <li key={note.id} className="border-l-2 border-hairline pl-4">
                   <p className="leading-relaxed text-navy-800">{note.body}</p>
-                  <p className="mt-1 text-xs text-navy-400">
+                  <p className="mt-1 text-xs text-muted">
                     {authorName ?? "Unknown"} · {formatDateTime(note.createdAt)}
                   </p>
                 </li>
@@ -159,7 +163,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
               </SubmitButton>
             </form>
 
-            <p className="mt-5 border-t border-hairline pt-4 text-xs text-navy-400">
+            <p className="mt-5 border-t border-hairline pt-4 text-xs text-muted">
               Created {formatDateTime(lead.createdAt)}
             </p>
           </Card>
@@ -174,7 +178,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
               </Button>
             </div>
             <ul className="mt-4 space-y-3">
-              {cases.length === 0 && <li className="text-sm text-navy-400">No loan cases yet.</li>}
+              {cases.length === 0 && <li className="text-sm text-muted">No loan cases yet.</li>}
               {cases.map((c) => (
                 <li key={c.id}>
                   <Link

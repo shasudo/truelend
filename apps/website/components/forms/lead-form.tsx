@@ -1,43 +1,36 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useForm, type DefaultValues, type FieldValues, type Resolver } from "react-hook-form";
 import { Turnstile } from "@marsidev/react-turnstile";
 import { CheckCircle2, MessageCircle } from "lucide-react";
 import { Button } from "@truelend/ui";
+import type { TurnstileAction } from "@truelend/turnstile";
 import { submitLead } from "@/lib/actions";
+import { resolveAttribution, touchFromSearch, type LeadAttribution } from "@/lib/attribution";
 import { site } from "@/content/site";
 
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 const UTM_STORAGE_KEY = "tl-utm";
 
-interface Utm {
-  utmSource?: string;
-  utmMedium?: string;
-  utmCampaign?: string;
-}
-
-function useUtm(): Utm {
-  const [utm, setUtm] = useState<Utm>({});
+function useUtm(): LeadAttribution {
+  const [utm, setUtm] = useState<LeadAttribution>({});
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const current: Utm = {
-      utmSource: params.get("utm_source") ?? undefined,
-      utmMedium: params.get("utm_medium") ?? undefined,
-      utmCampaign: params.get("utm_campaign") ?? undefined,
-    };
-    if (current.utmSource || current.utmMedium || current.utmCampaign) {
-      // First touch wins — don't let a later plain visit overwrite it.
-      if (!localStorage.getItem(UTM_STORAGE_KEY)) {
-        localStorage.setItem(UTM_STORAGE_KEY, JSON.stringify(current));
+    try {
+      const resolved = resolveAttribution(
+        window.localStorage.getItem(UTM_STORAGE_KEY),
+        touchFromSearch(params),
+      );
+      if (resolved.serialized) {
+        window.localStorage.setItem(UTM_STORAGE_KEY, resolved.serialized);
+      } else {
+        window.localStorage.removeItem(UTM_STORAGE_KEY);
       }
-      setUtm(current);
-    } else {
-      try {
-        setUtm(JSON.parse(localStorage.getItem(UTM_STORAGE_KEY) ?? "{}") as Utm);
-      } catch {
-        // ignore corrupt storage
-      }
+      setUtm(resolved.fields);
+    } catch {
+      // Storage may be disabled by browser policy; attribution stays optional.
+      setUtm(resolveAttribution(null, touchFromSearch(params)).fields);
     }
   }, []);
   return utm;
@@ -60,11 +53,16 @@ export function useLeadForm<T extends FieldValues>(
 
   const onSubmit = form.handleSubmit(async (values) => {
     setRootError(undefined);
-    const result = await submitLead({ ...values, ...utm, turnstileToken });
-    if (result.ok) {
-      setSucceeded(true);
-    } else {
+    try {
+      const result = await submitLead({ ...values, ...utm, turnstileToken });
+      if (result.ok) {
+        setSucceeded(true);
+        return;
+      }
       setRootError(result.error);
+    } catch {
+      setRootError("The request could not be sent. Check your connection and try again.");
+    } finally {
       // Turnstile tokens are single-use — remount the widget for a fresh one.
       setTurnstileToken(undefined);
       setTurnstileError(undefined);
@@ -94,11 +92,13 @@ export function useLeadForm<T extends FieldValues>(
 
 export function TurnstileField({
   resetKey,
+  action,
   onToken,
   onExpire,
   onError,
 }: {
   resetKey: number;
+  action: TurnstileAction;
   onToken: (token: string) => void;
   onExpire: () => void;
   onError: () => void;
@@ -112,7 +112,7 @@ export function TurnstileField({
       onExpire={onExpire}
       onTimeout={onExpire}
       onError={onError}
-      options={{ theme: "light" }}
+      options={{ theme: "light", action }}
     />
   );
 }
@@ -120,7 +120,7 @@ export function TurnstileField({
 export function TurnstilePendingHint({ show }: { show: boolean }) {
   if (!show) return null;
   return (
-    <p className="text-xs text-navy-400" aria-live="polite">
+    <p className="text-xs text-muted" aria-live="polite">
       Verifying you&rsquo;re human — one moment…
     </p>
   );
@@ -138,6 +138,24 @@ export function RootError({ message }: { message?: string }) {
   );
 }
 
+export function NoScriptFallback() {
+  return (
+    <noscript>
+      <div className="rounded-lg border border-hairline bg-paper p-4 text-sm text-navy-700">
+        Online submission needs JavaScript. Call us at{" "}
+        <a className="font-semibold underline" href={site.phoneHref}>
+          {site.phone}
+        </a>{" "}
+        or email{" "}
+        <a className="font-semibold underline" href={`mailto:${site.email}`}>
+          {site.email}
+        </a>
+        .
+      </div>
+    </noscript>
+  );
+}
+
 export function FormSuccess({
   title,
   sub,
@@ -147,8 +165,15 @@ export function FormSuccess({
   sub: string;
   showWhatsApp?: boolean;
 }) {
+  const successRef = useRef<HTMLDivElement>(null);
+  useEffect(() => successRef.current?.focus(), []);
   return (
-    <div className="flex flex-col items-center gap-4 p-6 text-center sm:p-10">
+    <div
+      ref={successRef}
+      role="status"
+      tabIndex={-1}
+      className="flex flex-col items-center gap-4 p-6 text-center outline-none sm:p-10"
+    >
       <CheckCircle2 className="h-12 w-12 text-red-600" aria-hidden />
       <h2 className="font-display text-2xl font-extrabold tracking-tight text-navy-950">{title}</h2>
       <p className="max-w-md text-navy-600">{sub}</p>

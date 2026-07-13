@@ -4,8 +4,19 @@ export default function robots(): MetadataRoute.Robots {
   return {
     rules: {
       userAgent: "*",
-      allow: ["/", "/register", "/login", "/resources"],
-      disallow: ["/dashboard", "/kyc", "/leads", "/refer", "/profile", "/api"],
+      allow: ["/", "/register", "/resources"],
+      disallow: [
+        "/login",
+        "/forgot-password",
+        "/reset-password",
+        "/dashboard",
+        "/kyc",
+        "/leads",
+        "/refer",
+        "/profile",
+        "/api",
+      ],
     },
+    sitemap: "https://partner.truelend.in/sitemap.xml",
   };
 }

@@ -2,7 +2,11 @@ import type { Metadata } from "next";
 import { Card, Logo } from "@truelend/ui";
 import { ResetPasswordForm } from "@truelend/auth/forms";
 
-export const metadata: Metadata = { title: "Set a new password" };
+export const metadata: Metadata = {
+  title: "Set a new password",
+  robots: { index: false, follow: false },
+  referrer: "no-referrer",
+};
 
 export default async function ResetPasswordPage({
   searchParams,

@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
+import { Turnstile } from "@marsidev/react-turnstile";
 import { Briefcase, UserRoundPlus } from "lucide-react";
 import { Button, Field, Input, cx } from "@truelend/ui";
 import { registerPartner, type RegisterState } from "@/lib/signup-actions";
@@ -20,12 +21,23 @@ const types = [
   },
 ] as const;
 
+const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+
 export function RegisterForm() {
   const [type, setType] = useState<"business" | "referral">("business");
+  const [turnstileToken, setTurnstileToken] = useState<string>();
+  const [turnstileKey, setTurnstileKey] = useState(0);
+  const [turnstileError, setTurnstileError] = useState<string>();
   const [state, action, pending] = useActionState<RegisterState, FormData>(registerPartner, {});
 
+  useEffect(() => {
+    if (!state.error) return;
+    setTurnstileToken(undefined);
+    setTurnstileKey((key) => key + 1);
+  }, [state]);
+
   return (
-    <form action={action} className="space-y-6">
+    <form action={action} aria-busy={pending} className="space-y-6">
       <fieldset>
         <legend className="mb-2 text-sm font-medium text-navy-800">I want to join as</legend>
         <input type="hidden" name="type" value={type} />
@@ -44,7 +56,7 @@ export function RegisterForm() {
               )}
             >
               <t.icon
-                className={cx("h-5 w-5", type === t.value ? "text-red-600" : "text-navy-400")}
+                className={cx("h-5 w-5", type === t.value ? "text-red-600" : "text-muted")}
                 aria-hidden
               />
               <span className="mt-1 font-semibold text-navy-950">{t.label}</span>
@@ -116,7 +128,36 @@ export function RegisterForm() {
         </p>
       )}
 
-      <Button type="submit" size="lg" disabled={pending} className="w-full">
+      <input type="hidden" name="turnstileToken" value={turnstileToken ?? ""} />
+      {TURNSTILE_SITE_KEY && (
+        <Turnstile
+          key={turnstileKey}
+          siteKey={TURNSTILE_SITE_KEY}
+          onSuccess={(token) => {
+            setTurnstileError(undefined);
+            setTurnstileToken(token);
+          }}
+          onExpire={() => setTurnstileToken(undefined)}
+          onTimeout={() => setTurnstileToken(undefined)}
+          onError={() => {
+            setTurnstileToken(undefined);
+            setTurnstileError("Human verification could not load. Refresh and try again.");
+          }}
+          options={{ theme: "light", action: "partner_registration" }}
+        />
+      )}
+      {turnstileError && (
+        <p role="alert" className="text-sm text-red-700">
+          {turnstileError}
+        </p>
+      )}
+
+      <Button
+        type="submit"
+        size="lg"
+        disabled={pending || Boolean(TURNSTILE_SITE_KEY && !turnstileToken)}
+        className="w-full"
+      >
         {pending ? "Creating your account…" : "Create partner account"}
       </Button>
     </form>

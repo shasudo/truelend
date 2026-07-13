@@ -71,7 +71,7 @@ export default async function PartnersPage({ searchParams }: { searchParams: Pro
           <tbody>
             {partners.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-5 py-12 text-center text-navy-400">
+                <td colSpan={6} className="px-5 py-12 text-center text-muted">
                   No partners{status ? ` with status "${status}"` : ""} yet.
                 </td>
               </tr>
@@ -88,7 +88,7 @@ export default async function PartnersPage({ searchParams }: { searchParams: Pro
                   >
                     {p.businessName || p.name}
                   </Link>
-                  <div className="text-xs text-navy-400">{p.email}</div>
+                  <div className="text-xs text-muted">{p.email}</div>
                 </td>
                 <td className="px-5 py-3.5 text-navy-600">{partnerTypeLabels[p.type]}</td>
                 <td className="px-5 py-3.5">
@@ -114,3 +114,4 @@ export default async function PartnersPage({ searchParams }: { searchParams: Pro
     </>
   );
 }
+export const metadata = { title: "Partners" };

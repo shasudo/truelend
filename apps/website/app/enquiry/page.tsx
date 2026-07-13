@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import { Suspense } from "react";
 import { PhoneCall, SearchCheck, BadgeCheck, ShieldCheck } from "lucide-react";
 import { Card, Container } from "@truelend/ui";
+import { products } from "@truelend/reference";
 import { PageHeader } from "@/components/page-header";
 import { EnquiryForm } from "@/components/forms/enquiry-form";
 import { site } from "@/content/site";
@@ -10,6 +10,7 @@ export const metadata: Metadata = {
   title: "Customer Enquiry",
   description:
     "Tell us what you're borrowing for — an advisor compares offers across 50+ banks and NBFCs and calls you back within a working day.",
+  alternates: { canonical: "/enquiry" },
 };
 
 const nextSteps = [
@@ -30,7 +31,17 @@ const nextSteps = [
   },
 ];
 
-export default function EnquiryPage() {
+export default async function EnquiryPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ product?: string | string[] }>;
+}) {
+  const requested = (await searchParams).product;
+  const requestedSlug = typeof requested === "string" ? requested : "";
+  const defaultProduct = products.some((product) => product.slug === requestedSlug)
+    ? requestedSlug
+    : "";
+
   return (
     <>
       <PageHeader
@@ -40,10 +51,7 @@ export default function EnquiryPage() {
       />
       <Container className="grid gap-8 py-16 sm:py-20 lg:grid-cols-[1.25fr_0.75fr]">
         <Card className="p-7 sm:p-9">
-          {/* useSearchParams (product preselect) requires Suspense during prerender */}
-          <Suspense fallback={null}>
-            <EnquiryForm />
-          </Suspense>
+          <EnquiryForm defaultProduct={defaultProduct} />
         </Card>
         <div className="space-y-4">
           <Card className="p-7">

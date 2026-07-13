@@ -13,7 +13,9 @@ const nextConfig: NextConfig = {
     "@truelend/auth",
     "@truelend/db",
     "@truelend/email",
+    "@truelend/health",
     "@truelend/reference",
+    "@truelend/types",
     "@truelend/ui",
   ],
   // Security headers on every response. Next emits inline bootstrap scripts,
@@ -48,4 +50,8 @@ export default nextConfig;
 
 // Makes Cloudflare bindings (Hyperdrive, …) and .dev.vars available via
 // getCloudflareContext() during `next dev`. No-op in production builds.
-initOpenNextCloudflareForDev();
+// Development binding injection can inline local connection strings when it is
+// evaluated during a production build, so never initialize it outside next dev.
+if (process.env.NODE_ENV === "development") {
+  void initOpenNextCloudflareForDev();
+}

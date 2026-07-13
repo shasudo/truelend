@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { Badge, Container } from "@truelend/ui";
 import { CtaBand } from "@/components/cta-band";
 import { getAllPosts, postBySlug, formatPostDate } from "@/lib/blog";
+import { canonical, jsonLd } from "@/lib/metadata";
 
 // Fully static: posts compile into the bundle at build time (Workers has no
 // runtime fs); unknown slugs 404 via dynamicParams=false.
@@ -20,7 +21,22 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const post = postBySlug((await params).slug);
   if (!post) return {};
-  return { title: post.title, description: post.excerpt };
+  const url = canonical(`/blog/${post.slug}`);
+  return {
+    title: post.title,
+    description: post.excerpt,
+    alternates: { canonical: url },
+    authors: [{ name: post.author }],
+    openGraph: {
+      type: "article",
+      url,
+      title: post.title,
+      description: post.excerpt,
+      publishedTime: post.date.toISOString(),
+      authors: [post.author],
+      images: ["/opengraph-image.png"],
+    },
+  };
 }
 
 export default async function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -29,9 +45,38 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
   if (!post) notFound();
 
   const { default: Post } = await import(`@/content/blog/${slug}.mdx`);
+  const url = canonical(`/blog/${slug}`);
+  const articleJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: post.title,
+    description: post.excerpt,
+    datePublished: post.date.toISOString(),
+    author: { "@type": "Organization", name: post.author },
+    publisher: { "@type": "Organization", name: "TrueLend", url: canonical("/") },
+    image: canonical("/opengraph-image.png"),
+    mainEntityOfPage: url,
+  };
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: canonical("/") },
+      { "@type": "ListItem", position: 2, name: "Blog", item: canonical("/blog") },
+      { "@type": "ListItem", position: 3, name: post.title, item: url },
+    ],
+  };
 
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: jsonLd(articleJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: jsonLd(breadcrumbJsonLd) }}
+      />
       <article>
         <header className="border-b border-hairline">
           <Container className="max-w-3xl py-14 sm:py-16">

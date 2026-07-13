@@ -5,11 +5,17 @@ import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { createDb, schema } from "@truelend/db";
 import { notifyNewLead } from "@truelend/email";
 import { leadKindLabels, productName } from "@truelend/reference";
+import { verifyTurnstile, type TurnstileAction } from "@truelend/turnstile";
 import { leadSchema } from "./schemas";
-import { verifyTurnstile } from "./turnstile";
 
 export type SubmitResult = { ok: true } | { ok: false; error: string };
 const CONSENT_VERSION = "2026-07-13";
+const TURNSTILE_ACTIONS: Record<string, TurnstileAction> = {
+  enquiry: "lead_enquiry",
+  referral: "lead_referral",
+  contact: "lead_contact",
+  cibil_notify: "lead_cibil_notify",
+};
 
 const blank = (v: string | undefined) => (v && v.length > 0 ? v : undefined);
 
@@ -51,12 +57,14 @@ export async function submitLead(input: unknown): Promise<SubmitResult> {
     return { ok: false, error: "Too many requests. Please wait a minute and try again." };
   }
 
-  const human = await verifyTurnstile(
-    parsed.data.turnstileToken,
-    env.TURNSTILE_SECRET_KEY,
-    ip === "anonymous" ? undefined : ip,
-    hostname,
-  );
+  const human = await verifyTurnstile({
+    token: parsed.data.turnstileToken,
+    secret: env.TURNSTILE_SECRET_KEY,
+    siteKeyConfigured: Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY),
+    expectedAction: TURNSTILE_ACTIONS[parsed.data.kind]!,
+    ip: ip === "anonymous" ? undefined : ip,
+    expectedHostname: hostname,
+  });
   if (!human) {
     return { ok: false, error: "Human verification failed — please try once more." };
   }
@@ -81,6 +89,9 @@ export async function submitLead(input: unknown): Promise<SubmitResult> {
           utmSource: blank(d.utmSource),
           utmMedium: blank(d.utmMedium),
           utmCampaign: blank(d.utmCampaign),
+          utmLastSource: blank(d.utmLastSource),
+          utmLastMedium: blank(d.utmLastMedium),
+          utmLastCampaign: blank(d.utmLastCampaign),
           consent: d.consent,
           consentAt,
           consentSource: "website_form",

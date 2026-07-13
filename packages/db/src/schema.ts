@@ -140,6 +140,9 @@ export const leads = pgTable(
     utmSource: text("utm_source"),
     utmMedium: text("utm_medium"),
     utmCampaign: text("utm_campaign"),
+    utmLastSource: text("utm_last_source"),
+    utmLastMedium: text("utm_last_medium"),
+    utmLastCampaign: text("utm_last_campaign"),
 
     consent: boolean("consent").notNull().default(false),
     // Proof of the consent above: when it was captured, from where (website

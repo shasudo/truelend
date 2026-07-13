@@ -16,12 +16,14 @@ const instrument = Instrument_Sans({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://partner.truelend.in"),
   title: {
     default: "TrueLend Partners",
     template: "%s — TrueLend Partners",
   },
   description:
     "Partner with TrueLend — distribute loans, refer customers, earn on every disbursal.",
+  alternates: { canonical: "/" },
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

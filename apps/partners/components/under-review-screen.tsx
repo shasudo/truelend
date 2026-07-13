@@ -48,7 +48,7 @@ export function UnderReviewScreen({
         </p>
 
         <Card className="mt-10 w-full max-w-md p-6 text-left">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-navy-400">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted">
             What happens next
           </p>
           <ol className="mt-4 space-y-4">
@@ -60,7 +60,7 @@ export function UnderReviewScreen({
                       ? "flex h-8 w-8 items-center justify-center rounded-full bg-navy-800 text-white"
                       : step.state === "current"
                         ? "flex h-8 w-8 items-center justify-center rounded-full bg-red-50 text-red-600 ring-2 ring-red-600"
-                        : "flex h-8 w-8 items-center justify-center rounded-full bg-navy-800/[0.06] text-navy-400"
+                        : "flex h-8 w-8 items-center justify-center rounded-full bg-navy-800/[0.06] text-muted"
                   }
                 >
                   <step.icon className="h-4.5 w-4.5" aria-hidden />
@@ -68,7 +68,7 @@ export function UnderReviewScreen({
                 <span
                   className={
                     step.state === "todo"
-                      ? "text-sm text-navy-400"
+                      ? "text-sm text-muted"
                       : "text-sm font-medium text-navy-900"
                   }
                 >

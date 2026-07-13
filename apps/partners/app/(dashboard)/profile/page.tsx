@@ -35,10 +35,11 @@ export default async function ProfilePage() {
           <Row label="Status" value={partner ? partnerStatusLabels[partner.status] : undefined} />
           {partner?.businessName && <Row label="Business" value={partner.businessName} />}
         </dl>
-        <p className="mt-4 text-xs text-navy-400">
+        <p className="mt-4 text-xs text-muted">
           To change your email or KYC details, contact your relationship manager.
         </p>
       </Card>
     </div>
   );
 }
+export const metadata = { title: "Profile" };

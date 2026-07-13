@@ -1,6 +1,6 @@
 "use client";
 
-import { Accordion as RadixAccordion } from "radix-ui";
+import * as RadixAccordion from "@radix-ui/react-accordion";
 import { Plus } from "lucide-react";
 import { cx } from "./cx";
 

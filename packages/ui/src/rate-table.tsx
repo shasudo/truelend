@@ -41,7 +41,7 @@ export function RateTable({ rows, compact, className }: RateTableProps) {
               <td className={cx("px-5 font-medium text-navy-950", compact ? "py-3" : "py-4")}>
                 {row.lender}
                 {row.kind && (
-                  <span className="ml-2 text-xs font-normal uppercase tracking-wide text-navy-400">
+                  <span className="ml-2 text-xs font-normal uppercase tracking-wide text-muted">
                     {row.kind}
                   </span>
                 )}

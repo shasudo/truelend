@@ -8,6 +8,7 @@ export const metadata: Metadata = {
   title: "Refer a Friend",
   description:
     "Know someone hunting for a loan? Refer them to TrueLend — they get borrower-side advice, you stay in the loop.",
+  alternates: { canonical: "/refer" },
 };
 
 const steps = [

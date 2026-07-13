@@ -1,160 +1,119 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Repository instructions for coding agents working on TrueLend. Read this file and `TODO.md` before changing code. The TODO completion definition is strict: repository implementation alone does not close work that still needs deployment, production verification, external configuration, legal approval, documentation, or recovery testing.
 
-## What this is
+## System overview
 
-pnpm + Turborepo monorepo for the TrueLend lending platform. Three Next.js 15 (App Router) apps — the public **website**, the internal **admin** dashboard, and the **partners** portal (business + referral partners) — each deploying as its own **Cloudflare Worker** via OpenNext, backed by a shared **Postgres through Cloudflare Hyperdrive** (Drizzle + postgres.js) and **R2** (KYC docs). No separate API service — route handlers and server actions in each app are its API. Pending work is tracked in `todo.md` (keep it updated).
+TrueLend is a pnpm/Turborepo monorepo with three Next.js 15 App Router apps deployed as separate Cloudflare Workers through OpenNext:
+
+- `apps/website` — public content and lead capture, port 3000
+- `apps/admin` — internal staff operations, port 3001
+- `apps/partners` — business/referral partner portal, port 3002
+
+There is no separate API service. Route handlers and server actions are the server surfaces. PostgreSQL is accessed with Drizzle/postgres.js through a per-app Hyperdrive binding at runtime. Partners write private KYC documents to R2; admins read them through authenticated routes. The public website must never have a KYC bucket binding.
+
+Shared code belongs in `packages/auth`, `db`, `email`, `health`, `reference`, `turnstile`, `types`, or `ui`. Workspace packages ship raw TypeScript and must be listed in each consuming app's `transpilePackages`.
 
 ## Commands
 
-Run from the repo root; Turborepo fans out to the packages that define each task.
+Run from the repository root:
 
 ```bash
-pnpm install         # install everything
-pnpm dev             # next dev → http://localhost:3000
-pnpm build           # next build (all packages)
-pnpm lint            # eslint
-pnpm typecheck       # tsc --noEmit
-pnpm format          # prettier --write (format:check in CI)
+pnpm bootstrap:local  # create missing local-only config; never overwrites
+pnpm dev              # ports 3000, 3001, 3002
+pnpm format:check
+pnpm cf:validate
+pnpm lint
+pnpm typecheck
+pnpm test
+pnpm audit --audit-level high
+pnpm build
 
-pnpm db:generate     # drizzle-kit: create migration from packages/db/src/schema.ts
-pnpm db:migrate      # apply migrations (needs DATABASE_URL in packages/db/.env)
-pnpm db:studio       # drizzle studio
-
-pnpm cf-typegen      # regenerate apps/website/cloudflare-env.d.ts from wrangler.jsonc
-pnpm deploy          # deploy the website Worker
-pnpm deploy:admin    # deploy the admin Worker
-pnpm deploy:partners # deploy the partners Worker
+pnpm db:generate
+pnpm db:preflight
+pnpm db:migrate
+pnpm db:studio
 ```
 
-Apps run on ports 3000 (website), 3001 (admin), 3002 (partners).
+Before requesting review, run the complete verification sequence listed in `TODO.md`. Run `pnpm format` after edits. Use `pnpm --filter @truelend/<workspace> <script>` for one package.
 
-Single-package runs: `pnpm --filter @truelend/website <script>` (or `@truelend/admin`). The admin app runs on port 3001 (`pnpm dev` runs both). Seed the first admin: `DATABASE_URL=… BETTER_AUTH_SECRET=… pnpm --filter @truelend/admin seed:admin <email> <password> [name]`. There are no unit tests yet (deliberate); verification is done by driving the apps on the workerd preview against Neon. CI (`.github/workflows/ci.yml`) runs format:check → lint → typecheck → build on every push/PR, then **auto-deploys all three Workers** (parallel matrix) on push to `main`.
+## Protected release workflow
 
-## Architecture
+- Never commit directly to `main`. Create a branch, open a pull request, obtain the required reviews, and merge only with current required checks.
+- `main` must be protected against force-push/deletion. Sensitive auth, infrastructure, migration, finance, and KYC changes require CODEOWNER review and two approvals.
+- Merging to `main` starts the production workflow, but deployment must remain gated by required reviewers on the protected GitHub `production` Environment.
+- Production secrets and variables belong only in the production Environment or Cloudflare secret storage. Never place them in source, Wrangler `vars`, build output, shell arguments, or logs.
+- Do not deploy production from a developer workstation. Manual `pnpm deploy:*` is for isolated development/staging accounts only unless an approved incident runbook explicitly authorizes a production break-glass action.
+- Follow `docs/runbooks/release-and-rollback.md` and `docs/runbooks/migrations.md`. A healthy code build does not authorize production release when external P0 controls remain open.
 
-```
-apps/website/        Public site: Next.js → Workers (OpenNext); writes leads
-  app/ components/ content/ lib/   (routes, chrome, typed content + mdx blog, zod/actions)
-apps/admin/          Internal ops dashboard: Next.js → Workers (truelend-admin, port 3001, noindex)
-  app/(dashboard)/   leads, loan-cases, mis, team, overview — all force-dynamic
-  app/login, app/api/auth/[...all]   better-auth
-  lib/               auth.ts (request context + guards), queries, *-actions (server actions)
-  components/        sidebar, forms, charts (recharts), status-badge
-packages/ui/         design system: theme.css (Tailwind v4 @theme tokens) + brand primitives
-apps/partners/       Partner portal: Next.js → Workers (truelend-partners, port 3002)
-  self-register (allowSignUp) → KYC upload to R2 → admin verifies → dashboard
-  one app, two roles (business|referral); differs only in payout|incentive labels + bulk CSV
-packages/db/         Drizzle ORM + postgres.js; schema.ts = source of truth (leads, notes, loan_cases, partners, partner_documents, partner_payouts, auth tables)
-packages/auth/       shared better-auth: createAuth(db,{secret,baseURL}) factory + React client + `/forms` (shared login/forgot/reset UI for admin + partners)
-packages/reference/  canonical product/bank slugs+names + enum labels + money/date format helpers (formatPaise, rupeesToPaise, formatDate…) — shared by admin + partners
-packages/types/      type-only package (import type only)
-packages/eslint-config/, packages/typescript-config/   shared flat config / tsconfig bases
-branding/            logo JPEGs + OG image SVG source (reference assets)
-```
+## Authentication boundaries
 
-### Auth (packages/auth + apps/admin)
+- Create auth per request; never keep database/auth I/O objects in a cross-request singleton.
+- Admin uses `createAdminAuth`: no public signup, eight-hour absolute session, admin plugin available only on the admin host.
+- Partners use `createPartnerAuth`: no admin plugin. Raw generic email signup and `/api/auth/admin/*` endpoints must remain blocked on the partner domain. Registration goes only through the atomic, rate-limited, Turnstile-protected workflow.
+- Real authorization occurs in server guards/actions. Middleware cookie presence is only an early redirect optimization.
+- Never expose reset tokens, activation credentials, raw auth errors, account existence, temporary passwords, or secrets to the client or logs.
+- Staff provisioning must reject partner-linked identities, refuse existing users by default, revoke sessions before controlled promotion, and write audit evidence. Passwords are environment input, never command-line arguments.
+- Staff and partner password resets must use emailed single-use links. Reset pages use `noindex`, `no-referrer`, and scrub tokens from the URL.
 
-- **better-auth**, email+password, no self-signup (admin creates users via the Team page; `role` is a plain text column: `admin`/`employee` now, `partner`/`referral` later — no migration).
-- **Per-request factory**: `createAuth(db, {secret, baseURL})` — never a singleton (workerd forbids cross-request I/O reuse). The catch-all route `app/api/auth/[...all]/route.ts` and every server action build their own db+auth and close it with `ctx.waitUntil(db.$client.end())`. RSC reads go through `getAuthContext()` (React.cache) and do NOT close (layout+page share it).
-- **Gating**: `middleware.ts` only checks the session cookie exists; real validation is `requireSession()`/`requireAdmin()` in the dashboard layout/pages. Secrets: `BETTER_AUTH_SECRET` via `.dev.vars` + `wrangler secret put`.
-- Auth-table ids are `text` (better-auth generates them); people-FKs (`leads.assigned_to`, `lead_notes.author_id`, `loan_cases.created_by`) are text.
-- Money is **integer paise** in `bigint({mode:"number"})`; convert rupees↔paise only at the form boundary (`@truelend/reference` — `rupeesToPaise`/`formatPaise`), format with `Intl` en-IN. Never floats.
-- Charts: single-series recharts, one brand hue, per the dataviz skill — read it before adding charts.
+## Cloudflare and secrets
 
-### R2 file uploads (KYC — apps/partners writes, apps/admin reads)
+Server code obtains bindings through `getCloudflareContext()`, not `process.env`. Build-time public variables such as `NEXT_PUBLIC_TURNSTILE_SITE_KEY` are the exception.
 
-- Upload = a POST **route handler** (not a server action: 1MB body cap + an OpenNext bug). `req.formData()` → guard `entry instanceof File && entry.size > 0` (workerd coerces empty file inputs to `""`) → validate type/size → `env.BUCKET.put(key, await file.arrayBuffer())` (buffering avoids a DOM/workers `ReadableStream` type mismatch). One file per request.
-- Private docs are **proxied through an authenticated worker route** — no presigned URLs (the R2 binding can't presign). Admin serves via `app/api/kyc/[...key]` (catch-all; `requireAdmin` then streams `env.BUCKET.get(key).body`). Both workers bind the same bucket `truelend`.
+Each app declares bindings in `wrangler.jsonc` and types in `cloudflare-env.d.ts`; update both or run the relevant `cf-typegen` command. Keep `workers_dev: false`. Use the local Hyperdrive override name `CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE`.
 
-### Two SQL gotchas (both caused prod 500s — remember them)
+Required production secrets:
 
-- **Raw postgres.js (`db.$client`) with `fetch_types:false` returns `timestamptz` as a STRING** — wrap in `new Date()` before formatting. Drizzle queries parse dates; raw `db.$client` ones don't.
-- **Conditional SQL fragments** `${cond ? sql\`…\` : sql\`\`}`throw in the worker runtime — use a null-guard WHERE instead:`where (${s}::text is null or col = ${s})`.
+- website: `TURNSTILE_SECRET_KEY`, `HEALTHCHECK_SECRET`
+- admin: `BETTER_AUTH_SECRET`, `HEALTHCHECK_SECRET`
+- partners: `BETTER_AUTH_SECRET`, `TURNSTILE_SECRET_KEY`, `HEALTHCHECK_SECRET`
 
-### Design system (packages/ui + Tailwind v4)
+Website and partner production builds also require `NEXT_PUBLIC_TURNSTILE_SITE_KEY`. Missing production Turnstile configuration must fail closed. Each form/registration flow must verify its exact action and the expected hostname.
 
-- Brand tokens live ONLY in `packages/ui/src/theme.css` (`@theme`): navy scale (logo navy = `navy-800` #14204A), red scale (logo red = `red-600` #CE0E17), `paper` background, `hairline` borders. **The default Tailwind palette is wiped** — off-brand classes like `bg-blue-500` don't compile; that's intentional.
-- Fonts: Bricolage Grotesque (`font-display`) + Instrument Sans (`font-sans`) via next/font, bridged in `@theme inline`. Rates/numerals use `tabular-nums`.
-- `apps/website/app/globals.css` must keep the `@source "../../../packages/ui/src"` line — Tailwind v4 does not scan symlinked workspace packages; without it, ui-package classes silently vanish from the build.
-- New brand-level primitives go in `packages/ui` (future dashboards reuse them); site-specific composites stay in `apps/website/components/`.
+Public `/api/health` is liveness only. `/api/health/ready` is bearer protected and performs an origin database probe plus critical configuration checks. Do not expose dependency details publicly.
 
-### Cloudflare bindings (the core pattern)
+## Database rules
 
-Server code gets platform resources from `getCloudflareContext()` (from `@opennextjs/cloudflare`), never from process env:
+- `packages/db/src/schema.ts` is the source of truth. Generate and commit Drizzle SQL, snapshot, and journal changes together.
+- Runtime Workers connect only through `env.HYPERDRIVE.connectionString`. Migrations use a direct `DATABASE_URL` from protected CI or `packages/db/.env`; never bundle it into a Worker.
+- Create one database client per request and close it with `ctx.waitUntil(db.$client.end())`, except cached RSC contexts whose request lifetime owns the connection.
+- Money is integer paise in `bigint({ mode: "number" })`. Convert at form boundaries with `@truelend/reference`; never use floating-point currency.
+- Raw postgres.js with `fetch_types: false` returns `timestamptz` as a string. Convert it with `new Date()` before formatting.
+- Avoid conditional empty postgres.js fragments such as `${cond ? sql`...` : sql``}`; use a null-guard predicate.
+- Security-sensitive reads require cache-disabled, least-privilege Hyperdrive/database identities. The current shared identity is an open P0 external remediation; do not add stale-tolerant caching to auth, KYC, finance, mutations, or read-after-write paths.
+- Migrations must use expand/migrate/contract, bounded timeouts, a recent production-clone test, a restorable checkpoint, and old/new version compatibility. Never contract while rollback-eligible code depends on the old shape.
 
-```ts
-const { env, ctx } = getCloudflareContext();
-env.HYPERDRIVE.connectionString; // Postgres (pooled by Hyperdrive)
-env.BUCKET; // R2 bucket (use its API directly; no wrapper)
-```
+## KYC and hostile files
 
-Bindings are declared in `apps/website/wrangler.jsonc` and typed in `apps/website/cloudflare-env.d.ts` — when you change one, update the other (or run `pnpm cf-typegen`). `initOpenNextCloudflareForDev()` in `next.config.ts` makes bindings work during `next dev`; the Hyperdrive binding falls back to `localConnectionString` locally.
+- Website must not bind R2. Partner uploads and admin reads need separate authenticated capabilities; a narrow admin reader service remains required before production closure.
+- Reject oversized requests before buffering where possible. Validate authentication, authorization, exact Origin/Fetch Metadata, rate limit, declared MIME, file size, and magic bytes.
+- Keep objects private. Never add `r2.dev`, public custom domains, public CORS, or presigned/public URLs for KYC.
+- Every upload/replacement/read/decision must have audit evidence. Do not weaken locking around KYC review.
+- Malware scanning, quarantine, safe previews, resilient deletion, reconciliation, and recovery are still open; do not describe current signature sniffing as a complete hostile-file pipeline.
 
-### Database: two connection paths, one schema
+## Code organization and style
 
-- **Runtime (Worker):** `createDb(env.HYPERDRIVE.connectionString)` from `@truelend/db` — one connection per request, closed after the response with `ctx.waitUntil(db.$client.end())`. See `apps/website/app/api/health/route.ts` for the canonical handler shape.
-- **Migrations (Node):** drizzle-kit uses a direct `DATABASE_URL` from `packages/db/.env` (see `.env.example`). The Worker never uses `DATABASE_URL`; drizzle-kit never uses Hyperdrive.
+- `app/` contains routes/layouts/pages and thin boundary code; shared app UI goes in `components/`; shared app logic goes in `lib/`.
+- Put reusable domain logic in a package. Keep shared types/constants in one canonical home.
+- Use server components by default and add `"use client"` only for browser APIs, state, or effects.
+- Use strict TypeScript: no `any`, no `@ts-ignore`, and type-only imports where appropriate.
+- Validate every external input at the boundary. Return stable, generic public errors and log bounded structured internal context without PII/secrets.
+- Keep functions/modules focused. Apply the rule of three before introducing a configurable abstraction.
+- Files/folders use kebab-case; components/types use PascalCase; functions/variables use camelCase; database columns use snake_case.
+- Centralize dependency versions in `pnpm-workspace.yaml` using `catalog:`. Prefer established dependencies already present over hand-rolled substitutes.
+- Comment constraints and reasons, not line-by-line behavior. Mark deliberate shortcuts with `ponytail:` and the upgrade path.
 
-Schema changes: edit `packages/db/src/schema.ts` → `pnpm db:generate` → `pnpm db:migrate`.
+## UI, accessibility, and content
 
-### Monorepo wiring (why the gotchas exist)
+- Brand tokens live in `packages/ui/src/theme.css`; do not use the removed default Tailwind palette. Keep `@source "../../../packages/ui/src"` in website globals so Tailwind scans workspace UI code.
+- Use semantic AA text tokens (`text-muted`, `text-on-dark-muted`). Label every control, expose pending/error/success states, use accessible live regions, preserve keyboard focus, and keep skip links/main targets/`aria-current` accurate.
+- Server-render meaningful public form/fallback content. Browser storage and transport failures must not strand forms in a pending state.
+- Public metadata needs canonical URLs, complete descriptions, and safe structured data. Private/auth routes are `noindex,nofollow`.
+- Public contact, rate, legal, and statistical content requires named business/legal ownership and source/freshness evidence. Do not replace placeholders by guessing.
 
-- Workspace packages (`@truelend/db`, `@truelend/types`) ship **raw TypeScript** — no build step. Next.js compiles them via `transpilePackages` in `next.config.ts`. Because of that, use **extensionless relative imports** inside these packages (`./schema`, not `./schema.js` — the `.js` form breaks Next's webpack resolution).
-- Dependency versions live once in the `catalog:` block of `pnpm-workspace.yaml`; package.json files reference `"catalog:"`. Bump versions there.
-- Route handlers that touch the DB need `export const dynamic = "force-dynamic"`. Pages stay fully static — forms submit through the `submitLead` server action (`apps/website/lib/actions.ts`), which re-validates with the same zod schemas used client-side and verifies Turnstile (env-gated: no `TURNSTILE_SECRET_KEY` = pass-through).
-- Blog posts are MDX in `apps/website/content/blog/` compiled at build time (`@next/mdx`); `lib/blog.ts` reads frontmatter with fs at build only — Workers has no runtime fs, so keep blog pages `dynamicParams = false`.
-- `apps/website/next-env.d.ts` is committed deliberately so `tsc --noEmit` passes on a fresh checkout without a prior build.
-- Deliberate shortcuts are marked with `ponytail:` comments naming the upgrade path.
+## Tests and change safety
 
-## Code rules
-
-**Organization — every file has one obvious home:**
-
-- `apps/website/app/` — routes only (`page.tsx`, `layout.tsx`, `route.ts`). Keep route handlers and pages thin: parse input → call logic → shape response.
-- `apps/website/components/` — reusable UI components. Pieces used by a single route live next to that route.
-- `apps/website/lib/` — non-UI helpers used across routes (formatting, fetch wrappers).
-- `packages/db/` — the only place that touches the database. No inline SQL or drizzle calls in components; route handlers go through `@truelend/db`.
-- `packages/types/` — shared request/response contracts. If web and a handler both need a type, it goes here.
-- Domain logic with no runtime surface (money math, validation rules) → a package, not a route file, so it's reusable and testable.
-
-**Naming:**
-
-- Files and folders: `kebab-case` (`loan-summary.tsx`, `format-currency.ts`). Next.js reserved names (`page.tsx`, `route.ts`, `layout.tsx`) as required.
-- React components and types: `PascalCase`. Functions, variables, DB columns follow existing style (`camelCase` in TS, `snake_case` column names in schema.ts).
-- Name things for what they do, not how (`getActiveLoans`, not `queryHelper2`).
-
-**Components & reuse (DRY, applied with judgment):**
-
-- Server components by default; add `"use client"` only for state, effects, or browser APIs.
-- Extract a shared component/helper when the _third_ usage appears (rule of three). Two similar blocks are cheaper than a premature abstraction with a config surface.
-- One responsibility per module/component; compose small pieces rather than extending big ones. Keep functions small enough to name honestly.
-- Never copy-paste a type or constant between packages — import it from its home.
-
-**Prefer packages over hand-written code:**
-
-- Don't hand-roll what a well-maintained library already does (validation → zod, dates → date-fns/Temporal, auth → an established provider). Check in this order: already in the repo → already an installed dependency → stdlib/platform → then add a package.
-- New dependencies go in the `catalog:` block of `pnpm-workspace.yaml`, referenced as `"catalog:"` — never a version pinned in one package.json.
-- Prefer boring, popular, actively maintained packages; avoid micro-deps a few lines can replace.
-
-**Comments:**
-
-- Comment only what the code can't say: constraints, gotchas, whys (`// Hyperdrive pools upstream, keep max small`). Never narrate what the next line does.
-- Deliberate shortcuts get a `ponytail:` comment naming the ceiling and upgrade path.
-
-**Correctness & safety:**
-
-- TypeScript strict mode is on; keep it clean — no `any`, no `@ts-ignore` (use `@ts-expect-error` with a reason if truly needed). `import type` for type-only imports.
-- Validate all external input at the boundary (route handler request bodies/params) before it reaches logic or the DB.
-- Route handlers return proper status codes and never leak internal error details in responses.
-- Money is never `float` — use integer cents or `numeric` columns.
-- Secrets: never in code or committed files. Local dev → `.dev.vars` / `packages/db/.env` (gitignored); production → `wrangler secret put`.
-- Before committing: `pnpm lint && pnpm typecheck && pnpm build` must pass, `pnpm format` applied.
-
-## Workflow
-
-- Commit directly to `main` — no feature branches. Remote is `github.com/shasudo/truelend`; **pushing to `main` deploys to prod** via the CI `deploy` job, so keep `main` releasable (order schema migrations before the code that needs them). Manual `pnpm deploy:*` still works for a first deploy or hotfix.
-- **Pre-commit** (husky + lint-staged) runs `prettier --write` on staged files — run `pnpm install` once after cloning to activate it. Lint/typecheck/build stay in CI (too slow for a hook).
-- **CI deploy secrets** (GitHub → repo Settings): secrets `CLOUDFLARE_API_TOKEN` (an "Edit Cloudflare Workers" token) + `CLOUDFLARE_ACCOUNT_ID`; optional vars `NEXT_PUBLIC_TURNSTILE_SITE_KEY` / `NEXT_PUBLIC_CF_BEACON_TOKEN` bake into the website build (unset = Turnstile/analytics off). Runtime secrets stay in Cloudflare via `wrangler secret put` — CI never sees them.
-- First-time deploy needs real Cloudflare resources: `wrangler login`, `wrangler hyperdrive create` (paste id into `wrangler.jsonc`), `wrangler r2 bucket create truelend`.
+- Add or update focused tests for domain behavior and security boundaries. The root `pnpm test` discovers central and colocated tests.
+- Type-aware ESLint, React Hooks, and JSX accessibility rules are required. Do not disable them broadly; test-file floating-promise registration is the narrow exception.
+- Preserve unrelated working-tree changes. Never delete generated migrations, user data, secrets, or artifacts destructively.
+- Update `TODO.md` with implementation evidence, but do not mark externally dependent work complete until its deployment, production verification, documentation, and rollback/recovery evidence exists.

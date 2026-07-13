@@ -12,8 +12,9 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "lucide-react": "catalog:",
-    "radix-ui": "catalog:"
+    "@radix-ui/react-accordion": "catalog:",
+    "@radix-ui/react-slot": "catalog:",
+    "lucide-react": "catalog:"
   },
   "peerDependencies": {
     "react": "^19.0.0",

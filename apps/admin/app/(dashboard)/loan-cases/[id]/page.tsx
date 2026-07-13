@@ -11,6 +11,7 @@ import { updateLoanCaseAction } from "@/lib/loan-actions";
 import { LoanCaseFields } from "@/components/loan-case-fields";
 
 export const dynamic = "force-dynamic";
+export const metadata = { title: "Loan case details" };
 
 export default async function LoanCaseDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;

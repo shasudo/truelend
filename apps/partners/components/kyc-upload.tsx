@@ -81,7 +81,7 @@ function DocRow({
   }
 
   return (
-    <Card className="flex items-center justify-between gap-4 p-4">
+    <Card aria-busy={busy} className="flex items-center justify-between gap-4 p-4">
       <div className="flex items-center gap-3">
         <span
           className={cx(
@@ -98,14 +98,16 @@ function DocRow({
         <div>
           <p className="font-medium text-navy-950">
             {doc.label}
-            {!doc.required && <span className="ml-2 text-xs text-navy-400">Optional</span>}
+            {!doc.required && <span className="ml-2 text-xs text-muted">Optional</span>}
           </p>
           {error ? (
             <p role="alert" className="text-xs text-red-600">
               {error}
             </p>
           ) : (
-            <p className="text-xs text-navy-400">{done ? "Uploaded" : "Not uploaded"}</p>
+            <p role="status" aria-live="polite" className="text-xs text-muted">
+              {busy ? "Uploading…" : done ? "Uploaded" : "Not uploaded"}
+            </p>
           )}
         </div>
       </div>

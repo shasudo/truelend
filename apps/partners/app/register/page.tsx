@@ -6,6 +6,7 @@ import { RegisterForm } from "@/components/register-form";
 export const metadata: Metadata = {
   title: "Become a partner",
   description: "Register as a TrueLend business or referral partner.",
+  alternates: { canonical: "/register" },
 };
 
 export default function RegisterPage() {

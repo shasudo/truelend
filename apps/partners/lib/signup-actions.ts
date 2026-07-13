@@ -5,9 +5,13 @@ import { redirect } from "next/navigation";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { schema } from "@truelend/db";
+import { verifyTurnstile } from "@truelend/turnstile";
 import { getAuthContext } from "./auth";
 
-export type RegisterState = { error?: string };
+export type RegisterState = {
+  code?: "invalid_input" | "rate_limited" | "verification_failed" | "registration_failed";
+  error?: string;
+};
 
 const registerSchema = z
   .object({
@@ -21,6 +25,7 @@ const registerSchema = z
       .pipe(z.string().regex(/^[6-9]\d{9}$/, "Enter a valid 10-digit mobile number")),
     password: z.string().min(8, "Password must be at least 8 characters").max(128),
     businessName: z.string().trim().max(160).optional(),
+    turnstileToken: z.string().max(2048).optional(),
   })
   .superRefine((data, context) => {
     if (data.type === "business" && !data.businessName) {
@@ -38,15 +43,50 @@ export async function registerPartner(
 ): Promise<RegisterState> {
   const parsed = registerSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? "Please check the fields." };
+    return {
+      code: "invalid_input",
+      error: parsed.error.issues[0]?.message ?? "Please check the fields.",
+    };
   }
   const d = parsed.data;
-  const { auth, db, ctx } = getAuthContext();
+  const { auth, db, ctx, env } = getAuthContext();
   let createdUserId: string | undefined;
   try {
+    const requestHeaders = await headers();
+    const ip = requestHeaders.get("cf-connecting-ip") ?? "anonymous";
+    const emailDigest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(d.email));
+    const emailKey = Array.from(new Uint8Array(emailDigest), (byte) =>
+      byte.toString(16).padStart(2, "0"),
+    ).join("");
+    const [ipLimit, emailLimit] = await Promise.all([
+      env.REGISTRATION_RATE_LIMITER.limit({ key: `ip:${ip}` }),
+      env.REGISTRATION_RATE_LIMITER.limit({ key: `email:${emailKey}` }),
+    ]);
+    if (!ipLimit.success || !emailLimit.success) {
+      return {
+        code: "rate_limited",
+        error: "Too many registration attempts. Please wait a minute and try again.",
+      };
+    }
+
+    const human = await verifyTurnstile({
+      token: d.turnstileToken,
+      secret: env.TURNSTILE_SECRET_KEY,
+      siteKeyConfigured: Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY),
+      expectedAction: "partner_registration",
+      ip: ip === "anonymous" ? undefined : ip,
+      expectedHostname: requestHeaders.get("host") ?? undefined,
+    });
+    if (!human) {
+      return {
+        code: "verification_failed",
+        error: "Human verification failed. Please try again.",
+      };
+    }
+
     const res = await auth.api.signUpEmail({
       body: { name: d.name, email: d.email, password: d.password },
-      headers: await headers(),
+      headers: requestHeaders,
     });
     createdUserId = res.user.id;
     await db.transaction(async (tx) => {
@@ -67,7 +107,7 @@ export async function registerPartner(
         after: { type: d.type, status: "pending" },
       });
     });
-  } catch (err) {
+  } catch (error) {
     // better-auth owns signup and therefore cannot share the application
     // transaction. Compensate if our role/profile transaction fails.
     if (createdUserId) {
@@ -83,8 +123,17 @@ export async function registerPartner(
         );
       }
     }
+    console.error(
+      JSON.stringify({
+        event: "partner_registration_failed",
+        cleanupAttempted: Boolean(createdUserId),
+        error: error instanceof Error ? error.message : "unknown",
+      }),
+    );
     return {
-      error: (err as Error).message || "Could not register — this email may already exist.",
+      code: "registration_failed",
+      // Deliberately identical for an existing email and internal failures.
+      error: "Could not create the account. Check your details or try again later.",
     };
   } finally {
     ctx.waitUntil(db.$client.end());

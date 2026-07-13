@@ -3,7 +3,10 @@ import { Container } from "@truelend/ui";
 import { PageHeader } from "@/components/page-header";
 import { site } from "@/content/site";
 
-export const metadata: Metadata = { title: "Privacy Policy" };
+export const metadata: Metadata = {
+  title: "Privacy Policy",
+  alternates: { canonical: "/privacy" },
+};
 
 // PLACEHOLDER legal copy — must be replaced by counsel-approved text before
 // campaigns run (todo.md).
@@ -40,7 +43,7 @@ export default function PrivacyPage() {
             to meet our legal obligations.
           </p>
         </section>
-        <p className="border-t border-hairline pt-6 text-sm text-navy-400">
+        <p className="border-t border-hairline pt-6 text-sm text-muted">
           This is interim policy text pending formal legal review. Last updated July 2026.
         </p>
       </Container>

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { products } from "@/content/products";
+import { products } from "@truelend/reference";
 
 const productSlugs = products.map((p) => p.slug) as [string, ...string[]];
 
@@ -13,12 +13,20 @@ const optionalEmail = z.email("Enter a valid email address").max(254).or(z.liter
 
 const consent = z.boolean().refine((v) => v === true, "Please accept to proceed");
 
+const optionalAttribution = z.preprocess(
+  (value) => (typeof value === "string" ? value.trim().slice(0, 100) || undefined : undefined),
+  z.string().max(100).optional(),
+);
+
 const base = {
   consent,
   turnstileToken: z.string().max(2048).optional(),
-  utmSource: z.string().max(100).optional(),
-  utmMedium: z.string().max(100).optional(),
-  utmCampaign: z.string().max(100).optional(),
+  utmSource: optionalAttribution,
+  utmMedium: optionalAttribution,
+  utmCampaign: optionalAttribution,
+  utmLastSource: optionalAttribution,
+  utmLastMedium: optionalAttribution,
+  utmLastCampaign: optionalAttribution,
 };
 
 export const enquirySchema = z.object({

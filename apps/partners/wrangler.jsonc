@@ -5,6 +5,7 @@
   "compatibility_date": "2026-07-13",
   "compatibility_flags": ["nodejs_compat"],
   "upload_source_maps": true,
+  "workers_dev": false,
   // Custom domain — wrangler provisions the DNS record + edge cert on deploy.
   "routes": [{ "pattern": "partner.truelend.in", "custom_domain": true }],
   "assets": {
@@ -22,6 +23,11 @@
       // Shared with admin so the same credential cannot bypass the limit by host.
       "namespace_id": "1001",
       "simple": { "limit": 10, "period": 60 },
+    },
+    {
+      "name": "REGISTRATION_RATE_LIMITER",
+      "namespace_id": "1005",
+      "simple": { "limit": 5, "period": 60 },
     },
     {
       "name": "PARTNER_WRITE_RATE_LIMITER",

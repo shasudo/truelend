@@ -10,7 +10,7 @@ import { cx } from "./cx";
 
 const fieldBase =
   "w-full rounded-lg border border-navy-800/20 bg-white text-[0.95rem] text-navy-950 " +
-  "placeholder:text-navy-300 transition-colors focus:border-navy-800 focus:outline-none " +
+  "placeholder:text-muted transition-colors focus:border-navy-800 focus:outline-none " +
   "focus:ring-2 focus:ring-navy-800/10 aria-invalid:border-red-600 aria-invalid:ring-red-600/10 " +
   "disabled:cursor-not-allowed disabled:opacity-50";
 
@@ -35,7 +35,7 @@ export function Select({ className, children, ...props }: ComponentProps<"select
       </select>
       <ChevronDown
         aria-hidden
-        className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-navy-400"
+        className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted"
       />
     </span>
   );
