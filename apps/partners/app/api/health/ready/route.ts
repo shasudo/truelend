@@ -24,8 +24,7 @@ export async function GET(request: Request) {
     ctx.waitUntil(connection.$client.end());
   }
   const auth = env.BETTER_AUTH_SECRET && env.BETTER_AUTH_URL ? "ok" : "error";
-  const turnstile =
-    env.TURNSTILE_SECRET_KEY && process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ? "ok" : "error";
+  const turnstile = env.TURNSTILE_SECRET_KEY && env.TURNSTILE_SITE_KEY ? "ok" : "error";
   const status = db === "ok" && auth === "ok" && turnstile === "ok" ? "ok" : "error";
   const body: HealthResponse = {
     status,

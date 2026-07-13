@@ -72,7 +72,7 @@ export async function registerPartner(
     const human = await verifyTurnstile({
       token: d.turnstileToken,
       secret: env.TURNSTILE_SECRET_KEY,
-      siteKeyConfigured: Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY),
+      siteKeyConfigured: Boolean(env.TURNSTILE_SITE_KEY),
       expectedAction: "partner_registration",
       ip: ip === "anonymous" ? undefined : ip,
       expectedHostname: requestHeaders.get("host") ?? undefined,

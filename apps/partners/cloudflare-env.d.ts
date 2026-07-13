@@ -12,6 +12,7 @@ declare global {
     PARTNER_WRITE_RATE_LIMITER: RateLimit;
     CSV_IMPORT_RATE_LIMITER: RateLimit;
     BETTER_AUTH_URL: string;
+    TURNSTILE_SITE_KEY: string;
     /** Secret — set via .dev.vars locally, `wrangler secret put` in prod. */
     BETTER_AUTH_SECRET: string;
     /** Optional only for local development; production registration fails closed without it. */

@@ -43,6 +43,9 @@
   "vars": {
     // Overridden to http://localhost:3002 in .dev.vars for local dev.
     "BETTER_AUTH_URL": "https://partner.truelend.in",
+    // A site key is public. Pass it at runtime so the registration form can
+    // render Turnstile after the Worker is deployed.
+    "TURNSTILE_SITE_KEY": "0x4AAAAAAD0gmfEKR5XdzhJR",
     // Email (Resend). RESEND_API_KEY is a secret; TEAM_EMAIL receives partner
     // lead alerts. Missing key = no-op.
     "EMAIL_FROM": "TrueLend <hello@truelend.in>",
