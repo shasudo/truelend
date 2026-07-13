@@ -85,14 +85,13 @@ Full end-to-end review (52 confirmed findings). **High-severity code fixes done:
       logo assets when permissions exist (`components/partner-strip.tsx`).
 - [ ] **Analytics** — none wired. Cloudflare Web Analytics is the zero-config
       option; Meta pixel etc. only alongside campaign work.
-- [~] **Email (Resend)** — wired but INACTIVE until configured. `@truelend/email` + triggers are deployed: new-lead alerts to the team (website + partner
-  leads) and partner verified/rejected emails. Env-gated (no key = no-op).
-  **To activate:** (1) create a Resend account + API key; (2) verify a
-  sending domain (or use `onboarding@resend.dev` to test to your own inbox);
-  (3) on each worker set `wrangler secret put RESEND_API_KEY` and set
-  `EMAIL_FROM` + `TEAM_EMAIL` (admin also `PARTNERS_URL`) vars in
-  wrangler.jsonc; redeploy. WhatsApp alerts still a separate future add.
-- [ ] **Password reset emails** — better-auth reset flow not wired (needs the
+- [x] **Email (Resend) — LIVE.** Domain `truelend.in` verified; `RESEND_API_KEY`
+      set as a secret on all three workers; `EMAIL_FROM="TrueLend <hello@truelend.in>"`;
+      `TEAM_EMAIL="shathwik@icloud.com"` (⚠️ personal inbox for now — change to a real
+      ops address like `leads@truelend.in`). Deployed + verified with a live send.
+      Covers: new-lead alerts, partner verified/rejected, password reset. WhatsApp
+      still a separate future add. **Rotate the API key** — it was shared in chat.
+- [ ] **Password reset emails** — DONE (see the audit section). Historical: needed the
       email sender in packages/auth + forgot/reset pages in admin & partners).
       Now that @truelend/email exists, this is a smaller add.
 - [ ] **CIBIL score integration** — `/cibil-score` is a coming-soon page
