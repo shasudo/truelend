@@ -106,7 +106,7 @@ export default function Home() {
           <HexPattern className="-left-32 -top-24 h-[520px] w-[520px] text-navy-800/[0.04]" />
           <div className="absolute inset-y-0 right-0 hidden w-[58%] lg:block">
             <Image
-              src="/images/partner-handshake-hero.png"
+              src="/images/partner-handshake-hero.jpg"
               alt="Two Indian business professionals shaking hands in a modern office"
               fill
               priority
@@ -156,7 +156,7 @@ export default function Home() {
 
               <div className="relative mt-10 aspect-[2/1] overflow-hidden rounded-2xl border border-hairline bg-white shadow-[0_24px_60px_-40px_rgba(7,13,36,0.7)] lg:hidden">
                 <Image
-                  src="/images/partner-handshake-hero.png"
+                  src="/images/partner-handshake-hero.jpg"
                   alt="Two Indian business professionals shaking hands in a modern office"
                   fill
                   priority
@@ -325,7 +325,7 @@ export default function Home() {
             </div>
             <div className="relative hidden aspect-[2/1] overflow-hidden rounded-2xl border border-white/15 lg:block">
               <Image
-                src="/images/partner-handshake-hero.png"
+                src="/images/partner-handshake-hero.jpg"
                 alt="TrueLend partnership handshake"
                 fill
                 sizes="420px"

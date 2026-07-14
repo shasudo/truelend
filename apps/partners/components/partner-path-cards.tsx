@@ -10,7 +10,7 @@ export function PartnerPathCards({ className }: { className?: string }) {
       {partnerPaths.map((path) => {
         const business = path.type === "business";
         const Icon = business ? Briefcase : UserRoundPlus;
-        const imageSrc = business ? "/images/business-partner.png" : "/images/referral-partner.png";
+        const imageSrc = business ? "/images/business-partner.jpg" : "/images/referral-partner.jpg";
         const imageAlt = business
           ? "Indian business partner and loan professional in a navy suit"
           : "Indian referral partner holding a smartphone";

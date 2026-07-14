@@ -18,7 +18,7 @@ const copy = {
       "Lead and case tracking dashboard",
       "Marketing resources and training",
     ],
-    image: "/images/business-partner.png",
+    image: "/images/business-partner.jpg",
     imageAlt: "Indian business partner and loan professional in a navy suit",
     imageWidth: 1024,
     imageHeight: 683,
@@ -37,7 +37,7 @@ const copy = {
       "No documentation expertise required",
       "End-to-end support from TrueLend",
     ],
-    image: "/images/partner-referral-network.png",
+    image: "/images/partner-referral-network.jpg",
     imageAlt:
       "TrueLend Referral Partner poster explaining referral rewards, no investment and flexible working",
     imageWidth: 1024,
