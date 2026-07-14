@@ -2,7 +2,7 @@
 
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { schema } from "@truelend/db";
 import { verifyTurnstile } from "@truelend/turnstile";
@@ -91,10 +91,14 @@ export async function registerPartner(
     createdUserId = res.user.id;
     await db.transaction(async (tx) => {
       await tx.update(schema.user).set({ role: d.type }).where(eq(schema.user.id, createdUserId!));
+      // Reference id is generated in-DB from the sequence so it's race-free and
+      // gapless; prefix (BP/RP) is a controlled constant, not user input.
+      const prefix = d.type === "business" ? "BP" : "RP";
       await tx.insert(schema.partners).values({
         userId: createdUserId!,
         type: d.type,
         status: "pending",
+        referenceId: sql`${prefix} || lpad(nextval('partners_reference_seq')::text, 6, '0')`,
         phone: d.phone,
         businessName: d.type === "business" ? d.businessName! : null,
       });

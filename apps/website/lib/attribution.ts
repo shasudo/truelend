@@ -13,16 +13,32 @@ export interface LeadAttribution {
   utmLastSource?: string;
   utmLastMedium?: string;
   utmLastCampaign?: string;
+  /** Partner reference id (BP…/RP…) from a shared affiliate link. */
+  ref?: string;
 }
 
 interface StoredAttribution {
   first: UtmTouch;
   last: UtmTouch;
+  ref?: string;
   expiresAt: number;
 }
 
 const clean = (value: unknown) =>
   typeof value === "string" ? value.trim().slice(0, 100) || undefined : undefined;
+
+// Partner reference ids are BP/RP + a sequence number; reject anything else so a
+// hostile ?ref= can't smuggle junk into storage or the lead payload.
+const REF_RE = /^(?:BP|RP)\d{4,}$/;
+function sanitizeRef(value: unknown): string | undefined {
+  if (typeof value !== "string") return undefined;
+  const v = value.trim().toUpperCase().slice(0, 32);
+  return REF_RE.test(v) ? v : undefined;
+}
+
+export function refFromSearch(params: URLSearchParams): string | undefined {
+  return sanitizeRef(params.get("ref"));
+}
 
 function sanitizeTouch(value: unknown): UtmTouch {
   if (!value || typeof value !== "object") return {};
@@ -48,6 +64,7 @@ export function resolveAttribution(
   storedRaw: string | null,
   current: UtmTouch,
   now = Date.now(),
+  currentRef?: string,
 ): { fields: LeadAttribution; serialized?: string } {
   let stored: StoredAttribution | undefined;
   if (storedRaw && storedRaw.length <= 4_096) {
@@ -59,6 +76,7 @@ export function resolveAttribution(
           stored = {
             first: sanitizeTouch(candidate.first),
             last: sanitizeTouch(candidate.last),
+            ref: sanitizeRef(candidate.ref),
             expiresAt: candidate.expiresAt,
           };
         }
@@ -69,24 +87,32 @@ export function resolveAttribution(
   }
 
   const cleanCurrent = sanitizeTouch(current);
+  // First partner to refer keeps the credit; a later ?ref= does not overwrite.
+  const ref = stored?.ref ?? sanitizeRef(currentRef);
+
   if (hasTouch(cleanCurrent)) {
     stored = {
       first: stored && hasTouch(stored.first) ? stored.first : cleanCurrent,
       last: cleanCurrent,
+      ref,
       expiresAt: now + ATTRIBUTION_TTL_MS,
     };
+  } else if (ref && !stored) {
+    // Referral link with no UTM: still persist so the credit survives navigation.
+    stored = { first: {}, last: {}, ref, expiresAt: now + ATTRIBUTION_TTL_MS };
+  } else if (stored) {
+    stored = { ...stored, ref };
   }
 
   if (!stored) return { fields: {} };
-  return {
-    fields: {
-      utmSource: stored.first.source,
-      utmMedium: stored.first.medium,
-      utmCampaign: stored.first.campaign,
-      utmLastSource: stored.last.source,
-      utmLastMedium: stored.last.medium,
-      utmLastCampaign: stored.last.campaign,
-    },
-    serialized: JSON.stringify(stored),
+  const fields: LeadAttribution = {
+    utmSource: stored.first.source,
+    utmMedium: stored.first.medium,
+    utmCampaign: stored.first.campaign,
+    utmLastSource: stored.last.source,
+    utmLastMedium: stored.last.medium,
+    utmLastCampaign: stored.last.campaign,
   };
+  if (stored.ref) fields.ref = stored.ref;
+  return { fields, serialized: JSON.stringify(stored) };
 }

@@ -117,6 +117,13 @@ export const leadStatus = pgEnum("lead_status", [
   "lost",
 ]);
 
+export const employmentType = pgEnum("employment_type", [
+  "salaried",
+  "self_employed_professional",
+  "self_employed_business",
+]);
+export const residenceType = pgEnum("residence_type", ["owned", "rented", "family", "company"]);
+
 /*
  * Columns are nullable by design — per-kind requiredness (e.g. cibil_notify
  * needs only email) is enforced by zod at the form boundary, not the database.
@@ -133,6 +140,22 @@ export const leads = pgTable(
     city: text("city"),
     productSlug: text("product_slug"),
     message: text("message"),
+
+    // Loan-application detail captured by the detailed lead forms. Requiredness
+    // is enforced per-form by zod; the columns stay nullable (partner/CSV/older
+    // leads may omit them). Money is integer paise, converted at the boundary.
+    loanAmountPaise: bigint("loan_amount_paise", { mode: "number" }),
+    tenureMonths: integer("tenure_months"),
+    loanPurpose: text("loan_purpose"),
+    pincode: text("pincode"),
+    residenceType: residenceType("residence_type"),
+    employmentType: employmentType("employment_type"),
+    monthlyIncomePaise: bigint("monthly_income_paise", { mode: "number" }),
+    employerName: text("employer_name"),
+    experienceYears: integer("experience_years"),
+    existingEmiPaise: bigint("existing_emi_paise", { mode: "number" }),
+    assetValuePaise: bigint("asset_value_paise", { mode: "number" }),
+    annualTurnoverPaise: bigint("annual_turnover_paise", { mode: "number" }),
 
     referrerName: text("referrer_name"),
     referrerPhone: text("referrer_phone"),
@@ -178,6 +201,16 @@ export const leads = pgTable(
     check(
       "leads_consent_proof",
       sql`${t.consent} = false or (${t.consentAt} is not null and ${t.consentSource} is not null and ${t.consentVersion} is not null)`,
+    ),
+    check(
+      "leads_application_amounts_valid",
+      sql`(${t.loanAmountPaise} is null or (${t.loanAmountPaise} >= 0 and ${t.loanAmountPaise} <= 9007199254740991))
+        and (${t.monthlyIncomePaise} is null or (${t.monthlyIncomePaise} >= 0 and ${t.monthlyIncomePaise} <= 9007199254740991))
+        and (${t.existingEmiPaise} is null or (${t.existingEmiPaise} >= 0 and ${t.existingEmiPaise} <= 9007199254740991))
+        and (${t.assetValuePaise} is null or (${t.assetValuePaise} >= 0 and ${t.assetValuePaise} <= 9007199254740991))
+        and (${t.annualTurnoverPaise} is null or (${t.annualTurnoverPaise} >= 0 and ${t.annualTurnoverPaise} <= 9007199254740991))
+        and (${t.tenureMonths} is null or (${t.tenureMonths} >= 0 and ${t.tenureMonths} <= 600))
+        and (${t.experienceYears} is null or (${t.experienceYears} >= 0 and ${t.experienceYears} <= 100))`,
     ),
   ],
 );
@@ -288,6 +321,10 @@ export const partners = pgTable(
       .references(() => user.id, { onDelete: "cascade" }),
     type: partnerType("type").notNull(),
     status: partnerStatus("status").notNull().default("pending"),
+    // Human-readable partner reference shown as the partner's ID. BP<seq> for
+    // business, RP<seq> for referral, generated at signup from the
+    // partners_reference_seq sequence (see migration 0011). Unique per partner.
+    referenceId: text("reference_id").notNull().unique(),
     phone: text("phone"),
     // business only
     alternatePhone: text("alternate_phone"),

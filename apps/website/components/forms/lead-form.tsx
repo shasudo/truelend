@@ -7,7 +7,12 @@ import { CheckCircle2, MessageCircle } from "lucide-react";
 import { Button } from "@truelend/ui";
 import type { TurnstileAction } from "@truelend/turnstile";
 import { submitLead } from "@/lib/actions";
-import { resolveAttribution, touchFromSearch, type LeadAttribution } from "@/lib/attribution";
+import {
+  resolveAttribution,
+  touchFromSearch,
+  refFromSearch,
+  type LeadAttribution,
+} from "@/lib/attribution";
 import { site } from "@/content/site";
 
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
@@ -21,6 +26,8 @@ function useUtm(): LeadAttribution {
       const resolved = resolveAttribution(
         window.localStorage.getItem(UTM_STORAGE_KEY),
         touchFromSearch(params),
+        undefined,
+        refFromSearch(params),
       );
       if (resolved.serialized) {
         window.localStorage.setItem(UTM_STORAGE_KEY, resolved.serialized);
@@ -30,7 +37,9 @@ function useUtm(): LeadAttribution {
       setUtm(resolved.fields);
     } catch {
       // Storage may be disabled by browser policy; attribution stays optional.
-      setUtm(resolveAttribution(null, touchFromSearch(params)).fields);
+      setUtm(
+        resolveAttribution(null, touchFromSearch(params), undefined, refFromSearch(params)).fields,
+      );
     }
   }, []);
   return utm;

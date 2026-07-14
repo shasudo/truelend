@@ -132,3 +132,67 @@ export const partnerDocTypeLabels: Record<string, string> = Object.fromEntries(
 );
 
 export const earningsLabel = (type: string) => (type === "business" ? "Payout" : "Incentive");
+
+/* ------------------------------------------------------------------ */
+/* Loan-application fields — shared option sets for the detailed lead   */
+/* forms (website enquiry/referral, partner submissions). DB stores the */
+/* `value`; forms render the `label`. Money is paise; convert with      */
+/* rupeesToPaise at the form boundary.                                  */
+/* ------------------------------------------------------------------ */
+
+export const employmentTypes = [
+  { value: "salaried", label: "Salaried" },
+  { value: "self_employed_professional", label: "Self-employed professional" },
+  { value: "self_employed_business", label: "Self-employed / Business owner" },
+] as const;
+
+export const residenceTypes = [
+  { value: "owned", label: "Owned" },
+  { value: "rented", label: "Rented" },
+  { value: "family", label: "Family-owned" },
+  { value: "company", label: "Company-provided" },
+] as const;
+
+export type EmploymentType = (typeof employmentTypes)[number]["value"];
+export type ResidenceType = (typeof residenceTypes)[number]["value"];
+
+export const employmentTypeValues = employmentTypes.map((e) => e.value) as [
+  EmploymentType,
+  ...EmploymentType[],
+];
+export const residenceTypeValues = residenceTypes.map((r) => r.value) as [
+  ResidenceType,
+  ...ResidenceType[],
+];
+
+export const employmentTypeLabels: Record<string, string> = Object.fromEntries(
+  employmentTypes.map((e) => [e.value, e.label]),
+);
+export const residenceTypeLabels: Record<string, string> = Object.fromEntries(
+  residenceTypes.map((r) => [r.value, r.label]),
+);
+
+// Whole-month tenures offered on the forms.
+export const loanTenures = [
+  { value: 12, label: "1 year" },
+  { value: 24, label: "2 years" },
+  { value: 36, label: "3 years" },
+  { value: 60, label: "5 years" },
+  { value: 84, label: "7 years" },
+  { value: 120, label: "10 years" },
+  { value: 180, label: "15 years" },
+  { value: 240, label: "20 years" },
+  { value: 360, label: "30 years" },
+] as const;
+
+export const tenureLabel = (months: number | null | undefined) =>
+  months == null ? "—" : (loanTenures.find((t) => t.value === months)?.label ?? `${months} months`);
+
+// Products that unlock the conditional fields on the detailed forms.
+export const securedProducts = new Set([
+  "home-loan",
+  "loan-against-property",
+  "vehicle-loan",
+  "equipment-finance",
+]);
+export const businessProducts = new Set(["business-loan", "working-capital"]);

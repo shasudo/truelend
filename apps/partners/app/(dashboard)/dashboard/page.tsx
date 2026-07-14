@@ -24,7 +24,10 @@ import {
   formatDate,
 } from "@truelend/reference";
 import { requirePartner, getAuthContext } from "@/lib/auth";
-import { getPartnerMetrics, getPartnerLeads } from "@/lib/dashboard-queries";
+import { getPartnerMetrics, getPartnerLeads, getPartnerPipeline } from "@/lib/dashboard-queries";
+import { PartnerIdChip } from "@/components/partner-id-chip";
+import { PipelineDonut } from "@/components/pipeline-donut";
+import { ReferralLinkCard } from "@/components/referral-link-card";
 
 export const dynamic = "force-dynamic";
 
@@ -124,9 +127,10 @@ export default async function DashboardPage() {
   const business = partner!.type === "business";
   const label = earningsLabel(partner!.type);
 
-  const [m, leads] = await Promise.all([
+  const [m, leads, pipeline] = await Promise.all([
     getPartnerMetrics(db, partnerId),
     getPartnerLeads(db, partnerId),
+    getPartnerPipeline(db, partnerId),
   ]);
   const balance = m.earnedPaise - m.paidPaise;
   const submitHref = business ? "/leads" : "/refer";
@@ -143,11 +147,17 @@ export default async function DashboardPage() {
           aria-hidden
           className="absolute -bottom-24 right-24 h-64 w-64 rotate-45 rounded-[2.5rem] border-[40px] border-navy-800/10"
         />
-        <div className="relative max-w-3xl">
-          <p className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em]">
-            <Sparkles className="h-4 w-4 text-red-600" aria-hidden />
-            TrueLend {business ? "Business" : "Referral"} Partner™
-          </p>
+        <div className="relative">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <p className="flex items-center gap-2 pt-1 text-xs font-extrabold uppercase tracking-[0.16em]">
+              <Sparkles className="h-4 w-4 text-red-600" aria-hidden />
+              TrueLend {business ? "Business" : "Referral"} Partner™
+            </p>
+            <PartnerIdChip
+              referenceId={partner!.referenceId}
+              className="shadow-[0_18px_36px_-30px_rgba(7,13,36,0.9)]"
+            />
+          </div>
           <h1 className="mt-4 max-w-2xl text-balance font-display text-3xl font-extrabold leading-tight tracking-tight sm:text-4xl">
             Welcome, {firstName}.{" "}
             <span className="text-red-600">
@@ -205,11 +215,40 @@ export default async function DashboardPage() {
         </div>
       </section>
 
+      <section className="mt-7" aria-labelledby="pipeline-title">
+        <Card className="p-5 sm:p-6">
+          <div className="mb-5 flex items-center justify-between gap-4">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.14em] text-red-600">
+                {business ? "Pipeline overview" : "Referral status"}
+              </p>
+              <h2 id="pipeline-title" className="mt-1 font-display text-lg font-bold text-navy-950">
+                {business ? "Cases by stage" : "Referrals by stage"}
+              </h2>
+            </div>
+            <Link
+              href="/pipeline"
+              className="text-sm font-semibold text-navy-700 hover:text-red-600"
+            >
+              View all
+            </Link>
+          </div>
+          <PipelineDonut stages={pipeline} />
+        </Card>
+      </section>
+
       <section className="mt-7" aria-labelledby="actions-title">
         <h2 id="actions-title" className="mb-3 font-display text-xl font-bold text-navy-950">
           {business ? "Manage your business" : "Everything you need"}
         </h2>
         <QuickActions business={business} />
+      </section>
+
+      <section className="mt-7" aria-labelledby="referral-link-title">
+        <h2 id="referral-link-title" className="sr-only">
+          Referral link
+        </h2>
+        <ReferralLinkCard referenceId={partner!.referenceId} />
       </section>
 
       <div className="mt-7 grid gap-4 xl:grid-cols-[minmax(0,1.7fr)_minmax(280px,0.7fr)]">

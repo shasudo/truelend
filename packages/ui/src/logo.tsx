@@ -1,10 +1,11 @@
 import { cx } from "./cx";
 
 /*
- * The TrueLend mark, redrawn as vector geometry from branding/*.jpeg:
- * a rounded hexagon, a bold north-east arrow (red), and a detached navy
- * corner triangle the arrow points into. Navy parts follow currentColor
- * so the mark flips to white on navy surfaces; red stays brand red.
+ * The TrueLend mark, traced from branding/*.jpeg: a rounded hexagon, a bold
+ * north-east arrow (red) rising from the lower-left, and the detached navy pin
+ * (right triangle) tucked into the arrowhead's upper-right. Navy parts follow
+ * currentColor so the mark flips to white on navy surfaces; red stays brand red.
+ * Rounded corners come from a same-color round-join stroke on each fill.
  */
 export function LogoMark({ className }: { className?: string }) {
   return (
@@ -16,9 +17,19 @@ export function LogoMark({ className }: { className?: string }) {
         strokeWidth="6"
         strokeLinejoin="round"
       />
-      <polygon points="23.4,67.4 45.4,45.4 54.6,54.6 32.6,76.6" className="fill-red-600" />
-      <polygon points="68,32 58.1,61.7 38.3,41.9" className="fill-red-600" />
-      <polygon points="77,23 65,23 77,35" fill="currentColor" />
+      <polygon
+        points="35.5,72.4 37,72.4 53.2,55.8 56.6,58.8 57.6,71.9 68.4,72.4 69.9,70.9 69.9,55.3 45.8,31.1 30.6,31.1 28.6,33.2 29.1,42.7 41.9,43.2 45.3,46.7 28.6,64.3"
+        strokeWidth="3.2"
+        strokeLinejoin="round"
+        className="fill-red-600 stroke-red-600"
+      />
+      <polygon
+        points="69.9,46.7 69.9,31.1 54.7,31.1"
+        fill="currentColor"
+        stroke="currentColor"
+        strokeWidth="3.2"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }

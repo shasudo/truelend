@@ -1,7 +1,63 @@
 import { z } from "zod";
-import { products } from "@truelend/reference";
+import { products, employmentTypeValues, residenceTypeValues } from "@truelend/reference";
 
 const productSlugs = products.map((p) => p.slug) as [string, ...string[]];
+
+/* Detailed loan-application fields. Amounts are rupee strings here (digits
+ * only) and become integer paise at the server boundary via rupeesToPaise. */
+const rupeeAmount = (label: string) =>
+  z
+    .string()
+    .trim()
+    .regex(/^\d{1,10}$/, `Enter ${label} in rupees (digits only)`);
+const rupeeAmountOptional = z
+  .string()
+  .trim()
+  .regex(/^\d{1,10}$/, "Enter the amount in rupees (digits only)")
+  .or(z.literal(""))
+  .optional();
+const smallIntOptional = z
+  .string()
+  .trim()
+  .regex(/^\d{1,3}$/, "Numbers only")
+  .or(z.literal(""))
+  .optional();
+const pincode = z
+  .string()
+  .trim()
+  .regex(/^\d{6}$/, "Enter a 6-digit PIN code");
+
+// Required core on the self-application enquiry. Enums accept "" as input (the
+// select's placeholder) but a refine rejects it, so the empty default still
+// typechecks while an unmade choice fails validation with a clear message.
+const loanCore = {
+  loanAmount: rupeeAmount("the loan amount"),
+  employmentType: z
+    .enum(employmentTypeValues)
+    .or(z.literal(""))
+    .refine((v) => v !== "", { message: "Select your employment type" }),
+  monthlyIncome: rupeeAmount("your monthly income"),
+  pincode,
+};
+// Optional detail, shared by every detailed form.
+const loanDetails = {
+  tenureMonths: smallIntOptional,
+  loanPurpose: z.string().trim().max(200).optional(),
+  residenceType: z.enum(residenceTypeValues).or(z.literal("")).optional(),
+  employerName: z.string().trim().max(160).optional(),
+  experienceYears: smallIntOptional,
+  existingEmi: rupeeAmountOptional,
+  assetValue: rupeeAmountOptional,
+  annualTurnover: rupeeAmountOptional,
+};
+// Everything optional — for a third party (referral) submitting on someone's behalf.
+const loanAllOptional = {
+  loanAmount: rupeeAmountOptional,
+  employmentType: z.enum(employmentTypeValues).or(z.literal("")).optional(),
+  monthlyIncome: rupeeAmountOptional,
+  pincode: pincode.or(z.literal("")).optional(),
+  ...loanDetails,
+};
 
 const phone = z
   .string()
@@ -27,6 +83,8 @@ const base = {
   utmLastSource: optionalAttribution,
   utmLastMedium: optionalAttribution,
   utmLastCampaign: optionalAttribution,
+  // Partner affiliate ref (BP…/RP…); resolved to a partner in submitLead.
+  ref: optionalAttribution,
 };
 
 export const enquirySchema = z.object({
@@ -35,8 +93,13 @@ export const enquirySchema = z.object({
   phone,
   email: optionalEmail,
   city: z.string().trim().max(100).optional(),
-  productSlug: z.enum(productSlugs).or(z.literal("")).optional(),
+  productSlug: z
+    .enum(productSlugs)
+    .or(z.literal(""))
+    .refine((v) => v !== "", { message: "Select the loan you need" }),
   message: z.string().trim().max(2000).optional(),
+  ...loanCore,
+  ...loanDetails,
   ...base,
 });
 
@@ -47,6 +110,7 @@ export const referralSchema = z.object({
   name: z.string().trim().min(2, "Please tell us your friend's name").max(100),
   phone,
   productSlug: z.enum(productSlugs).or(z.literal("")).optional(),
+  ...loanAllOptional,
   ...base,
 });
 

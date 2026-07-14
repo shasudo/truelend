@@ -10,6 +10,9 @@ import {
   channelForKind,
   formatDateTime,
   formatPaise,
+  tenureLabel,
+  employmentTypeLabels,
+  residenceTypeLabels,
 } from "@truelend/reference";
 import { schema } from "@truelend/db";
 import { PageTitle } from "@/components/page-title";
@@ -100,6 +103,60 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
               </p>
             )}
           </Card>
+
+          {(lead.loanAmountPaise != null ||
+            lead.monthlyIncomePaise != null ||
+            lead.employmentType ||
+            lead.pincode) && (
+            <Card className="p-6">
+              <h2 className="font-display text-lg font-bold text-navy-950">Loan application</h2>
+              <dl className="mt-5 grid grid-cols-2 gap-5">
+                <Detail
+                  label="Loan amount"
+                  value={lead.loanAmountPaise != null ? formatPaise(lead.loanAmountPaise) : null}
+                />
+                <Detail
+                  label="Tenure"
+                  value={lead.tenureMonths != null ? tenureLabel(lead.tenureMonths) : null}
+                />
+                <Detail label="Purpose" value={lead.loanPurpose} />
+                <Detail label="PIN code" value={lead.pincode} />
+                <Detail
+                  label="Residence"
+                  value={lead.residenceType ? residenceTypeLabels[lead.residenceType] : null}
+                />
+                <Detail
+                  label="Employment"
+                  value={lead.employmentType ? employmentTypeLabels[lead.employmentType] : null}
+                />
+                <Detail
+                  label="Monthly income"
+                  value={
+                    lead.monthlyIncomePaise != null ? formatPaise(lead.monthlyIncomePaise) : null
+                  }
+                />
+                <Detail label="Employer / business" value={lead.employerName} />
+                <Detail
+                  label="Experience (yrs)"
+                  value={lead.experienceYears != null ? String(lead.experienceYears) : null}
+                />
+                <Detail
+                  label="Current EMIs / mo"
+                  value={lead.existingEmiPaise != null ? formatPaise(lead.existingEmiPaise) : null}
+                />
+                <Detail
+                  label="Asset value"
+                  value={lead.assetValuePaise != null ? formatPaise(lead.assetValuePaise) : null}
+                />
+                <Detail
+                  label="Annual turnover"
+                  value={
+                    lead.annualTurnoverPaise != null ? formatPaise(lead.annualTurnoverPaise) : null
+                  }
+                />
+              </dl>
+            </Card>
+          )}
 
           <Card className="p-6">
             <h2 className="font-display text-lg font-bold text-navy-950">Notes</h2>

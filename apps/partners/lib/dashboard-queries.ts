@@ -45,6 +45,25 @@ export async function getPartnerMetrics(db: Database, partnerId: string): Promis
   };
 }
 
+export interface PipelineStage {
+  status: string;
+  count: number;
+}
+
+/** Lead counts grouped by status, for the dashboard pipeline breakdown. */
+export async function getPartnerPipeline(
+  db: Database,
+  partnerId: string,
+): Promise<PipelineStage[]> {
+  const rows = (await db.$client`
+    select status, count(*)::int as count
+    from leads
+    where partner_id = ${partnerId}
+    group by status
+  `) as Row[];
+  return rows.map((row) => ({ status: String(row.status), count: num(row.count) }));
+}
+
 export interface PaginatedLeads {
   rows: Lead[];
   total: number;

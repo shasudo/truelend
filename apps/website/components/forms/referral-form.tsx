@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button, Checkbox, Field, Input, Select } from "@truelend/ui";
-import { products } from "@truelend/reference";
+import { products, employmentTypes, loanTenures } from "@truelend/reference";
 import { referralSchema } from "@/lib/schemas";
 import {
   FormSuccess,
@@ -32,6 +32,18 @@ export function ReferralForm() {
     name: "",
     phone: "",
     productSlug: "",
+    loanAmount: "",
+    tenureMonths: "",
+    loanPurpose: "",
+    pincode: "",
+    residenceType: "",
+    employmentType: "",
+    monthlyIncome: "",
+    employerName: "",
+    experienceYears: "",
+    existingEmi: "",
+    assetValue: "",
+    annualTurnover: "",
     consent: false,
   });
   const { register, formState } = form;
@@ -103,17 +115,78 @@ export function ReferralForm() {
               {...register("phone")}
             />
           </Field>
+          <Field label="What are they looking for?" htmlFor="ref-product">
+            <Select id="ref-product" {...register("productSlug")}>
+              <option value="">Not sure</option>
+              {products.map((p) => (
+                <option key={p.slug} value={p.slug}>
+                  {p.name}
+                </option>
+              ))}
+            </Select>
+          </Field>
+          <Field label="Loan amount (₹)" htmlFor="ref-amount" error={err.loanAmount?.message}>
+            <Input
+              id="ref-amount"
+              inputMode="numeric"
+              placeholder="If you know it"
+              {...register("loanAmount")}
+            />
+          </Field>
         </div>
-        <Field label="What are they looking for?" htmlFor="ref-product">
-          <Select id="ref-product" {...register("productSlug")}>
-            <option value="">Not sure</option>
-            {products.map((p) => (
-              <option key={p.slug} value={p.slug}>
-                {p.name}
-              </option>
-            ))}
-          </Select>
-        </Field>
+      </fieldset>
+
+      <fieldset className="space-y-5">
+        <legend className="font-display text-sm font-bold uppercase tracking-[0.14em] text-navy-500">
+          Loan details <span className="font-medium normal-case tracking-normal">— optional</span>
+        </legend>
+        <div className="grid gap-5 sm:grid-cols-2">
+          <Field label="Preferred tenure" htmlFor="ref-tenure" error={err.tenureMonths?.message}>
+            <Select id="ref-tenure" {...register("tenureMonths")}>
+              <option value="">No preference</option>
+              {loanTenures.map((t) => (
+                <option key={t.value} value={t.value}>
+                  {t.label}
+                </option>
+              ))}
+            </Select>
+          </Field>
+          <Field label="Their PIN code" htmlFor="ref-pin" error={err.pincode?.message}>
+            <Input
+              id="ref-pin"
+              inputMode="numeric"
+              placeholder="6-digit PIN"
+              aria-invalid={!!err.pincode}
+              {...register("pincode")}
+            />
+          </Field>
+          <Field
+            label="Their employment"
+            htmlFor="ref-employment"
+            error={err.employmentType?.message}
+          >
+            <Select id="ref-employment" {...register("employmentType")}>
+              <option value="">Not sure</option>
+              {employmentTypes.map((e) => (
+                <option key={e.value} value={e.value}>
+                  {e.label}
+                </option>
+              ))}
+            </Select>
+          </Field>
+          <Field
+            label="Their monthly income (₹)"
+            htmlFor="ref-income"
+            error={err.monthlyIncome?.message}
+          >
+            <Input
+              id="ref-income"
+              inputMode="numeric"
+              placeholder="If you know it"
+              {...register("monthlyIncome")}
+            />
+          </Field>
+        </div>
       </fieldset>
 
       <label className="flex gap-3 text-sm leading-relaxed text-navy-600">

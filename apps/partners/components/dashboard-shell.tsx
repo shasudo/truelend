@@ -28,6 +28,7 @@ import { Logo, cx } from "@truelend/ui";
 import { partnerTypeLabels } from "@truelend/reference";
 import { authClient } from "@truelend/auth/client";
 import type { Partner } from "@truelend/db";
+import { PartnerIdChip } from "./partner-id-chip";
 
 interface NavItem {
   label: string;
@@ -99,7 +100,15 @@ function NavLinks({ groups, onNavigate }: { groups: NavGroup[]; onNavigate?: () 
   );
 }
 
-function UserCard({ name, type }: { name: string; type: Partner["type"] }) {
+function UserCard({
+  name,
+  type,
+  referenceId,
+}: {
+  name: string;
+  type: Partner["type"];
+  referenceId: string;
+}) {
   const { signOut, pending } = useSignOut();
   return (
     <div className="border-t border-hairline p-3">
@@ -109,6 +118,7 @@ function UserCard({ name, type }: { name: string; type: Partner["type"] }) {
           {partnerTypeLabels[type]}
         </span>
       </div>
+      <PartnerIdChip referenceId={referenceId} className="mt-2 w-full justify-between" />
       <button
         onClick={signOut}
         disabled={pending}
@@ -205,7 +215,7 @@ export function DashboardShell({
         <nav className="flex-1 overflow-y-auto p-3" aria-label="Main">
           <NavLinks groups={navGroups} />
         </nav>
-        <UserCard name={name} type={partner.type} />
+        <UserCard name={name} type={partner.type} referenceId={partner.referenceId} />
       </aside>
 
       <div className="flex min-h-screen flex-1 flex-col">
@@ -242,7 +252,7 @@ export function DashboardShell({
                 <nav className="flex-1 overflow-y-auto p-3" aria-label="Main">
                   <NavLinks groups={navGroups} onNavigate={() => setOpen(false)} />
                 </nav>
-                <UserCard name={name} type={partner.type} />
+                <UserCard name={name} type={partner.type} referenceId={partner.referenceId} />
               </Dialog.Content>
             </Dialog.Portal>
           </Dialog.Root>

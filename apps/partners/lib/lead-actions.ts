@@ -6,7 +6,14 @@ import { eq } from "drizzle-orm";
 import Papa from "papaparse";
 import { z } from "zod";
 import { schema, type NewLead } from "@truelend/db";
-import { products, productName, partnerTypeLabels } from "@truelend/reference";
+import {
+  products,
+  productName,
+  partnerTypeLabels,
+  rupeesToPaise,
+  employmentTypeValues,
+  residenceTypeValues,
+} from "@truelend/reference";
 import { notifyBulkLeadImport, notifyNewLead } from "@truelend/email";
 import { getAuthContext } from "./auth";
 
@@ -22,6 +29,45 @@ const phone = z
   .pipe(z.string().regex(/^[6-9]\d{9}$/, "Enter a valid 10-digit mobile number"));
 
 const blank = (v: string | undefined) => (v && v.length > 0 ? v : null);
+const intOrNull = (v: string | undefined) => {
+  if (!v) return null;
+  const n = Number(v);
+  return Number.isInteger(n) ? n : null;
+};
+
+// Detailed loan-application fields are optional here — a partner captures what
+// the customer gave them. Amounts are rupee strings, converted to paise on save.
+const rupeeAmountOptional = z
+  .string()
+  .trim()
+  .regex(/^\d{1,10}$/, "Enter the amount in rupees (digits only)")
+  .or(z.literal(""))
+  .optional();
+const smallIntOptional = z
+  .string()
+  .trim()
+  .regex(/^\d{1,3}$/, "Numbers only")
+  .or(z.literal(""))
+  .optional();
+const loanApplicationFields = {
+  loanAmount: rupeeAmountOptional,
+  tenureMonths: smallIntOptional,
+  loanPurpose: z.string().trim().max(200).optional(),
+  pincode: z
+    .string()
+    .trim()
+    .regex(/^\d{6}$/, "Enter a 6-digit PIN code")
+    .or(z.literal(""))
+    .optional(),
+  residenceType: z.enum(residenceTypeValues).or(z.literal("")).optional(),
+  employmentType: z.enum(employmentTypeValues).or(z.literal("")).optional(),
+  monthlyIncome: rupeeAmountOptional,
+  employerName: z.string().trim().max(160).optional(),
+  experienceYears: smallIntOptional,
+  existingEmi: rupeeAmountOptional,
+  assetValue: rupeeAmountOptional,
+  annualTurnover: rupeeAmountOptional,
+};
 
 async function verifiedPartner() {
   const { db, ctx, auth, env } = getAuthContext();
@@ -51,6 +97,7 @@ const leadSchema = z.object({
   city: z.string().trim().max(100).optional(),
   productSlug: z.enum(productSlugs).or(z.literal("")).optional(),
   message: z.string().trim().max(2000).optional(),
+  ...loanApplicationFields,
   consent: z.literal("on", { error: "Confirm the customer's consent before submitting." }),
 });
 
@@ -84,6 +131,18 @@ export async function submitLead(_prev: LeadState, formData: FormData): Promise<
           city: blank(d.city),
           productSlug: blank(d.productSlug),
           message: blank(d.message),
+          loanAmountPaise: rupeesToPaise(d.loanAmount),
+          tenureMonths: intOrNull(d.tenureMonths),
+          loanPurpose: blank(d.loanPurpose),
+          pincode: blank(d.pincode),
+          residenceType: d.residenceType || null,
+          employmentType: d.employmentType || null,
+          monthlyIncomePaise: rupeesToPaise(d.monthlyIncome),
+          employerName: blank(d.employerName),
+          experienceYears: intOrNull(d.experienceYears),
+          existingEmiPaise: rupeesToPaise(d.existingEmi),
+          assetValuePaise: rupeesToPaise(d.assetValue),
+          annualTurnoverPaise: rupeesToPaise(d.annualTurnover),
         })
         .returning({ id: schema.leads.id });
       await tx.insert(schema.auditLog).values({

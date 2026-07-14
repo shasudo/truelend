@@ -4,7 +4,7 @@ import { headers } from "next/headers";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { createDb, schema } from "@truelend/db";
 import { notifyNewLead } from "@truelend/email";
-import { leadKindLabels, productName } from "@truelend/reference";
+import { leadKindLabels, productName, rupeesToPaise } from "@truelend/reference";
 import { verifyTurnstile, type TurnstileAction } from "@truelend/turnstile";
 import { leadSchema } from "./schemas";
 
@@ -18,6 +18,11 @@ const TURNSTILE_ACTIONS: Record<string, TurnstileAction> = {
 };
 
 const blank = (v: string | undefined) => (v && v.length > 0 ? v : undefined);
+const intOrNull = (v: string | undefined) => {
+  if (!v) return null;
+  const n = Number(v);
+  return Number.isInteger(n) ? n : null;
+};
 
 async function leadRateLimitKey(
   data: {
@@ -72,11 +77,44 @@ export async function submitLead(input: unknown): Promise<SubmitResult> {
   const d = parsed.data;
   const db = createDb(env.HYPERDRIVE.connectionString);
   try {
+    // Resolve an affiliate ref (BP…/RP…) to the partner it credits. A rejected
+    // partner earns nothing; an unknown code silently falls back to direct.
+    const refCode = d.ref?.trim().toUpperCase();
+    let partnerId: string | undefined;
+    if (refCode) {
+      const rows = (await db.$client`
+        select user_id from partners
+        where reference_id = ${refCode} and status <> 'rejected'
+        limit 1
+      `) as { user_id: string }[];
+      partnerId = rows[0]?.user_id;
+    }
+
+    // Loan-application detail exists only on the enquiry/referral variants.
+    const loanCols =
+      d.kind === "enquiry" || d.kind === "referral"
+        ? {
+            loanAmountPaise: rupeesToPaise(d.loanAmount),
+            tenureMonths: intOrNull(d.tenureMonths),
+            loanPurpose: blank(d.loanPurpose),
+            pincode: blank(d.pincode),
+            residenceType: d.residenceType || undefined,
+            employmentType: d.employmentType || undefined,
+            monthlyIncomePaise: rupeesToPaise(d.monthlyIncome),
+            employerName: blank(d.employerName),
+            experienceYears: intOrNull(d.experienceYears),
+            existingEmiPaise: rupeesToPaise(d.existingEmi),
+            assetValuePaise: rupeesToPaise(d.assetValue),
+            annualTurnoverPaise: rupeesToPaise(d.annualTurnover),
+          }
+        : {};
+
     const consentAt = new Date();
     await db.transaction(async (tx) => {
       const [lead] = await tx
         .insert(schema.leads)
         .values({
+          ...loanCols,
           kind: d.kind,
           name: "name" in d ? blank(d.name) : undefined,
           phone: "phone" in d ? blank(d.phone) : undefined,
@@ -92,6 +130,7 @@ export async function submitLead(input: unknown): Promise<SubmitResult> {
           utmLastSource: blank(d.utmLastSource),
           utmLastMedium: blank(d.utmLastMedium),
           utmLastCampaign: blank(d.utmLastCampaign),
+          partnerId,
           consent: d.consent,
           consentAt,
           consentSource: "website_form",
@@ -102,7 +141,12 @@ export async function submitLead(input: unknown): Promise<SubmitResult> {
         action: "lead.create",
         entityType: "lead",
         entityId: lead?.id,
-        after: { source: "website_form", kind: d.kind, consentVersion: CONSENT_VERSION },
+        after: {
+          source: partnerId ? "partner_referral_link" : "website_form",
+          kind: d.kind,
+          partnerRef: partnerId ? refCode : undefined,
+          consentVersion: CONSENT_VERSION,
+        },
       });
     });
     ctx.waitUntil(
@@ -113,7 +157,7 @@ export async function submitLead(input: unknown): Promise<SubmitResult> {
         city: "city" in d ? d.city : undefined,
         product: "productSlug" in d && d.productSlug ? productName(d.productSlug) : undefined,
         message: "message" in d ? d.message : undefined,
-        source: `Website · ${leadKindLabels[d.kind]}`,
+        source: partnerId ? `Partner referral · ${refCode}` : `Website · ${leadKindLabels[d.kind]}`,
       }),
     );
     return { ok: true };
