@@ -103,6 +103,16 @@ export const partnerStatusLabels: Record<string, string> = {
   rejected: "Rejected",
 };
 
+// Products a Business Partner distributes today (spreadsheet "Products Handled").
+// Shared by the KYC form checkboxes, its server validation, and admin display.
+export const partnerProductOptions = [
+  "Loans",
+  "Insurance",
+  "Mutual Funds",
+  "Real Estate",
+  "Taxation",
+] as const;
+
 export interface PartnerDoc {
   type: string;
   label: string;

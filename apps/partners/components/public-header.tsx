@@ -56,7 +56,7 @@ export function PublicHeader() {
             </Button>
           </span>
           <Button size="sm" className="whitespace-nowrap px-3 sm:px-4" asChild>
-            <Link href="/register">Become a partner</Link>
+            <Link href="/#partner-types">Become a partner</Link>
           </Button>
         </div>
       </Container>

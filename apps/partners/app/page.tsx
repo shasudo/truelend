@@ -134,12 +134,9 @@ export default function Home() {
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
                 <Button size="lg" asChild>
-                  <Link href="/register">
+                  <a href="#partner-types">
                     Become a partner <ArrowRight className="h-4 w-4" aria-hidden />
-                  </Link>
-                </Button>
-                <Button size="lg" variant="outline" asChild>
-                  <Link href="#partner-types">Explore partner paths</Link>
+                  </a>
                 </Button>
               </div>
 
@@ -170,7 +167,7 @@ export default function Home() {
             </div>
           </Container>
 
-          <div className="absolute right-8 top-16 z-20 hidden w-44 space-y-3 xl:block">
+          <div className="absolute bottom-10 right-8 z-20 hidden w-44 space-y-3 xl:block">
             {[
               { icon: Handshake, label: "Help your network", tone: "bg-white" },
               { icon: BadgeIndianRupee, label: "Earn by your path", tone: "bg-navy-50" },
@@ -188,7 +185,7 @@ export default function Home() {
         </section>
 
         <section id="partner-types" className="scroll-mt-16">
-          <Container className="max-w-[1380px] py-16 sm:py-20">
+          <Container className="reveal max-w-[1380px] py-16 sm:py-20">
             <SectionHeading
               eyebrow="Two ways to partner with TrueLend"
               title="Choose the path built around how you work"
@@ -205,7 +202,7 @@ export default function Home() {
           id="how-it-works"
           className="scroll-mt-16 border-y border-hairline bg-paper-deep/55"
         >
-          <Container className="max-w-[1380px] py-16 sm:py-20">
+          <Container className="reveal max-w-[1380px] py-16 sm:py-20">
             <div className="grid gap-8 lg:grid-cols-[240px_minmax(0,1fr)] lg:items-start">
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.14em] text-red-600">
@@ -244,7 +241,7 @@ export default function Home() {
         </section>
 
         <section id="benefits" className="scroll-mt-16">
-          <Container className="max-w-[1380px] py-16 sm:py-20">
+          <Container className="reveal max-w-[1380px] py-16 sm:py-20">
             <SectionHeading
               eyebrow="Built for trust"
               title="A partner experience that stays clear at every step"
@@ -269,7 +266,7 @@ export default function Home() {
         </section>
 
         <section className="border-y border-hairline bg-white">
-          <Container className="max-w-[1380px] py-16 sm:py-20">
+          <Container className="reveal max-w-[1380px] py-16 sm:py-20">
             <div className="flex flex-wrap items-end justify-between gap-4">
               <div className="max-w-2xl">
                 <p className="text-xs font-bold uppercase tracking-[0.14em] text-red-600">
@@ -307,7 +304,7 @@ export default function Home() {
 
         <section className="relative overflow-hidden bg-navy-900 text-white">
           <HexPattern className="-left-28 -top-44 h-[420px] w-[420px] text-white/[0.06]" />
-          <Container className="grid max-w-[1380px] items-center gap-8 py-14 sm:py-16 lg:grid-cols-[minmax(0,1fr)_420px]">
+          <Container className="reveal grid max-w-[1380px] items-center gap-8 py-14 sm:py-16 lg:grid-cols-[minmax(0,1fr)_420px]">
             <div className="relative z-10">
               <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.14em] text-sun-400">
                 <Sparkles className="h-4 w-4" aria-hidden /> Ready to get started?
@@ -317,9 +314,9 @@ export default function Home() {
               </h2>
               <div className="mt-6 flex flex-wrap gap-3">
                 <Button size="lg" asChild>
-                  <Link href="/register">
+                  <a href="#partner-types">
                     Become a partner <ArrowRight className="h-4 w-4" aria-hidden />
-                  </Link>
+                  </a>
                 </Button>
                 <Button size="lg" variant="outline-inverse" asChild>
                   <Link href="/login">Partner sign in</Link>

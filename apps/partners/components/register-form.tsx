@@ -2,27 +2,16 @@
 
 import { useActionState, useEffect, useState } from "react";
 import { Turnstile } from "@marsidev/react-turnstile";
-import { Briefcase, UserRoundPlus } from "lucide-react";
-import { Button, Field, Input, cx } from "@truelend/ui";
+import { Button, Field, Input } from "@truelend/ui";
 import { registerPartner, type RegisterState } from "@/lib/signup-actions";
 
-const types = [
-  {
-    value: "business",
-    label: "Business Partner™",
-    desc: "I already source loan business and want commissions, tracking and partner support.",
-    icon: Briefcase,
-  },
-  {
-    value: "referral",
-    label: "Referral Partner™",
-    desc: "I want to introduce people from my network and earn referral rewards.",
-    icon: UserRoundPlus,
-  },
-] as const;
-
-export function RegisterForm({ siteKey }: { siteKey?: string }) {
-  const [type, setType] = useState<"business" | "referral">("business");
+export function RegisterForm({
+  type,
+  siteKey,
+}: {
+  type: "business" | "referral";
+  siteKey?: string;
+}) {
   const [turnstileToken, setTurnstileToken] = useState<string>();
   const [turnstileKey, setTurnstileKey] = useState(0);
   const [turnstileError, setTurnstileError] = useState<string>();
@@ -36,33 +25,7 @@ export function RegisterForm({ siteKey }: { siteKey?: string }) {
 
   return (
     <form action={action} aria-busy={pending} className="space-y-6">
-      <fieldset>
-        <legend className="mb-2 text-sm font-medium text-navy-800">I want to join as</legend>
-        <input type="hidden" name="type" value={type} />
-        <div className="grid gap-3 sm:grid-cols-2">
-          {types.map((t) => (
-            <button
-              key={t.value}
-              type="button"
-              onClick={() => setType(t.value)}
-              aria-pressed={type === t.value}
-              className={cx(
-                "flex flex-col gap-1 rounded-xl border p-4 text-left transition-colors",
-                type === t.value
-                  ? "border-navy-800 bg-navy-800/[0.04]"
-                  : "border-hairline hover:border-navy-800/40",
-              )}
-            >
-              <t.icon
-                className={cx("h-5 w-5", type === t.value ? "text-red-600" : "text-muted")}
-                aria-hidden
-              />
-              <span className="mt-1 font-semibold text-navy-950">{t.label}</span>
-              <span className="text-xs leading-relaxed text-navy-500">{t.desc}</span>
-            </button>
-          ))}
-        </div>
-      </fieldset>
+      <input type="hidden" name="type" value={type} />
 
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Full name" htmlFor="name" required>

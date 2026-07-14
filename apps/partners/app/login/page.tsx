@@ -22,7 +22,7 @@ export default function LoginPage() {
         <LoginForm redirectTo="/dashboard">
           <p className="text-center text-sm text-navy-500">
             New partner?{" "}
-            <Link href="/register" className="font-semibold text-red-600 hover:text-red-700">
+            <Link href="/#partner-types" className="font-semibold text-red-600 hover:text-red-700">
               Create an account
             </Link>
           </p>

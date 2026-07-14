@@ -21,11 +21,25 @@ test("KYC becomes immutable once submitted or verified", () => {
 
 test("application completeness requires details and every mandatory document", () => {
   const completeDetails = {
+    type: "business" as const,
     pan: "ABCDE1234F",
     address: "Full registered address",
+    bankName: "HDFC Bank",
     accountHolder: "Test Partner",
     accountNumber: "123456789",
+    bankBranch: "MG Road",
     ifsc: "HDFC0001234",
+    nomineeName: "Nominee One",
+    nomineeAadhaar: "123412341234",
+    nomineePhone: "9876543210",
+    productsHandled: ["Loans"],
+    yearsExperience: 5,
+    monthlyVolumeLoansPaise: 100000,
+    monthlyVolumeInsurancePaise: 0,
+    monthlyVolumeMutualFundsPaise: 0,
+    residenceAddress: "Home address",
+    occupation: null,
+    designation: null,
   };
   assert.equal(
     isApplicationComplete(completeDetails, new Set(["pan", "aadhaar", "photo", "cheque"])),

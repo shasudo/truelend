@@ -50,16 +50,31 @@ export default async function PartnerDetailPage({ params }: { params: Promise<{ 
   const { partner, name, email, documents, payouts, leads, earnedPaise, paidPaise } = data;
   const balance = earnedPaise - paidPaise;
   const noun = earningsLabel(partner.type);
+  const business = partner.type === "business";
   const uploadedDocTypes = new Set<string>(documents.map((document) => document.docType));
   const missingRequiredDocs = partnerDocTypes.filter(
     (document) => document.required && !uploadedDocTypes.has(document.type),
   );
+  // Mirrors partners/lib/onboarding.ts isApplicationComplete — keep in sync.
   const detailsComplete = Boolean(
     partner.pan &&
     partner.address &&
+    partner.bankName &&
     partner.accountHolder &&
     partner.accountNumber &&
-    partner.ifsc,
+    partner.bankBranch &&
+    partner.ifsc &&
+    partner.nomineeName &&
+    partner.nomineeAadhaar &&
+    partner.nomineePhone &&
+    (partner.type === "business"
+      ? partner.productsHandled?.length &&
+        partner.yearsExperience != null &&
+        partner.monthlyVolumeLoansPaise != null &&
+        partner.monthlyVolumeInsurancePaise != null &&
+        partner.monthlyVolumeMutualFundsPaise != null &&
+        partner.residenceAddress
+      : partner.occupation && partner.designation),
   );
   const canApprove =
     Boolean(partner.submittedAt) && detailsComplete && missingRequiredDocs.length === 0;
@@ -96,6 +111,7 @@ export default async function PartnerDetailPage({ params }: { params: Promise<{ 
               <Detail label="Contact name" value={name} />
               <Detail label="Email" value={email} />
               <Detail label="Phone" value={partner.phone} />
+              {business && <Detail label="Alternative phone" value={partner.alternatePhone} />}
               <Detail label="Type" value={partnerTypeLabels[partner.type]} />
               {partner.businessName && <Detail label="Business" value={partner.businessName} />}
               <Detail label="Registered" value={formatDate(partner.createdAt)} />
@@ -109,15 +125,60 @@ export default async function PartnerDetailPage({ params }: { params: Promise<{ 
           </Card>
 
           <Card className="p-6">
+            <h2 className="font-display text-lg font-bold text-navy-950">
+              {business ? "Business profile" : "Referral profile"}
+            </h2>
+            <dl className="mt-5 grid grid-cols-2 gap-5">
+              {business ? (
+                <>
+                  <Detail label="Products handled" value={partner.productsHandled?.join(", ")} />
+                  <Detail label="Years experience" value={partner.yearsExperience?.toString()} />
+                  <Detail
+                    label="Monthly volume · Loans"
+                    value={formatPaise(partner.monthlyVolumeLoansPaise)}
+                  />
+                  <Detail
+                    label="Monthly volume · Insurance"
+                    value={formatPaise(partner.monthlyVolumeInsurancePaise)}
+                  />
+                  <Detail
+                    label="Monthly volume · Mutual funds"
+                    value={formatPaise(partner.monthlyVolumeMutualFundsPaise)}
+                  />
+                </>
+              ) : (
+                <>
+                  <Detail label="Occupation" value={partner.occupation} />
+                  <Detail label="Designation" value={partner.designation} />
+                  <Detail label="Experience" value={partner.experienceNote} />
+                </>
+              )}
+            </dl>
+          </Card>
+
+          <Card className="p-6">
             <h2 className="font-display text-lg font-bold text-navy-950">KYC details</h2>
             <dl className="mt-5 grid grid-cols-2 gap-5">
               <Detail label="PAN" value={partner.pan} />
-              <Detail label="GST" value={partner.gst} />
-              <Detail label="Address" value={partner.address} />
-              <div />
+              {business && <Detail label="GST" value={partner.gst} />}
+              <Detail
+                label={business ? "Office address" : "Current address"}
+                value={partner.address}
+              />
+              {business && <Detail label="Residence address" value={partner.residenceAddress} />}
+              <Detail label="Bank name" value={partner.bankName} />
               <Detail label="Account holder" value={partner.accountHolder} />
               <Detail label="Account number" value={partner.accountNumber} />
+              <Detail label="Branch" value={partner.bankBranch} />
               <Detail label="IFSC" value={partner.ifsc} />
+            </dl>
+            <h3 className="mt-6 text-xs font-semibold uppercase tracking-[0.1em] text-muted">
+              Nominee
+            </h3>
+            <dl className="mt-3 grid grid-cols-2 gap-5">
+              <Detail label="Name" value={partner.nomineeName} />
+              <Detail label="Aadhaar" value={partner.nomineeAadhaar} />
+              <Detail label="Mobile" value={partner.nomineePhone} />
             </dl>
           </Card>
 

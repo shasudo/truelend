@@ -1,6 +1,7 @@
 import Image from "next/image";
-import { BadgeCheck, Briefcase, UserRoundPlus } from "lucide-react";
-import { Card, cx } from "@truelend/ui";
+import Link from "next/link";
+import { ArrowRight, BadgeCheck, Briefcase, UserRoundPlus } from "lucide-react";
+import { Button, Card, cx } from "@truelend/ui";
 import { partnerPaths } from "@/lib/partner-network";
 
 export function PartnerPathCards({ className }: { className?: string }) {
@@ -90,6 +91,12 @@ export function PartnerPathCards({ className }: { className?: string }) {
                   </ul>
                 </div>
               </div>
+              <Button asChild className="mt-7 w-full">
+                <Link href={`/register/${path.type}`}>
+                  Become a {business ? "Business" : "Referral"} Partner
+                  <ArrowRight className="h-4 w-4" aria-hidden />
+                </Link>
+              </Button>
             </div>
           </Card>
         );

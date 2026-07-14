@@ -11,7 +11,7 @@ export const metadata: Metadata = { robots: { index: false, follow: false } };
 
 export default async function DashboardLayout({ children }: { children: ReactNode }) {
   const { session, partner } = await requirePartner();
-  if (!partner) redirect("/register");
+  if (!partner) redirect("/#partner-types");
 
   if (partner.status !== "verified") {
     if (partner.submittedAt && partner.status !== "rejected") {

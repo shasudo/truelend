@@ -1,9 +1,9 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getSessionCookie } from "better-auth/cookies";
 
-// Optimistic gate for the dashboard group only; public pages (/, /register,
-// /login, /resources) stay open. Real validation + status gating happens in
-// the (dashboard) layout via requirePartner.
+// Optimistic gate for the dashboard group only; public pages (/,
+// /register/business, /register/referral, /login, /resources) stay open. Real
+// validation + status gating happens in the (dashboard) layout via requirePartner.
 export function middleware(request: NextRequest) {
   if (!getSessionCookie(request)) {
     return NextResponse.redirect(new URL("/login", request.url));

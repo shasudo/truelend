@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import type { NextConfig } from "next";
 import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
 
@@ -55,5 +56,22 @@ export default nextConfig;
 // Development binding injection can inline local connection strings when it is
 // evaluated during a production build, so never initialize it outside next dev.
 if (process.env.NODE_ENV === "development") {
+  // wrangler's getPlatformProxy resolves the Hyperdrive local connection string
+  // from process.env, but our local secrets live in .dev.vars (which only
+  // injects Worker bindings). Bridge the override across before init so dev
+  // connects to the real database instead of the localhost placeholder in
+  // wrangler.jsonc. Dev-only: never runs during a production build.
+  const hyperdriveKey = "CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE";
+  if (!process.env[hyperdriveKey]) {
+    try {
+      const line = readFileSync(".dev.vars", "utf8")
+        .split("\n")
+        .find((l) => l.startsWith(`${hyperdriveKey}=`));
+      // slice past the first '=' only — the value itself contains '=' (sslmode=…)
+      if (line) process.env[hyperdriveKey] = line.slice(hyperdriveKey.length + 1).trim();
+    } catch {
+      // no .dev.vars — nothing to bridge
+    }
+  }
   void initOpenNextCloudflareForDev();
 }

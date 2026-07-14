@@ -289,13 +289,43 @@ export const partners = pgTable(
     type: partnerType("type").notNull(),
     status: partnerStatus("status").notNull().default("pending"),
     phone: text("phone"),
+    // business only
+    alternatePhone: text("alternate_phone"),
     businessName: text("business_name"),
     pan: text("pan"),
     gst: text("gst"),
+
+    // Professional profile — business partners list what they distribute today
+    // (jsonb array of partnerProductOptions labels), years in the trade and the
+    // self-reported monthly volume they move, product-wise. Volumes are money:
+    // integer paise, never floats, converted at the form boundary.
+    productsHandled: jsonb("products_handled").$type<string[]>(),
+    yearsExperience: integer("years_experience"),
+    monthlyVolumeLoansPaise: bigint("monthly_volume_loans_paise", { mode: "number" }),
+    monthlyVolumeInsurancePaise: bigint("monthly_volume_insurance_paise", { mode: "number" }),
+    monthlyVolumeMutualFundsPaise: bigint("monthly_volume_mutual_funds_paise", { mode: "number" }),
+    // referral only
+    occupation: text("occupation"),
+    designation: text("designation"),
+    experienceNote: text("experience_note"),
+
+    // address: current address (referral) / office address (business) — kept as
+    // the primary address the verified constraint already requires.
     address: text("address"),
+    residenceAddress: text("residence_address"),
+
+    // Bank account for payouts/incentives
+    bankName: text("bank_name"),
     accountHolder: text("account_holder"),
     accountNumber: text("account_number"),
+    bankBranch: text("bank_branch"),
     ifsc: text("ifsc"),
+
+    // Nominee (aadhaar is PII: stored, never copied into the audit trail)
+    nomineeName: text("nominee_name"),
+    nomineeAadhaar: text("nominee_aadhaar"),
+    nomineePhone: text("nominee_phone"),
+
     submittedAt: timestamp("submitted_at", { withTimezone: true }),
     verifiedBy: text("verified_by").references(() => user.id, { onDelete: "set null" }),
     verifiedAt: timestamp("verified_at", { withTimezone: true }),

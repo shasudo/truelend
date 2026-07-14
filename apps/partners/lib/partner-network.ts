@@ -23,7 +23,6 @@ export const partnerPaths: PartnerPath[] = [
       "Real Estate Professionals",
       "Chartered Accountants",
       "Builders & Developers",
-      "Existing Loan Referral Businesses",
     ],
     does: [
       "Source customers",
