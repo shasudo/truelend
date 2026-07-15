@@ -20,9 +20,15 @@ export function authOptions(env: CloudflareEnv): CreateAuthOptions {
     allowSignUp: true,
     sendResetPassword: async ({ user, url }) => {
       const result = await sendPasswordReset(env, { to: user.email, name: user.name, url });
-      if (!result.ok || result.skipped) {
-        throw new Error("Password reset email was not accepted for delivery");
+      if (result.ok && !result.skipped) return;
+      // No email provider configured (local dev): log the reset link so the flow
+      // is testable. Production has RESEND_API_KEY, so a skip is a real failure
+      // and must fail closed.
+      if (result.ok && result.skipped && new URL(env.BETTER_AUTH_URL).hostname === "localhost") {
+        console.warn(`[dev] password reset link for ${user.email}: ${url}`);
+        return;
       }
+      throw new Error("Password reset email was not accepted for delivery");
     },
   };
 }

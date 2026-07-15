@@ -18,9 +18,17 @@ export function authOptions(env: CloudflareEnv): CreateAuthOptions {
     baseURL: env.BETTER_AUTH_URL,
     sendResetPassword: async ({ user, url }) => {
       const result = await sendPasswordReset(env, { to: user.email, name: user.name, url });
-      if (!result.ok || result.skipped) {
-        throw new Error("Password reset email was not accepted for delivery");
+      if (result.ok && !result.skipped) return;
+      // Email was skipped because no provider is configured (local dev). Surface
+      // the reset/activation link on the server console so staff creation and
+      // resets are testable without email. Production has RESEND_API_KEY, so a
+      // skip there is a real failure and must fail closed — never mint a staff
+      // account that can't be activated.
+      if (result.ok && result.skipped && new URL(env.BETTER_AUTH_URL).hostname === "localhost") {
+        console.warn(`[dev] password reset link for ${user.email}: ${url}`);
+        return;
       }
+      throw new Error("Password reset email was not accepted for delivery");
     },
   };
 }
