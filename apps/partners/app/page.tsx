@@ -125,12 +125,13 @@ export default function Home() {
                 Join the TrueLend Partner Network™
               </p>
               <h1 className="mt-5 text-balance font-display text-5xl font-extrabold leading-[1.02] tracking-tight text-navy-950 sm:text-6xl">
-                Turn relationships into{" "}
-                <span className="text-red-600">meaningful opportunities.</span>
+                Help people get the <span className="text-red-600">right loan.</span>
               </h1>
               <p className="mt-6 max-w-xl text-lg leading-relaxed text-navy-600">
-                Help more people navigate their loan journey while you build commission or
-                referral-reward opportunities through the partner path that fits you.
+                Partner with TrueLend to help your family, friends, clients and contacts get the
+                right loan from the right lender. We’ll take care of everything—from understanding
+                their needs and matching them with the right lender to loan disbursement—while you
+                strengthen relationships and earn for every successfully disbursed loan.
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
                 <Button size="lg" asChild>

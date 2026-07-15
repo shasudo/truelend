@@ -164,10 +164,14 @@ export default async function DashboardPage() {
               {business ? "Let’s move your next case." : "Your network can open doors."}
             </span>
           </h1>
-          <p className="mt-3 max-w-xl text-sm font-medium leading-relaxed text-navy-800 sm:text-base">
-            {business
-              ? "Source customers, follow every milestone and grow your loan business with dedicated TrueLend support."
-              : "Simply introduce someone who needs a loan. TrueLend takes care of the process while you track the referral and reward."}
+          <p className="mt-3 max-w-2xl text-sm font-medium leading-relaxed text-navy-800 sm:text-base">
+            <span className="font-display font-bold text-navy-950">
+              Help people get the right loan.
+            </span>{" "}
+            Partner with TrueLend to help your family, friends, clients and contacts get the right
+            loan from the right lender. We’ll take care of everything—from understanding their needs
+            and matching them with the right lender to loan disbursement—while you strengthen
+            relationships and earn for every successfully disbursed loan.
           </p>
           <Button asChild className="mt-6 bg-navy-800 text-white hover:bg-navy-900">
             <Link href={submitHref}>
