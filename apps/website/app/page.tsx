@@ -1,26 +1,15 @@
 import Link from "next/link";
-import { Headset, ShieldCheck, MoveUpRight } from "lucide-react";
-import {
-  Badge,
-  Button,
-  Card,
-  Container,
-  HexPattern,
-  RateTable,
-  SectionHeading,
-} from "@truelend/ui";
+import { MoveUpRight } from "lucide-react";
+import { Badge, Button, Container, RateTable, SectionHeading } from "@truelend/ui";
 import { Reveal } from "@/components/reveal";
-import { StatsBand } from "@/components/stats-band";
+import { HomeHero } from "@/components/home-hero";
 import { CategoryCard } from "@/components/category-card";
 import { PartnerStrip } from "@/components/partner-strip";
 import { PostCard } from "@/components/post-card";
 import { CtaBand } from "@/components/cta-band";
 import { products, productBySlug } from "@/content/products";
-import { banks } from "@/content/banks";
-import { rateRange, toRateTableRows } from "@/lib/format";
+import { toRateTableRows } from "@/lib/format";
 import { getAllPosts } from "@/lib/blog";
-
-const heroChips = ["Right Lender", "Better Terms", "Higher Approval Probability"];
 
 const steps = [
   {
@@ -77,117 +66,14 @@ const whyItems = [
   },
 ];
 
-function HeroComparisonCard() {
-  const homeLoan = productBySlug("home-loan")!;
-  const rows = homeLoan.rates.slice(0, 4);
-  return (
-    <Card className="relative shadow-[0_24px_60px_-24px_rgba(20,32,74,0.35)]">
-      <div className="flex items-center justify-between border-b border-hairline px-6 py-4">
-        <div>
-          <p className="text-xs font-bold uppercase tracking-[0.14em] text-muted">
-            Sample comparison
-          </p>
-          <p className="mt-0.5 font-display font-bold text-navy-950">Home Loan · ₹75 L · 20 yrs</p>
-        </div>
-        <Badge variant="red">Illustrative</Badge>
-      </div>
-      <ul>
-        {rows.map((row, i) => {
-          const bank = banks.find((b) => b.slug === row.bankSlug);
-          const best = i === 0;
-          return (
-            <li
-              key={row.bankSlug}
-              className={
-                best
-                  ? "flex items-center justify-between border-b border-hairline border-l-2 border-l-red-600 bg-red-50/60 px-6 py-3.5"
-                  : "flex items-center justify-between border-b border-hairline px-6 py-3.5 last:border-b-0"
-              }
-            >
-              <span className="flex items-center gap-2 text-sm font-medium text-navy-950">
-                {bank?.name}
-                {best && (
-                  <span className="text-xs font-bold uppercase tracking-wide text-red-600">
-                    Best fit
-                  </span>
-                )}
-              </span>
-              <span className="font-display font-bold tabular-nums text-navy-950">
-                {rateRange(row)}
-              </span>
-            </li>
-          );
-        })}
-      </ul>
-      <p className="px-6 py-3 text-xs text-muted">
-        Indicative rates — your match depends on your profile.
-      </p>
-    </Card>
-  );
-}
-
 export default function Home() {
   const homeLoan = productBySlug("home-loan")!;
   const posts = getAllPosts().slice(0, 3);
 
   return (
     <>
-      <section className="relative overflow-hidden">
-        <HexPattern className="-right-36 -top-24 h-[620px] w-[620px] text-navy-800/[0.05]" />
-        <Container className="grid items-center gap-14 py-16 sm:py-24 lg:grid-cols-[1.05fr_0.95fr]">
-          <div>
-            <Reveal immediate>
-              <p className="flex items-center gap-3 text-xs font-bold uppercase tracking-[0.18em] text-red-600">
-                <span aria-hidden className="h-px w-8 bg-red-600" />
-                Smarter borrowing starts here
-              </p>
-              <h1 className="mt-5 text-balance font-display text-5xl font-extrabold leading-[1.02] tracking-tight text-navy-950 sm:text-6xl">
-                We help you choose the right loan.{" "}
-                <span className="text-red-600">From the right lender.</span>
-              </h1>
-            </Reveal>
-            <Reveal immediate delay={0.1}>
-              <p className="mt-6 max-w-lg text-lg leading-relaxed text-navy-600">
-                TrueLend analyses your financial profile and matches you with lenders whose policies
-                best fit your needs — so the decision is made before the application is.
-              </p>
-              <ul className="mt-6 flex flex-wrap gap-2.5">
-                {heroChips.map((chip) => (
-                  <li
-                    key={chip}
-                    className="flex items-center gap-1.5 rounded-full border border-hairline bg-white px-3.5 py-1.5 text-sm font-medium text-navy-800"
-                  >
-                    <MoveUpRight className="h-3.5 w-3.5 text-red-600" aria-hidden />
-                    {chip}
-                  </li>
-                ))}
-              </ul>
-            </Reveal>
-            <Reveal immediate delay={0.2}>
-              <div className="mt-8 flex flex-wrap gap-3">
-                <Button size="lg" asChild>
-                  <Link href="/enquiry">
-                    <Headset className="h-4 w-4" aria-hidden />
-                    Speak to an Advisor
-                  </Link>
-                </Button>
-                <Button size="lg" variant="outline" asChild>
-                  <Link href="/products">Explore Loan Products</Link>
-                </Button>
-              </div>
-              <p className="mt-5 flex items-center gap-2 text-sm text-navy-500">
-                <ShieldCheck className="h-4 w-4 text-muted" aria-hidden />
-                100% Confidential · No Spam Calls
-              </p>
-            </Reveal>
-          </div>
-          <Reveal immediate delay={0.15} className="lg:justify-self-end lg:w-full lg:max-w-md">
-            <HeroComparisonCard />
-          </Reveal>
-        </Container>
-      </section>
-
-      <StatsBand />
+      <HomeHero />
+      <PartnerStrip />
 
       <section id="how-it-works" className="scroll-mt-20">
         <Container className="py-20 sm:py-24">
@@ -292,8 +178,6 @@ export default function Home() {
           </Reveal>
         </Container>
       </section>
-
-      <PartnerStrip />
 
       <section>
         <Container className="py-20 sm:py-24">
