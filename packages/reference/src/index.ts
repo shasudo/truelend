@@ -196,3 +196,6 @@ export const securedProducts = new Set([
   "equipment-finance",
 ]);
 export const businessProducts = new Set(["business-loan", "working-capital"]);
+// Card products don't have a loan amount/tenure — the enquiry form drops those
+// fields (and their requiredness) when one of these is selected.
+export const cardProducts = new Set(["credit-cards"]);

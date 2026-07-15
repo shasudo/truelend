@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { enquirySchema, referralSchema } from "../lib/schemas";
+import { enquirySchema, enquiryFormSchema, referralSchema } from "../lib/schemas";
 
 const validEnquiry = {
   kind: "enquiry",
@@ -14,13 +14,32 @@ const validEnquiry = {
   consent: true,
 };
 
-test("enquiry enforces the loan-application core", () => {
-  assert.equal(enquirySchema.safeParse(validEnquiry).success, true);
-  assert.equal(enquirySchema.safeParse({ ...validEnquiry, loanAmount: "" }).success, false);
-  assert.equal(enquirySchema.safeParse({ ...validEnquiry, employmentType: "" }).success, false);
-  assert.equal(enquirySchema.safeParse({ ...validEnquiry, productSlug: "" }).success, false);
-  assert.equal(enquirySchema.safeParse({ ...validEnquiry, pincode: "56" }).success, false);
-  assert.equal(enquirySchema.safeParse({ ...validEnquiry, loanAmount: "25 lakh" }).success, false);
+test("enquiry form enforces the loan-application core for loans", () => {
+  assert.equal(enquiryFormSchema.safeParse(validEnquiry).success, true);
+  assert.equal(enquiryFormSchema.safeParse({ ...validEnquiry, loanAmount: "" }).success, false);
+  assert.equal(enquiryFormSchema.safeParse({ ...validEnquiry, employmentType: "" }).success, false);
+  assert.equal(enquiryFormSchema.safeParse({ ...validEnquiry, productSlug: "" }).success, false);
+  assert.equal(enquiryFormSchema.safeParse({ ...validEnquiry, pincode: "56" }).success, false);
+  assert.equal(
+    enquiryFormSchema.safeParse({ ...validEnquiry, loanAmount: "25 lakh" }).success,
+    false,
+  );
+});
+
+test("credit-card enquiry needs no loan amount", () => {
+  const card = { ...validEnquiry, productSlug: "credit-cards", loanAmount: "" };
+  // Card is valid without a loan amount at the form layer...
+  assert.equal(enquiryFormSchema.safeParse(card).success, true);
+  // ...and the server union accepts it too.
+  assert.equal(enquirySchema.safeParse(card).success, true);
+  // but still requires the fields a card issuer needs.
+  assert.equal(enquiryFormSchema.safeParse({ ...card, monthlyIncome: "" }).success, false);
+});
+
+test("server enquiry schema keeps loan amount optional (requiredness is form-only)", () => {
+  assert.equal(enquirySchema.safeParse({ ...validEnquiry, loanAmount: "" }).success, true);
+  // a malformed amount is still rejected when present
+  assert.equal(enquirySchema.safeParse({ ...validEnquiry, loanAmount: "abc" }).success, false);
 });
 
 test("referral keeps loan detail optional but still validates when given", () => {

@@ -1,5 +1,10 @@
 import { z } from "zod";
-import { products, employmentTypeValues, residenceTypeValues } from "@truelend/reference";
+import {
+  products,
+  employmentTypeValues,
+  residenceTypeValues,
+  cardProducts,
+} from "@truelend/reference";
 
 const productSlugs = products.map((p) => p.slug) as [string, ...string[]];
 
@@ -96,11 +101,27 @@ export const enquirySchema = z.object({
   productSlug: z
     .enum(productSlugs)
     .or(z.literal(""))
-    .refine((v) => v !== "", { message: "Select the loan you need" }),
+    .refine((v) => v !== "", { message: "Select the product you need" }),
   message: z.string().trim().max(2000).optional(),
   ...loanCore,
+  // Cards have no loan amount; requiredness is enforced per-product in
+  // enquiryFormSchema (below) so the server union stays a plain ZodObject.
+  loanAmount: rupeeAmountOptional,
   ...loanDetails,
   ...base,
+});
+
+// Client-side resolver: everything enquirySchema checks, plus "loan amount is
+// required unless the product is a card". Kept out of the discriminated union
+// (which rejects refined schemas); the server parses with leadSchema.
+export const enquiryFormSchema = enquirySchema.superRefine((v, ctx) => {
+  if (!cardProducts.has(v.productSlug) && !v.loanAmount) {
+    ctx.addIssue({
+      path: ["loanAmount"],
+      code: z.ZodIssueCode.custom,
+      message: "Enter the loan amount in rupees (digits only)",
+    });
+  }
 });
 
 export const referralSchema = z.object({

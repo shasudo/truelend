@@ -10,8 +10,9 @@ import {
   loanTenures,
   securedProducts,
   businessProducts,
+  cardProducts,
 } from "@truelend/reference";
-import { enquirySchema } from "@/lib/schemas";
+import { enquiryFormSchema } from "@/lib/schemas";
 import {
   FormSuccess,
   NoScriptFallback,
@@ -41,7 +42,7 @@ export function EnquiryForm({ defaultProduct = "" }: { defaultProduct?: string }
     setToken,
     resetToken,
     failTurnstile,
-  } = useLeadForm(zodResolver(enquirySchema), {
+  } = useLeadForm(zodResolver(enquiryFormSchema), {
     kind: "enquiry",
     name: "",
     phone: "",
@@ -66,6 +67,7 @@ export function EnquiryForm({ defaultProduct = "" }: { defaultProduct?: string }
   const { register, formState, watch } = form;
   const err = formState.errors;
   const product = watch("productSlug");
+  const isCard = cardProducts.has(product);
   const showAsset = securedProducts.has(product);
   const showTurnover = businessProducts.has(product);
 
@@ -83,16 +85,16 @@ export function EnquiryForm({ defaultProduct = "" }: { defaultProduct?: string }
       <NoScriptFallback />
 
       <fieldset className="space-y-5">
-        <Legend>Loan requirement</Legend>
+        <Legend>{isCard ? "Card you want" : "Loan requirement"}</Legend>
         <div className="grid gap-5 sm:grid-cols-2">
           <Field
-            label="Loan you need"
+            label={isCard ? "Credit card" : "Loan you need"}
             htmlFor="enq-product"
             required
             error={err.productSlug?.message}
           >
             <Select id="enq-product" aria-invalid={!!err.productSlug} {...register("productSlug")}>
-              <option value="">Select a loan</option>
+              <option value="">{isCard ? "Select a card" : "Select a loan"}</option>
               {products.map((p) => (
                 <option key={p.slug} value={p.slug}>
                   {p.name}
@@ -100,37 +102,47 @@ export function EnquiryForm({ defaultProduct = "" }: { defaultProduct?: string }
               ))}
             </Select>
           </Field>
-          <Field
-            label="Loan amount (₹)"
-            htmlFor="enq-amount"
-            required
-            error={err.loanAmount?.message}
-          >
-            <Input
-              id="enq-amount"
-              inputMode="numeric"
-              placeholder="e.g. 2500000"
-              aria-invalid={!!err.loanAmount}
-              {...register("loanAmount")}
-            />
-          </Field>
-          <Field label="Preferred tenure" htmlFor="enq-tenure" error={err.tenureMonths?.message}>
-            <Select id="enq-tenure" {...register("tenureMonths")}>
-              <option value="">No preference</option>
-              {loanTenures.map((t) => (
-                <option key={t.value} value={t.value}>
-                  {t.label}
-                </option>
-              ))}
-            </Select>
-          </Field>
-          <Field label="Purpose (optional)" htmlFor="enq-purpose" error={err.loanPurpose?.message}>
-            <Input
-              id="enq-purpose"
-              placeholder="e.g. Buying a home, business expansion"
-              {...register("loanPurpose")}
-            />
-          </Field>
+          {!isCard && (
+            <Field
+              label="Loan amount (₹)"
+              htmlFor="enq-amount"
+              required
+              error={err.loanAmount?.message}
+            >
+              <Input
+                id="enq-amount"
+                inputMode="numeric"
+                placeholder="e.g. 2500000"
+                aria-invalid={!!err.loanAmount}
+                {...register("loanAmount")}
+              />
+            </Field>
+          )}
+          {!isCard && (
+            <Field label="Preferred tenure" htmlFor="enq-tenure" error={err.tenureMonths?.message}>
+              <Select id="enq-tenure" {...register("tenureMonths")}>
+                <option value="">No preference</option>
+                {loanTenures.map((t) => (
+                  <option key={t.value} value={t.value}>
+                    {t.label}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+          )}
+          {!isCard && (
+            <Field
+              label="Purpose (optional)"
+              htmlFor="enq-purpose"
+              error={err.loanPurpose?.message}
+            >
+              <Input
+                id="enq-purpose"
+                placeholder="e.g. Buying a home, business expansion"
+                {...register("loanPurpose")}
+              />
+            </Field>
+          )}
         </div>
       </fieldset>
 
@@ -249,7 +261,7 @@ export function EnquiryForm({ defaultProduct = "" }: { defaultProduct?: string }
         </div>
       </fieldset>
 
-      <fieldset className="space-y-5">
+      <fieldset className={`space-y-5${isCard ? " hidden" : ""}`}>
         <Legend>Obligations &amp; assets</Legend>
         <div className="grid gap-5 sm:grid-cols-2">
           <Field
