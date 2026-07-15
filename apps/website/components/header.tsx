@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { Menu, X, Headset } from "lucide-react";
 import { Button, Container, Logo, cx } from "@truelend/ui";
 import { site } from "@/content/site";
+import { ProductsMenu } from "@/components/products-menu";
 
 export function Header() {
   const menuRef = useRef<HTMLDialogElement>(null);
@@ -22,20 +23,24 @@ export function Header() {
         </Link>
 
         <nav className="hidden items-center gap-7 lg:flex" aria-label="Main">
-          {site.nav.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              aria-current={isActive(item.href) ? "page" : undefined}
-              className={cx(
-                "text-sm font-medium text-navy-600 transition-colors hover:text-navy-950",
-                isActive(item.href) &&
-                  "text-navy-950 underline decoration-red-600 decoration-2 underline-offset-8",
-              )}
-            >
-              {item.label}
-            </Link>
-          ))}
+          {site.nav.map((item) =>
+            item.href === "/products" ? (
+              <ProductsMenu key={item.href} active={isActive(item.href)} />
+            ) : (
+              <Link
+                key={item.href}
+                href={item.href}
+                aria-current={isActive(item.href) ? "page" : undefined}
+                className={cx(
+                  "text-sm font-medium text-navy-600 transition-colors hover:text-navy-950",
+                  isActive(item.href) &&
+                    "text-navy-950 underline decoration-red-600 decoration-2 underline-offset-8",
+                )}
+              >
+                {item.label}
+              </Link>
+            ),
+          )}
         </nav>
 
         <div className="flex items-center gap-3">

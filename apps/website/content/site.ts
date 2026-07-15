@@ -6,7 +6,9 @@ export const site = {
   tagline: "Lending Choices, Simplified.",
   slogan: "Before You Borrow. Think TrueLend.",
   url: "https://truelend.in",
-  partnerDashboardUrl: "https://partner.truelend.in/dashboard",
+  // Partner site landing page. Deep-linking to /dashboard bounces logged-out
+  // visitors to sign-in; the landing page is the correct public entry point.
+  partnerUrl: "https://partner.truelend.in",
   phone: "+91 98765 43210",
   phoneHref: "tel:+919876543210",
   whatsappHref: "https://wa.me/919876543210",
@@ -18,7 +20,7 @@ export const site = {
     { label: "How It Works", href: "/#how-it-works" },
     { label: "About Us", href: "/about" },
     { label: "Blog", href: "/blog" },
-    { label: "Partner Dashboard", href: "https://partner.truelend.in/dashboard" },
+    { label: "Partner Dashboard", href: "https://partner.truelend.in" },
     { label: "Contact", href: "/contact" },
   ],
   utilityStrip: [

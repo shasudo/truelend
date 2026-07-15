@@ -15,7 +15,12 @@ export function CategoryCard({ product }: { product: ProductCategory }) {
         <h3 className="mt-4 font-display text-lg font-bold text-navy-950">{product.name}</h3>
         <p className="mt-1.5 text-sm leading-relaxed text-navy-600">{product.tagline}</p>
         <span className="mt-auto flex items-center justify-between pt-5 text-sm">
-          <span className="font-semibold tabular-nums text-navy-800">{minRateLabel(product)}</span>
+          <span className="font-semibold tabular-nums text-navy-800">
+            {minRateLabel(product)}
+            <sup aria-hidden className="ml-0.5 font-normal text-red-600">
+              *
+            </sup>
+          </span>
           <MoveUpRight
             aria-hidden
             className="h-4 w-4 text-muted transition-all duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-red-600"

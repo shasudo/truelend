@@ -127,16 +127,24 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       </section>
 
       <section>
-        <Container className="grid grid-cols-1 gap-y-8 border-b border-hairline py-10 text-navy-950 sm:grid-cols-3">
-          {product.highlights.map((h, i) => (
-            <Stat
-              key={h.label}
-              value={h.value}
-              label={h.label}
-              accent={i === 0}
-              className={i > 0 ? "sm:border-l sm:border-hairline sm:pl-8" : undefined}
-            />
-          ))}
+        <Container className="border-b border-hairline py-10">
+          <div className="grid grid-cols-1 gap-y-8 text-navy-950 sm:grid-cols-3">
+            {product.highlights.map((h, i) => (
+              <Stat
+                key={h.label}
+                value={h.value}
+                label={h.label}
+                accent={i === 0}
+                mark
+                className={i > 0 ? "sm:border-l sm:border-hairline sm:pl-8" : undefined}
+              />
+            ))}
+          </div>
+          <p className="mt-8 text-xs leading-relaxed text-muted">
+            * Indicative — interest rates, fees and limits are set by lenders, vary with your
+            profile, and are subject to change without notice. Not an offer; your advisor confirms
+            live terms before any application.
+          </p>
         </Container>
       </section>
 

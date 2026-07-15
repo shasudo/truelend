@@ -3,6 +3,7 @@ import { Container } from "@truelend/ui";
 import { PageHeader } from "@/components/page-header";
 import { CategoryCard } from "@/components/category-card";
 import { CtaBand } from "@/components/cta-band";
+import { ProductCatalog } from "@/components/product-catalog";
 import { Reveal } from "@/components/reveal";
 import { products } from "@/content/products";
 import { site } from "@/content/site";
@@ -32,9 +33,14 @@ export default function ProductsPage() {
               </Reveal>
             ))}
           </div>
-          <p className="mt-10 max-w-3xl text-xs leading-relaxed text-muted">{site.disclaimer}</p>
+          <p className="mt-10 max-w-3xl text-xs leading-relaxed text-muted">
+            <span aria-hidden>* </span>
+            {site.disclaimer}
+          </p>
         </Container>
       </section>
+
+      <ProductCatalog />
 
       <CtaBand />
     </>
