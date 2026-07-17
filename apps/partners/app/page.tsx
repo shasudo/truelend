@@ -125,7 +125,7 @@ export default function Home() {
                 Join the TrueLend Partner Network™
               </p>
               <h1 className="mt-5 text-balance font-display text-5xl font-extrabold leading-[1.02] tracking-tight text-navy-950 sm:text-6xl">
-                Help people get the <span className="text-red-600">right loan.</span>
+                Help People Get The <span className="text-red-600">Right Loan.</span>
               </h1>
               <p className="mt-6 max-w-xl text-lg leading-relaxed text-navy-600">
                 Partner with TrueLend to help your family, friends, clients and contacts get the
