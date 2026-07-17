@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Button, Container, Logo } from "@truelend/ui";
+import { ProductsMenu } from "@/components/products-menu";
 
 export function PublicHeader() {
   return (
@@ -33,6 +34,7 @@ export function PublicHeader() {
           >
             Who Can Join
           </Link>
+          <ProductsMenu />
           <Link href="/resources" className="text-sm font-medium text-navy-700 hover:text-red-600">
             Resources
           </Link>
