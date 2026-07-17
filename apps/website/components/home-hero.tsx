@@ -83,10 +83,11 @@ function ProfilePanel() {
         You tell us about yourself
       </p>
       <ul className="space-y-1">
-        {profileDetails.map(({ label, detail, icon: Icon }) => (
+        {profileDetails.map(({ label, detail, icon: Icon }, i) => (
           <li
             key={label}
-            className="flex items-center gap-2.5 rounded-xl px-2 py-2 text-[0.66rem] font-medium leading-tight text-navy-800"
+            className="flex animate-[tl-scan_4.4s_ease-in-out_infinite] items-center gap-2.5 rounded-xl px-2 py-2 text-[0.66rem] font-medium leading-tight text-navy-800"
+            style={{ animationDelay: `${i * 0.2}s` }}
           >
             <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-navy-50 text-navy-700">
               <Icon className="h-3.5 w-3.5" aria-hidden />
@@ -106,12 +107,34 @@ function IntelligenceCore() {
   return (
     <div className="relative rounded-[2rem] border border-navy-100 bg-white/95 p-4 shadow-[0_24px_70px_-36px_rgba(54,40,160,0.5)]">
       <div
-        className="absolute inset-x-8 top-2 h-28 rounded-full bg-navy-200/35 blur-3xl"
+        className="absolute inset-x-8 top-2 h-28 animate-[tl-halo_3.4s_ease-in-out_infinite] rounded-full bg-navy-200/35 blur-3xl"
         aria-hidden
       />
       <div className="relative flex flex-col items-center text-center">
-        <div className="flex h-28 w-28 items-center justify-center rounded-full border border-navy-200 bg-[radial-gradient(circle,#ffffff_18%,#eef0f7_48%,#dfe3ef_70%,#ffffff_72%)] shadow-[0_0_45px_rgba(109,125,172,0.28)]">
-          <BrainCircuit className="h-11 w-11 text-navy-700" aria-hidden />
+        {/* Rings, probe and glyph each rotate on their own period so the core
+         * reads as layered motion instead of one rigid disc. */}
+        <div className="relative flex h-28 w-28 items-center justify-center">
+          <span
+            className="absolute -inset-3 animate-[tl-spin-reverse_24s_linear_infinite] rounded-full border border-dotted border-navy-200"
+            aria-hidden
+          />
+          <span
+            className="absolute -inset-1 animate-[tl-spin_14s_linear_infinite] rounded-full border border-dashed border-navy-300"
+            aria-hidden
+          />
+          <span className="absolute -inset-1 animate-[tl-spin_5s_linear_infinite]" aria-hidden>
+            <span className="absolute left-1/2 top-0 h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-red-600 shadow-[0_0_10px_rgba(206,14,23,0.85)]" />
+          </span>
+          <div className="flex h-28 w-28 items-center justify-center rounded-full border border-navy-200 bg-[radial-gradient(circle,#ffffff_18%,#eef0f7_48%,#dfe3ef_70%,#ffffff_72%)] shadow-[0_0_45px_rgba(109,125,172,0.28)]">
+            {/* Rotation lives on a wrapper: the glyph's own transform is the
+             * breathe, and two transform animations on one element don't compose. */}
+            <span className="inline-flex animate-[tl-spin_20s_linear_infinite]">
+              <BrainCircuit
+                className="h-11 w-11 animate-[tl-breathe_3.4s_ease-in-out_infinite] text-navy-700"
+                aria-hidden
+              />
+            </span>
+          </div>
         </div>
         <p className="mt-3 font-display text-base font-extrabold uppercase leading-tight tracking-tight text-navy-950">
           TrueLend borrowing
@@ -119,12 +142,15 @@ function IntelligenceCore() {
           intelligence™
         </p>
         <ul className="mt-4 w-full rounded-2xl border border-navy-100 bg-white p-3 text-left shadow-[0_12px_34px_-26px_rgba(20,32,74,0.45)]">
-          {assessments.map((assessment) => (
+          {assessments.map((assessment, i) => (
             <li
               key={assessment}
               className="flex items-center gap-2 py-1.5 text-[0.67rem] font-medium text-navy-800"
             >
-              <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-navy-50 text-navy-700">
+              <span
+                className="flex h-4 w-4 shrink-0 animate-[tl-tick_4.4s_ease-in-out_infinite] items-center justify-center rounded-full bg-navy-50 text-navy-700"
+                style={{ animationDelay: `${0.9 + i * 0.18}s` }}
+              >
                 <Check className="h-2.5 w-2.5" strokeWidth={3} aria-hidden />
               </span>
               {assessment}
@@ -146,10 +172,11 @@ function LenderPanel() {
         <p className="mt-0.5 text-[0.58rem] text-muted">Ranked for your profile</p>
       </div>
       <ul className="space-y-2">
-        {lenderMatches.map((lender) => (
+        {lenderMatches.map((lender, i) => (
           <li
             key={lender.bank}
-            className="rounded-xl border border-navy-100 bg-white p-3 shadow-[0_10px_28px_-24px_rgba(20,32,74,0.55)]"
+            className="animate-[tl-highlight_4.4s_ease-in-out_infinite] rounded-xl border border-navy-100 bg-white p-3 shadow-[0_10px_28px_-24px_rgba(20,32,74,0.55)]"
+            style={{ animationDelay: `${1.5 + i * 0.18}s` }}
           >
             <div className="flex items-center justify-between gap-2">
               <p className="flex min-w-0 items-center gap-1.5 text-xs font-bold text-navy-950">
@@ -179,14 +206,20 @@ function LenderPanel() {
                   {lender.rate}
                 </dd>
               </div>
-              <div className="col-span-2 flex items-center justify-between border-t border-navy-100 pt-2">
-                <div>
-                  <dt className="text-[0.48rem] text-muted">Approval probability</dt>
-                  <dd className="mt-0.5 text-[0.68rem] font-extrabold text-navy-950">
+              <div className="col-span-2 border-t border-navy-100 pt-2">
+                <dt className="text-[0.48rem] text-muted">Approval probability</dt>
+                <dd className="mt-1 flex items-center gap-2">
+                  <span className="h-1 flex-1 overflow-hidden rounded-full bg-navy-100">
+                    <span
+                      className="block h-full origin-left animate-[tl-fill_1.1s_var(--ease-out-quart)_both] rounded-full bg-red-600"
+                      style={{ width: lender.probability, animationDelay: `${0.5 + i * 0.15}s` }}
+                    />
+                  </span>
+                  <span className="text-[0.68rem] font-extrabold text-navy-950">
                     {lender.probability}
-                  </dd>
-                </div>
-                <ChevronRight className="h-3.5 w-3.5 text-navy-500" aria-hidden />
+                  </span>
+                  <ChevronRight className="h-3.5 w-3.5 shrink-0 text-navy-500" aria-hidden />
+                </dd>
               </div>
             </dl>
           </li>
@@ -205,6 +238,21 @@ function LenderPanel() {
 }
 
 function FlowConnections() {
+  const intakePaths = [
+    "M195 80 C218 80 208 104 231 104",
+    "M195 148 C222 148 207 178 231 178",
+    "M195 216 C222 216 208 252 231 252",
+    "M195 284 C222 284 208 326 231 326",
+    "M195 352 C222 352 208 400 231 400",
+    "M195 420 C218 420 216 400 231 400",
+  ];
+  const matchPaths = [
+    "M493 104 C516 104 504 76 526 76",
+    "M493 178 C518 178 504 160 526 160",
+    "M493 252 C518 252 504 252 526 252",
+    "M493 326 C518 326 504 344 526 344",
+    "M493 400 C516 400 506 430 526 430",
+  ];
   const sourceDots = [80, 148, 216, 284, 352, 420];
   const coreLeftDots = [104, 178, 252, 326, 400];
   const coreRightDots = [104, 178, 252, 326, 400];
@@ -218,31 +266,65 @@ function FlowConnections() {
       aria-hidden
     >
       <g fill="none" stroke="#9ba7c9" strokeWidth="1.15" opacity="0.72">
-        <path d="M195 80 C218 80 208 104 231 104" />
-        <path d="M195 148 C222 148 207 178 231 178" />
-        <path d="M195 216 C222 216 208 252 231 252" />
-        <path d="M195 284 C222 284 208 326 231 326" />
-        <path d="M195 352 C222 352 208 400 231 400" />
-        <path d="M195 420 C218 420 216 400 231 400" />
-
-        <path d="M493 104 C516 104 504 76 526 76" />
-        <path d="M493 178 C518 178 504 160 526 160" />
-        <path d="M493 252 C518 252 504 252 526 252" />
-        <path d="M493 326 C518 326 504 344 526 344" />
-        <path d="M493 400 C516 400 506 430 526 430" />
+        {[...intakePaths, ...matchPaths].map((d) => (
+          <path key={d} d={d} />
+        ))}
+      </g>
+      {/* Pulses ride the same wires. Intake leads; matches trail by 0.8s so the
+       * eye reads profile → core → lenders rather than one simultaneous flash. */}
+      <g fill="none" strokeWidth="2.2" strokeLinecap="round" className="stroke-red-600">
+        {intakePaths.map((d, i) => (
+          <path key={d} d={d} className="tl-flow" style={{ animationDelay: `${i * 0.14}s` }} />
+        ))}
+        {matchPaths.map((d, i) => (
+          <path
+            key={d}
+            d={d}
+            className="tl-flow"
+            style={{ animationDelay: `${0.8 + i * 0.14}s` }}
+          />
+        ))}
       </g>
       <g fill="#46578f" stroke="#ffffff" strokeWidth="1.5">
-        {sourceDots.map((y) => (
-          <circle key={`source-${y}`} cx="195" cy={y} r="3.1" />
+        {sourceDots.map((y, i) => (
+          <circle
+            key={`source-${y}`}
+            cx="195"
+            cy={y}
+            r="3.1"
+            className="tl-node"
+            style={{ animationDelay: `${i * 0.14}s` }}
+          />
         ))}
-        {coreLeftDots.map((y) => (
-          <circle key={`core-left-${y}`} cx="231" cy={y} r="3.1" />
+        {coreLeftDots.map((y, i) => (
+          <circle
+            key={`core-left-${y}`}
+            cx="231"
+            cy={y}
+            r="3.1"
+            className="tl-node"
+            style={{ animationDelay: `${0.4 + i * 0.14}s` }}
+          />
         ))}
-        {coreRightDots.map((y) => (
-          <circle key={`core-right-${y}`} cx="493" cy={y} r="3.1" />
+        {coreRightDots.map((y, i) => (
+          <circle
+            key={`core-right-${y}`}
+            cx="493"
+            cy={y}
+            r="3.1"
+            className="tl-node"
+            style={{ animationDelay: `${0.8 + i * 0.14}s` }}
+          />
         ))}
-        {lenderDots.map((y) => (
-          <circle key={`lender-${y}`} cx="526" cy={y} r="3.1" />
+        {lenderDots.map((y, i) => (
+          <circle
+            key={`lender-${y}`}
+            cx="526"
+            cy={y}
+            r="3.1"
+            className="tl-node"
+            style={{ animationDelay: `${1.2 + i * 0.14}s` }}
+          />
         ))}
       </g>
     </svg>
@@ -252,7 +334,7 @@ function FlowConnections() {
 function BorrowingIntelligenceVisual() {
   return (
     <div
-      className="relative mx-auto w-full max-w-[48rem]"
+      className="tl-diagram relative mx-auto w-full max-w-[48rem]"
       aria-label="How TrueLend matches a borrower profile to suitable lenders"
     >
       <div className="absolute inset-10 rounded-full bg-navy-200/30 blur-3xl" aria-hidden />
@@ -312,7 +394,7 @@ export function HomeHero() {
               for a loan,
               <br />
               <span className="relative inline-block text-red-600">
-                talk to TrueLend first.
+                check with TrueLend first.
                 <span
                   className="absolute -bottom-2 left-[62%] h-1 w-28 -rotate-2 rounded-full bg-red-600"
                   aria-hidden

@@ -53,3 +53,147 @@
     transform: translateX(-50%);
   }
 }
+
+/* Hero "borrowing intelligence" diagram. One shared 4.4s rhythm tells the
+ * story: intake rows light up, pulses run the wires into the core, the core
+ * works, pulses run back out to the lenders. The wire flow runs at half the
+ * cycle so two pulses land per pass. Pure CSS — the hero stays a server
+ * component. Panels deliberately don't move: the connector SVG is pinned to
+ * fixed coordinates and would visibly detach from them. */
+
+@keyframes tl-flow {
+  from {
+    stroke-dashoffset: 45;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes tl-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes tl-spin-reverse {
+  to {
+    transform: rotate(-360deg);
+  }
+}
+
+@keyframes tl-breathe {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.07);
+  }
+}
+
+@keyframes tl-halo {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+@keyframes tl-node {
+  0%,
+  100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.45);
+  }
+}
+
+/* Lit window stays shorter than the row stagger, else all six light at once
+ * and the sweep reads as a flat pulse instead of a scan. */
+@keyframes tl-scan {
+  0%,
+  30%,
+  100% {
+    background-color: transparent;
+  }
+  6%,
+  16% {
+    background-color: var(--color-navy-50);
+  }
+}
+
+/* 0%/100% restate the resting classes so reduced-motion parks on them. */
+@keyframes tl-tick {
+  0%,
+  56%,
+  100% {
+    transform: scale(1);
+    background-color: var(--color-navy-50);
+    color: var(--color-navy-700);
+  }
+  10%,
+  26% {
+    transform: scale(1.22);
+    background-color: var(--color-red-600);
+    color: var(--color-white);
+  }
+}
+
+/* ponytail: the row/tick/card highlights animate background-color and
+ * box-shadow, so they repaint each frame instead of compositing. Cheap enough
+ * at this size; if the hero ever shows paint cost on low-end mobile, swap to an
+ * opacity-animated overlay (opacity and transform stay on the compositor). */
+@keyframes tl-highlight {
+  0%,
+  58%,
+  100% {
+    box-shadow: 0 10px 28px -24px rgba(20, 32, 74, 0.55);
+  }
+  10%,
+  26% {
+    box-shadow:
+      0 10px 30px -20px rgba(206, 14, 23, 0.5),
+      0 0 0 1px rgba(206, 14, 23, 0.3);
+  }
+}
+
+@keyframes tl-fill {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+/* dasharray period (5 + 40) equals the dashoffset travel, so each loop seams. */
+.tl-flow {
+  stroke-dasharray: 5 40;
+  animation: tl-flow 2.2s linear infinite;
+}
+
+/* SVG transforms resolve against the viewBox until fill-box scopes them. */
+.tl-node {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: tl-node 2.2s ease-in-out infinite;
+}
+
+/* The diagram is decorative motion only — hold all of it still, including
+ * anything added here later. */
+@media (prefers-reduced-motion: reduce) {
+  .tl-diagram,
+  .tl-diagram * {
+    animation: none !important;
+  }
+
+  .tl-flow {
+    display: none;
+  }
+}
