@@ -1,20 +1,20 @@
 import type { ReactNode } from "react";
 import type { Metadata } from "next";
-import { Bricolage_Grotesque, Instrument_Sans } from "next/font/google";
+import { Plus_Jakarta_Sans, Inter } from "next/font/google";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import { canonical, jsonLd } from "@/lib/metadata";
 import "./globals.css";
 
-const bricolage = Bricolage_Grotesque({
+const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
-  variable: "--font-bricolage",
+  variable: "--font-jakarta",
   display: "swap",
 });
 
-const instrument = Instrument_Sans({
+const inter = Inter({
   subsets: ["latin"],
-  variable: "--font-instrument",
+  variable: "--font-inter",
   display: "swap",
 });
 
@@ -48,7 +48,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       "Loan comparison and borrower advisory across banks and non-banking financial companies in India.",
   };
   return (
-    <html lang="en" className={`${bricolage.variable} ${instrument.variable}`}>
+    <html lang="en" className={`${jakarta.variable} ${inter.variable}`}>
       <body className="flex min-h-screen flex-col bg-paper font-sans text-navy-900 antialiased">
         <script
           type="application/ld+json"

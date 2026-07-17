@@ -6,9 +6,12 @@
  */
 
 @theme inline {
-  /* Bridges next/font CSS variables (set on <html>) into Tailwind utilities. */
-  --font-display: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;
-  --font-sans: var(--font-instrument), ui-sans-serif, system-ui, sans-serif;
+  /* Bridges next/font CSS variables (set on <html>) into Tailwind utilities.
+   * Every app must load both faces and set these two variables, or headings
+   * silently fall back to system-ui. Both families carry true tabular figures —
+   * money and rates render with `tabular-nums` and would misalign without. */
+  --font-display: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
 }
 
 @theme {

@@ -5,48 +5,57 @@ import { ProductsMenu } from "@/components/products-menu";
 export function PublicHeader() {
   return (
     <header className="sticky top-0 z-40 border-b border-hairline bg-paper/85 backdrop-blur-md">
-      <Container className="flex h-16 max-w-[1380px] items-center justify-between gap-6">
+      <Container className="flex h-20 max-w-[1380px] items-center justify-between gap-6">
         <Link href="/" aria-label="TrueLend Partners home" className="text-navy-800">
           <Logo />
         </Link>
+        {/* Eight items at text-base is a wide nav: nowrap stops links breaking
+            across two lines inside the bar, and the tighter gap keeps it inside
+            the container at the xl breakpoint where this nav first appears. */}
         <nav
-          className="hidden flex-1 items-center justify-center gap-7 xl:flex"
+          className="hidden flex-1 items-center justify-center gap-5 whitespace-nowrap xl:flex"
           aria-label="Public"
         >
           <Link
             href="/"
-            className="border-b-2 border-transparent py-5 text-sm font-semibold text-navy-950 hover:border-red-600"
+            className="border-b-2 border-transparent py-7 text-base font-semibold text-navy-950 hover:border-red-600"
           >
             For Partners
           </Link>
-          <Link href="/#benefits" className="text-sm font-medium text-navy-700 hover:text-red-600">
+          <Link
+            href="/#benefits"
+            className="text-base font-medium text-navy-700 hover:text-red-600"
+          >
             Partner Benefits
           </Link>
           <Link
             href="/#how-it-works"
-            className="text-sm font-medium text-navy-700 hover:text-red-600"
+            className="text-base font-medium text-navy-700 hover:text-red-600"
           >
             How It Works
           </Link>
           <Link
             href="/#partner-types"
-            className="text-sm font-medium text-navy-700 hover:text-red-600"
+            className="text-base font-medium text-navy-700 hover:text-red-600"
           >
             Who Can Join
           </Link>
           <ProductsMenu />
-          <Link href="/resources" className="text-sm font-medium text-navy-700 hover:text-red-600">
+          <Link
+            href="/resources"
+            className="text-base font-medium text-navy-700 hover:text-red-600"
+          >
             Resources
           </Link>
           <a
             href="https://truelend.in/about"
-            className="text-sm font-medium text-navy-700 hover:text-red-600"
+            className="text-base font-medium text-navy-700 hover:text-red-600"
           >
             About Us
           </a>
           <a
             href="https://truelend.in/contact"
-            className="text-sm font-medium text-navy-700 hover:text-red-600"
+            className="text-base font-medium text-navy-700 hover:text-red-600"
           >
             Contact
           </a>

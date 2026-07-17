@@ -17,7 +17,7 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-50 border-b border-hairline bg-paper/85 backdrop-blur-md">
-      <Container className="flex h-16 items-center justify-between gap-6">
+      <Container className="flex h-20 items-center justify-between gap-6">
         <Link href="/" aria-label="TrueLend home" className="text-navy-800">
           <Logo />
         </Link>
@@ -32,7 +32,7 @@ export function Header() {
                 href={item.href}
                 aria-current={isActive(item.href) ? "page" : undefined}
                 className={cx(
-                  "text-sm font-medium text-navy-600 transition-colors hover:text-navy-950",
+                  "text-base font-medium text-navy-600 transition-colors hover:text-navy-950",
                   isActive(item.href) &&
                     "text-navy-950 underline decoration-red-600 decoration-2 underline-offset-8",
                 )}
