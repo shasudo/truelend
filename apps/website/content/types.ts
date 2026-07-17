@@ -22,6 +22,11 @@ export interface ProductCategory {
   name: string;
   shortName: string;
   icon: LucideIcon;
+  /**
+   * Decorative card photo under public/images/products. Provenance, licence and
+   * known limitations for each file are in docs/product-imagery.md.
+   */
+  image: string;
   tagline: string;
   description: string;
   /** Key facts rendered as oversized ledger numerals. */

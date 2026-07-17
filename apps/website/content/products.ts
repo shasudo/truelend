@@ -21,6 +21,7 @@ export const products: ProductCategory[] = [
     name: "Home Loan",
     shortName: "Home",
     icon: Home,
+    image: "/images/products/home-loan.jpg",
     tagline: "The right roof deserves the right rate.",
     description:
       "Buying, building or renovating — we compare home loan offers across banks and NBFCs on rate, processing fee, LTV and turnaround, and take your file to the lender whose credit policy actually fits your profile.",
@@ -110,6 +111,7 @@ export const products: ProductCategory[] = [
     name: "Loan Against Property",
     shortName: "LAP",
     icon: Building2,
+    image: "/images/products/loan-against-property.jpg",
     tagline: "Unlock the value sitting in your property.",
     description:
       "A loan against residential, commercial or industrial property gives you large-ticket funds at rates far below unsecured credit. We match your property profile and cash-flow story to the lender most likely to value both fairly.",
@@ -192,6 +194,7 @@ export const products: ProductCategory[] = [
     name: "Business Loan",
     shortName: "Business",
     icon: Briefcase,
+    image: "/images/products/business-loan.jpg",
     tagline: "Capital that keeps pace with your business.",
     description:
       "Unsecured business loans for proprietors, partnerships and private limited companies — no collateral, quick sanction. We position your turnover, margins and banking behaviour to the lender whose credit model rewards them.",
@@ -274,6 +277,7 @@ export const products: ProductCategory[] = [
     name: "Personal Loan",
     shortName: "Personal",
     icon: User,
+    image: "/images/products/personal-loan.jpg",
     tagline: "Quick funds, matched to your profile.",
     description:
       "Weddings, medical needs, travel, consolidation — an unsecured personal loan is the fastest formal credit available. Your employer category, income and score decide your rate; we route your file where those numbers score best.",
@@ -362,6 +366,7 @@ export const products: ProductCategory[] = [
     name: "Vehicle Loan",
     shortName: "Vehicle",
     icon: Car,
+    image: "/images/products/vehicle-loan.jpg",
     tagline: "Drive the deal, not just the car.",
     description:
       "New cars, used cars and commercial vehicles. Dealers push the financier that pays them most — we compare across banks and NBFCs so the financing is as good as the negotiation on the vehicle itself.",
@@ -438,6 +443,7 @@ export const products: ProductCategory[] = [
     name: "Education Loan",
     shortName: "Education",
     icon: GraduationCap,
+    image: "/images/products/education-loan.jpg",
     tagline: "Fund the degree without derailing the family.",
     description:
       "Domestic and overseas education finance — with or without collateral. The right structure (moratorium, margin money, co-borrower, collateral choice) matters more here than anywhere else, and it varies wildly across lenders.",
@@ -513,6 +519,7 @@ export const products: ProductCategory[] = [
     name: "Working Capital · OD / CC",
     shortName: "Working Capital",
     icon: IndianRupee,
+    image: "/images/products/working-capital.jpg",
     tagline: "Breathing room for your operating cycle.",
     description:
       "Overdrafts, cash-credit limits and invoice-backed lines that flex with your receivables. Pay interest only on what you use, and renew annually — the cheapest way to fund inventory and debtors when structured right.",
@@ -588,6 +595,7 @@ export const products: ProductCategory[] = [
     name: "Equipment Finance",
     shortName: "Equipment",
     icon: Tractor,
+    image: "/images/products/equipment-finance.jpg",
     tagline: "Machines that pay for themselves.",
     description:
       "Finance for construction equipment, medical devices, machine tools, printing and packaging lines — where the asset itself is the collateral and lender appetite is driven by the equipment's resale market.",
@@ -658,6 +666,7 @@ export const products: ProductCategory[] = [
     name: "Credit Cards",
     shortName: "Cards",
     icon: CreditCard,
+    image: "/images/products/credit-cards.jpg",
     tagline: "The right card, not just any card.",
     description:
       "Cashback, travel, fuel, premium lounge access or a first-ever card — issuers price benefits for very specific spending patterns. We map your actual monthly spends to the card whose rewards you'll genuinely use.",
