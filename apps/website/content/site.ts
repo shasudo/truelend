@@ -16,9 +16,9 @@ export const site = {
   address: "Hyderabad, Telangana, India",
   hours: "Mon–Sat · 9:30 AM – 6:30 PM IST",
   nav: [
+    { label: "About Us", href: "/about" },
     { label: "Products", href: "/products" },
     { label: "How It Works", href: "/#how-it-works" },
-    { label: "About Us", href: "/about" },
     { label: "Blog", href: "/blog" },
     { label: "Partner Dashboard", href: "https://partner.truelend.in" },
     { label: "Contact", href: "/contact" },
