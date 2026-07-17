@@ -14,8 +14,8 @@ import { Reveal } from "@/components/reveal";
 import { site } from "@/content/site";
 import type { ItemContent } from "@/content/catalog/content";
 import { contentFor } from "@/content/catalog/content";
-import type { CatalogCategory, CatalogColumn, CatalogItem } from "@/content/catalog/data";
-import { enquirySlugFor, itemsFor } from "@/content/catalog/data";
+import type { CatalogCategory, CatalogColumn, CatalogItem } from "@truelend/reference";
+import { enquirySlugFor, itemsFor } from "@truelend/reference";
 
 const CATALOG_DISCLAIMER =
   "* Figures marked with an asterisk are indicative — set by lenders, compiled from public sources, and change with the market and your profile. They are not an offer; your advisor confirms live terms with the lender before any application.";

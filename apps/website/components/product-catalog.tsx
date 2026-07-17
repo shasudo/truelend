@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ArrowUpRight, MoveUpRight } from "lucide-react";
 import { Container } from "@truelend/ui";
-import { CATEGORIES, type CatalogCategory } from "@/content/catalog/data";
+import { CATEGORIES, type CatalogCategory } from "@truelend/reference";
 
 function CategoryBlock({ category }: { category: CatalogCategory }) {
   return (

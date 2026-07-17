@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { CatalogItemView } from "@/components/catalog-view";
 import { contentFor } from "@/content/catalog/content";
-import { allProductParams, findItem } from "@/content/catalog/data";
+import { allProductParams, findItem } from "@truelend/reference";
 import { canonical, completeDescription } from "@/lib/metadata";
 
 export const dynamicParams = false;

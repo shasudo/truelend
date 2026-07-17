@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ChevronDown, MoveUpRight } from "lucide-react";
 import { cx } from "@truelend/ui";
-import { CATEGORIES, itemsFor } from "@/content/catalog/data";
+import { CATEGORIES, itemsFor } from "@truelend/reference";
 
 // Desktop hover/focus mega-menu for the Products nav item. CSS-only reveal
 // (group-hover + group-focus-within) so it works on hover and via keyboard

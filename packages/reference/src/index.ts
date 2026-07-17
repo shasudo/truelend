@@ -6,6 +6,7 @@
  */
 
 export * from "./format";
+export * from "./catalog";
 
 export interface ProductRef {
   slug: string;

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { CatalogCategoryView } from "@/components/catalog-view";
-import { CATEGORIES, CATEGORY_BY_KEY } from "@/content/catalog/data";
+import { CATEGORIES, CATEGORY_BY_KEY } from "@truelend/reference";
 import { canonical } from "@/lib/metadata";
 
 export const dynamicParams = false;

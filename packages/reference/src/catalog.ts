@@ -1,8 +1,10 @@
 // Product catalog taxonomy — ported from the TrueLend product research set.
-// Drives /products/all/[category]/[item]. Rich per-item content lives in
-// content.json (see ./content.ts). `enquirySlug` maps each category/column onto
-// a canonical @truelend/reference product slug so every CTA lands on
-// /enquiry?product=<slug> with the loan preselected.
+// Shared because two apps render it: the website drives
+// /products/all/[category]/[item] from it, and the partners site shows the same
+// tree in its public Products menu. The rich per-item content it indexes stays
+// in the website (content/catalog/content.json) — only the taxonomy is shared.
+// `enquirySlug` maps each category/column onto a canonical `products` slug (see
+// ./index.ts) so every CTA lands on /enquiry?product=<slug> preselected.
 
 export type CatalogItem = {
   slug: string;
