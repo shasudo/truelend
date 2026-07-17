@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Scale, Handshake, BookOpenCheck, Route } from "lucide-react";
 import { Card, Container } from "@truelend/ui";
 import { PageHeader } from "@/components/page-header";
-import { StatsBand } from "@/components/stats-band";
 import { CtaBand } from "@/components/cta-band";
 import { Reveal } from "@/components/reveal";
 
@@ -94,7 +93,6 @@ export default function AboutPage() {
         </Container>
       </section>
 
-      <StatsBand />
       <CtaBand />
     </>
   );

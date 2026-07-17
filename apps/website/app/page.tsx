@@ -20,7 +20,10 @@ const steps = [
     title: "Assess Profile",
     desc: "Credit health, obligations and real eligibility, mapped honestly.",
   },
-  { title: "Analyze Lenders", desc: "Policies and pricing compared across 50+ banks and NBFCs." },
+  {
+    title: "Analyze Lenders",
+    desc: "Policies and pricing compared across our partner banks and NBFCs.",
+  },
   {
     title: "Find the Right Fit",
     desc: "Lenders whose credit model actually rewards your profile.",
@@ -38,7 +41,7 @@ const steps = [
 const whyItems = [
   {
     title: "Access to multiple banks & NBFCs",
-    desc: "One enquiry puts 50+ lenders in play — not just the one whose branch you walked into.",
+    desc: "One enquiry puts our partner lenders in play — not just the one whose branch you walked into.",
   },
   {
     title: "Expert advisors you can trust",

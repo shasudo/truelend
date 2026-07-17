@@ -152,7 +152,7 @@ Evidence: [`.github/workflows/ci.yml`](.github/workflows/ci.yml), [`CLAUDE.md`](
 
 - [ ] Assign business, legal, and rate-data owners.
 - [ ] Replace the placeholder phone, WhatsApp, email, address, and operating hours.
-- [ ] Remove or substantiate borrower, lender, transparency, and fee statistics.
+- [x] Remove or substantiate borrower, lender, transparency, and fee statistics. Removed rather than substantiated: TrueLend is a new firm and none of the figures could be evidenced. The StatsBand ("10,000+ borrowers guided so far", "50+ Banks & NBFCs", "100% transparent", "₹0 fees") is deleted, and the "50+ banks and NBFCs" claim is gone from the homepage, enquiry page and partner products page. Evidence: [`apps/website/app/about/page.tsx`](apps/website/app/about/page.tsx), [`apps/website/app/page.tsx`](apps/website/app/page.tsx), [`apps/website/app/enquiry/page.tsx`](apps/website/app/enquiry/page.tsx).
 - [ ] Replace placeholder lender rates and product terms with dated, sourced, owned data.
 - [ ] Add freshness/expiry rules for every displayed rate.
 - [ ] Replace interim privacy and terms pages with counsel-approved documents.
@@ -163,7 +163,7 @@ Evidence: [`.github/workflows/ci.yml`](.github/workflows/ci.yml), [`CLAUDE.md`](
 
 Done when: production contains no known placeholder or interim content and the build fails if it is reintroduced.
 
-Evidence: [`apps/website/content/site.ts`](apps/website/content/site.ts), [`apps/website/components/stats-band.tsx`](apps/website/components/stats-band.tsx), [`apps/website/content/products.ts`](apps/website/content/products.ts), [`apps/website/app/privacy/page.tsx`](apps/website/app/privacy/page.tsx), [`apps/website/app/terms/page.tsx`](apps/website/app/terms/page.tsx).
+Evidence: [`apps/website/content/site.ts`](apps/website/content/site.ts), [`apps/website/content/products.ts`](apps/website/content/products.ts), [`apps/website/app/privacy/page.tsx`](apps/website/app/privacy/page.tsx), [`apps/website/app/terms/page.tsx`](apps/website/app/terms/page.tsx).
 
 ### P0-10 Verify recoverability before further production use
 

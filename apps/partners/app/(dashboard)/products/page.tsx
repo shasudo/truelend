@@ -16,8 +16,8 @@ export default async function ProductsPage() {
         title={business ? "Products you can submit" : "Loans you can refer"}
         description={
           business
-            ? "Every category TrueLend places across 50+ banks and NBFCs. Start a case with the product preselected, or open the public page to check rates and eligibility before you commit to a lender."
-            : "Every category TrueLend places across 50+ banks and NBFCs. Start a referral with the product preselected — you never need to know the rates yourself, but they are here if your contact asks."
+            ? "Every category TrueLend places with our partner banks and NBFCs. Start a case with the product preselected, or open the public page to check rates and eligibility before you commit to a lender."
+            : "Every category TrueLend places with our partner banks and NBFCs. Start a referral with the product preselected — you never need to know the rates yourself, but they are here if your contact asks."
         }
       />
 

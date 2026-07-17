@@ -9,7 +9,7 @@ import { site } from "@/content/site";
 export const metadata: Metadata = {
   title: "Customer Enquiry",
   description:
-    "Tell us what you're borrowing for — an advisor compares offers across 50+ banks and NBFCs and calls you back within a working day.",
+    "Tell us what you're borrowing for — an advisor compares offers across our partner banks and NBFCs and calls you back within a working day.",
   alternates: { canonical: "/enquiry" },
 };
 
