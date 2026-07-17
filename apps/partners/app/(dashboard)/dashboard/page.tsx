@@ -151,7 +151,7 @@ export default async function DashboardPage() {
           <div className="flex flex-wrap items-start justify-between gap-4">
             <p className="flex items-center gap-2 pt-1 text-xs font-extrabold uppercase tracking-[0.16em]">
               <Sparkles className="h-4 w-4 text-red-600" aria-hidden />
-              TrueLend {business ? "Business" : "Referral"} Partner™
+              TrueLend {business ? "Business" : "Referral"} Partner
             </p>
             <PartnerIdChip
               referenceId={partner!.referenceId}

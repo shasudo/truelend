@@ -12,7 +12,7 @@ export interface PartnerPath {
 export const partnerPaths: PartnerPath[] = [
   {
     type: "business",
-    title: "TrueLend Business Partner™",
+    title: "TrueLend Business Partner",
     question: "Already in loan sales?",
     promise: "Bring business. Earn commissions.",
     who: "Experienced professionals who already generate or source loan business.",
@@ -41,7 +41,7 @@ export const partnerPaths: PartnerPath[] = [
   },
   {
     type: "referral",
-    title: "TrueLend Referral Partner™",
+    title: "TrueLend Referral Partner",
     question: "No loan experience?",
     promise: "Simply refer people. Earn referral rewards.",
     who: "People with a trusted personal or professional network but no lending experience.",

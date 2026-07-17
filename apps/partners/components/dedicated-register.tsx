@@ -9,7 +9,7 @@ import { RegisterForm } from "@/components/register-form";
 // toggle. Kept as a single component so both pages stay visually in sync.
 const copy = {
   business: {
-    eyebrow: "TrueLend Business Partner™",
+    eyebrow: "TrueLend Business Partner",
     title: "Become a Business Partner",
     lede: "Already source loan business? Register to bring complete loan cases, track every stage, and earn business commissions.",
     bullets: [
@@ -28,7 +28,7 @@ const copy = {
     switchCta: "Become a Referral Partner",
   },
   referral: {
-    eyebrow: "TrueLend Referral Partner™",
+    eyebrow: "TrueLend Referral Partner",
     title: "Become a Referral Partner",
     lede: "Have a trusted network but no lending experience? Introduce people who need a loan and earn referral rewards.",
     bullets: [
