@@ -76,7 +76,7 @@ export default function Home() {
       <PartnerStrip />
 
       <section id="how-it-works" className="scroll-mt-20">
-        <Container className="py-20 sm:py-24">
+        <Container className="py-12 sm:py-16">
           <Reveal>
             <SectionHeading
               eyebrow="Our borrowing intelligence approach"
@@ -84,17 +84,17 @@ export default function Home() {
               lede="Six deliberate steps between your first call and the money in your account — each one designed to remove a place borrowers usually lose."
             />
           </Reveal>
-          <ol className="mt-12 grid gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
+          <ol className="mt-6 grid gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
             {steps.map((step, i) => (
-              <li key={step.title} className="border-t border-hairline pt-5">
+              <li key={step.title} className="border-t border-hairline pt-3">
                 <Reveal delay={(i % 3) * 0.08}>
                   <span className="font-display text-2xl font-extrabold tabular-nums text-red-600">
                     {String(i + 1).padStart(2, "0")}
                   </span>
-                  <h3 className="mt-3 font-display text-lg font-bold text-navy-950">
+                  <h3 className="mt-1.5 font-display text-lg font-bold text-navy-950">
                     {step.title}
                   </h3>
-                  <p className="mt-1.5 text-sm leading-relaxed text-navy-600">{step.desc}</p>
+                  <p className="mt-1 text-sm leading-relaxed text-navy-600">{step.desc}</p>
                 </Reveal>
               </li>
             ))}
@@ -107,7 +107,7 @@ export default function Home() {
           <Reveal>
             <SectionHeading
               eyebrow="Loans we help you get"
-              title="Nine products. One standard of advice."
+              title="One standard of advice."
               lede="Whatever you're funding, the method is the same — understand the need, compare the market, and place the file where it wins."
             />
           </Reveal>
