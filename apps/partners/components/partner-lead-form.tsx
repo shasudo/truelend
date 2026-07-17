@@ -12,10 +12,17 @@ import {
 } from "@truelend/reference";
 import { submitLead, type LeadState } from "@/lib/lead-actions";
 
-export function PartnerLeadForm({ variant }: { variant: "business" | "referral" }) {
+export function PartnerLeadForm({
+  variant,
+  initialProduct = "",
+}: {
+  variant: "business" | "referral";
+  /** Preselected product slug — callers must validate it against `products`. */
+  initialProduct?: string;
+}) {
   const [state, action, pending] = useActionState<LeadState, FormData>(submitLead, {});
   const formRef = useRef<HTMLFormElement>(null);
-  const [product, setProduct] = useState("");
+  const [product, setProduct] = useState(initialProduct);
   const who = variant === "referral" ? "friend" : "customer";
   const Who = variant === "referral" ? "Friend's" : "Customer";
   const showAsset = securedProducts.has(product);
@@ -24,9 +31,9 @@ export function PartnerLeadForm({ variant }: { variant: "business" | "referral" 
   useEffect(() => {
     if (state.ok) {
       formRef.current?.reset();
-      setProduct("");
+      setProduct(initialProduct);
     }
-  }, [state.ok]);
+  }, [state.ok, initialProduct]);
 
   return (
     <form ref={formRef} action={action} className="space-y-6">

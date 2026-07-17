@@ -13,6 +13,7 @@ import {
   FolderKanban,
   Handshake,
   LayoutDashboard,
+  LayoutGrid,
   LibraryBig,
   Megaphone,
   NotebookTabs,
@@ -149,6 +150,7 @@ export function DashboardShell({
           label: "Business",
           items: [
             { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+            { label: "Products", href: "/products", icon: LayoutGrid },
             { label: "Submit New Loan Case", href: "/leads", icon: Briefcase },
             { label: "My Customers", href: "/customers", icon: UsersRound },
             { label: "Pipeline", href: "/pipeline", icon: FolderKanban },
@@ -177,6 +179,7 @@ export function DashboardShell({
           label: "Referrals",
           items: [
             { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+            { label: "Products", href: "/products", icon: LayoutGrid },
             { label: "Refer Someone", href: "/refer", icon: UserRoundPlus },
             { label: "My Referrals", href: "/customers", icon: Handshake },
             { label: "Referral Status", href: "/pipeline", icon: NotebookTabs },

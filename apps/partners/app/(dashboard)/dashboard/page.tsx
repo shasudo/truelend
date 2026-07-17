@@ -27,6 +27,7 @@ import { requirePartner, getAuthContext } from "@/lib/auth";
 import { getPartnerMetrics, getPartnerLeads, getPartnerPipeline } from "@/lib/dashboard-queries";
 import { PartnerIdChip } from "@/components/partner-id-chip";
 import { PipelineDonut } from "@/components/pipeline-donut";
+import { ProductCatalog, submitProductHref } from "@/components/product-catalog";
 import { ReferralLinkCard } from "@/components/referral-link-card";
 
 export const dynamic = "force-dynamic";
@@ -246,6 +247,30 @@ export default async function DashboardPage() {
           {business ? "Manage your business" : "Everything you need"}
         </h2>
         <QuickActions business={business} />
+      </section>
+
+      <section className="mt-7" aria-labelledby="catalog-title">
+        <div className="mb-3 flex items-end justify-between gap-4">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.14em] text-red-600">
+              Loans we place
+            </p>
+            <h2 id="catalog-title" className="mt-1 font-display text-xl font-bold text-navy-950">
+              {business ? "Products you can submit" : "Loans you can refer"}
+            </h2>
+            <p className="mt-1.5 text-sm leading-relaxed text-navy-600">
+              Pick a category to start {business ? "a case" : "a referral"} with it already
+              selected.
+            </p>
+          </div>
+          <Link
+            href="/products"
+            className="shrink-0 text-sm font-semibold text-navy-700 hover:text-red-600"
+          >
+            View all
+          </Link>
+        </div>
+        <ProductCatalog hrefFor={submitProductHref(submitHref)} />
       </section>
 
       <section className="mt-7" aria-labelledby="referral-link-title">

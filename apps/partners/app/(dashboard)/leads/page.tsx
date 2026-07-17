@@ -4,12 +4,18 @@ import { requirePartner } from "@/lib/auth";
 import { PartnerLeadForm } from "@/components/partner-lead-form";
 import { CsvLeadUpload } from "@/components/csv-lead-upload";
 import { PartnerPageHeader } from "@/components/partner-page-header";
+import { preselectedProduct } from "@/lib/preselected-product";
 
 export const dynamic = "force-dynamic";
 
-export default async function LeadsPage() {
+export default async function LeadsPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const { partner } = await requirePartner();
   if (partner?.type === "referral") redirect("/refer");
+  const initialProduct = preselectedProduct((await searchParams).product);
 
   return (
     <div className="max-w-3xl">
@@ -20,7 +26,7 @@ export default async function LeadsPage() {
       />
 
       <Card className="mt-6 p-6 sm:p-8">
-        <PartnerLeadForm variant="business" />
+        <PartnerLeadForm variant="business" initialProduct={initialProduct} />
       </Card>
 
       <Card className="mt-6 p-6 sm:p-8">
