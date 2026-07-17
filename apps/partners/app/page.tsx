@@ -189,7 +189,7 @@ export default function Home() {
           <Container className="reveal max-w-[1380px] py-16 sm:py-20">
             <SectionHeading
               eyebrow="Two ways to partner with TrueLend"
-              title="Choose the path built around how you work"
+              title="Choose the right partnership"
               lede="Bring complete loan business as an experienced professional, or simply introduce people from your trusted network."
             />
             <div className="mt-10 grid gap-5 xl:grid-cols-[minmax(0,3fr)_minmax(280px,1fr)]">
