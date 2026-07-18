@@ -5,13 +5,13 @@ import { CategoryCard } from "@/components/category-card";
 import { CtaBand } from "@/components/cta-band";
 import { ProductCatalog } from "@/components/product-catalog";
 import { Reveal } from "@/components/reveal";
-import { products } from "@/content/products";
+import { loanProductCards } from "@/content/products";
 import { site } from "@/content/site";
 
 export const metadata: Metadata = {
   title: "Loan Products",
   description:
-    "Home loans, business loans, LAP, vehicle and education finance, working capital, equipment finance and credit cards — compared bank-by-bank.",
+    "From personal and home loans to business finance and credit cards, introduce anyone to the product they need and TrueLend matches them with the right lender.",
   alternates: { canonical: "/products" },
 };
 
@@ -20,14 +20,14 @@ export default function ProductsPage() {
     <>
       <PageHeader
         eyebrow="Products"
-        title="Every major credit product, compared honestly"
-        lede="Each product page carries indicative bank-wise rates, eligibility, documents and the questions borrowers actually ask — so you walk in knowing more than the branch expects."
+        title="Loan products you can help people get"
+        lede="From personal and home loans to business finance and credit cards—introduce anyone to the product they need, and we match them with the right lender."
       />
 
       <section>
         <Container className="py-16 sm:py-20">
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {products.map((p, i) => (
+            {loanProductCards.map((p, i) => (
               <Reveal key={p.slug} delay={(i % 3) * 0.06}>
                 <CategoryCard product={p} />
               </Reveal>

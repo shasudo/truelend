@@ -4,14 +4,23 @@ import {
   ArrowRight,
   BadgeIndianRupee,
   BookOpenCheck,
+  Briefcase,
   BriefcaseBusiness,
+  Building2,
+  Car,
   ChartNoAxesCombined,
+  CreditCard,
   FileCheck2,
+  GraduationCap,
   Handshake,
   Headset,
+  Home as HomeIcon,
+  IndianRupee,
   Megaphone,
   ShieldCheck,
   Sparkles,
+  Tractor,
+  User,
   UserRoundPlus,
 } from "lucide-react";
 import { Button, Card, Container, HexPattern, SectionHeading } from "@truelend/ui";
@@ -24,6 +33,66 @@ const heroBenefits = [
   { icon: ChartNoAxesCombined, label: "Transparent tracking" },
   { icon: ShieldCheck, label: "Consent-led sharing" },
   { icon: Handshake, label: "Two partner paths" },
+];
+
+// Marketing display of the loans a partner can help people get. Names mirror
+// the canonical @truelend/reference `products` set; icons match the website's
+// product cards. Not linked — the header Products menu handles browsing.
+const loanProducts = [
+  {
+    icon: User,
+    name: "Personal Loan",
+    blurb: "Quick funds for personal needs.",
+    image: "/images/products/personal-loan.avif",
+  },
+  {
+    icon: HomeIcon,
+    name: "Home Loan",
+    blurb: "Turn a dream home into reality.",
+    image: "/images/products/home-loan.avif",
+  },
+  {
+    icon: Briefcase,
+    name: "Business Loan",
+    blurb: "Fuel business growth and expansion.",
+    image: "/images/products/business-loan.avif",
+  },
+  {
+    icon: Building2,
+    name: "Loan Against Property",
+    blurb: "Unlock the value in owned property.",
+    image: "/images/products/loan-against-property.avif",
+  },
+  {
+    icon: CreditCard,
+    name: "Credit Cards",
+    blurb: "Everyday convenience and flexibility.",
+    image: "/images/products/credit-cards.avif",
+  },
+  {
+    icon: GraduationCap,
+    name: "Education Loan",
+    blurb: "Invest in a brighter future.",
+    image: "/images/products/education-loan.avif",
+  },
+  {
+    icon: Car,
+    name: "Vehicle Loan",
+    blurb: "Finance the right car or vehicle.",
+    image: "/images/products/vehicle-loan.avif",
+  },
+  {
+    icon: IndianRupee,
+    name: "Working Capital",
+    blurb: "Breathing room for the operating cycle.",
+    image: "/images/products/working-capital.avif",
+  },
+  {
+    icon: Tractor,
+    name: "Equipment Finance",
+    blurb: "Fund machines that pay for themselves.",
+    image: "/images/products/equipment-finance.avif",
+  },
 ];
 
 const steps = [
@@ -122,7 +191,7 @@ export default function Home() {
             <div className="w-full max-w-2xl lg:max-w-[49%]">
               <p className="inline-flex items-center gap-2 rounded-full border border-navy-800/10 bg-navy-50 px-4 py-2 text-xs font-bold uppercase tracking-[0.12em] text-navy-800">
                 <Handshake className="h-4 w-4 text-red-600" aria-hidden />
-                Join the TrueLend Partner Network™
+                Join the TrueLend Partner Network
               </p>
               <h1 className="mt-5 text-balance font-display text-5xl font-extrabold leading-[1.02] tracking-tight text-navy-950 sm:text-6xl">
                 Help People Get The <span className="text-red-600">Right Loan.</span>
@@ -183,6 +252,44 @@ export default function Home() {
               </div>
             ))}
           </div>
+        </section>
+
+        <section
+          id="loan-products"
+          className="scroll-mt-16 border-b border-hairline bg-paper-deep/40"
+        >
+          <Container className="reveal max-w-[1380px] py-16 sm:py-20">
+            <SectionHeading
+              eyebrow="Loan products"
+              title="Loan products you can help people get"
+              lede="From personal and home loans to business finance and credit cards—introduce anyone to the product they need, and we match them with the right lender."
+            />
+            <div className="mt-10 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+              {loanProducts.map((product) => (
+                <div
+                  key={product.name}
+                  className="overflow-hidden rounded-xl border border-hairline bg-white"
+                >
+                  <div className="relative aspect-[3/2] overflow-hidden border-b border-hairline">
+                    <Image
+                      src={product.image}
+                      alt=""
+                      fill
+                      sizes="(min-width: 1024px) 260px, (min-width: 640px) 33vw, 50vw"
+                      className="object-cover object-center"
+                    />
+                    <span className="absolute bottom-3 left-3 flex h-10 w-10 items-center justify-center rounded-xl bg-white/90 text-navy-800 shadow-[0_12px_24px_-18px_rgba(7,13,36,0.8)] backdrop-blur-sm">
+                      <product.icon className="h-5 w-5" aria-hidden />
+                    </span>
+                  </div>
+                  <div className="p-4">
+                    <h3 className="font-display font-bold text-navy-950">{product.name}</h3>
+                    <p className="mt-1.5 text-xs leading-relaxed text-navy-600">{product.blurb}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Container>
         </section>
 
         <section id="partner-types" className="scroll-mt-16">
@@ -305,7 +412,7 @@ export default function Home() {
 
         <section className="relative overflow-hidden bg-navy-900 text-white">
           <HexPattern className="-left-28 -top-44 h-[420px] w-[420px] text-white/[0.06]" />
-          <Container className="reveal grid max-w-[1380px] items-center gap-8 py-14 sm:py-16 lg:grid-cols-[minmax(0,1fr)_420px]">
+          <Container className="reveal max-w-[1380px] py-14 sm:py-16">
             <div className="relative z-10">
               <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.14em] text-sun-400">
                 <Sparkles className="h-4 w-4" aria-hidden /> Ready to get started?
@@ -323,16 +430,6 @@ export default function Home() {
                   <Link href="/login">Partner sign in</Link>
                 </Button>
               </div>
-            </div>
-            <div className="relative hidden aspect-[2/1] overflow-hidden rounded-2xl border border-white/15 lg:block">
-              <Image
-                src="/images/partner-handshake-hero-branded.avif"
-                alt="TrueLend partnership handshake"
-                fill
-                sizes="420px"
-                className="object-cover object-center"
-              />
-              <div className="absolute inset-0 bg-navy-900/15" aria-hidden />
             </div>
           </Container>
         </section>

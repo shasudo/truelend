@@ -23,8 +23,8 @@ export interface ProductCategory {
   shortName: string;
   icon: LucideIcon;
   /**
-   * Decorative card photo under public/images/products. Provenance, licence and
-   * known limitations for each file are in docs/product-imagery.md.
+   * Decorative card image under public/images/products. Generation notes and
+   * the shared visual brief are in docs/product-imagery.md.
    */
   image: string;
   tagline: string;

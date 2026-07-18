@@ -1,45 +1,28 @@
-# Product card photography — provenance and licence
+# Product card imagery — generation brief
 
-All nine files here are Unsplash photos under the [Unsplash
-Licence](https://unsplash.com/license): free to use commercially, no permission
-or attribution required. Attribution is recorded anyway so the provenance of
-public marketing imagery is auditable, and so a replacement can be sourced
-without re-running the search.
+All nine product-card images were generated with OpenAI's built-in image tool on
+2026-07-17. They were created specifically for TrueLend rather than sourced from
+stock libraries, then resized to 900 × 600 and encoded as quality-76 AVIF files.
 
-Retrieved 2026-07-17. Each was downloaded at 1200px wide, then resized to 900px
-wide / quality 78 for the card grid.
+## Shared visual brief
 
-| File                        | Photo ID      | Photographer                      | Subject                |
-| --------------------------- | ------------- | --------------------------------- | ---------------------- |
-| `home-loan.jpg`             | `EMPLSuvDuhQ` | Naomi Ellsworth                   | Modern house exterior  |
-| `loan-against-property.jpg` | `RV6bmOOBV_g` | Paramdeo Singh                    | Glass office tower     |
-| `business-loan.jpg`         | `pYlBAu3de0w` | Musemind UX Agency                | Open-plan office       |
-| `personal-loan.jpg`         | `vIbxvHj9m9g` | Prydumano Design                  | Minimal living room    |
-| `vehicle-loan.jpg`          | `AmFj7Xn9x_k` | Portafolio fotográfico automotriz | Cars in a showroom     |
-| `education-loan.jpg`        | `_UEwOH4hu0s` | Moonlight Endearer                | Modern campus building |
-| `working-capital.jpg`       | `-aCrA9FmT8Y` | Alberto Rodríguez                 | Warehouse interior     |
-| `equipment-finance.jpg`     | `ZgmGq_eFmUs` | Jamar Penny                       | Excavator on a site    |
-| `credit-cards.jpg`          | `0hs_mYB9KRc` | CardMapr.nl                       | EMV chip close-up      |
+- Premium, photorealistic editorial photography set in contemporary India.
+- Authentic Indian borrowers, families and business owners.
+- Natural light, warm neutrals, and restrained navy and muted-red accents.
+- Important subjects kept inside a central 3:2 card-safe crop.
+- No text, logos, watermarks, brand marks, graphics, overlays or gradients.
 
-Fetch any original with `https://unsplash.com/photos/<id>`.
+| File                         | Subject                                                    |
+| ---------------------------- | ---------------------------------------------------------- |
+| `home-loan.avif`             | Couple receiving the keys to their new home                |
+| `loan-against-property.avif` | Property owner reviewing documents with an adviser         |
+| `business-loan.avif`         | Woman entrepreneur collaborating with her team             |
+| `personal-loan.avif`         | Professional planning an important purchase at home        |
+| `vehicle-loan.avif`          | Couple receiving a new car in a showroom                   |
+| `education-loan.avif`        | University student walking on campus with her parents      |
+| `working-capital.avif`       | Warehouse owner and staff member reviewing healthy stock   |
+| `equipment-finance.avif`     | Engineer and business owner inspecting an excavator        |
+| `credit-cards.avif`          | Professional making a contactless payment with a bank card |
 
-## Known limitations
-
-These are stock, not commissioned to an art brief, and none of them depict India
-— the closest India-specific results on Unsplash were rural-poverty imagery that
-would be badly off-brand for a lender. `category-card.tsx` holds saturation at
-0.45 and multiplies a navy tint over the top to make the mixed set read as one
-system; that treatment is load-bearing. Untreated, the green chip macro and the
-red car fight every other tile in the grid.
-
-Subjects were chosen to be mid-distance and architectural wherever possible.
-That is deliberate: it keeps the set uniform, and it avoids stock photos of
-Western faces standing in for Indian borrowers.
-
-`equipment-finance.jpg` has a legible "CAT" marking on the excavator. Editorial
-use of an incidental third-party mark is normally fine, but it is the one file
-here with a trademark in frame.
-
-Replacing these with photography shot to a single brief — ideally Indian
-locations — is the real fix. Avoid Unsplash+ ("plus"/"premium") results: they
-need a paid subscription and are not covered by the licence above.
+`category-card.tsx` renders the images without a tint or gradient overlay so the
+commissioned visual system appears at its intended color and contrast.

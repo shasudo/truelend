@@ -21,8 +21,8 @@ export const products: ProductCategory[] = [
     name: "Home Loan",
     shortName: "Home",
     icon: Home,
-    image: "/images/products/home-loan.jpg",
-    tagline: "The right roof deserves the right rate.",
+    image: "/images/products/home-loan.avif",
+    tagline: "Turn a dream home into reality.",
     description:
       "Buying, building or renovating — we compare home loan offers across banks and NBFCs on rate, processing fee, LTV and turnaround, and take your file to the lender whose credit policy actually fits your profile.",
     highlights: [
@@ -111,8 +111,8 @@ export const products: ProductCategory[] = [
     name: "Loan Against Property",
     shortName: "LAP",
     icon: Building2,
-    image: "/images/products/loan-against-property.jpg",
-    tagline: "Unlock the value sitting in your property.",
+    image: "/images/products/loan-against-property.avif",
+    tagline: "Unlock the value in owned property.",
     description:
       "A loan against residential, commercial or industrial property gives you large-ticket funds at rates far below unsecured credit. We match your property profile and cash-flow story to the lender most likely to value both fairly.",
     highlights: [
@@ -194,8 +194,8 @@ export const products: ProductCategory[] = [
     name: "Business Loan",
     shortName: "Business",
     icon: Briefcase,
-    image: "/images/products/business-loan.jpg",
-    tagline: "Capital that keeps pace with your business.",
+    image: "/images/products/business-loan.avif",
+    tagline: "Fuel business growth and expansion.",
     description:
       "Unsecured business loans for proprietors, partnerships and private limited companies — no collateral, quick sanction. We position your turnover, margins and banking behaviour to the lender whose credit model rewards them.",
     highlights: [
@@ -277,8 +277,8 @@ export const products: ProductCategory[] = [
     name: "Personal Loan",
     shortName: "Personal",
     icon: User,
-    image: "/images/products/personal-loan.jpg",
-    tagline: "Quick funds, matched to your profile.",
+    image: "/images/products/personal-loan.avif",
+    tagline: "Quick funds for personal needs.",
     description:
       "Weddings, medical needs, travel, consolidation — an unsecured personal loan is the fastest formal credit available. Your employer category, income and score decide your rate; we route your file where those numbers score best.",
     highlights: [
@@ -366,8 +366,8 @@ export const products: ProductCategory[] = [
     name: "Vehicle Loan",
     shortName: "Vehicle",
     icon: Car,
-    image: "/images/products/vehicle-loan.jpg",
-    tagline: "Drive the deal, not just the car.",
+    image: "/images/products/vehicle-loan.avif",
+    tagline: "Finance the right car or vehicle.",
     description:
       "New cars, used cars and commercial vehicles. Dealers push the financier that pays them most — we compare across banks and NBFCs so the financing is as good as the negotiation on the vehicle itself.",
     highlights: [
@@ -443,8 +443,8 @@ export const products: ProductCategory[] = [
     name: "Education Loan",
     shortName: "Education",
     icon: GraduationCap,
-    image: "/images/products/education-loan.jpg",
-    tagline: "Fund the degree without derailing the family.",
+    image: "/images/products/education-loan.avif",
+    tagline: "Invest in a brighter future.",
     description:
       "Domestic and overseas education finance — with or without collateral. The right structure (moratorium, margin money, co-borrower, collateral choice) matters more here than anywhere else, and it varies wildly across lenders.",
     highlights: [
@@ -516,11 +516,11 @@ export const products: ProductCategory[] = [
   },
   {
     slug: "working-capital",
-    name: "Working Capital · OD / CC",
+    name: "Working Capital",
     shortName: "Working Capital",
     icon: IndianRupee,
-    image: "/images/products/working-capital.jpg",
-    tagline: "Breathing room for your operating cycle.",
+    image: "/images/products/working-capital.avif",
+    tagline: "Breathing room for the operating cycle.",
     description:
       "Overdrafts, cash-credit limits and invoice-backed lines that flex with your receivables. Pay interest only on what you use, and renew annually — the cheapest way to fund inventory and debtors when structured right.",
     highlights: [
@@ -595,8 +595,8 @@ export const products: ProductCategory[] = [
     name: "Equipment Finance",
     shortName: "Equipment",
     icon: Tractor,
-    image: "/images/products/equipment-finance.jpg",
-    tagline: "Machines that pay for themselves.",
+    image: "/images/products/equipment-finance.avif",
+    tagline: "Fund machines that pay for themselves.",
     description:
       "Finance for construction equipment, medical devices, machine tools, printing and packaging lines — where the asset itself is the collateral and lender appetite is driven by the equipment's resale market.",
     highlights: [
@@ -666,8 +666,8 @@ export const products: ProductCategory[] = [
     name: "Credit Cards",
     shortName: "Cards",
     icon: CreditCard,
-    image: "/images/products/credit-cards.jpg",
-    tagline: "The right card, not just any card.",
+    image: "/images/products/credit-cards.avif",
+    tagline: "Everyday convenience and flexibility.",
     description:
       "Cashback, travel, fuel, premium lounge access or a first-ever card — issuers price benefits for very specific spending patterns. We map your actual monthly spends to the card whose rewards you'll genuinely use.",
     highlights: [
@@ -707,5 +707,21 @@ export const products: ProductCategory[] = [
     ],
   },
 ];
+
+const loanProductDisplayOrder = [
+  "personal-loan",
+  "home-loan",
+  "business-loan",
+  "loan-against-property",
+  "credit-cards",
+  "education-loan",
+  "vehicle-loan",
+  "working-capital",
+  "equipment-finance",
+];
+
+export const loanProductCards = loanProductDisplayOrder
+  .map((slug) => products.find((product) => product.slug === slug))
+  .filter((product): product is ProductCategory => Boolean(product));
 
 export const productBySlug = (slug: string) => products.find((p) => p.slug === slug);

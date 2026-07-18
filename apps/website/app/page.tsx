@@ -1,14 +1,12 @@
-import Link from "next/link";
 import { MoveUpRight } from "lucide-react";
-import { Badge, Button, Container, RateTable, SectionHeading } from "@truelend/ui";
+import { Container, SectionHeading } from "@truelend/ui";
 import { Reveal } from "@/components/reveal";
 import { HomeHero } from "@/components/home-hero";
 import { CategoryCard } from "@/components/category-card";
 import { PartnerStrip } from "@/components/partner-strip";
 import { PostCard } from "@/components/post-card";
 import { CtaBand } from "@/components/cta-band";
-import { products, productBySlug } from "@/content/products";
-import { toRateTableRows } from "@/lib/format";
+import { loanProductCards } from "@/content/products";
 import { getAllPosts } from "@/lib/blog";
 
 const steps = [
@@ -70,7 +68,6 @@ const whyItems = [
 ];
 
 export default function Home() {
-  const homeLoan = productBySlug("home-loan")!;
   const posts = getAllPosts().slice(0, 3);
 
   return (
@@ -109,13 +106,12 @@ export default function Home() {
         <Container className="py-20 sm:py-24">
           <Reveal>
             <SectionHeading
-              eyebrow="Loans we help you get"
-              title="One standard of advice."
-              lede="Whatever you're funding, the method is the same — understand the need, compare the market, and place the file where it wins."
+              title="Loan products you can help people get"
+              lede="From personal and home loans to business finance and credit cards—introduce anyone to the product they need, and we match them with the right lender."
             />
           </Reveal>
           <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {products.map((p, i) => (
+            {loanProductCards.map((p, i) => (
               <Reveal key={p.slug} delay={(i % 3) * 0.06}>
                 <CategoryCard product={p} />
               </Reveal>
@@ -147,38 +143,6 @@ export default function Home() {
               </Reveal>
             ))}
           </div>
-        </Container>
-      </section>
-
-      <section className="bg-paper-deep/60">
-        <Container className="py-20 sm:py-24">
-          <Reveal>
-            <div className="flex flex-wrap items-end justify-between gap-6">
-              <SectionHeading
-                eyebrow="Today's market"
-                title="Bank-wise rates, in the open"
-                lede="A sample from our home loan desk. Every product page carries the full lender-by-lender table."
-              />
-              <Badge variant="red">Indicative</Badge>
-            </div>
-          </Reveal>
-          <Reveal delay={0.1}>
-            <RateTable
-              className="mt-10"
-              compact
-              rows={toRateTableRows(homeLoan.rates.slice(0, 4))}
-            />
-            <div className="mt-6 flex flex-wrap items-center justify-between gap-4">
-              <p className="text-sm text-navy-500">
-                Rates are set by lenders and move with the market — treat these as a starting point.
-              </p>
-              <Button variant="outline" asChild>
-                <Link href="/products">
-                  See every product&rsquo;s rates <MoveUpRight className="h-4 w-4" aria-hidden />
-                </Link>
-              </Button>
-            </div>
-          </Reveal>
         </Container>
       </section>
 

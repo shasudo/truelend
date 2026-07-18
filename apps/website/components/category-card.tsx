@@ -17,17 +17,7 @@ export function CategoryCard({ product }: { product: ProductCategory }) {
             alt=""
             fill
             sizes="(min-width: 1024px) 380px, (min-width: 640px) 50vw, calc(100vw - 40px)"
-            className="object-cover object-center saturate-[0.45] transition-all duration-300 group-hover:scale-[1.03] group-hover:saturate-100"
-          />
-          {/* Stock photos come from different shoots, eras and lighting. Holding
-              saturation down and multiplying a flat brand tint over the top is
-              what makes them read as one set; without it the greens and reds in
-              the card/vehicle shots fight the rest of the grid. Drop the
-              treatment only if every image is reshot to a single art brief. */}
-          <div aria-hidden className="absolute inset-0 bg-navy-950/45 mix-blend-multiply" />
-          <div
-            aria-hidden
-            className="absolute inset-0 bg-gradient-to-t from-navy-950/70 via-navy-950/10 to-transparent"
+            className="object-cover object-center transition-transform duration-300 group-hover:scale-[1.03]"
           />
           <span className="absolute bottom-3 left-3 flex h-9 w-9 items-center justify-center rounded-lg bg-paper/90 text-navy-800 backdrop-blur-sm transition-colors group-hover:bg-red-50 group-hover:text-red-600">
             <Icon className="h-4.5 w-4.5" aria-hidden />
@@ -44,7 +34,8 @@ export function CategoryCard({ product }: { product: ProductCategory }) {
           </span>
           <MoveUpRight
             aria-hidden
-            className="h-4 w-4 text-muted transition-all duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-red-600"
+            strokeWidth={4}
+            className="h-4 w-4 text-red-600 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
           />
         </span>
       </Card>
