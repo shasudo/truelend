@@ -56,7 +56,7 @@ export default async function MarketingPage() {
         <div aria-hidden className="absolute -right-8 -top-16 h-56 w-32 rotate-12 bg-red-600" />
         <div className="relative max-w-2xl">
           <p className="text-xs font-extrabold uppercase tracking-[0.16em]">
-            TrueLend Partner Network™
+            TrueLend Partner Network
           </p>
           <h2 className="mt-3 text-balance font-display text-4xl font-extrabold leading-none sm:text-5xl">
             {business ? "Bring business. Earn commission." : "Refer loans. Earn extra income."}

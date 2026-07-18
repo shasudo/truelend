@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { UserPlus, PhoneCall, Handshake } from "lucide-react";
+import { UserPlus, PhoneCall, Handshake, BadgeIndianRupee } from "lucide-react";
 import { Card, Container } from "@truelend/ui";
 import { PageHeader } from "@/components/page-header";
 import { ReferralForm } from "@/components/forms/referral-form";
@@ -26,6 +26,11 @@ const steps = [
     icon: Handshake,
     title: "They borrow smarter",
     desc: "Same advice standard you'd get — compared, honest, free.",
+  },
+  {
+    icon: BadgeIndianRupee,
+    title: "You get rewarded",
+    desc: "Earn a reward on every successful loan disbursement.",
   },
 ];
 

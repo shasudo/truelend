@@ -139,7 +139,7 @@ function IntelligenceCore() {
         <p className="mt-3 font-display text-base font-extrabold uppercase leading-tight tracking-tight text-navy-950">
           TrueLend borrowing
           <br />
-          intelligence™
+          intelligence
         </p>
         <ul className="mt-4 w-full rounded-2xl border border-navy-100 bg-white p-3 text-left shadow-[0_12px_34px_-26px_rgba(20,32,74,0.45)]">
           {assessments.map((assessment, i) => (
@@ -386,7 +386,7 @@ export function HomeHero() {
           <Reveal immediate>
             <p className="inline-flex items-center gap-2 rounded-xl border border-navy-100 bg-navy-50/80 px-4 py-2 text-xs font-semibold text-navy-700 shadow-sm">
               <BrainCircuit className="h-4 w-4" aria-hidden />
-              Borrow smarter with TrueLend Borrowing Intelligence™
+              Borrow smarter with TrueLend Borrowing Intelligence
             </p>
             <h1 className="mt-6 text-balance font-display text-5xl font-extrabold uppercase leading-[0.97] tracking-[-0.045em] text-navy-950 sm:text-6xl xl:text-[4rem]">
               Before you apply

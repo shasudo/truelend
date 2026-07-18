@@ -16,10 +16,7 @@ export function PartnerPathCards({ className }: { className?: string }) {
           : "Indian referral partner holding a smartphone";
 
         return (
-          <Card
-            key={path.type}
-            className={cx("overflow-hidden", business ? "border-navy-800/20" : "border-sun-500/40")}
-          >
+          <Card key={path.type} className="overflow-hidden border-red-600">
             <div className="relative aspect-[3/2] overflow-hidden border-b border-hairline">
               <Image
                 src={imageSrc}
@@ -41,7 +38,7 @@ export function PartnerPathCards({ className }: { className?: string }) {
                 >
                   <Icon className="h-5 w-5" aria-hidden />
                 </span>
-                <h3 className="mt-3 font-display text-xl font-extrabold leading-tight text-navy-950 sm:text-2xl">
+                <h3 className="mt-3 font-display text-2xl font-extrabold leading-tight text-navy-950 sm:text-3xl">
                   {path.title}
                 </h3>
                 <p className="mt-2 text-sm font-semibold text-navy-700">{path.question}</p>
@@ -69,7 +66,7 @@ export function PartnerPathCards({ className }: { className?: string }) {
               </div>
               <div className="mt-7 grid gap-6 border-t border-hairline pt-6 sm:grid-cols-2">
                 <div>
-                  <p className="font-display font-bold text-navy-950">What they do</p>
+                  <p className="font-display font-bold text-navy-950">What you will do</p>
                   <ul className="mt-3 space-y-2">
                     {path.does.map((item) => (
                       <li key={item} className="flex gap-2.5 text-sm text-navy-700">
@@ -80,7 +77,7 @@ export function PartnerPathCards({ className }: { className?: string }) {
                   </ul>
                 </div>
                 <div>
-                  <p className="font-display font-bold text-navy-950">What they receive</p>
+                  <p className="font-display font-bold text-navy-950">What you will receive</p>
                   <ul className="mt-3 space-y-2">
                     {path.receives.map((item) => (
                       <li key={item} className="flex gap-2.5 text-sm text-navy-700">
