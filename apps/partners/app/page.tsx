@@ -173,15 +173,12 @@ export default function Home() {
       <main>
         <section className="relative overflow-hidden border-b border-hairline">
           <HexPattern className="-left-32 -top-24 h-[520px] w-[520px] text-navy-800/[0.04]" />
-          <div className="absolute inset-y-0 right-0 hidden w-[58%] lg:block">
-            <Image
-              src="/images/partner-handshake-hero-branded.avif"
-              alt="Two Indian business professionals shaking hands in a modern office"
-              fill
-              priority
-              sizes="58vw"
-              className="object-cover object-right"
-            />
+          <div
+            aria-label="Two Indian business professionals shaking hands in a modern office"
+            role="img"
+            className="absolute inset-y-0 right-0 hidden w-[58%] bg-cover bg-right lg:block"
+            style={{ backgroundImage: "url('/images/partner-handshake-hero-branded.jpg')" }}
+          >
             <div
               aria-hidden
               className="absolute inset-0 bg-[linear-gradient(90deg,var(--color-paper)_0%,transparent_42%)]"
@@ -226,10 +223,11 @@ export default function Home() {
 
               <div className="relative mt-10 aspect-[2/1] overflow-hidden rounded-2xl border border-hairline bg-white shadow-[0_24px_60px_-40px_rgba(7,13,36,0.7)] lg:hidden">
                 <Image
-                  src="/images/partner-handshake-hero-branded.avif"
+                  src="/images/partner-handshake-hero-branded.jpg"
                   alt="Two Indian business professionals shaking hands in a modern office"
                   fill
                   priority
+                  unoptimized
                   sizes="calc(100vw - 40px)"
                   className="object-cover object-center"
                 />
