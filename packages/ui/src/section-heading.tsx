@@ -7,6 +7,10 @@ export interface SectionHeadingProps {
   center?: boolean;
   /** For navy surfaces — flips text to light. */
   inverse?: boolean;
+  /** Override eyebrow color (default red); the leading rule follows via bg-current. */
+  eyebrowClassName?: string;
+  /** Override title color (default navy / white on inverse). */
+  titleClassName?: string;
   /** Heading level. Page-level headers pass "h1"; in-page sections keep h2 so
    *  each page has exactly one h1. */
   as?: "h1" | "h2";
@@ -19,6 +23,8 @@ export function SectionHeading({
   lede,
   center,
   inverse,
+  eyebrowClassName,
+  titleClassName,
   as: Heading = "h2",
   className,
 }: SectionHeadingProps) {
@@ -27,18 +33,19 @@ export function SectionHeading({
       {eyebrow && (
         <p
           className={cx(
-            "flex items-center gap-3 text-xs font-bold uppercase tracking-[0.18em] text-red-600",
+            "flex items-center gap-3 text-xs font-bold uppercase tracking-[0.18em]",
+            eyebrowClassName ?? "text-red-600",
             center && "justify-center",
           )}
         >
-          {!center && <span aria-hidden className="h-px w-8 bg-red-600" />}
+          {!center && <span aria-hidden className="h-px w-8 bg-current" />}
           {eyebrow}
         </p>
       )}
       <Heading
         className={cx(
           "mt-3 text-balance font-display text-3xl font-extrabold tracking-tight sm:text-4xl",
-          inverse ? "text-white" : "text-navy-950",
+          titleClassName ?? (inverse ? "text-white" : "text-navy-950"),
         )}
       >
         {title}

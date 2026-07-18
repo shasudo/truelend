@@ -47,7 +47,7 @@ export function Header() {
           <Button size="sm" asChild className="hidden sm:inline-flex">
             <Link href="/enquiry">
               <Headset className="h-4 w-4" aria-hidden />
-              Speak to an Advisor
+              Talk to a Borrowing Advisor
             </Link>
           </Button>
 

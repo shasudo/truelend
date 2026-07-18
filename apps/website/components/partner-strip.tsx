@@ -1,6 +1,6 @@
 import { LogoMark } from "@truelend/ui";
 
-const lenderTypes = ["Multiple banks", "NBFCs", "Fintech lenders"];
+const lenderTypes = ["Leading Banks", "NBFCs", "Fintech Lenders"];
 
 export function PartnerStrip() {
   return (
@@ -10,7 +10,7 @@ export function PartnerStrip() {
     >
       <div className="mx-auto flex w-full max-w-[95rem] flex-col gap-5 px-5 sm:px-8 lg:flex-row lg:items-center">
         <p className="shrink-0 border-b border-red-600 pb-3 text-xs font-bold uppercase leading-relaxed tracking-[0.12em] text-navy-800 lg:w-52 lg:border-r lg:border-b-0 lg:pb-0 lg:pr-6">
-          Access to our lending network
+          We compare lending policies across
         </p>
         <ul className="flex flex-wrap items-center gap-x-6 gap-y-3">
           {lenderTypes.map((type) => (

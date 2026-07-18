@@ -71,7 +71,7 @@ const lenderMatches = [
 
 const assurances = [
   { label: "Confidential", icon: LockKeyhole },
-  { label: "Multiple banks & NBFCs", icon: Landmark },
+  { label: "Access to Multiple Lenders", icon: Landmark },
   { label: "Expert guidance", icon: UserRoundCheck },
   { label: "No obligation", icon: ShieldCheck },
 ];
@@ -381,35 +381,34 @@ export function HomeHero() {
         className="absolute -right-24 bottom-4 h-48 w-[44rem] rounded-[100%] border border-navy-100/60"
         aria-hidden
       />
-      <div className="relative mx-auto grid w-full max-w-[95rem] items-center gap-12 px-5 py-12 sm:px-8 sm:py-16 xl:grid-cols-[0.82fr_1.18fr] xl:gap-8 xl:py-14">
+      <div className="relative mx-auto grid w-full max-w-[95rem] items-start gap-12 px-5 pb-12 pt-6 sm:px-8 sm:pb-16 sm:pt-8 xl:grid-cols-[0.82fr_1.18fr] xl:gap-8 xl:pb-14 xl:pt-6">
         <div className="max-w-[42rem]">
           <Reveal immediate>
-            <p className="inline-flex items-center gap-2 rounded-xl border border-navy-100 bg-navy-50/80 px-4 py-2 text-xs font-semibold text-navy-700 shadow-sm">
-              <BrainCircuit className="h-4 w-4" aria-hidden />
-              Borrow smarter with TrueLend Borrowing Intelligence
-            </p>
-            <h1 className="mt-6 text-balance font-display text-5xl font-extrabold uppercase leading-[0.97] tracking-[-0.045em] text-navy-950 sm:text-6xl xl:text-[4rem]">
+            <h1 className="text-balance font-display text-5xl font-extrabold uppercase leading-[0.97] tracking-[-0.045em] text-navy-950 sm:text-6xl xl:text-[4rem]">
               Before you apply
               <br />
               for a loan,
               <br />
               <span className="relative inline-block text-red-600">
-                check with TrueLend first.
+                talk to TrueLend first.
                 <span
                   className="absolute -bottom-2 left-[62%] h-1 w-28 -rotate-2 rounded-full bg-red-600"
                   aria-hidden
                 />
               </span>
             </h1>
+            <p className="mt-6 max-w-[38rem] text-lg font-semibold leading-8 text-navy-800">
+              Because the right loan matters. We help you find it from the right lender.
+            </p>
           </Reveal>
           <Reveal immediate delay={0.1}>
-            <p className="mt-7 max-w-[38rem] text-base leading-7 text-navy-700">
-              Instead of applying to multiple banks and hoping for approval, let TrueLend first
-              analyse your financial profile and borrowing requirement. We compare it against lender
-              policies to find where you may qualify for a higher loan amount and better terms.
-            </p>
-            <p className="mt-3 max-w-[38rem] text-sm leading-6 text-navy-600">
-              Our Borrowing Advisors personally guide you through every step.
+            <p className="mt-5 max-w-[38rem] text-base leading-7 text-navy-700">
+              Need a Personal Loan, Business Loan, Home Loan or any other borrowing solution? Before
+              you approach a bank or NBFC, let our experienced Borrowing Advisors understand your
+              borrowing requirement and financial profile. Using the TrueLend Borrowing Intelligence
+              Framework, we compare your profile with the lending policies of multiple banks, NBFCs
+              and Fintech Lenders to help identify borrowing options that may offer higher
+              eligibility and competitive borrowing terms.
             </p>
           </Reveal>
           <Reveal immediate delay={0.2}>

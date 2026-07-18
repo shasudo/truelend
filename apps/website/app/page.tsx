@@ -12,27 +12,27 @@ import { getAllPosts } from "@/lib/blog";
 const steps = [
   {
     title: "Understand You",
-    desc: "Your needs, income shape and timelines — before any product talk.",
+    desc: "We begin by understanding your borrowing requirement, financial goals and repayment preferences before discussing any loan options.",
   },
   {
-    title: "Assess Profile",
-    desc: "Credit health, obligations and real eligibility, mapped honestly.",
+    title: "Review Your Financial Profile",
+    desc: "We review your income, existing obligations, credit profile and overall financial position to assess borrowing suitability.",
   },
   {
-    title: "Analyze Lenders",
-    desc: "Policies and pricing compared across our partner banks and NBFCs.",
+    title: "Compare Lending Policies",
+    desc: "We compare your profile with the lending policies of multiple banks, NBFCs and Fintech Lenders to identify suitable borrowing options.",
   },
   {
-    title: "Find the Right Fit",
-    desc: "Lenders whose credit model actually rewards your profile.",
+    title: "Identify the Right Fit",
+    desc: "We shortlist borrowing options that best align with your financial profile, borrowing needs and repayment capacity.",
   },
   {
-    title: "Apply with Ease",
-    desc: "One clean file, guided documentation, no running around twice.",
+    title: "Apply with Confidence",
+    desc: "We help you prepare the required documentation and guide you through the application process with your selected lender.",
   },
   {
-    title: "Get Disbursed",
-    desc: "We chase sanction to disbursal and stay accountable throughout.",
+    title: "Support Until Disbursement",
+    desc: "We stay with you through the lender’s process until your loan is successfully disbursed, keeping you informed at every stage.",
   },
 ];
 
@@ -79,9 +79,11 @@ export default function Home() {
         <Container className="py-12 sm:py-16">
           <Reveal>
             <SectionHeading
-              eyebrow="Our borrowing intelligence approach"
-              title="How TrueLend works for you"
-              lede="Six deliberate steps between your first call and the money in your account — each one designed to remove a place borrowers usually lose."
+              eyebrow="Our Borrowing Intelligence Framework"
+              eyebrowClassName="text-muted"
+              title="How We Help You Borrow Better"
+              titleClassName="text-red-600"
+              lede="Every borrower is unique. Before recommending a lender, our experienced borrowing advisors understand your borrowing requirement, review your financial profile, compare lending policies across multiple banks, NBFCs and Fintech Lenders and guide you through every step of the borrowing journey."
             />
           </Reveal>
           <ol className="mt-6 grid gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
