@@ -33,7 +33,7 @@ catalog:
   remark-frontmatter: ^5.0.0
   "@opennextjs/cloudflare": ^1.0.0
   wrangler: ^4.86.0
-  "@cloudflare/workers-types": 5.20260711.1
+  "@cloudflare/workers-types": 5.20260719.1
   drizzle-kit: ^0.31.10
   tsx: ^4.20.0
   typescript: ^5.7.0
