@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button, Checkbox, Field, Input } from "@truelend/ui";
-import { cibilNotifySchema } from "@/lib/schemas";
+import { cibilNotifySchema } from "@/lib/lead-schemas";
 import {
   FormSuccess,
   NoScriptFallback,

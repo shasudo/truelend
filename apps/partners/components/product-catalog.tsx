@@ -13,7 +13,7 @@ import {
   Tractor,
   User,
 } from "lucide-react";
-import { products } from "@truelend/reference";
+import { appUrls, products } from "@truelend/reference";
 
 /*
  * Icons for the canonical product list. @truelend/reference is deliberately a
@@ -35,7 +35,7 @@ const productIcons: Record<string, LucideIcon> = {
 
 // Rates, eligibility and documents live on the public site — partners read the
 // same pages their customers do, so there is one published source for them.
-const PUBLIC_SITE = "https://truelend.in";
+const PUBLIC_SITE = appUrls.website;
 
 /** Starts a case/referral with the product already chosen. Signed-in only. */
 export const submitProductHref = (submitHref: string) => (slug: string) =>

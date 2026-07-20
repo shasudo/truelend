@@ -4,12 +4,17 @@ import { headers } from "next/headers";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { createDb, schema } from "@truelend/db";
 import { notifyNewLead } from "@truelend/email";
-import { leadKindLabels, productName, rupeesToPaise } from "@truelend/reference";
-import { verifyTurnstile, type TurnstileAction } from "@truelend/turnstile";
-import { leadSchema } from "./schemas";
+import {
+  customerConsentVersion,
+  leadKindLabels,
+  productName,
+  rupeesToPaise,
+} from "@truelend/reference";
+import type { TurnstileAction } from "@truelend/turnstile/actions";
+import { verifyTurnstile } from "@truelend/turnstile/server";
+import { leadSchema } from "./lead-schemas";
 
 type SubmitResult = { ok: true } | { ok: false; error: string };
-const CONSENT_VERSION = "2026-07-13";
 const TURNSTILE_ACTIONS: Record<string, TurnstileAction> = {
   enquiry: "lead_enquiry",
   referral: "lead_referral",
@@ -69,6 +74,7 @@ export async function submitLead(input: unknown): Promise<SubmitResult> {
     expectedAction: TURNSTILE_ACTIONS[parsed.data.kind]!,
     ip: ip === "anonymous" ? undefined : ip,
     expectedHostname: hostname,
+    production: process.env.NODE_ENV === "production",
   });
   if (!human) {
     return { ok: false, error: "Human verification failed — please try once more." };
@@ -147,7 +153,7 @@ export async function submitLead(input: unknown): Promise<SubmitResult> {
           consent: d.consent,
           consentAt,
           consentSource: "website_form",
-          consentVersion: CONSENT_VERSION,
+          consentVersion: customerConsentVersion,
         })
         .returning({ id: schema.leads.id });
       await tx.insert(schema.auditLog).values({
@@ -159,7 +165,7 @@ export async function submitLead(input: unknown): Promise<SubmitResult> {
           kind: d.kind,
           contactReason: d.kind === "contact" ? d.reason : undefined,
           partnerRef: partnerId ? refCode : undefined,
-          consentVersion: CONSENT_VERSION,
+          consentVersion: customerConsentVersion,
         },
       });
     });

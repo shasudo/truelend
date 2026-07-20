@@ -62,7 +62,7 @@ export function DedicatedRegister({
     <>
       <PublicHeader />
 
-      <main>
+      <main id="main-content" tabIndex={-1}>
         <section className="relative overflow-hidden border-b border-hairline">
           <HexPattern className="-left-44 -top-32 h-[520px] w-[520px] text-navy-800/[0.04]" />
           <Container className="grid items-start gap-10 py-12 sm:py-16 lg:grid-cols-[minmax(0,1fr)_minmax(340px,0.82fr)] lg:py-20">

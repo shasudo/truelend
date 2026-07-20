@@ -5,25 +5,6 @@
 /* Tailwind v4 won't scan symlinked workspace packages — point at the real path. */
 @source "../../../packages/ui/src";
 
-/* Entrance animations for Radix portals (mount/unmount can't use transitions). */
-@keyframes fade-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes drawer-in {
-  from {
-    transform: translateX(100%);
-  }
-  to {
-    transform: translateX(0);
-  }
-}
-
 /* Lightweight scroll reveal: a tiny IntersectionObserver toggles one attribute. */
 .tl-reveal {
   opacity: 0;
@@ -146,9 +127,9 @@
 }
 
 /* ponytail: the row/tick/card highlights animate background-color and
- * box-shadow, so they repaint each frame instead of compositing. Cheap enough
- * at this size; if the hero ever shows paint cost on low-end mobile, swap to an
- * opacity-animated overlay (opacity and transform stay on the compositor). */
+ * box-shadow, so they repaint each frame instead of compositing. If a low-end
+ * mobile trace shows paint work above 8ms per frame, swap to an opacity-animated
+ * overlay (opacity and transform stay on the compositor). */
 @keyframes tl-highlight {
   0%,
   58%,

@@ -1,6 +1,6 @@
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { createDb } from "@truelend/db";
-import { allowSensitiveAuthRequest, createAdminAuth } from "@truelend/auth";
+import { allowSensitiveAuthRequest, createAdminAuth } from "@truelend/auth/server";
 import { authOptions } from "@/lib/auth";
 
 // Per-request auth instance (workerd forbids cross-request I/O reuse); this

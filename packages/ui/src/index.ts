@@ -6,7 +6,7 @@ export { Container } from "./container";
 export { SectionHeading } from "./section-heading";
 export { Card } from "./card";
 export { Badge } from "./badge";
-export { StatusBadge } from "./status-badge";
+export { StatusBadge, type StatusBadgeTone } from "./status-badge";
 export { Stat } from "./stat";
 export { StatTile } from "./stat-tile";
 export { RateTable, type RateTableRow } from "./rate-table";

@@ -1,7 +1,11 @@
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { createDb, ping } from "@truelend/db";
-import { healthHeaders, isReadinessAuthorized } from "@truelend/health";
-import type { HealthResponse } from "@truelend/types";
+import {
+  hasConfiguredValues,
+  healthHeaders,
+  isReadinessAuthorized,
+  type HealthResponse,
+} from "@truelend/health";
 
 export const dynamic = "force-dynamic";
 
@@ -23,8 +27,10 @@ export async function GET(request: Request) {
   } finally {
     ctx.waitUntil(connection.$client.end());
   }
-  const auth = env.BETTER_AUTH_SECRET && env.BETTER_AUTH_URL ? "ok" : "error";
-  const turnstile = env.TURNSTILE_SECRET_KEY && env.TURNSTILE_SITE_KEY ? "ok" : "error";
+  const auth = hasConfiguredValues(env.BETTER_AUTH_SECRET, env.BETTER_AUTH_URL) ? "ok" : "error";
+  const turnstile = hasConfiguredValues(env.TURNSTILE_SECRET_KEY, env.TURNSTILE_SITE_KEY)
+    ? "ok"
+    : "error";
   const status = db === "ok" && auth === "ok" && turnstile === "ok" ? "ok" : "error";
   const body: HealthResponse = {
     status,

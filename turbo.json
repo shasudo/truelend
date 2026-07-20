@@ -1,9 +1,17 @@
 {
   "$schema": "https://turbo.build/schema.json",
   "ui": "tui",
+  "globalDependencies": [
+    ".nvmrc",
+    ".npmrc",
+    "pnpm-workspace.yaml",
+    "packages/eslint-config/**",
+    "packages/typescript-config/**"
+  ],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
+      "env": ["NEXT_PUBLIC_CF_BEACON_TOKEN", "NEXT_PUBLIC_TURNSTILE_SITE_KEY"],
       "outputs": [".next/**", "!.next/cache/**"]
     },
     "dev": {

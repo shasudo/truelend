@@ -15,7 +15,7 @@ function percentage(value: number, total: number) {
 
 export default async function ReportsPage() {
   const { partner } = await requirePartner();
-  if (partner?.type !== "business") redirect("/dashboard");
+  if (partner.type !== "business") redirect("/dashboard");
   const { db } = getAuthContext();
   const [metrics, products] = await Promise.all([
     getPartnerMetrics(db, partner.userId),

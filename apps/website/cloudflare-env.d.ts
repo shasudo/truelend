@@ -1,22 +1,19 @@
-// Types for the Cloudflare bindings declared in wrangler.jsonc.
-// getCloudflareContext().env is typed as the global CloudflareEnv interface.
-// Regenerate from wrangler.jsonc with: pnpm cf-typegen
-import type { Hyperdrive, Fetcher, RateLimit } from "@cloudflare/workers-types";
-
-declare global {
-  interface CloudflareEnv {
-    ASSETS: Fetcher;
-    HYPERDRIVE: Hyperdrive;
-    LEAD_RATE_LIMITER: RateLimit;
-    /** Optional — set via .dev.vars locally, `wrangler secret put` in prod. */
-    TURNSTILE_SECRET_KEY?: string;
-    /** Protects /api/health/ready; set as a Worker secret. */
-    HEALTHCHECK_SECRET?: string;
-    // Email (Resend) — see @truelend/email. Missing key = no-op.
-    RESEND_API_KEY?: string;
-    EMAIL_FROM?: string;
-    TEAM_EMAIL?: string;
-  }
+/* eslint-disable */
+// Generated from wrangler.jsonc by scripts/check-cloudflare-types.mjs. Do not edit.
+interface __BaseEnv_CloudflareEnv {
+	HYPERDRIVE: Hyperdrive;
+	LEAD_RATE_LIMITER: RateLimit;
+	ASSETS: Fetcher;
+	EMAIL_FROM: "TrueLend <hello@truelend.in>";
+	TEAM_EMAIL: "shathwik@icloud.com";
 }
-
-export {};
+declare namespace Cloudflare {
+	interface Env extends __BaseEnv_CloudflareEnv {}
+}
+interface CloudflareEnv extends Cloudflare.Env {}
+type StringifyValues<EnvType extends Record<string, unknown>> = {
+	[Binding in keyof EnvType]: EnvType[Binding] extends string ? EnvType[Binding] : string;
+};
+declare namespace NodeJS {
+	interface ProcessEnv extends StringifyValues<Pick<Cloudflare.Env, "EMAIL_FROM" | "TEAM_EMAIL">> {}
+}

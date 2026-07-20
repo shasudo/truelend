@@ -1,7 +1,6 @@
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { createDb, ping } from "@truelend/db";
-import { healthHeaders, isReadinessAuthorized } from "@truelend/health";
-import type { HealthResponse } from "@truelend/types";
+import { healthHeaders, isReadinessAuthorized, type HealthResponse } from "@truelend/health";
 
 export const dynamic = "force-dynamic";
 

@@ -5,7 +5,13 @@ import { redirect } from "next/navigation";
 import { eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { schema } from "@truelend/db";
-import { verifyTurnstile } from "@truelend/turnstile";
+import { verifyTurnstile } from "@truelend/turnstile/server";
+import {
+  normalizeIndianMobile,
+  partnerTypeValues,
+  validationMessages,
+  validationPatterns,
+} from "@truelend/reference";
 import { getAuthContext } from "./auth";
 
 export type RegisterState = {
@@ -15,14 +21,14 @@ export type RegisterState = {
 
 const registerSchema = z
   .object({
-    type: z.enum(["business", "referral"]),
+    type: z.enum(partnerTypeValues),
     name: z.string().trim().min(2, "Please enter your name").max(120),
     email: z.string().trim().toLowerCase().pipe(z.email("Enter a valid email").max(254)),
     phone: z
       .string()
       .trim()
-      .transform((s) => s.replace(/[\s-]/g, ""))
-      .pipe(z.string().regex(/^[6-9]\d{9}$/, "Enter a valid 10-digit mobile number")),
+      .transform(normalizeIndianMobile)
+      .pipe(z.string().regex(validationPatterns.indianMobile, validationMessages.indianMobile)),
     password: z.string().min(8, "Password must be at least 8 characters").max(128),
     businessName: z.string().trim().max(160).optional(),
     turnstileToken: z.string().max(2048).optional(),
@@ -76,6 +82,7 @@ export async function registerPartner(
       expectedAction: "partner_registration",
       ip: ip === "anonymous" ? undefined : ip,
       expectedHostname: requestHeaders.get("host") ?? undefined,
+      production: process.env.NODE_ENV === "production",
     });
     if (!human) {
       return {
@@ -91,8 +98,8 @@ export async function registerPartner(
     createdUserId = res.user.id;
     await db.transaction(async (tx) => {
       await tx.update(schema.user).set({ role: d.type }).where(eq(schema.user.id, createdUserId!));
-      // Reference id is generated in-DB from the sequence so it's race-free and
-      // gapless; prefix (BP/RP) is a controlled constant, not user input.
+      // The database sequence makes the reference id unique under concurrency.
+      // Sequence gaps after failed transactions are expected and harmless.
       const prefix = d.type === "business" ? "BP" : "RP";
       await tx.insert(schema.partners).values({
         userId: createdUserId!,

@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { createDb, schema } from "@truelend/db";
-import { createAdminAuth } from "@truelend/auth";
+import { createAdminAuth } from "@truelend/auth/server";
 
 /*
  * Break-glass bootstrap for the first admin. Runs in Node against a direct

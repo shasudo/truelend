@@ -4,7 +4,7 @@ import { donutArcs } from "../components/pipeline-donut";
 
 const C = 100;
 
-test("arcs tile the full circle and carry cumulative offsets", () => {
+void test("arcs tile the full circle and carry cumulative offsets", () => {
   const arcs = donutArcs(
     [
       { label: "a", count: 1, color: "#000" },
@@ -21,7 +21,7 @@ test("arcs tile the full circle and carry cumulative offsets", () => {
   assert.ok(Math.abs(totalLen - C) < 1e-9);
 });
 
-test("empty pipeline produces zero-length arcs, not NaN", () => {
+void test("empty pipeline produces zero-length arcs, not NaN", () => {
   const arcs = donutArcs([{ label: "a", count: 0, color: "#000" }], C);
   assert.equal(arcs[0]!.len, 0);
   assert.equal(arcs[0]!.pct, 0);

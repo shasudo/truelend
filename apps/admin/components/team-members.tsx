@@ -67,7 +67,7 @@ function TeamRow({ m, isSelf }: { m: Member; isSelf: boolean }) {
     setMsg(null);
     start(async () => {
       const res = await action(fd);
-      if (res?.error) {
+      if (res.error) {
         setMsg({ ok: false, text: res.error });
         return;
       }
@@ -86,7 +86,7 @@ function TeamRow({ m, isSelf }: { m: Member; isSelf: boolean }) {
     start(async () => {
       const res = await sendPasswordResetAction(fd);
       setMsg(
-        res?.error
+        res.error
           ? { ok: false, text: res.error }
           : { ok: true, text: "Sessions revoked and reset link sent" },
       );

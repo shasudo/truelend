@@ -24,6 +24,7 @@ import {
   UserRoundPlus,
 } from "lucide-react";
 import { Button, Card, Container, HexPattern, SectionHeading } from "@truelend/ui";
+import { products, type ProductSlug } from "@truelend/reference";
 import { PartnerBenefitsPanel } from "@/components/partner-benefits-panel";
 import { PartnerPathCards } from "@/components/partner-path-cards";
 import { PublicHeader } from "@/components/public-header";
@@ -35,65 +36,65 @@ const heroBenefits = [
   { icon: Handshake, label: "Two partner paths" },
 ];
 
-// Marketing display of the loans a partner can help people get. Names mirror
-// the canonical @truelend/reference `products` set; icons match the website's
-// product cards. Not linked — the header Products menu handles browsing.
-const loanProducts = [
-  {
+const productPresentation = {
+  "personal-loan": {
     icon: User,
-    name: "Personal Loan",
     blurb: "Quick funds for personal needs.",
     image: "/images/products/personal-loan.avif",
   },
-  {
+  "home-loan": {
     icon: HomeIcon,
-    name: "Home Loan",
     blurb: "Turn a dream home into reality.",
     image: "/images/products/home-loan.avif",
   },
-  {
+  "business-loan": {
     icon: Briefcase,
-    name: "Business Loan",
     blurb: "Fuel business growth and expansion.",
     image: "/images/products/business-loan.avif",
   },
-  {
+  "loan-against-property": {
     icon: Building2,
-    name: "Loan Against Property",
     blurb: "Unlock the value in owned property.",
     image: "/images/products/loan-against-property.avif",
   },
-  {
+  "credit-cards": {
     icon: CreditCard,
-    name: "Credit Cards",
     blurb: "Everyday convenience and flexibility.",
     image: "/images/products/credit-cards.avif",
   },
-  {
+  "education-loan": {
     icon: GraduationCap,
-    name: "Education Loan",
     blurb: "Invest in a brighter future.",
     image: "/images/products/education-loan.avif",
   },
-  {
+  "vehicle-loan": {
     icon: Car,
-    name: "Vehicle Loan",
     blurb: "Finance the right car or vehicle.",
     image: "/images/products/vehicle-loan.avif",
   },
-  {
+  "working-capital": {
     icon: IndianRupee,
-    name: "Working Capital",
     blurb: "Breathing room for the operating cycle.",
     image: "/images/products/working-capital.avif",
   },
-  {
+  "equipment-finance": {
     icon: Tractor,
-    name: "Equipment Finance",
     blurb: "Fund machines that pay for themselves.",
     image: "/images/products/equipment-finance.avif",
   },
-];
+} satisfies Record<
+  ProductSlug,
+  {
+    icon: typeof User;
+    blurb: string;
+    image: string;
+  }
+>;
+
+const loanProducts = products.map((product) => ({
+  ...product,
+  ...productPresentation[product.slug],
+}));
 
 const steps = [
   {
@@ -170,7 +171,7 @@ export default function Home() {
     <>
       <PublicHeader />
 
-      <main>
+      <main id="main-content" tabIndex={-1}>
         <section className="relative overflow-hidden border-b border-hairline">
           <HexPattern className="-left-32 -top-24 h-[520px] w-[520px] text-navy-800/[0.04]" />
           <div
@@ -265,7 +266,7 @@ export default function Home() {
             <div className="mt-10 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
               {loanProducts.map((product) => (
                 <div
-                  key={product.name}
+                  key={product.slug}
                   className="overflow-hidden rounded-xl border border-hairline bg-white"
                 >
                   <div className="relative aspect-[3/2] overflow-hidden border-b border-hairline">

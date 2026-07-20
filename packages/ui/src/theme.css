@@ -83,8 +83,8 @@
   }
 }
 
-/* Radix Dialog portals (mount/unmount can't transition) — shared by the
- * dashboard mobile nav drawers. Overlay fades; panel slides in from the left. */
+/* Radix Dialog portals (mount/unmount can't transition) — shared by mobile
+ * navigation drawers. Motion-safe variants at call sites respect user prefs. */
 @keyframes fade-in {
   from {
     opacity: 0;
@@ -97,6 +97,15 @@
 @keyframes drawer-in-left {
   from {
     transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes drawer-in-right {
+  from {
+    transform: translateX(100%);
   }
   to {
     transform: translateX(0);

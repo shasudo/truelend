@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, Handshake, UsersRound } from "lucide-react";
 import { Button, Card, StatusBadge } from "@truelend/ui";
-import { formatDate, leadStatusLabels, productName } from "@truelend/reference";
+import { formatDate, leadStatusLabels, pipelineStatusTone, productName } from "@truelend/reference";
 import { PartnerPageHeader } from "@/components/partner-page-header";
 import { requirePartner, getAuthContext } from "@/lib/auth";
 import { getPartnerLeadsPage } from "@/lib/dashboard-queries";
@@ -18,10 +18,10 @@ export default async function CustomersPage({
   const requestedPage = Number.parseInt((await searchParams).page ?? "1", 10);
   const result = await getPartnerLeadsPage(
     db,
-    partner!.userId,
+    partner.userId,
     Number.isFinite(requestedPage) ? requestedPage : 1,
   );
-  const business = partner!.type === "business";
+  const business = partner.type === "business";
   const submitHref = business ? "/leads" : "/refer";
 
   return (
@@ -87,7 +87,7 @@ export default async function CustomersPage({
                       </p>
                     </div>
                     <StatusBadge
-                      status={lead.status}
+                      tone={pipelineStatusTone(lead.status)}
                       label={leadStatusLabels[lead.status] ?? lead.status}
                     />
                   </div>
@@ -124,7 +124,7 @@ export default async function CustomersPage({
                       </td>
                       <td className="px-6 py-4 text-right">
                         <StatusBadge
-                          status={lead.status}
+                          tone={pipelineStatusTone(lead.status)}
                           label={leadStatusLabels[lead.status] ?? lead.status}
                         />
                       </td>

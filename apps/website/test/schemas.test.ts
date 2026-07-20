@@ -1,6 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { contactSchema, enquirySchema, enquiryFormSchema, referralSchema } from "../lib/schemas";
+import {
+  contactSchema,
+  enquirySchema,
+  enquiryFormSchema,
+  referralSchema,
+} from "../lib/lead-schemas";
 
 const validEnquiry = {
   kind: "enquiry",
@@ -14,7 +19,7 @@ const validEnquiry = {
   consent: true,
 };
 
-test("enquiry form enforces the loan-application core for loans", () => {
+void test("enquiry form enforces the loan-application core for loans", () => {
   assert.equal(enquiryFormSchema.safeParse(validEnquiry).success, true);
   assert.equal(enquiryFormSchema.safeParse({ ...validEnquiry, loanAmount: "" }).success, false);
   assert.equal(enquiryFormSchema.safeParse({ ...validEnquiry, employmentType: "" }).success, false);
@@ -26,7 +31,7 @@ test("enquiry form enforces the loan-application core for loans", () => {
   );
 });
 
-test("credit-card enquiry needs no loan amount", () => {
+void test("credit-card enquiry needs no loan amount", () => {
   const card = { ...validEnquiry, productSlug: "credit-cards", loanAmount: "" };
   // Card is valid without a loan amount at the form layer...
   assert.equal(enquiryFormSchema.safeParse(card).success, true);
@@ -36,13 +41,13 @@ test("credit-card enquiry needs no loan amount", () => {
   assert.equal(enquiryFormSchema.safeParse({ ...card, monthlyIncome: "" }).success, false);
 });
 
-test("server enquiry schema keeps loan amount optional (requiredness is form-only)", () => {
+void test("server enquiry schema keeps loan amount optional (requiredness is form-only)", () => {
   assert.equal(enquirySchema.safeParse({ ...validEnquiry, loanAmount: "" }).success, true);
   // a malformed amount is still rejected when present
   assert.equal(enquirySchema.safeParse({ ...validEnquiry, loanAmount: "abc" }).success, false);
 });
 
-test("referral keeps loan detail optional but still validates when given", () => {
+void test("referral keeps loan detail optional but still validates when given", () => {
   const r = {
     kind: "referral",
     referrerName: "Asha Rao",
@@ -56,7 +61,7 @@ test("referral keeps loan detail optional but still validates when given", () =>
   assert.equal(referralSchema.safeParse({ ...r, loanAmount: "500000" }).success, true);
 });
 
-test("contact requires an enquiry type, email and bounded message", () => {
+void test("contact requires an enquiry type, email and bounded message", () => {
   const contact = {
     kind: "contact",
     reason: "borrowing_advice",

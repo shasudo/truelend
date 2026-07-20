@@ -7,6 +7,7 @@ import {
   formatPaise,
   leadStatusLabels,
   loanCaseStatusLabels,
+  pipelineStatusTone,
   productName,
 } from "@truelend/reference";
 import { PartnerPageHeader } from "@/components/partner-page-header";
@@ -20,10 +21,10 @@ const caseStages = ["logged_in", "approved", "disbursed"] as const;
 export default async function PipelinePage() {
   const { partner } = await requirePartner();
   const { db } = getAuthContext();
-  const business = partner!.type === "business";
+  const business = partner.type === "business";
 
   if (!business) {
-    const referrals = await getPartnerLeadsPage(db, partner!.userId, 1);
+    const referrals = await getPartnerLeadsPage(db, partner.userId, 1);
     return (
       <div className="mx-auto max-w-5xl">
         <PartnerPageHeader
@@ -60,7 +61,7 @@ export default async function PipelinePage() {
                     </p>
                   </div>
                   <StatusBadge
-                    status={lead.status}
+                    tone={pipelineStatusTone(lead.status)}
                     label={leadStatusLabels[lead.status] ?? lead.status}
                   />
                 </div>
@@ -92,8 +93,8 @@ export default async function PipelinePage() {
   }
 
   const [cases, metrics] = await Promise.all([
-    getPartnerCases(db, partner!.userId),
-    getPartnerMetrics(db, partner!.userId),
+    getPartnerCases(db, partner.userId),
+    getPartnerMetrics(db, partner.userId),
   ]);
 
   return (
@@ -184,7 +185,7 @@ export default async function PipelinePage() {
                     </td>
                     <td className="px-6 py-4 text-right">
                       <StatusBadge
-                        status={loanCase.status}
+                        tone={pipelineStatusTone(loanCase.status)}
                         label={loanCaseStatusLabels[loanCase.status] ?? loanCase.status}
                       />
                     </td>

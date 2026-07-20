@@ -11,8 +11,7 @@ import {
 } from "lucide-react";
 import type { ProductCategory } from "./types";
 
-// RATES_ARE_PLACEHOLDER: these indicative numbers still require approved,
-// sourced product data before production.
+// Approval state and the visible draft notice are owned by content/approval.ts.
 
 export const products: ProductCategory[] = [
   {

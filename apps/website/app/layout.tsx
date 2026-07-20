@@ -1,8 +1,10 @@
 import type { ReactNode } from "react";
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans, Inter } from "next/font/google";
+import { appUrls } from "@truelend/reference";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
+import { DraftContentNotice } from "@/components/draft-content-notice";
 import { canonical, jsonLd } from "@/lib/metadata";
 import "./globals.css";
 
@@ -19,7 +21,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://truelend.in"),
+  metadataBase: new URL(appUrls.website),
   title: {
     default: "TrueLend — Lending Choices, Simplified.",
     template: "%s — TrueLend",
@@ -65,12 +67,14 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           Skip to content
         </a>
         <Header />
+        <DraftContentNotice />
         <main id="main-content" className="flex-1">
           {children}
         </main>
         <Footer />
-        {/* Cloudflare Web Analytics — set NEXT_PUBLIC_CF_BEACON_TOKEN in
-            apps/website/.env (build-time). Absent = no beacon, no-op. */}
+        {/* Cloudflare Web Analytics is build-time configuration. Set it in
+            .env.development.local locally or the protected GitHub variable for
+            releases. Absent means no beacon. */}
         {process.env.NEXT_PUBLIC_CF_BEACON_TOKEN && (
           <script
             defer

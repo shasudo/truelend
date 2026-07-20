@@ -37,39 +37,42 @@ export default function ResourcesPage() {
   return (
     <>
       <PublicHeader />
-      <section className="border-b border-hairline">
-        <Container className="py-16 sm:py-20">
-          <SectionHeading
-            eyebrow="Partner resources"
-            title="Everything you need to sell with confidence"
-            lede="Business and Referral Partners receive a tailored resource area after signing in."
-          />
-        </Container>
-      </section>
-      <section>
-        <Container className="grid gap-4 py-16 sm:grid-cols-2">
-          {sections.map((s) => (
-            <Card key={s.title} className="p-7">
-              <s.icon className="h-6 w-6 text-red-600" aria-hidden />
-              <h2 className="mt-4 font-display text-lg font-bold text-navy-950">{s.title}</h2>
-              <p className="mt-2 text-sm leading-relaxed text-navy-600">{s.desc}</p>
-            </Card>
-          ))}
-        </Container>
-      </section>
-      <section className="bg-navy-900 text-white">
-        <Container className="flex flex-col items-start justify-between gap-6 py-12 sm:flex-row sm:items-center">
-          <div>
-            <h2 className="font-display text-2xl font-bold">Access your partner toolkit</h2>
-            <p className="mt-1 text-sm text-on-dark-muted">
-              Sign in for role-specific marketing, training, tracking and support.
-            </p>
-          </div>
-          <Button asChild>
-            <Link href="/login">Partner sign in</Link>
-          </Button>
-        </Container>
-      </section>
+      <main id="main-content" tabIndex={-1}>
+        <section className="border-b border-hairline">
+          <Container className="py-16 sm:py-20">
+            <SectionHeading
+              as="h1"
+              eyebrow="Partner resources"
+              title="Everything you need to sell with confidence"
+              lede="Business and Referral Partners receive a tailored resource area after signing in."
+            />
+          </Container>
+        </section>
+        <section>
+          <Container className="grid gap-4 py-16 sm:grid-cols-2">
+            {sections.map((s) => (
+              <Card key={s.title} className="p-7">
+                <s.icon className="h-6 w-6 text-red-600" aria-hidden />
+                <h2 className="mt-4 font-display text-lg font-bold text-navy-950">{s.title}</h2>
+                <p className="mt-2 text-sm leading-relaxed text-navy-600">{s.desc}</p>
+              </Card>
+            ))}
+          </Container>
+        </section>
+        <section className="bg-navy-900 text-white">
+          <Container className="flex flex-col items-start justify-between gap-6 py-12 sm:flex-row sm:items-center">
+            <div>
+              <h2 className="font-display text-2xl font-bold">Access your partner toolkit</h2>
+              <p className="mt-1 text-sm text-on-dark-muted">
+                Sign in for role-specific marketing, training, tracking and support.
+              </p>
+            </div>
+            <Button asChild>
+              <Link href="/login">Partner sign in</Link>
+            </Button>
+          </Container>
+        </section>
+      </main>
     </>
   );
 }

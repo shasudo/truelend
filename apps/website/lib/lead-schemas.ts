@@ -1,36 +1,31 @@
 import { z } from "zod";
 import {
-  products,
+  productSlugs,
   employmentTypeValues,
   residenceTypeValues,
   cardProducts,
+  normalizeIndianMobile,
+  validationMessages,
+  validationPatterns,
 } from "@truelend/reference";
-
-const productSlugs = products.map((p) => p.slug) as [string, ...string[]];
 
 /* Detailed loan-application fields. Amounts are rupee strings here (digits
  * only) and become integer paise at the server boundary via rupeesToPaise. */
 const rupeeAmount = (label: string) =>
-  z
-    .string()
-    .trim()
-    .regex(/^\d{1,10}$/, `Enter ${label} in rupees (digits only)`);
+  z.string().trim().regex(validationPatterns.rupeeAmount, `Enter ${label} in rupees (digits only)`);
 const rupeeAmountOptional = z
   .string()
   .trim()
-  .regex(/^\d{1,10}$/, "Enter the amount in rupees (digits only)")
+  .regex(validationPatterns.rupeeAmount, validationMessages.rupeeAmount)
   .or(z.literal(""))
   .optional();
 const smallIntOptional = z
   .string()
   .trim()
-  .regex(/^\d{1,3}$/, "Numbers only")
+  .regex(validationPatterns.smallInteger, validationMessages.smallInteger)
   .or(z.literal(""))
   .optional();
-const pincode = z
-  .string()
-  .trim()
-  .regex(/^\d{6}$/, "Enter a 6-digit PIN code");
+const pincode = z.string().trim().regex(validationPatterns.pincode, validationMessages.pincode);
 
 // Required core on the self-application enquiry. Enums accept "" as input (the
 // select's placeholder) but a refine rejects it, so the empty default still
@@ -67,8 +62,8 @@ const loanAllOptional = {
 const phone = z
   .string()
   .trim()
-  .transform((s) => s.replace(/[\s-]/g, ""))
-  .pipe(z.string().regex(/^[6-9]\d{9}$/, "Enter a valid 10-digit mobile number"));
+  .transform(normalizeIndianMobile)
+  .pipe(z.string().regex(validationPatterns.indianMobile, validationMessages.indianMobile));
 
 const optionalEmail = z.email("Enter a valid email address").max(254).or(z.literal("")).optional();
 

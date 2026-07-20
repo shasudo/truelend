@@ -8,8 +8,6 @@ export const metadata: Metadata = {
   alternates: { canonical: "/privacy" },
 };
 
-// PLACEHOLDER legal copy — must be replaced by counsel-approved text before
-// campaigns run.
 export default function PrivacyPage() {
   return (
     <>

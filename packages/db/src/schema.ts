@@ -13,6 +13,17 @@ import {
   check,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
+import {
+  employmentTypeValues,
+  leadKindValues,
+  leadStatusValues,
+  loanCaseStatusValues,
+  partnerDocumentTypeValues,
+  partnerStatusValues,
+  partnerTypeValues,
+  payoutKindValues,
+  residenceTypeValues,
+} from "@truelend/reference";
 
 /* ------------------------------------------------------------------ */
 /* Auth — table shapes owned by better-auth (admin plugin included).  */
@@ -103,26 +114,10 @@ export const verification = pgTable(
   (t) => [index("verification_identifier_idx").on(t.identifier)],
 );
 
-export const leadKind = pgEnum("lead_kind", ["enquiry", "referral", "contact", "cibil_notify"]);
-
-export const leadStatus = pgEnum("lead_status", [
-  "new",
-  "contacted",
-  "qualified",
-  "docs_collected",
-  "logged_in",
-  "approved",
-  "declined",
-  "disbursed",
-  "lost",
-]);
-
-export const employmentType = pgEnum("employment_type", [
-  "salaried",
-  "self_employed_professional",
-  "self_employed_business",
-]);
-export const residenceType = pgEnum("residence_type", ["owned", "rented", "family", "company"]);
+export const leadKind = pgEnum("lead_kind", leadKindValues);
+export const leadStatus = pgEnum("lead_status", leadStatusValues);
+export const employmentType = pgEnum("employment_type", employmentTypeValues);
+export const residenceType = pgEnum("residence_type", residenceTypeValues);
 
 /*
  * Columns are nullable by design — per-kind requiredness (e.g. cibil_notify
@@ -237,12 +232,7 @@ export const leadNotes = pgTable(
 /* SQL-aggregable; JS-number-safe to ~₹90 trillion.                   */
 /* ------------------------------------------------------------------ */
 
-export const loanCaseStatus = pgEnum("loan_case_status", [
-  "logged_in",
-  "approved",
-  "declined",
-  "disbursed",
-]);
+export const loanCaseStatus = pgEnum("loan_case_status", loanCaseStatusValues);
 
 export const loanCases = pgTable(
   "loan_cases",
@@ -252,7 +242,7 @@ export const loanCases = pgTable(
       .notNull()
       .references(() => leads.id, { onDelete: "cascade" }),
 
-    // slugs match the website's content data (content/banks.ts, content/products.ts)
+    // Slugs are the canonical @truelend/reference product and lender identifiers.
     lenderSlug: text("lender_slug").notNull(),
     productSlug: text("product_slug").notNull(),
 
@@ -300,16 +290,10 @@ export const loanCases = pgTable(
   ],
 );
 
-export const partnerType = pgEnum("partner_type", ["business", "referral"]);
-export const partnerStatus = pgEnum("partner_status", ["pending", "verified", "rejected"]);
-export const partnerDocType = pgEnum("partner_doc_type", [
-  "pan",
-  "aadhaar",
-  "photo",
-  "cheque",
-  "gst",
-]);
-export const payoutKind = pgEnum("payout_kind", ["earned", "paid"]);
+export const partnerType = pgEnum("partner_type", partnerTypeValues);
+export const partnerStatus = pgEnum("partner_status", partnerStatusValues);
+export const partnerDocType = pgEnum("partner_doc_type", partnerDocumentTypeValues);
+export const payoutKind = pgEnum("payout_kind", payoutKindValues);
 
 // 1:1 with a better-auth user (user_id is the PK). The user's `role` column
 // mirrors `type` (business|referral) for auth; this row holds partner data.

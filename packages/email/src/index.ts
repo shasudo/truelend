@@ -1,8 +1,8 @@
 /*
  * Transactional email via Resend's HTTP API — no SDK, just fetch (Workers-clean).
- * Env-gated: with no RESEND_API_KEY, sends are skipped (so dev/preview work
- * without keys, exactly like Turnstile). Call sites fire-and-forget through
- * ctx.waitUntil so email never blocks or breaks the user's action.
+ * Env-gated: with no RESEND_API_KEY, sends are skipped so local development can
+ * run without a provider. Callers choose whether delivery is background work or
+ * a required part of the flow; password-reset callers fail closed in production.
  */
 
 interface EmailEnv {
@@ -22,19 +22,24 @@ interface SendEmailOptions {
 }
 
 type SendResult = { ok: true; skipped?: boolean } | { ok: false; error: string };
+type EmailContext = "bulk_lead" | "new_lead" | "partner_decision" | "password_reset";
 
 // Callers fire-and-forget through ctx.waitUntil, so a failed SendResult is
 // never read. Log at the send boundary so failures/skips still surface in
 // Worker logs instead of vanishing.
-// ponytail: logging only. Queue + retry + alerting is the real fix once email
-// delivery becomes load-bearing (password resets, partner decisions).
+// ponytail: delivery failures are log-only; add queueing, retries, and alerting
+// before activation, reset, or decision email is approved for live operations.
 function logSkip(context: string): SendResult {
   console.warn(JSON.stringify({ event: "email_skipped", context, reason: "not_configured" }));
   return { ok: true, skipped: true };
 }
 
-async function sendEmail(apiKey: string | undefined, opts: SendEmailOptions): Promise<SendResult> {
-  if (!apiKey) return logSkip(`"${opts.subject}" (RESEND_API_KEY unset)`);
+async function sendEmail(
+  apiKey: string | undefined,
+  context: EmailContext,
+  opts: SendEmailOptions,
+): Promise<SendResult> {
+  if (!apiKey) return logSkip(`${context} (RESEND_API_KEY unset)`);
   try {
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
@@ -49,16 +54,15 @@ async function sendEmail(apiKey: string | undefined, opts: SendEmailOptions): Pr
       signal: AbortSignal.timeout(10_000),
     });
     if (!res.ok) {
-      const detail = (await res.text()).slice(0, 1_000);
-      const error = `Resend ${res.status}: ${detail}`;
-      console.error(JSON.stringify({ event: "email_send_failed", status: res.status, detail }));
+      const error = `Email provider rejected the request (${res.status})`;
+      console.error(JSON.stringify({ event: "email_send_failed", context, status: res.status }));
       return { ok: false, error };
     }
     return { ok: true };
-  } catch (err) {
-    const error = (err as Error).message;
-    console.error(JSON.stringify({ event: "email_send_error", error }));
-    return { ok: false, error };
+  } catch (cause) {
+    const diagnostic = (cause instanceof Error ? cause.message : "unknown").slice(0, 240);
+    console.error(JSON.stringify({ event: "email_send_error", context, error: diagnostic }));
+    return { ok: false, error: "Email provider request failed" };
   }
 }
 
@@ -133,7 +137,7 @@ export function notifyNewLead(env: EmailEnv, lead: NewLeadInfo): Promise<SendRes
       para("A new lead just came in. Details below.") +
       `<table style="width:100%;border-collapse:collapse;margin-top:4px;">${rows}</table>`,
   );
-  return sendEmail(env.RESEND_API_KEY, {
+  return sendEmail(env.RESEND_API_KEY, "new_lead", {
     from: env.EMAIL_FROM,
     to: env.TEAM_EMAIL,
     replyTo: lead.email ?? undefined,
@@ -155,7 +159,7 @@ export function notifyBulkLeadImport(
         `<strong>${esc(info.source)}</strong> imported <strong>${info.count}</strong> new ${info.count === 1 ? "lead" : "leads"}.`,
       ),
   );
-  return sendEmail(env.RESEND_API_KEY, {
+  return sendEmail(env.RESEND_API_KEY, "bulk_lead", {
     from: env.EMAIL_FROM,
     to: env.TEAM_EMAIL,
     subject: `Bulk lead import: ${info.count} ${info.count === 1 ? "lead" : "leads"}`,
@@ -193,7 +197,7 @@ export function notifyPartnerDecision(
             para("Please sign in, correct your details or documents, and resubmit.") +
             `<div style="margin-top:8px;">${button(info.loginUrl, "Update your application")}</div>`,
         );
-  return sendEmail(env.RESEND_API_KEY, {
+  return sendEmail(env.RESEND_API_KEY, "partner_decision", {
     from: env.EMAIL_FROM,
     to: info.to,
     subject:
@@ -223,7 +227,7 @@ export function sendPasswordReset(env: EmailEnv, info: PasswordResetInfo): Promi
       ) +
       `<div style="margin-top:8px;">${button(info.url, "Reset password")}</div>`,
   );
-  return sendEmail(env.RESEND_API_KEY, {
+  return sendEmail(env.RESEND_API_KEY, "password_reset", {
     from: env.EMAIL_FROM,
     to: info.to,
     subject: "Reset your TrueLend password",

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { verifyTurnstile } from "../src/index";
+import { verifyTurnstile } from "../src/server";
 
 const base = {
   token: "token",
@@ -14,16 +14,16 @@ function siteverify(body: object, ok = true): typeof fetch {
   return async () => Response.json(body, { status: ok ? 200 : 503 });
 }
 
-test("production fails closed when either Turnstile key is missing", async () => {
+void test("production fails closed when either Turnstile key is missing", async () => {
   assert.equal(await verifyTurnstile({ ...base, secret: undefined }), false);
   assert.equal(await verifyTurnstile({ ...base, siteKeyConfigured: false }), false);
 });
 
-test("local development can run without Turnstile credentials", async () => {
+void test("local development can run without Turnstile credentials", async () => {
   assert.equal(await verifyTurnstile({ ...base, secret: undefined, production: false }), true);
 });
 
-test("tokens must match both the form action and hostname", async () => {
+void test("tokens must match both the form action and hostname", async () => {
   assert.equal(
     await verifyTurnstile({
       ...base,
@@ -57,7 +57,7 @@ test("tokens must match both the form action and hostname", async () => {
   );
 });
 
-test("missing and invalid tokens are rejected", async () => {
+void test("missing and invalid tokens are rejected", async () => {
   assert.equal(await verifyTurnstile({ ...base, token: undefined }), false);
   assert.equal(
     await verifyTurnstile({

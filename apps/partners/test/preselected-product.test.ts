@@ -2,12 +2,12 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { preselectedProduct } from "../lib/preselected-product";
 
-test("a real product slug preselects the form", () => {
+void test("a real product slug preselects the form", () => {
   assert.equal(preselectedProduct("home-loan"), "home-loan");
   assert.equal(preselectedProduct("credit-cards"), "credit-cards");
 });
 
-test("anything not a known slug falls back to no selection", () => {
+void test("anything not a known slug falls back to no selection", () => {
   assert.equal(preselectedProduct(undefined), "");
   assert.equal(preselectedProduct(""), "");
   assert.equal(preselectedProduct("not-a-product"), "");

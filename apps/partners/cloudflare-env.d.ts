@@ -1,29 +1,25 @@
-// Types for the Cloudflare bindings declared in wrangler.jsonc.
-// Regenerate from wrangler.jsonc with: pnpm --filter @truelend/partners cf-typegen
-import type { Hyperdrive, Fetcher, R2Bucket, RateLimit } from "@cloudflare/workers-types";
-
-declare global {
-  interface CloudflareEnv {
-    ASSETS: Fetcher;
-    HYPERDRIVE: Hyperdrive;
-    BUCKET: R2Bucket;
-    AUTH_RATE_LIMITER: RateLimit;
-    REGISTRATION_RATE_LIMITER: RateLimit;
-    PARTNER_WRITE_RATE_LIMITER: RateLimit;
-    CSV_IMPORT_RATE_LIMITER: RateLimit;
-    BETTER_AUTH_URL: string;
-    TURNSTILE_SITE_KEY: string;
-    /** Secret — set via .dev.vars locally, `wrangler secret put` in prod. */
-    BETTER_AUTH_SECRET: string;
-    /** Optional only for local development; production registration fails closed without it. */
-    TURNSTILE_SECRET_KEY?: string;
-    /** Protects /api/health/ready; set as a Worker secret. */
-    HEALTHCHECK_SECRET?: string;
-    // Email (Resend) — see @truelend/email. Missing key = no-op.
-    RESEND_API_KEY?: string;
-    EMAIL_FROM?: string;
-    TEAM_EMAIL?: string;
-  }
+/* eslint-disable */
+// Generated from wrangler.jsonc by scripts/check-cloudflare-types.mjs. Do not edit.
+interface __BaseEnv_CloudflareEnv {
+	BUCKET: R2Bucket;
+	HYPERDRIVE: Hyperdrive;
+	AUTH_RATE_LIMITER: RateLimit;
+	REGISTRATION_RATE_LIMITER: RateLimit;
+	PARTNER_WRITE_RATE_LIMITER: RateLimit;
+	CSV_IMPORT_RATE_LIMITER: RateLimit;
+	ASSETS: Fetcher;
+	BETTER_AUTH_URL: "https://partner.truelend.in";
+	TURNSTILE_SITE_KEY: "0x4AAAAAAD0gmfEKR5XdzhJR";
+	EMAIL_FROM: "TrueLend <hello@truelend.in>";
+	TEAM_EMAIL: "shathwik@icloud.com";
 }
-
-export {};
+declare namespace Cloudflare {
+	interface Env extends __BaseEnv_CloudflareEnv {}
+}
+interface CloudflareEnv extends Cloudflare.Env {}
+type StringifyValues<EnvType extends Record<string, unknown>> = {
+	[Binding in keyof EnvType]: EnvType[Binding] extends string ? EnvType[Binding] : string;
+};
+declare namespace NodeJS {
+	interface ProcessEnv extends StringifyValues<Pick<Cloudflare.Env, "BETTER_AUTH_URL" | "TURNSTILE_SITE_KEY" | "EMAIL_FROM" | "TEAM_EMAIL">> {}
+}

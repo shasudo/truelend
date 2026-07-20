@@ -9,7 +9,7 @@ import {
   type AdminAuth,
   type AdminSession,
   type CreateAuthOptions,
-} from "@truelend/auth";
+} from "@truelend/auth/server";
 import { sendPasswordReset } from "@truelend/email";
 
 export function authOptions(env: CloudflareEnv): CreateAuthOptions {
@@ -21,8 +21,8 @@ export function authOptions(env: CloudflareEnv): CreateAuthOptions {
       if (result.ok && !result.skipped) return;
       // Email was skipped because no provider is configured (local dev). Surface
       // the reset/activation link on the server console so staff creation and
-      // resets are testable without email. Production has RESEND_API_KEY, so a
-      // skip there is a real failure and must fail closed — never mint a staff
+      // resets are testable without email. In production a skip is a real
+      // failure and must fail closed — never mint a staff
       // account that can't be activated.
       if (result.ok && result.skipped && new URL(env.BETTER_AUTH_URL).hostname === "localhost") {
         console.warn(`[dev] password reset link for ${user.email}: ${url}`);
@@ -46,8 +46,8 @@ interface AuthContext {
  * ctx.waitUntil(db.$client.end()); RSC reads through this cached context
  * don't — layout and page share the client, so there is no single safe
  * owner.
- * ponytail: RSC reads skip end(); Hyperdrive reclaims idle connections —
- * revisit only if Neon connection counts climb.
+ * ponytail: RSC reads skip end(); Hyperdrive reclaims idle connections.
+ * Revisit if connection utilization exceeds 80% or readiness detects exhaustion.
  */
 export const getAuthContext = cache((): AuthContext => {
   const { env, ctx } = getCloudflareContext();
@@ -79,7 +79,7 @@ async function requireSession(): Promise<AdminSession> {
  * account) are bounced to /login — the login page never auto-forwards, so this
  * is a hard denial, not a loop.
  * ponytail: bounce-to-login leaves the partner's admin-domain session live but
- * useless. Clear it on rejection if the half-signed-in state confuses anyone.
+ * useless. Clear it on rejection if support records this half-signed-in state.
  */
 export async function requireStaff(): Promise<AdminSession> {
   const session = await requireSession();

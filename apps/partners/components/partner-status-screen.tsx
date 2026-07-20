@@ -1,24 +1,24 @@
 import { Clock, XCircle, Send, CheckCircle2 } from "lucide-react";
 import { Card, Container, Logo, SubmitButton } from "@truelend/ui";
-import { partnerTypeLabels } from "@truelend/reference";
-import type { Partner, PartnerDocument } from "@truelend/db";
+import { evaluatePartnerApplication, partnerTypeLabel } from "@truelend/reference";
+import type { Partner } from "@truelend/db";
 import { KycDetailsForm } from "@/components/kyc-details-form";
 import { KycUpload } from "@/components/kyc-upload";
 import { SignOutButton } from "@/components/sign-out-button";
-import { isApplicationComplete } from "@/lib/onboarding";
+import { toKycFormValues } from "@/lib/kyc-form-values";
 import { submitForReview } from "@/lib/kyc-actions";
 
 export function PartnerStatusScreen({
   partner,
   name,
-  documents,
+  documentTypes,
 }: {
   partner: Partner;
   name: string;
-  documents: PartnerDocument[];
+  documentTypes: string[];
 }) {
   const rejected = partner.status === "rejected";
-  const complete = isApplicationComplete(partner, new Set(documents.map((d) => d.docType)));
+  const complete = evaluatePartnerApplication(partner, new Set(documentTypes)).isComplete;
   return (
     <div className="min-h-screen">
       <header className="border-b border-hairline bg-white">
@@ -44,7 +44,7 @@ export function PartnerStatusScreen({
               </h1>
               <p className="mt-1 text-sm leading-relaxed text-navy-600">
                 Hi {name.split(" ")[0]} — you registered as a{" "}
-                <strong>{partnerTypeLabels[partner.type]}</strong>.{" "}
+                <strong>{partnerTypeLabel(partner.type)}</strong>.{" "}
                 {rejected
                   ? "Please review the note below, correct your documents, and they'll be re-checked."
                   : "Upload your documents below; our team verifies partners within one working day."}
@@ -66,7 +66,7 @@ export function PartnerStatusScreen({
             PAN, address and bank details — so we can verify you and pay you.
           </p>
           <Card className="p-6">
-            <KycDetailsForm partner={partner} />
+            <KycDetailsForm values={toKycFormValues(partner)} />
           </Card>
         </div>
 
@@ -75,7 +75,7 @@ export function PartnerStatusScreen({
             <span className="mr-2 text-red-600">2.</span>Your documents
           </h2>
           <p className="mb-4 mt-1 text-sm text-navy-500">Upload proof for the details above.</p>
-          <KycUpload documents={documents} />
+          <KycUpload uploadedDocumentTypes={documentTypes} />
         </div>
 
         <div className="mt-8">

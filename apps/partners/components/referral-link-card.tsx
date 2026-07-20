@@ -3,10 +3,9 @@
 import { useEffect, useState } from "react";
 import { Check, Copy, MessageCircle, Share2 } from "lucide-react";
 import { Card } from "@truelend/ui";
+import { appUrls } from "@truelend/reference";
 
-// Canonical public site (mirrors apps/website/content/site.ts). Partners share
-// the production link regardless of which environment they view the dashboard in.
-const REFERRAL_BASE = "https://truelend.in/enquiry";
+const REFERRAL_BASE = `${appUrls.website}/enquiry`;
 
 export function ReferralLinkCard({ referenceId }: { referenceId: string }) {
   const link = `${REFERRAL_BASE}?ref=${referenceId}`;

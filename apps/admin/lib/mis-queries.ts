@@ -1,14 +1,14 @@
 import "server-only";
 import type { Database } from "@truelend/db";
-import { products } from "@truelend/reference";
+import { channelForKind, normalizeSafeInteger, products } from "@truelend/reference";
 
 // These aggregates are gnarly (FILTER clauses, date_trunc, cross-table joins),
 // so they use the raw postgres.js client (db.$client) rather than the query
-// builder. Counts are cast ::int (→ number); paise sums come back as numeric
-// strings and are coerced with Number() (safe well past ₹90 trillion).
+// builder. Counts are cast ::int; paise sums arrive as numeric strings and are
+// rejected if an aggregate exceeds JavaScript's safe integer range.
 
 type Row = Record<string, unknown>;
-const num = (v: unknown) => Number(v ?? 0);
+const num = (value: unknown) => normalizeSafeInteger(value, "MIS aggregate");
 
 interface OverviewStats {
   totalLeads: number;
@@ -73,18 +73,17 @@ export async function getLeadsByProduct(db: Database): Promise<NamedCount[]> {
 
 export async function getLeadsByChannel(db: Database): Promise<NamedCount[]> {
   const rows = (await db.$client`
-    select
-      case
-        when le.partner_id is not null and pt.type = 'business' then 'Business Partner'
-        when le.partner_id is not null and pt.type = 'referral' then 'Referral Partner'
-        when le.kind = 'referral' then 'Website · Referral'
-        else 'Website · Direct'
-      end as channel,
-      count(*)::int as n
+    select le.kind, pt.type as partner_type, count(*)::int as n
     from leads le left join partners pt on pt.user_id = le.partner_id
-    group by 1
+    group by le.kind, pt.type
   `) as Row[];
-  return rows.map((r) => ({ name: String(r.channel), count: num(r.n) }));
+  const counts = new Map<string, number>();
+  for (const row of rows) {
+    const partnerType = typeof row.partner_type === "string" ? row.partner_type : null;
+    const channel = channelForKind(String(row.kind), partnerType);
+    counts.set(channel, (counts.get(channel) ?? 0) + num(row.n));
+  }
+  return [...counts].map(([name, count]) => ({ name, count }));
 }
 
 export interface MisRow {

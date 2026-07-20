@@ -3,18 +3,18 @@
 import { useActionState } from "react";
 import { Button, Checkbox, Field, Input, Textarea } from "@truelend/ui";
 import { partnerProductOptions, paiseToRupeesInput } from "@truelend/reference";
-import type { Partner } from "@truelend/db";
 import { savePartnerKyc, type KycState } from "@/lib/kyc-actions";
+import type { KycFormValues } from "@/lib/kyc-form-values";
 
 export function KycDetailsForm({
-  partner,
+  values,
   editable = true,
 }: {
-  partner: Partner;
+  values: KycFormValues;
   editable?: boolean;
 }) {
   const [state, action, pending] = useActionState<KycState, FormData>(savePartnerKyc, {});
-  const business = partner.type === "business";
+  const business = values.type === "business";
 
   return (
     <form action={action} className="space-y-5">
@@ -22,7 +22,7 @@ export function KycDetailsForm({
           when KYC is locked (under review / verified). */}
       <fieldset disabled={!editable} className="space-y-8">
         {/* type is immutable — the server re-checks it against the DB row. */}
-        <input type="hidden" name="type" value={partner.type} />
+        <input type="hidden" name="type" value={values.type} />
 
         <div className="space-y-5">
           <div className="grid gap-5 sm:grid-cols-2">
@@ -30,7 +30,7 @@ export function KycDetailsForm({
               <Input
                 id="pan"
                 name="pan"
-                defaultValue={partner.pan ?? ""}
+                defaultValue={values.pan ?? ""}
                 placeholder="ABCDE1234F"
                 autoCapitalize="characters"
                 maxLength={10}
@@ -43,7 +43,7 @@ export function KycDetailsForm({
                 <Input
                   id="gst"
                   name="gst"
-                  defaultValue={partner.gst ?? ""}
+                  defaultValue={values.gst ?? ""}
                   placeholder="22ABCDE1234F1Z5"
                   autoCapitalize="characters"
                   maxLength={15}
@@ -59,7 +59,7 @@ export function KycDetailsForm({
                   type="tel"
                   inputMode="numeric"
                   placeholder="10-digit mobile"
-                  defaultValue={partner.alternatePhone ?? ""}
+                  defaultValue={values.alternatePhone ?? ""}
                 />
               </Field>
             )}
@@ -79,7 +79,7 @@ export function KycDetailsForm({
                     <Checkbox
                       name="productsHandled"
                       value={product}
-                      defaultChecked={partner.productsHandled?.includes(product) ?? false}
+                      defaultChecked={values.productsHandled?.includes(product) ?? false}
                     />
                     {product}
                   </label>
@@ -99,7 +99,7 @@ export function KycDetailsForm({
                   inputMode="numeric"
                   min={0}
                   max={99}
-                  defaultValue={partner.yearsExperience ?? ""}
+                  defaultValue={values.yearsExperience ?? ""}
                   required
                 />
               </Field>
@@ -113,7 +113,7 @@ export function KycDetailsForm({
                     name="monthlyVolumeLoans"
                     inputMode="numeric"
                     placeholder="0"
-                    defaultValue={paiseToRupeesInput(partner.monthlyVolumeLoansPaise)}
+                    defaultValue={paiseToRupeesInput(values.monthlyVolumeLoansPaise)}
                     required
                   />
                 </Field>
@@ -123,7 +123,7 @@ export function KycDetailsForm({
                     name="monthlyVolumeInsurance"
                     inputMode="numeric"
                     placeholder="0"
-                    defaultValue={paiseToRupeesInput(partner.monthlyVolumeInsurancePaise)}
+                    defaultValue={paiseToRupeesInput(values.monthlyVolumeInsurancePaise)}
                     required
                   />
                 </Field>
@@ -133,7 +133,7 @@ export function KycDetailsForm({
                     name="monthlyVolumeMutualFunds"
                     inputMode="numeric"
                     placeholder="0"
-                    defaultValue={paiseToRupeesInput(partner.monthlyVolumeMutualFundsPaise)}
+                    defaultValue={paiseToRupeesInput(values.monthlyVolumeMutualFundsPaise)}
                     required
                   />
                 </Field>
@@ -148,7 +148,7 @@ export function KycDetailsForm({
                 <Input
                   id="occupation"
                   name="occupation"
-                  defaultValue={partner.occupation ?? ""}
+                  defaultValue={values.occupation ?? ""}
                   maxLength={120}
                   required
                 />
@@ -157,7 +157,7 @@ export function KycDetailsForm({
                 <Input
                   id="designation"
                   name="designation"
-                  defaultValue={partner.designation ?? ""}
+                  defaultValue={values.designation ?? ""}
                   maxLength={120}
                   required
                 />
@@ -167,7 +167,7 @@ export function KycDetailsForm({
               <Textarea
                 id="experienceNote"
                 name="experienceNote"
-                defaultValue={partner.experienceNote ?? ""}
+                defaultValue={values.experienceNote ?? ""}
                 className="min-h-16"
                 maxLength={500}
               />
@@ -180,7 +180,7 @@ export function KycDetailsForm({
             <Textarea
               id="address"
               name="address"
-              defaultValue={partner.address ?? ""}
+              defaultValue={values.address ?? ""}
               placeholder="House / office, street, city, state, PIN"
               className="min-h-20"
               maxLength={500}
@@ -192,7 +192,7 @@ export function KycDetailsForm({
               <Textarea
                 id="residenceAddress"
                 name="residenceAddress"
-                defaultValue={partner.residenceAddress ?? ""}
+                defaultValue={values.residenceAddress ?? ""}
                 placeholder="House, street, city, state, PIN"
                 className="min-h-20"
                 maxLength={500}
@@ -211,7 +211,7 @@ export function KycDetailsForm({
               <Input
                 id="bankName"
                 name="bankName"
-                defaultValue={partner.bankName ?? ""}
+                defaultValue={values.bankName ?? ""}
                 maxLength={120}
                 required
               />
@@ -220,7 +220,7 @@ export function KycDetailsForm({
               <Input
                 id="accountHolder"
                 name="accountHolder"
-                defaultValue={partner.accountHolder ?? ""}
+                defaultValue={values.accountHolder ?? ""}
                 maxLength={160}
                 required
               />
@@ -232,7 +232,7 @@ export function KycDetailsForm({
                 inputMode="numeric"
                 minLength={9}
                 maxLength={18}
-                defaultValue={partner.accountNumber ?? ""}
+                defaultValue={values.accountNumber ?? ""}
                 required
               />
             </Field>
@@ -240,7 +240,7 @@ export function KycDetailsForm({
               <Input
                 id="bankBranch"
                 name="bankBranch"
-                defaultValue={partner.bankBranch ?? ""}
+                defaultValue={values.bankBranch ?? ""}
                 maxLength={120}
                 required
               />
@@ -249,7 +249,7 @@ export function KycDetailsForm({
               <Input
                 id="ifsc"
                 name="ifsc"
-                defaultValue={partner.ifsc ?? ""}
+                defaultValue={values.ifsc ?? ""}
                 placeholder="HDFC0001234"
                 autoCapitalize="characters"
                 maxLength={11}
@@ -267,7 +267,7 @@ export function KycDetailsForm({
               <Input
                 id="nomineeName"
                 name="nomineeName"
-                defaultValue={partner.nomineeName ?? ""}
+                defaultValue={values.nomineeName ?? ""}
                 maxLength={160}
                 required
               />
@@ -279,7 +279,7 @@ export function KycDetailsForm({
                 inputMode="numeric"
                 placeholder="12-digit Aadhaar"
                 maxLength={12}
-                defaultValue={partner.nomineeAadhaar ?? ""}
+                defaultValue={values.nomineeAadhaar ?? ""}
                 required
               />
             </Field>
@@ -290,7 +290,7 @@ export function KycDetailsForm({
                 type="tel"
                 inputMode="numeric"
                 placeholder="10-digit mobile"
-                defaultValue={partner.nomineePhone ?? ""}
+                defaultValue={values.nomineePhone ?? ""}
                 required
               />
             </Field>

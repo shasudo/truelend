@@ -7,26 +7,28 @@ import Papa from "papaparse";
 import { z } from "zod";
 import { schema, type NewLead } from "@truelend/db";
 import {
-  products,
+  customerConsentVersion,
+  productSlugs,
   productName,
-  partnerTypeLabels,
+  partnerTypeLabel,
   rupeesToPaise,
   employmentTypeValues,
   residenceTypeValues,
+  normalizeIndianMobile,
+  validationMessages,
+  validationPatterns,
 } from "@truelend/reference";
 import { notifyBulkLeadImport, notifyNewLead } from "@truelend/email";
 import { getAuthContext } from "./auth";
 
-const productSlugs = products.map((p) => p.slug) as [string, ...string[]];
-const CONSENT_VERSION = "2026-07-13";
 const MAX_CSV_ROWS = 1_000;
 const MAX_ROW_ERRORS = 50;
 
 const phone = z
   .string()
   .trim()
-  .transform((s) => s.replace(/[\s-]/g, ""))
-  .pipe(z.string().regex(/^[6-9]\d{9}$/, "Enter a valid 10-digit mobile number"));
+  .transform(normalizeIndianMobile)
+  .pipe(z.string().regex(validationPatterns.indianMobile, validationMessages.indianMobile));
 
 const blank = (v: string | undefined) => (v && v.length > 0 ? v : null);
 const intOrNull = (v: string | undefined) => {
@@ -40,13 +42,13 @@ const intOrNull = (v: string | undefined) => {
 const rupeeAmountOptional = z
   .string()
   .trim()
-  .regex(/^\d{1,10}$/, "Enter the amount in rupees (digits only)")
+  .regex(validationPatterns.rupeeAmount, validationMessages.rupeeAmount)
   .or(z.literal(""))
   .optional();
 const smallIntOptional = z
   .string()
   .trim()
-  .regex(/^\d{1,3}$/, "Numbers only")
+  .regex(validationPatterns.smallInteger, validationMessages.smallInteger)
   .or(z.literal(""))
   .optional();
 const loanApplicationFields = {
@@ -56,7 +58,7 @@ const loanApplicationFields = {
   pincode: z
     .string()
     .trim()
-    .regex(/^\d{6}$/, "Enter a 6-digit PIN code")
+    .regex(validationPatterns.pincode, validationMessages.pincode)
     .or(z.literal(""))
     .optional(),
   residenceType: z.enum(residenceTypeValues).or(z.literal("")).optional(),
@@ -88,7 +90,7 @@ async function verifiedPartner() {
 }
 
 const partnerSource = (p: { type: string; businessName: string | null }) =>
-  `${partnerTypeLabels[p.type]}${p.businessName ? `: ${p.businessName}` : ""}`;
+  `${partnerTypeLabel(p.type)}${p.businessName ? `: ${p.businessName}` : ""}`;
 
 const leadSchema = z.object({
   name: z.string().trim().min(2, "Name is required").max(120),
@@ -124,7 +126,7 @@ export async function submitLead(_prev: LeadState, formData: FormData): Promise<
           consent: true,
           consentAt,
           consentSource: "partner_form",
-          consentVersion: CONSENT_VERSION,
+          consentVersion: customerConsentVersion,
           name: d.name,
           phone: d.phone,
           email: blank(d.email),
@@ -150,7 +152,7 @@ export async function submitLead(_prev: LeadState, formData: FormData): Promise<
         action: "lead.create",
         entityType: "lead",
         entityId: lead?.id,
-        after: { source: "partner_form", consentVersion: CONSENT_VERSION },
+        after: { source: "partner_form", consentVersion: customerConsentVersion },
       });
     });
     ctx.waitUntil(
@@ -234,7 +236,7 @@ export async function submitLeadsCsv(_prev: CsvState, formData: FormData): Promi
         consent: true,
         consentAt,
         consentSource: "partner_csv",
-        consentVersion: CONSENT_VERSION,
+        consentVersion: customerConsentVersion,
         name: data.name,
         phone: data.phone,
         email: blank(data.email),
@@ -261,7 +263,7 @@ export async function submitLeadsCsv(_prev: CsvState, formData: FormData): Promi
           source: "partner_csv",
           inserted: values.length,
           rejected: errorCount,
-          consentVersion: CONSENT_VERSION,
+          consentVersion: customerConsentVersion,
         },
       });
     });

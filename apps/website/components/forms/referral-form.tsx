@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button, Checkbox, Field, Input, Select } from "@truelend/ui";
 import { products, employmentTypes, loanTenures } from "@truelend/reference";
-import { referralSchema } from "@/lib/schemas";
+import { referralSchema } from "@/lib/lead-schemas";
 import {
   FormSuccess,
   NoScriptFallback,

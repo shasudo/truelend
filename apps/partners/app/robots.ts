@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { appUrls } from "@truelend/reference";
 
 export default function robots(): MetadataRoute.Robots {
   return {
@@ -17,6 +18,6 @@ export default function robots(): MetadataRoute.Robots {
         "/api",
       ],
     },
-    sitemap: "https://partner.truelend.in/sitemap.xml",
+    sitemap: `${appUrls.partners}/sitemap.xml`,
   };
 }

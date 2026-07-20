@@ -10,7 +10,7 @@ import {
   type CreateAuthOptions,
   type PartnerAuth,
   type PartnerSession,
-} from "@truelend/auth";
+} from "@truelend/auth/server";
 import { sendPasswordReset } from "@truelend/email";
 
 export function authOptions(env: CloudflareEnv): CreateAuthOptions {
@@ -22,8 +22,7 @@ export function authOptions(env: CloudflareEnv): CreateAuthOptions {
       const result = await sendPasswordReset(env, { to: user.email, name: user.name, url });
       if (result.ok && !result.skipped) return;
       // No email provider configured (local dev): log the reset link so the flow
-      // is testable. Production has RESEND_API_KEY, so a skip is a real failure
-      // and must fail closed.
+      // is testable. In production a skip is a real failure and must fail closed.
       if (result.ok && result.skipped && new URL(env.BETTER_AUTH_URL).hostname === "localhost") {
         console.warn(`[dev] password reset link for ${user.email}: ${url}`);
         return;
@@ -40,9 +39,11 @@ interface AuthContext {
   env: CloudflareEnv;
 }
 
-// One db + auth per request (React.cache-shared across layout/pages). Signup is
-// enabled here — partners self-register. See apps/admin/lib/auth.ts for the
-// connection-hygiene rationale (RSC reads don't close; actions/routes do).
+// One db + auth per request, React.cache-shared across layout and pages. RSC
+// reads have no single connection owner; actions and routes close clients with
+// ctx.waitUntil.
+// ponytail: Hyperdrive reclaims the cached RSC client's idle session. Revisit if
+// connection utilization exceeds 80% or readiness detects exhaustion.
 export const getAuthContext = cache((): AuthContext => {
   const { env, ctx } = getCloudflareContext();
   const db = createDb(env.HYPERDRIVE.connectionString);
@@ -55,12 +56,12 @@ async function getSession(): Promise<PartnerSession | null> {
   return auth.api.getSession({ headers: await headers() });
 }
 
-interface PartnerContext {
+interface PartnerSessionContext {
   session: PartnerSession;
   partner: Partner | null;
 }
 
-export async function requirePartner(): Promise<PartnerContext> {
+export const requirePartnerSession = cache(async (): Promise<PartnerSessionContext> => {
   const { db } = getAuthContext();
   const session = await getSession();
   if (!session) redirect("/login");
@@ -70,6 +71,12 @@ export async function requirePartner(): Promise<PartnerContext> {
     .where(eq(schema.partners.userId, session.user.id))
     .limit(1);
   return { session, partner: rows[0] ?? null };
+});
+
+export async function requirePartner(): Promise<{ session: PartnerSession; partner: Partner }> {
+  const context = await requirePartnerSession();
+  if (!context.partner) redirect("/#partner-types");
+  return { session: context.session, partner: context.partner };
 }
 
 export async function requirePartnerApi(): Promise<

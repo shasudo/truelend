@@ -66,10 +66,14 @@ export function Field({ label, htmlFor, required, error, children, className }: 
   const errorId = error && htmlFor ? `${htmlFor}-error` : undefined;
   const control =
     errorId && isValidElement(children)
-      ? cloneElement(
-          children as ReactElement<{ "aria-describedby"?: string; "aria-invalid"?: boolean }>,
-          { "aria-describedby": errorId, "aria-invalid": true },
-        )
+      ? (() => {
+          const child = children as ReactElement<{
+            "aria-describedby"?: string;
+            "aria-invalid"?: boolean;
+          }>;
+          const describedBy = [child.props["aria-describedby"], errorId].filter(Boolean).join(" ");
+          return cloneElement(child, { "aria-describedby": describedBy, "aria-invalid": true });
+        })()
       : children;
 
   return (

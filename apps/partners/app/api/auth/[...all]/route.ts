@@ -4,7 +4,7 @@ import {
   allowSensitiveAuthRequest,
   createPartnerAuth,
   isPartnerAuthEndpointAllowed,
-} from "@truelend/auth";
+} from "@truelend/auth/server";
 import { authOptions } from "@/lib/auth";
 
 // Per-request auth instance; signup enabled (partners self-register). Shared

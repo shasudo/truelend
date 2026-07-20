@@ -7,7 +7,7 @@ import { z } from "zod";
 import { schema, type Database } from "@truelend/db";
 import { notifyPartnerDecision } from "@truelend/email";
 import { getAuthContext, getMutationContext } from "./auth";
-import { formatPaise, partnerDocTypes, rupeesToPaise } from "@truelend/reference";
+import { evaluatePartnerApplication, formatPaise, rupeesToPaise } from "@truelend/reference";
 
 export type PayoutResult = { ok?: boolean; error?: string };
 
@@ -35,10 +35,6 @@ async function partnerContact(db: Database, partnerId: string) {
 }
 
 const idSchema = z.object({ partnerId: z.string().min(1) });
-type DocType = (typeof schema.partnerDocType.enumValues)[number];
-const requiredDocTypes = partnerDocTypes
-  .filter((doc) => doc.required)
-  .map((doc) => doc.type) as DocType[];
 
 export async function approvePartnerAction(formData: FormData) {
   const { db, ctx, env, isAdmin, adminId, adminEmail } = await admin();
@@ -53,22 +49,13 @@ export async function approvePartnerAction(formData: FormData) {
         .where(eq(schema.partners.userId, parsed.data.partnerId))
         .limit(1)
         .for("update");
-      if (!partner || partner.status === "verified" || !partner.submittedAt) return false;
+      if (!partner) return false;
       const docs = await tx
         .select({ docType: schema.partnerDocuments.docType })
         .from(schema.partnerDocuments)
         .where(eq(schema.partnerDocuments.partnerId, parsed.data.partnerId));
       const uploaded = new Set(docs.map((doc) => doc.docType));
-      const detailsComplete = Boolean(
-        partner.pan &&
-        partner.address &&
-        partner.accountHolder &&
-        partner.accountNumber &&
-        partner.ifsc,
-      );
-      if (!detailsComplete || !requiredDocTypes.every((docType) => uploaded.has(docType))) {
-        return false;
-      }
+      if (!evaluatePartnerApplication(partner, uploaded).canApprove) return false;
       const now = new Date();
       await tx
         .update(schema.partners)
@@ -98,7 +85,7 @@ export async function approvePartnerAction(formData: FormData) {
           to: contact.email,
           name: contact.name,
           decision: "verified",
-          loginUrl: `${env.PARTNERS_URL ?? ""}/login`,
+          loginUrl: `${env.PARTNERS_URL}/login`,
         }),
       );
     }
@@ -195,7 +182,7 @@ export async function rejectPartnerAction(formData: FormData) {
           name: contact.name,
           decision: "rejected",
           reason,
-          loginUrl: `${env.PARTNERS_URL ?? ""}/login`,
+          loginUrl: `${env.PARTNERS_URL}/login`,
         }),
       );
     }

@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans, Inter } from "next/font/google";
+import { appUrls } from "@truelend/reference";
 import "./globals.css";
 
 const jakarta = Plus_Jakarta_Sans({
@@ -16,7 +17,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://partner.truelend.in"),
+  metadataBase: new URL(appUrls.partners),
   title: {
     default: "TrueLend Partners",
     template: "%s — TrueLend Partners",
@@ -28,7 +29,11 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" className={`${jakarta.variable} ${inter.variable}`}>
+    <html
+      lang="en"
+      className={`${jakarta.variable} ${inter.variable}`}
+      data-scroll-behavior="smooth"
+    >
       <body className="min-h-screen bg-paper font-sans text-navy-900 antialiased">{children}</body>
     </html>
   );

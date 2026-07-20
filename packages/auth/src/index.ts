@@ -7,7 +7,11 @@ import { schema, type Database } from "@truelend/db";
 export interface CreateAuthOptions {
   secret: string;
   baseURL: string;
-  /** Bootstrap/seed only — permits email signup. Production leaves this off. */
+  /**
+   * Enables Better Auth's internal email-signup method. Admin uses it only for
+   * controlled bootstrap; partner registration enables it behind registerPartner
+   * while the public raw signup route remains blocked.
+   */
   allowSignUp?: boolean;
   /**
    * Send the password-reset email. Passed in by the app (which owns the email
@@ -72,10 +76,9 @@ export async function allowSensitiveAuthRequest(
  *
  * Roles come from the admin plugin's plain-text `role` column: admin|employee
  * (internal staff), business|referral (partners set explicitly at registration).
- * The default below is deliberately a NON-staff role: the partner app has
- * signup enabled, so anyone hitting the raw /api/auth/sign-up/email endpoint
- * (bypassing registerPartner, which sets business|referral) lands on the
- * default — it must never be a staff role, or that path mints admin access.
+ * The default below is deliberately a NON-staff role. The partner host blocks
+ * the raw signup route, and registerPartner assigns business|referral; this
+ * default is defense-in-depth if that route boundary is accidentally exposed.
  */
 function baseAuthOptions(db: Database, opts: CreateAuthOptions) {
   return {
@@ -142,6 +145,8 @@ export function createAdminAuth(db: Database, opts: CreateAuthOptions) {
 
 export function createPartnerAuth(db: Database, opts: CreateAuthOptions) {
   return betterAuth({
+    // registerPartner calls Better Auth's signup method internally; the host
+    // route still rejects direct /api/auth/sign-up/email requests.
     ...baseAuthOptions(db, { ...opts, allowSignUp: true }),
     session: {
       expiresIn: 60 * 60 * 24 * 7,

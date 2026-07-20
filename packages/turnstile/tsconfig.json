@@ -1,4 +1,4 @@
 {
-  "extends": "../typescript-config/node.json",
+  "extends": "@truelend/typescript-config/node.json",
   "include": ["src", "test"]
 }

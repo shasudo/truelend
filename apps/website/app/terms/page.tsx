@@ -8,8 +8,6 @@ export const metadata: Metadata = {
   alternates: { canonical: "/terms" },
 };
 
-// PLACEHOLDER legal copy — must be replaced by counsel-approved text before
-// campaigns run.
 export default function TermsPage() {
   return (
     <>

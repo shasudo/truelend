@@ -1,5 +1,5 @@
 import type { ProductCategory, RateRow } from "@/content/types";
-import { banks } from "@/content/banks";
+import { bankForSlug } from "@truelend/reference";
 import type { RateTableRow } from "@truelend/ui";
 
 const rateRange = (r: RateRow) =>
@@ -7,7 +7,7 @@ const rateRange = (r: RateRow) =>
 
 export function toRateTableRows(rates: RateRow[]): RateTableRow[] {
   return rates.map((r) => {
-    const bank = banks.find((b) => b.slug === r.bankSlug);
+    const bank = bankForSlug(r.bankSlug);
     return {
       lender: bank?.name ?? r.bankSlug,
       kind: bank?.kind === "nbfc" ? "NBFC" : "Bank",

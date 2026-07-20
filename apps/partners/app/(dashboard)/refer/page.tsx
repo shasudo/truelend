@@ -14,7 +14,7 @@ export default async function ReferPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { partner } = await requirePartner();
-  if (partner?.type === "business") redirect("/leads");
+  if (partner.type === "business") redirect("/leads");
   const initialProduct = preselectedProduct((await searchParams).product);
 
   return (
@@ -26,7 +26,7 @@ export default async function ReferPage({
       />
 
       <div className="mt-6">
-        <ReferralLinkCard referenceId={partner!.referenceId} />
+        <ReferralLinkCard referenceId={partner.referenceId} />
       </div>
 
       <Card className="mt-4 p-6 sm:p-8">

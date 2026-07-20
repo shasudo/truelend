@@ -5,9 +5,17 @@ import { revalidatePath } from "next/cache";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { schema } from "@truelend/db";
-import { partnerProductOptions, rupeesToPaise } from "@truelend/reference";
+import {
+  evaluatePartnerApplication,
+  isKycEditable,
+  partnerTypeValues,
+  partnerProductOptions,
+  rupeesToPaise,
+  normalizeIndianMobile,
+  validationMessages,
+  validationPatterns,
+} from "@truelend/reference";
 import { getAuthContext } from "./auth";
-import { isApplicationComplete, kycEditable } from "./onboarding";
 
 const LOCKED_MSG =
   "Your KYC is locked while it's under review or after verification. Contact us to make changes.";
@@ -19,13 +27,13 @@ const upper = (s: string) => s.trim().toUpperCase();
 const phoneField = z
   .string()
   .trim()
-  .transform((s) => s.replace(/[\s-]/g, ""))
-  .pipe(z.string().regex(/^[6-9]\d{9}$/, "Enter a valid 10-digit mobile number"));
+  .transform(normalizeIndianMobile)
+  .pipe(z.string().regex(validationPatterns.indianMobile, validationMessages.indianMobile));
 
 const kycSchema = z
   .object({
     // Mirrors the immutable partner.type; re-checked against the DB row below.
-    type: z.enum(["business", "referral"]),
+    type: z.enum(partnerTypeValues),
     pan: z
       .string()
       .transform(upper)
@@ -142,7 +150,7 @@ export async function savePartnerKyc(_prev: KycState, formData: FormData): Promi
       if (!partner) return "missing" as const;
       // type is immutable; a mismatch means the hidden field was tampered with.
       if (d.type !== partner.type) return "missing" as const;
-      if (!kycEditable(partner)) return "locked" as const;
+      if (!isKycEditable(partner)) return "locked" as const;
       const business = d.type === "business";
       await tx
         .update(schema.partners)
@@ -230,13 +238,13 @@ export async function submitForReview() {
         .where(eq(schema.partners.userId, session.user.id))
         .limit(1)
         .for("update");
-      if (!partner || !kycEditable(partner)) return;
+      if (!partner) return;
       const docs = await tx
         .select({ docType: schema.partnerDocuments.docType })
         .from(schema.partnerDocuments)
         .where(eq(schema.partnerDocuments.partnerId, partner.userId));
       const uploaded = new Set(docs.map((document) => document.docType));
-      if (!isApplicationComplete(partner, uploaded)) return;
+      if (!evaluatePartnerApplication(partner, uploaded).canSubmit) return;
       const submittedAt = new Date();
       await tx
         .update(schema.partners)

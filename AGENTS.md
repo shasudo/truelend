@@ -73,30 +73,24 @@ Replace `website` with the affected workspace and use only scripts declared by t
 touched files explicitly, for example `pnpm exec prettier --write AGENTS.md`. Run the repository-wide
 `pnpm format` only when the worktree is clean or every resulting change is intentional.
 
-Before requesting review, run the same gate as CI, in order:
+Before requesting review, run the same source and artifact gates as CI:
 
 ```bash
 pnpm install --frozen-lockfile
-pnpm format:check
-pnpm cf:validate
-pnpm lint
-pnpm typecheck
-pnpm test
-pnpm audit --audit-level high
-pnpm build
+pnpm check:release
 ```
 
-`pnpm build` verifies the Next.js builds. The release workflow separately creates, dry-runs, scans,
-and deploys OpenNext Worker artifacts. If any required check cannot run, report the exact command,
-failure, and reason; do not call the gate passing.
+`check:release` runs formatting, Cloudflare type/config drift, database schema/migration drift,
+generated blog content, lint, typecheck, tests, audit, all Next.js builds, and build/dry-run/scan
+validation for all three OpenNext Worker artifacts. The migration drift check works on an isolated
+temporary copy and does not connect to a database. If any required check cannot run, report the exact
+command, failure, and reason; do not call the gate passing.
 
 For changes to Worker runtime behavior, bindings, OpenNext, or Wrangler configuration, also validate
 each affected app's deployable artifact. For example, for the website:
 
 ```bash
-pnpm --filter @truelend/website worker:build
-pnpm --filter @truelend/website worker:dry-run
-node scripts/scan-worker-bundle.mjs website apps/website/.wrangler/deploy-bundle
+pnpm --filter @truelend/website worker:verify
 ```
 
 Database commands are not generic validation:
@@ -118,7 +112,8 @@ Generated artifacts must be produced by their owner:
 - Regenerate `apps/website/content/blog-index.ts` with
   `pnpm --filter @truelend/website generate:blog`; do not edit it directly.
 - After a binding change, run the matching `pnpm cf-typegen`, `pnpm cf-typegen:admin`, or
-  `pnpm cf-typegen:partners`. `pnpm cf:validate` checks configs but does not update tracked types.
+  `pnpm cf-typegen:partners`. Wrangler owns `cloudflare-env.d.ts`; hand-written secret augmentation
+  stays in `cloudflare-secrets.d.ts`. `pnpm cf:validate` fails if generated bindings drift.
 - Let pnpm update `pnpm-lock.yaml`; never edit it by hand.
 
 ## Change and release safety
@@ -134,18 +129,21 @@ Generated artifacts must be produced by their owner:
   CI and a Worker need appropriately scoped copies. Production mutations and deployments must be
   reviewer-gated. Safe reviewed non-secret configuration may use Wrangler `vars`; credentials, tokens,
   private keys, and database URLs may not.
-- Do not deploy production from a developer workstation. Manual `pnpm deploy:*` commands are for
-  isolated development/staging accounts unless an approved incident runbook explicitly authorizes a
-  production break-glass action. Root `pnpm deploy` aliases the website only; it is not an all-app
-  deploy command.
+- Do not deploy production from a developer workstation. Checked-in Worker configs target production,
+  so `worker:deploy` and the root `pnpm deploy:*` aliases require explicit main-branch release intent
+  as a defense against accidents; locally settable flags are not an authorization boundary. Protected
+  credentials and GitHub Environment approval provide that boundary. Use local preview for workstation
+  validation; an approved incident runbook must define any production break-glass command separately.
+  Root `pnpm deploy` intentionally refuses an ambiguous target; use an explicit per-app deploy command
+  in approved environments.
 - The checked-in workflow is configured to attempt CI, database preflight/migration, and all three
   Worker deployments on a `main` push. Each deployed Worker is health-checked and can be rolled back,
   but Worker rollback does not reverse a migration, R2 change, or other external mutation. Migrations
   must therefore remain compatible with old and new app versions throughout rollout and rollback.
-- Current workflow caveat: the `migrate` job runs before the job that declares the protected GitHub
-  `production` Environment. This is not evidence of a fully approval-gated release. Do not work around
-  it by broadening secret scope; when release controls are in scope, place every production mutation,
-  including migration, behind the protected approval gate.
+- The workflow builds, dry-runs, and scans all three Worker artifacts before production mutation. Its
+  configuration preflight, migration, and deploy jobs declare the `production` Environment. The YAML
+  is not evidence that external Environment protection is enabled; verify reviewers, branch policy,
+  secret scope, and bypass settings in GitHub before every production-readiness claim.
 
 Do not describe TrueLend as production-ready without current external evidence for branch/environment
 protection, admin Access and MFA, per-app cache-disabled least-privilege database identities,
@@ -205,20 +203,18 @@ verified evidence, not inference from repository files.
   bundle it. The required override name is
   `CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE`.
 - `scripts/assert-production-config.mjs` defines the subset of Worker secret names and public config
-  checked by the current pre-deploy assertion; it does not cover CI credentials, email delivery, or
-  external configuration. Website Turnstile uses build-time `NEXT_PUBLIC_TURNSTILE_SITE_KEY`; partner
-  registration uses runtime non-secret `TURNSTILE_SITE_KEY`. The current assertion also requires the
-  public build variable for partners even though partner runtime does not read it; treat this as
-  configuration drift and update the assertion, workflow, bootstrap script, examples, and runtime
-  reads together when changing this area.
+  checked by the current pre-deploy assertion; it does not cover CI credentials, live email delivery,
+  or external configuration. Website Turnstile uses build-time `NEXT_PUBLIC_TURNSTILE_SITE_KEY`;
+  partner registration uses runtime non-secret `TURNSTILE_SITE_KEY`.
 - Missing production Turnstile configuration must fail closed. Verify the exact action and expected
   hostname for every protected form or registration flow.
 - Public `/api/health` is liveness only. Bearer-protected `/api/health/ready` performs an origin
   database probe and critical configuration checks. Keep both uncached and never expose dependency
   details to unauthorized callers.
-- `RESEND_API_KEY` is not currently a deploy-gated secret and email helpers may no-op without it.
-  Any flow that depends on delivery, especially activation or reset, must fail closed in production.
-  Do not claim email readiness without live send/receive evidence.
+- `RESEND_API_KEY` is deploy-gated and email helpers may no-op without it in local development. Any
+  flow that depends on delivery, especially activation or reset, must fail closed in production. A
+  secret-name check does not prove delivery; do not claim email readiness without live send/receive
+  evidence.
 
 ## Database, money, and migrations
 
@@ -263,6 +259,8 @@ verified evidence, not inference from repository files.
 
 ## Code organization and style
 
+- For structural, naming, or comment changes, use `docs/ai-development.md` as the task-routing guide;
+  this file remains the authoritative security and engineering contract.
 - Keep `app/` focused on routes, layouts, pages, and thin boundaries. App-shared UI belongs in
   `components/`; app-shared logic belongs in `lib/`; cross-app domain logic belongs in a package.
 - Use Server Components by default. Add `"use client"` only for browser APIs, local interactive state,
@@ -276,8 +274,9 @@ verified evidence, not inference from repository files.
   repository.
 - Extract shared behavior when multiple consumers or a security invariant need one canonical
   implementation; avoid speculative frameworks.
-- Comment constraints and reasons, not line-by-line behavior. Mark an intentional compromise with
-  `ponytail:` and state the trigger or path for revisiting it.
+- Comment constraints and reasons, not line-by-line behavior. Use JSDoc only for non-obvious exported
+  contracts. Do not use `TODO`, `FIXME`, or `HACK` as an unowned backlog. Mark an intentional
+  compromise with `ponytail:` and state the concrete trigger or path for revisiting it.
 
 ## UI, accessibility, and public content
 

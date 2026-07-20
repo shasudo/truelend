@@ -5,16 +5,15 @@ import { useRouter } from "next/navigation";
 import { Check, Upload, Loader2, FileText } from "lucide-react";
 import { Card, cx } from "@truelend/ui";
 import { partnerDocTypes } from "@truelend/reference";
-import type { PartnerDocument } from "@truelend/db";
 
 export function KycUpload({
-  documents,
+  uploadedDocumentTypes,
   editable = true,
 }: {
-  documents: PartnerDocument[];
+  uploadedDocumentTypes: readonly string[];
   editable?: boolean;
 }) {
-  const uploadedTypes = new Set<string>(documents.map((d) => d.docType));
+  const uploadedTypes = new Set(uploadedDocumentTypes);
   const allRequiredDone = partnerDocTypes
     .filter((d) => d.required)
     .every((d) => uploadedTypes.has(d.type));

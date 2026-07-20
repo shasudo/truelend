@@ -1,13 +1,8 @@
 import type { LucideIcon } from "lucide-react";
-
-export interface Bank {
-  slug: string;
-  name: string;
-  kind: "bank" | "nbfc";
-}
+import type { BankSlug, ProductSlug } from "@truelend/reference";
 
 export interface RateRow {
-  bankSlug: string;
+  bankSlug: BankSlug;
   /** % p.a. range — rendered with tabular numerals. */
   interestRate: { min: number; max: number };
   /** Display string, e.g. "Up to 0.50%". */
@@ -18,7 +13,7 @@ export interface RateRow {
 }
 
 export interface ProductCategory {
-  slug: string;
+  slug: ProductSlug;
   name: string;
   shortName: string;
   icon: LucideIcon;

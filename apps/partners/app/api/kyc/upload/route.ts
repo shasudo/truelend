@@ -1,7 +1,7 @@
 import { and, eq, inArray } from "drizzle-orm";
 import { schema } from "@truelend/db";
+import { isKycEditable } from "@truelend/reference";
 import { requirePartnerApi } from "@/lib/auth";
-import { kycEditable } from "@/lib/onboarding";
 
 const MAX_BYTES = 5 * 1024 * 1024;
 const ALLOWED = ["image/jpeg", "image/png", "application/pdf"];
@@ -37,7 +37,7 @@ export async function POST(req: Request) {
     if (Number.isFinite(contentLength) && contentLength > MAX_BYTES + 1_000_000) {
       return Response.json({ error: "File must be 5MB or smaller" }, { status: 413 });
     }
-    if (!kycEditable(partner)) {
+    if (!isKycEditable(partner)) {
       return Response.json(
         { error: "Your documents are locked and can't be changed." },
         { status: 403 },
@@ -90,7 +90,7 @@ export async function POST(req: Request) {
         .limit(1)
         .for("update");
       if (!currentPartner) return { status: 403 as const, superseded: [] as string[] };
-      if (!kycEditable(currentPartner)) {
+      if (!isKycEditable(currentPartner)) {
         return { status: 409 as const, superseded: [] as string[] };
       }
       const prior = await tx
