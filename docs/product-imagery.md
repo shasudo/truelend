@@ -26,3 +26,16 @@ stock libraries, then resized to 900 × 600 and encoded as quality-76 AVIF files
 
 `category-card.tsx` renders the images without a tint or gradient overlay so the
 commissioned visual system appears at its intended color and contrast.
+
+## Public page hero artwork
+
+The Contact and About hero images were generated with OpenAI's built-in image
+tool on 2026-07-20 from the stakeholder-supplied page designs as composition
+references. They are original artwork, contain no embedded interface copy or
+logos, and are rendered with accessible HTML text around them. Both were resized
+to 1600 pixels wide and encoded as quality-84 WebP files.
+
+| File                        | Brief                                                                 |
+| --------------------------- | --------------------------------------------------------------------- |
+| `contact-support-hero.webp` | Support headset, blank laptop and plant with left-side negative space |
+| `about-guidance-hero.webp`  | Layered white paper forms crossed by one restrained red guidance line |

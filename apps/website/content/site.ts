@@ -14,6 +14,13 @@ export const site = {
   whatsappHref: "https://wa.me/919876543210",
   email: "hello@truelend.in",
   address: "Hyderabad, Telangana, India",
+  // City-centre fallback matching the generic address above. Replace these two
+  // values with the approved office coordinates when the business confirms them;
+  // the embedded map and directions link both derive from this single source.
+  location: {
+    latitude: 17.385044,
+    longitude: 78.486671,
+  },
   hours: "Mon–Sat · 9:30 AM – 6:30 PM IST",
   nav: [
     { label: "Products", href: "/products" },
@@ -24,10 +31,10 @@ export const site = {
     { label: "Contact", href: "/contact" },
   ],
   utilityStrip: [
-    "Pan India Presence",
+    "Pan-India Lending Partners",
+    "Experienced Borrowing Advisors",
     "Quick Response",
-    "Expert Consultation",
-    "Hassle-free Process",
+    "End-to-End Support",
   ],
   disclaimer:
     "TrueLend is a loan distribution platform. We help borrowers compare and choose credit products offered by our partner banks and NBFCs; loans are sanctioned and disbursed solely at the discretion of the respective lender. Interest rates, fees and eligibility norms shown are indicative and subject to change by the lender without notice.",

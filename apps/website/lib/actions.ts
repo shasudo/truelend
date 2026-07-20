@@ -75,6 +75,19 @@ export async function submitLead(input: unknown): Promise<SubmitResult> {
   }
 
   const d = parsed.data;
+  const contactMessage =
+    d.kind === "contact"
+      ? [
+          `Enquiry type: ${d.reason}`,
+          d.subject ? `Subject: ${d.subject}` : undefined,
+          "",
+          d.message,
+        ]
+          .filter((part): part is string => part !== undefined)
+          .join("\n")
+      : "message" in d
+        ? blank(d.message)
+        : undefined;
   const db = createDb(env.HYPERDRIVE.connectionString);
   try {
     // Resolve an affiliate ref (BP…/RP…) to the partner it credits. A rejected
@@ -121,7 +134,7 @@ export async function submitLead(input: unknown): Promise<SubmitResult> {
           email: "email" in d ? blank(d.email) : undefined,
           city: "city" in d ? blank(d.city) : undefined,
           productSlug: "productSlug" in d ? blank(d.productSlug) : undefined,
-          message: "message" in d ? blank(d.message) : undefined,
+          message: contactMessage,
           referrerName: "referrerName" in d ? blank(d.referrerName) : undefined,
           referrerPhone: "referrerPhone" in d ? blank(d.referrerPhone) : undefined,
           utmSource: blank(d.utmSource),
@@ -144,6 +157,7 @@ export async function submitLead(input: unknown): Promise<SubmitResult> {
         after: {
           source: partnerId ? "partner_referral_link" : "website_form",
           kind: d.kind,
+          contactReason: d.kind === "contact" ? d.reason : undefined,
           partnerRef: partnerId ? refCode : undefined,
           consentVersion: CONSENT_VERSION,
         },
@@ -156,7 +170,7 @@ export async function submitLead(input: unknown): Promise<SubmitResult> {
         email: "email" in d ? d.email : undefined,
         city: "city" in d ? d.city : undefined,
         product: "productSlug" in d && d.productSlug ? productName(d.productSlug) : undefined,
-        message: "message" in d ? d.message : undefined,
+        message: contactMessage,
         source: partnerId ? `Partner referral · ${refCode}` : `Website · ${leadKindLabels[d.kind]}`,
       }),
     );

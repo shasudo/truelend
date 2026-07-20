@@ -135,12 +135,25 @@ export const referralSchema = z.object({
   ...base,
 });
 
+export const contactReasonValues = [
+  "borrowing_advice",
+  "existing_enquiry",
+  "partnership",
+  "general_question",
+  "other",
+] as const;
+
 export const contactSchema = z.object({
   kind: z.literal("contact"),
+  reason: z
+    .enum(contactReasonValues)
+    .or(z.literal(""))
+    .refine((value) => value !== "", { message: "Select how we can help" }),
   name: z.string().trim().min(2, "Please tell us your name").max(100),
   phone,
-  email: optionalEmail,
-  message: z.string().trim().min(10, "Tell us a little more so we can help").max(2000),
+  email: z.email("Enter a valid email address").max(254),
+  subject: z.string().trim().max(120, "Keep the subject under 120 characters").optional(),
+  message: z.string().trim().min(10, "Tell us a little more so we can help").max(1000),
   ...base,
 });
 

@@ -11,6 +11,8 @@ export interface SectionHeadingProps {
   eyebrowClassName?: string;
   /** Override title color (default navy / white on inverse). */
   titleClassName?: string;
+  /** Override lede typography while retaining semantic default colors. */
+  ledeClassName?: string;
   /** Heading level. Page-level headers pass "h1"; in-page sections keep h2 so
    *  each page has exactly one h1. */
   as?: "h1" | "h2";
@@ -25,6 +27,7 @@ export function SectionHeading({
   inverse,
   eyebrowClassName,
   titleClassName,
+  ledeClassName,
   as: Heading = "h2",
   className,
 }: SectionHeadingProps) {
@@ -51,7 +54,13 @@ export function SectionHeading({
         {title}
       </Heading>
       {lede && (
-        <p className={cx("mt-4 leading-relaxed", inverse ? "text-white/70" : "text-navy-600")}>
+        <p
+          className={cx(
+            "mt-4 leading-relaxed",
+            inverse ? "text-white/70" : "text-navy-600",
+            ledeClassName,
+          )}
+        >
           {lede}
         </p>
       )}

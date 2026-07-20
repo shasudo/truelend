@@ -9,7 +9,7 @@ const csp =
   `script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com https://static.cloudflareinsights.com${process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""}; ` +
   "style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; " +
   `connect-src 'self' https://challenges.cloudflare.com https://cloudflareinsights.com${process.env.NODE_ENV === "development" ? " ws: http:" : ""}; ` +
-  `frame-src https://challenges.cloudflare.com; worker-src 'self' blob:; manifest-src 'self'${process.env.NODE_ENV === "development" ? "" : "; upgrade-insecure-requests"}`;
+  `frame-src https://challenges.cloudflare.com https://www.openstreetmap.org; worker-src 'self' blob:; manifest-src 'self'${process.env.NODE_ENV === "development" ? "" : "; upgrade-insecure-requests"}`;
 
 const nextConfig: NextConfig = {
   // Workspace packages ship TypeScript source — let Next transpile them.

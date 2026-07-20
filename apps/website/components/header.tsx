@@ -44,12 +44,14 @@ export function Header() {
         </nav>
 
         <div className="flex items-center gap-3">
-          <Button size="sm" asChild className="hidden sm:inline-flex">
-            <Link href="/enquiry">
-              <Headset className="h-4 w-4" aria-hidden />
-              Talk to a Borrowing Advisor
-            </Link>
-          </Button>
+          <div className="hidden sm:block">
+            <Button size="sm" asChild>
+              <Link href="/enquiry">
+                <Headset className="h-4 w-4" aria-hidden />
+                Talk to a Borrowing Advisor
+              </Link>
+            </Button>
+          </div>
 
           <button
             className="rounded-md p-2 text-navy-800 hover:bg-navy-800/5 lg:hidden"

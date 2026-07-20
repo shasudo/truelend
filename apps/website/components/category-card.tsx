@@ -5,7 +5,21 @@ import { Card } from "@truelend/ui";
 import type { ProductCategory } from "@/content/types";
 import { minRateLabel } from "@/lib/format";
 
-export function CategoryCard({ product }: { product: ProductCategory }) {
+export interface CategoryCardProps {
+  product: ProductCategory;
+  name?: string;
+  tagline?: string;
+  showRate?: boolean;
+  centered?: boolean;
+}
+
+export function CategoryCard({
+  product,
+  name = product.name,
+  tagline = product.tagline,
+  showRate = true,
+  centered = false,
+}: CategoryCardProps) {
   const Icon = product.icon;
   return (
     <Link href={`/products/${product.slug}`} className="group block h-full">
@@ -23,15 +37,29 @@ export function CategoryCard({ product }: { product: ProductCategory }) {
             <Icon className="h-4.5 w-4.5" aria-hidden />
           </span>
         </div>
-        <h3 className="mt-4 px-6 font-display text-lg font-bold text-navy-950">{product.name}</h3>
-        <p className="mt-1.5 px-6 text-sm leading-relaxed text-navy-600">{product.tagline}</p>
-        <span className="mt-auto flex items-center justify-between px-6 pb-6 pt-5 text-sm">
-          <span className="font-semibold tabular-nums text-navy-800">
-            {minRateLabel(product)}
-            <sup aria-hidden className="ml-0.5 font-normal text-red-600">
-              *
-            </sup>
-          </span>
+        <h3
+          className={`mt-5 px-6 font-display font-bold text-navy-950 ${centered ? "text-center text-xl" : "text-lg"}`}
+        >
+          {name}
+        </h3>
+        <p
+          className={`mt-1.5 px-6 text-sm leading-relaxed text-navy-600 ${centered ? "text-center" : ""}`}
+        >
+          {tagline}
+        </p>
+        <span
+          className={`mt-auto flex items-center px-6 pb-6 pt-5 text-sm ${centered ? "justify-center gap-2" : "justify-between"}`}
+        >
+          {showRate ? (
+            <span className="font-semibold tabular-nums text-navy-800">
+              {minRateLabel(product)}
+              <sup aria-hidden className="ml-0.5 font-normal text-red-600">
+                *
+              </sup>
+            </span>
+          ) : (
+            <span className="font-semibold text-red-600">Learn more</span>
+          )}
           <MoveUpRight
             aria-hidden
             strokeWidth={4}

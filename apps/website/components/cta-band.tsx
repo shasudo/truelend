@@ -11,7 +11,7 @@ export interface CtaBandProps {
 
 export function CtaBand({
   headline = "Ready to make a smarter borrowing decision?",
-  sub = "Our experts are ready to guide you — free, and on your side of the table.",
+  sub = "Speak with an experienced Borrowing Advisor and get guidance tailored to your financial profile, borrowing needs and goals.",
   href = "/enquiry",
 }: CtaBandProps) {
   return (
@@ -28,7 +28,7 @@ export function CtaBand({
           <Button size="lg" asChild>
             <Link href={href}>
               <Headset className="h-4 w-4" aria-hidden />
-              Speak to an Advisor
+              Talk to a Borrowing Advisor
             </Link>
           </Button>
           <Button size="lg" variant="outline-inverse" asChild>
