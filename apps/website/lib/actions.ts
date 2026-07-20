@@ -8,7 +8,7 @@ import { leadKindLabels, productName, rupeesToPaise } from "@truelend/reference"
 import { verifyTurnstile, type TurnstileAction } from "@truelend/turnstile";
 import { leadSchema } from "./schemas";
 
-export type SubmitResult = { ok: true } | { ok: false; error: string };
+type SubmitResult = { ok: true } | { ok: false; error: string };
 const CONSENT_VERSION = "2026-07-13";
 const TURNSTILE_ACTIONS: Record<string, TurnstileAction> = {
   enquiry: "lead_enquiry",

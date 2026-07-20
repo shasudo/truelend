@@ -3,7 +3,7 @@ import { Headset, MessageCircle } from "lucide-react";
 import { Button, Container, HexPattern } from "@truelend/ui";
 import { site } from "@/content/site";
 
-export interface CtaBandProps {
+interface CtaBandProps {
   headline?: string;
   sub?: string;
   href?: string;

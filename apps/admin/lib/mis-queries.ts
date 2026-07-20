@@ -10,7 +10,7 @@ import { products } from "@truelend/reference";
 type Row = Record<string, unknown>;
 const num = (v: unknown) => Number(v ?? 0);
 
-export interface OverviewStats {
+interface OverviewStats {
   totalLeads: number;
   inPipeline: number;
   disbursedCases: number;
@@ -211,7 +211,7 @@ export async function getMisByChannel(db: Database): Promise<MisRow[]> {
   }).filter((r) => r.leads > 0 || r.cases > 0);
 }
 
-export interface PartnerMisRow {
+interface PartnerMisRow {
   key: string;
   label: string;
   type: string;

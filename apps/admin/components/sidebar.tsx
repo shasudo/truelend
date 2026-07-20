@@ -34,7 +34,7 @@ const nav: NavItem[] = [
   { label: "Team", href: "/team", icon: Users, adminOnly: true },
 ];
 
-export interface SidebarUser {
+interface SidebarUser {
   name: string;
   email: string;
   role: string;

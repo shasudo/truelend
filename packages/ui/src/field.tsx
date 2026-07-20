@@ -51,7 +51,7 @@ export function Checkbox({ className, ...props }: ComponentProps<"input">) {
   );
 }
 
-export interface FieldProps {
+interface FieldProps {
   label: string;
   htmlFor?: string;
   required?: boolean;

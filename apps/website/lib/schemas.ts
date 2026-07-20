@@ -169,9 +169,3 @@ export const leadSchema = z.discriminatedUnion("kind", [
   contactSchema,
   cibilNotifySchema,
 ]);
-
-export type EnquiryInput = z.infer<typeof enquirySchema>;
-export type ReferralInput = z.infer<typeof referralSchema>;
-export type ContactInput = z.infer<typeof contactSchema>;
-export type CibilNotifyInput = z.infer<typeof cibilNotifySchema>;
-export type LeadInput = z.infer<typeof leadSchema>;

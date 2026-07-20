@@ -2,7 +2,7 @@ import "server-only";
 import { and, or, eq, ilike, isNull, desc, count, inArray, type SQL } from "drizzle-orm";
 import { schema, type Database, type Lead } from "@truelend/db";
 
-export const PAGE_SIZE = 20;
+const PAGE_SIZE = 20;
 
 export type LeadStatus = (typeof schema.leadStatus.enumValues)[number];
 export type LeadKind = (typeof schema.leadKind.enumValues)[number];
@@ -17,7 +17,7 @@ export interface LeadFilters {
   page: number;
 }
 
-export interface LeadRow extends Lead {
+interface LeadRow extends Lead {
   assigneeName: string | null;
 }
 

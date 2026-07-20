@@ -12,7 +12,7 @@ import {
 const num = (v: unknown) => Number(v ?? 0);
 type Row = Record<string, unknown>;
 
-export interface PartnerListRow {
+interface PartnerListRow {
   userId: string;
   name: string;
   email: string;
@@ -48,7 +48,7 @@ export async function listPartners(db: Database, status?: string): Promise<Partn
   }));
 }
 
-export interface PartnerDetail {
+interface PartnerDetail {
   partner: Partner;
   name: string;
   email: string;

@@ -1,4 +1,4 @@
-export interface PartnerPath {
+interface PartnerPath {
   type: "business" | "referral";
   title: string;
   question: string;

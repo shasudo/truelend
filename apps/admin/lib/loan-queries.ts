@@ -2,7 +2,7 @@ import "server-only";
 import { and, desc, eq, count, type SQL } from "drizzle-orm";
 import { schema, type Database, type LoanCase } from "@truelend/db";
 
-export const PAGE_SIZE = 20;
+const PAGE_SIZE = 20;
 
 export type LoanCaseStatus = (typeof schema.loanCaseStatus.enumValues)[number];
 
@@ -12,7 +12,7 @@ export interface LoanCaseFilters {
   page: number;
 }
 
-export interface LoanCaseRow extends LoanCase {
+interface LoanCaseRow extends LoanCase {
   leadName: string | null;
 }
 

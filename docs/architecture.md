@@ -15,7 +15,7 @@ GitHub protected release* ──> migration identity* / Cloudflare deploy API
 Email actions ──> Resend (currently via waitUntil; Queue/DLQ pending*)
 ```
 
-`*` denotes an external control or target architecture that is not closed merely by repository code. `TODO.md` is authoritative for production-readiness status.
+`*` denotes an external control or target architecture that is not closed merely by repository code.
 
 The browser-to-Worker boundary is untrusted. Every route/action revalidates data. Cloudflare-provided `cf-connecting-ip` is used for abuse keys; arbitrary forwarded headers are not trusted. Public lead capture and partner registration require Turnstile tokens tied to distinct actions and expected production hostnames.
 
@@ -70,4 +70,4 @@ The committed Wrangler files still reference one shared Hyperdrive configuration
 
 High-value assets include auth credentials/sessions, contact/lead data, PAN/GST/bank/KYC values and documents, financial facts, audit evidence, database/Cloudflare credentials, and policy consent records. Primary threats include role-boundary bypass, session staleness, credential leakage in artifacts, account/signup abuse, malicious uploads, IDOR, excessive runtime database privilege, audit tampering, inconsistent financial transitions, data loss, and misleading public content.
 
-Repository controls reduce but do not close these risks. The remaining required mitigations, owners, verification, and external exercises are tracked in `TODO.md`.
+Repository controls reduce but do not close these risks. Remaining mitigations require named owners, production verification, and external exercises before production readiness.

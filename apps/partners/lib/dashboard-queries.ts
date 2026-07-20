@@ -5,7 +5,7 @@ import { schema, type Database, type Lead, type PartnerPayout } from "@truelend/
 const num = (v: unknown) => Number(v ?? 0);
 type Row = Record<string, unknown>;
 
-export interface PartnerMetrics {
+interface PartnerMetrics {
   totalLeads: number;
   activeLeads: number;
   approved: number;
@@ -64,7 +64,7 @@ export async function getPartnerPipeline(
   return rows.map((row) => ({ status: String(row.status), count: num(row.count) }));
 }
 
-export interface PaginatedLeads {
+interface PaginatedLeads {
   rows: Lead[];
   total: number;
   page: number;
@@ -94,7 +94,7 @@ export async function getPartnerLeadsPage(
   return { rows, total, page, pageCount };
 }
 
-export interface PartnerCaseRow {
+interface PartnerCaseRow {
   id: string;
   leadName: string;
   productSlug: string | null;
@@ -139,7 +139,7 @@ export async function getPartnerPayouts(db: Database, partnerId: string): Promis
     .limit(50);
 }
 
-export interface ProductPerformance {
+interface ProductPerformance {
   productSlug: string | null;
   leads: number;
   disbursed: number;

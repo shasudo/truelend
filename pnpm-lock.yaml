@@ -641,9 +641,6 @@ importers:
       '@truelend/eslint-config':
         specifier: workspace:*
         version: link:../eslint-config
-      '@truelend/typescript-config':
-        specifier: workspace:*
-        version: link:../typescript-config
       '@types/node':
         specifier: 'catalog:'
         version: 22.20.1

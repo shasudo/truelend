@@ -2,13 +2,13 @@
  * Canonical slug → name reference shared across apps (admin, future partner
  * dashboards). The website's rich content (rates, FAQs, icons) keeps these
  * same slugs; keep the two in sync. ponytail: website should consume this too
- * — deferred refactor tracked in todo.md.
+ * when the rich content is moved into the shared reference package.
  */
 
 export * from "./format";
 export * from "./catalog";
 
-export interface ProductRef {
+interface ProductRef {
   slug: string;
   name: string;
   shortName: string;
@@ -26,7 +26,7 @@ export const products: ProductRef[] = [
   { slug: "credit-cards", name: "Credit Cards", shortName: "Cards" },
 ];
 
-export interface BankRef {
+interface BankRef {
   slug: string;
   name: string;
   kind: "bank" | "nbfc";
@@ -79,20 +79,6 @@ export const loanCaseStatusLabels: Record<string, string> = {
 export const channelForKind = (kind: string) =>
   kind === "referral" ? "Website · Referral" : "Website · Direct";
 
-/*
- * Channel for any lead, preferring partner attribution over website kind.
- * partnerType is looked up by the caller from the lead's partner_id.
- */
-export function channelForLead(
-  lead: { kind: string; partnerId?: string | null },
-  partnerType?: "business" | "referral" | null,
-): string {
-  if (lead.partnerId) {
-    return partnerType === "referral" ? "Referral Partner" : "Business Partner";
-  }
-  return channelForKind(lead.kind);
-}
-
 export const partnerTypeLabels: Record<string, string> = {
   business: "Business Partner",
   referral: "Referral Partner",
@@ -114,7 +100,7 @@ export const partnerProductOptions = [
   "Taxation",
 ] as const;
 
-export interface PartnerDoc {
+interface PartnerDoc {
   type: string;
   label: string;
   required: boolean;
@@ -154,8 +140,8 @@ export const residenceTypes = [
   { value: "company", label: "Company-provided" },
 ] as const;
 
-export type EmploymentType = (typeof employmentTypes)[number]["value"];
-export type ResidenceType = (typeof residenceTypes)[number]["value"];
+type EmploymentType = (typeof employmentTypes)[number]["value"];
+type ResidenceType = (typeof residenceTypes)[number]["value"];
 
 export const employmentTypeValues = employmentTypes.map((e) => e.value) as [
   EmploymentType,

@@ -37,9 +37,6 @@ const productIcons: Record<string, LucideIcon> = {
 // same pages their customers do, so there is one published source for them.
 const PUBLIC_SITE = "https://truelend.in";
 
-/** The public product page a partner (or a prospect) can read for detail. */
-export const publicProductHref = (slug: string) => `${PUBLIC_SITE}/products/${slug}`;
-
 /** Starts a case/referral with the product already chosen. Signed-in only. */
 export const submitProductHref = (submitHref: string) => (slug: string) =>
   `${submitHref}?product=${slug}`;

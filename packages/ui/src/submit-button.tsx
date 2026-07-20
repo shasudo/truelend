@@ -3,7 +3,7 @@
 import { useFormStatus } from "react-dom";
 import { Button, type ButtonProps } from "./button";
 
-export interface SubmitButtonProps extends Omit<ButtonProps, "asChild"> {
+interface SubmitButtonProps extends Omit<ButtonProps, "asChild"> {
   /** Label shown while the enclosing form's action is in flight. */
   pendingText?: string;
   /** If set, window.confirm() this before submitting; cancel aborts the submit. */

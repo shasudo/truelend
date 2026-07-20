@@ -12,7 +12,7 @@ import {
   type ActionResult,
 } from "@/lib/team-actions";
 
-export interface Member {
+interface Member {
   id: string;
   name: string;
   email: string;

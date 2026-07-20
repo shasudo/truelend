@@ -1,6 +1,6 @@
 import { cx } from "./cx";
 
-export interface StatProps {
+interface StatProps {
   value: string;
   label: string;
   /** Paint the numeral red — use sparingly, one per group. */

@@ -1,13 +1,13 @@
 import { leadStatusLabels } from "@truelend/reference";
 import type { PipelineStage } from "@/lib/dashboard-queries";
 
-export interface DonutSlice {
+interface DonutSlice {
   label: string;
   count: number;
   color: string;
 }
 
-export interface DonutArc extends DonutSlice {
+interface DonutArc extends DonutSlice {
   len: number;
   offset: number;
   pct: number;

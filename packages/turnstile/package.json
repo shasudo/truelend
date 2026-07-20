@@ -13,7 +13,6 @@
   },
   "devDependencies": {
     "@truelend/eslint-config": "workspace:*",
-    "@truelend/typescript-config": "workspace:*",
     "@types/node": "catalog:",
     "eslint": "catalog:",
     "tsx": "catalog:",

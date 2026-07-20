@@ -1,6 +1,6 @@
 # Repository hardening evidence — 2026-07-13
 
-This records implementation completed from `TODO.md`. It is not production-verification evidence and does not override the backlog's completion definition.
+This records implementation completed during the repository-hardening audit. It is not production-verification evidence and does not prove that external closure gates are complete.
 
 ## Security and infrastructure
 

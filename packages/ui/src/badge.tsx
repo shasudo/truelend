@@ -7,7 +7,7 @@ const variants = {
   outline: "border border-hairline text-navy-600",
 } as const;
 
-export interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
+interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
   variant?: keyof typeof variants;
 }
 

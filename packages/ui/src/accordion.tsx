@@ -4,7 +4,7 @@ import * as RadixAccordion from "@radix-ui/react-accordion";
 import { Plus } from "lucide-react";
 import { cx } from "./cx";
 
-export interface AccordionProps {
+interface AccordionProps {
   items: { q: string; a: string }[];
   className?: string;
 }

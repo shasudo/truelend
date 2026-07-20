@@ -1,5 +1,5 @@
 // NOTE: phone / whatsapp / email / address are PLACEHOLDERS until TrueLend
-// provides the real ones — tracked in todo.md.
+// provides approved production values.
 
 export const site = {
   name: "TrueLend",

@@ -11,9 +11,8 @@ import {
 } from "lucide-react";
 import type { ProductCategory } from "./types";
 
-// PLACEHOLDER DATA — realistic shapes, indicative numbers. Real product and
-// bank-wise rate content comes from LinchPin/TrueLend (tracked in todo.md).
-export const RATES_ARE_PLACEHOLDER = true;
+// RATES_ARE_PLACEHOLDER: these indicative numbers still require approved,
+// sourced product data before production.
 
 export const products: ProductCategory[] = [
   {

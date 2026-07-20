@@ -18,4 +18,4 @@ Only the current production revision on protected `main` is supported. Security 
 - Use isolated development/staging data and accounts.
 - Require CODEOWNER review and two approvals for auth, infrastructure, migration, finance, and KYC changes.
 - Record containment, rotation, migration, verification, and rollback evidence in a private incident/change record.
-- Follow the runbooks in `docs/runbooks/` and keep `TODO.md` honest about controls that still require external or production verification.
+- Follow the runbooks in `docs/runbooks/` and do not describe externally unverified controls as complete.

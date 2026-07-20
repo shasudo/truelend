@@ -2,7 +2,7 @@
 
 ## Before you start
 
-Read `CLAUDE.md`, `TODO.md`, and the relevant architecture/runbook documents. Do not use a code change to claim closure of work that also needs Cloudflare/GitHub configuration, production verification, legal approval, monitoring, or a recovery exercise.
+Read `CLAUDE.md` and the relevant architecture/runbook documents. Do not use a code change to claim closure of work that also needs Cloudflare/GitHub configuration, production verification, legal approval, monitoring, or a recovery exercise.
 
 Create a branch from current `main` (use the `codex/` prefix for Codex-created branches), keep the change focused, and open a pull request. Direct pushes and force-pushes to `main` are prohibited. Sensitive paths are assigned in `.github/CODEOWNERS`; auth, infrastructure, migrations, finance, and KYC changes require two approvals.
 

@@ -11,5 +11,3 @@ export const banks: Bank[] = [
   { slug: "tata", name: "Tata Capital", kind: "nbfc" },
   { slug: "aditya-birla", name: "Aditya Birla Capital", kind: "nbfc" },
 ];
-
-export const bankName = (slug: string) => banks.find((b) => b.slug === slug)?.name ?? slug;

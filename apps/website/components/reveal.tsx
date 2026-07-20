@@ -3,7 +3,7 @@
 import { useEffect, useRef, type CSSProperties, type ReactNode } from "react";
 import { cx } from "@truelend/ui";
 
-export interface RevealProps {
+interface RevealProps {
   children: ReactNode;
   /** Seconds. Stagger siblings with 0.1 increments. */
   delay?: number;

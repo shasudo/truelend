@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Repository instructions for coding agents working on TrueLend. Read this file and `TODO.md` before changing code. The TODO completion definition is strict: repository implementation alone does not close work that still needs deployment, production verification, external configuration, legal approval, documentation, or recovery testing.
+Repository instructions for coding agents working on TrueLend. Read this file before changing code. Repository implementation alone does not close work that still needs deployment, production verification, external configuration, legal approval, documentation, or recovery testing.
 
 ## System overview
 
@@ -21,6 +21,7 @@ Run from the repository root:
 ```bash
 pnpm bootstrap:local  # create missing local-only config; never overwrites
 pnpm dev              # ports 3000, 3001, 3002
+pnpm install --frozen-lockfile
 pnpm format:check
 pnpm cf:validate
 pnpm lint
@@ -35,7 +36,7 @@ pnpm db:migrate
 pnpm db:studio
 ```
 
-Before requesting review, run the complete verification sequence listed in `TODO.md`. Run `pnpm format` after edits. Use `pnpm --filter @truelend/<workspace> <script>` for one package.
+Before requesting review, run `pnpm install --frozen-lockfile` and every command from `format:check` through `build` above. Run `pnpm format` after edits. Use `pnpm --filter @truelend/<workspace> <script>` for one package.
 
 ## Protected release workflow
 
@@ -116,4 +117,3 @@ Public `/api/health` is liveness only. `/api/health/ready` is bearer protected a
 - Add or update focused tests for domain behavior and security boundaries. The root `pnpm test` discovers central and colocated tests.
 - Type-aware ESLint, React Hooks, and JSX accessibility rules are required. Do not disable them broadly; test-file floating-promise registration is the narrow exception.
 - Preserve unrelated working-tree changes. Never delete generated migrations, user data, secrets, or artifacts destructively.
-- Update `TODO.md` with implementation evidence, but do not mark externally dependent work complete until its deployment, production verification, documentation, and rollback/recovery evidence exists.

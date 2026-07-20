@@ -89,7 +89,7 @@ Commit the generated SQL, snapshot, and journal changes together. Follow [`docs/
 
 The partner and admin Workers bind the private `truelend` R2 bucket as `BUCKET`. Partner uploads are authenticated, rate-limited, origin-checked, size-limited, and signature-sniffed. Admin downloads are authenticated and audited. Public bucket access and CORS must remain disabled.
 
-Transactional email currently uses Resend through `ctx.waitUntil`. There are no Queue bindings yet, so durable retries, delivery webhooks, suppression, and a DLQ remain open production work in [`TODO.md`](TODO.md).
+Transactional email currently uses Resend through `ctx.waitUntil`. There are no Queue bindings yet, so durable retries, delivery webhooks, suppression, and a DLQ remain required production work.
 
 ## Release flow
 
@@ -116,4 +116,4 @@ packages/
 docs/            architecture, environment matrix, ADRs, and runbooks
 ```
 
-Dependency versions are centralized in the `catalog:` section of `pnpm-workspace.yaml`. See [`CONTRIBUTING.md`](CONTRIBUTING.md), [`SECURITY.md`](SECURITY.md), and [`TODO.md`](TODO.md) before making changes.
+Dependency versions are centralized in the `catalog:` section of `pnpm-workspace.yaml`. See [`CONTRIBUTING.md`](CONTRIBUTING.md) and [`SECURITY.md`](SECURITY.md) before making changes.

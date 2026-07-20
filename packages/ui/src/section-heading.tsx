@@ -1,6 +1,6 @@
 import { cx } from "./cx";
 
-export interface SectionHeadingProps {
+interface SectionHeadingProps {
   eyebrow?: string;
   title: string;
   lede?: string;

@@ -1,8 +1,8 @@
 import { cx } from "./cx";
 
 /*
- * The TrueLend mark, traced from branding/*.jpeg: a rounded hexagon, a bold
- * north-east arrow (red) rising from the lower-left, and the detached navy pin
+ * The TrueLend mark is a rounded hexagon with a bold north-east arrow (red)
+ * rising from the lower-left and a detached navy pin
  * (right triangle) tucked into the arrowhead's upper-right. Navy parts follow
  * currentColor so the mark flips to white on navy surfaces; red stays brand red.
  * Rounded corners come from a same-color round-join stroke on each fill.
@@ -34,7 +34,7 @@ export function LogoMark({ className }: { className?: string }) {
   );
 }
 
-export interface LogoProps {
+interface LogoProps {
   className?: string;
   tagline?: boolean;
 }

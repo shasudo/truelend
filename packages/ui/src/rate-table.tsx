@@ -11,7 +11,7 @@ export interface RateTableRow {
   amount?: string;
 }
 
-export interface RateTableProps {
+interface RateTableProps {
   rows: RateTableRow[];
   /** Compact drops the fee column and tightens spacing (teasers). */
   compact?: boolean;

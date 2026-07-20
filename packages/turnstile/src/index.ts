@@ -14,7 +14,7 @@ interface TurnstileResponse {
   action?: string;
 }
 
-export interface VerifyTurnstileOptions {
+interface VerifyTurnstileOptions {
   token: string | undefined;
   secret: string | undefined;
   siteKeyConfigured: boolean;

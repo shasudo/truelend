@@ -2,7 +2,7 @@ import type { ProductCategory, RateRow } from "@/content/types";
 import { banks } from "@/content/banks";
 import type { RateTableRow } from "@truelend/ui";
 
-export const rateRange = (r: RateRow) =>
+const rateRange = (r: RateRow) =>
   `${r.interestRate.min.toFixed(2)} – ${r.interestRate.max.toFixed(2)}%`;
 
 export function toRateTableRows(rates: RateRow[]): RateTableRow[] {

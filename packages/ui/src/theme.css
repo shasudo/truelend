@@ -1,6 +1,6 @@
 /*
  * TrueLend design tokens — "editorial ledger".
- * Brand colors sampled from the logo (branding/): navy #14204A, red #CE0E17.
+ * Brand colors: navy #14204A, red #CE0E17.
  * The default Tailwind palette is wiped so ONLY brand colors exist —
  * an off-palette class like `bg-blue-500` simply doesn't compile.
  */

@@ -1,7 +1,7 @@
 export { cx } from "./cx";
 export { Logo, LogoMark } from "./logo";
-export { Button, type ButtonProps } from "./button";
-export { SubmitButton, type SubmitButtonProps } from "./submit-button";
+export { Button } from "./button";
+export { SubmitButton } from "./submit-button";
 export { Container } from "./container";
 export { SectionHeading } from "./section-heading";
 export { Card } from "./card";

@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { cx } from "./cx";
 
-export interface StatTileProps {
+interface StatTileProps {
   label: string;
   value: ReactNode;
   sub?: string;

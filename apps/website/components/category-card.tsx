@@ -5,7 +5,7 @@ import { Card } from "@truelend/ui";
 import type { ProductCategory } from "@/content/types";
 import { minRateLabel } from "@/lib/format";
 
-export interface CategoryCardProps {
+interface CategoryCardProps {
   product: ProductCategory;
   name?: string;
   tagline?: string;

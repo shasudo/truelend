@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 };
 
 // PLACEHOLDER legal copy — must be replaced by counsel-approved text before
-// campaigns run (todo.md).
+// campaigns run.
 export default function TermsPage() {
   return (
     <>

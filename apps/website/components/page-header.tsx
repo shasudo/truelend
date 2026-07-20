@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { Container, HexPattern, SectionHeading } from "@truelend/ui";
 
-export interface PageHeaderProps {
+interface PageHeaderProps {
   eyebrow: string;
   title: string;
   lede?: string;

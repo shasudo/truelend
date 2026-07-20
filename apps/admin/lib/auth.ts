@@ -67,7 +67,7 @@ function isStaff(role: string | null | undefined): boolean {
   return role != null && STAFF_ROLES.has(role);
 }
 
-export async function requireSession(): Promise<AdminSession> {
+async function requireSession(): Promise<AdminSession> {
   const { auth } = getAuthContext();
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) redirect("/login");

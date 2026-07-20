@@ -50,12 +50,12 @@ export const getAuthContext = cache((): AuthContext => {
   return { db, auth, ctx, env };
 });
 
-export async function getSession(): Promise<PartnerSession | null> {
+async function getSession(): Promise<PartnerSession | null> {
   const { auth } = getAuthContext();
   return auth.api.getSession({ headers: await headers() });
 }
 
-export interface PartnerContext {
+interface PartnerContext {
   session: PartnerSession;
   partner: Partner | null;
 }
@@ -70,17 +70,6 @@ export async function requirePartner(): Promise<PartnerContext> {
     .where(eq(schema.partners.userId, session.user.id))
     .limit(1);
   return { session, partner: rows[0] ?? null };
-}
-
-export async function getMutationContext() {
-  const { db, ctx } = getAuthContext();
-  try {
-    const session = await getSession();
-    return { db, ctx, user: session?.user ?? null };
-  } catch (error) {
-    ctx.waitUntil(db.$client.end());
-    throw error;
-  }
 }
 
 export async function requirePartnerApi(): Promise<
