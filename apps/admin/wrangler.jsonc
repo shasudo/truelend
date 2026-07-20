@@ -29,7 +29,8 @@
     "BETTER_AUTH_URL": "https://admin.truelend.in",
     // Email (Resend). RESEND_API_KEY is a secret. EMAIL_FROM must be a verified
     // sender; TEAM_EMAIL receives new-lead alerts. PARTNERS_URL links the
-    // partner in verified/rejected emails. Missing key = no-op.
+    // partner in verified/rejected emails. Local development may omit delivery;
+    // production preflight requires the API key.
     "EMAIL_FROM": "TrueLend <hello@truelend.in>",
     "TEAM_EMAIL": "shathwik@icloud.com",
     "PARTNERS_URL": "https://partner.truelend.in",
@@ -43,8 +44,9 @@
       "localConnectionString": "postgres://postgres:postgres@localhost:5432/truelend",
     },
   ],
-  // Read-only here: partners upload KYC docs to this bucket; admin serves them
-  // back through an authenticated route.
+  // The admin route only reads KYC objects, but an R2 binding is capability-wide
+  // and can mutate the bucket. Production still needs a separately enforced
+  // narrow reader capability.
   "r2_buckets": [
     {
       "binding": "BUCKET",

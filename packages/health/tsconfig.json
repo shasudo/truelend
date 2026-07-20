@@ -1,5 +1,5 @@
 {
   "extends": "@truelend/typescript-config/base.json",
   "compilerOptions": { "lib": ["ES2022", "DOM"] },
-  "include": ["src"]
+  "include": ["src", "test"]
 }

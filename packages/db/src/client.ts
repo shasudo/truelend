@@ -6,8 +6,8 @@ import * as schema from "./schema";
 // upstream, so keep `max` small; `fetch_types: false` skips an extra round-trip
 // on connect. Close it after the response: ctx.waitUntil(db.$client.end()).
 //
-// Pass env.HYPERDRIVE.connectionString in the Worker; a direct DATABASE_URL
-// works too (e.g. local dev, scripts).
+// Worker callers pass env.HYPERDRIVE.connectionString. Direct DATABASE_URL use
+// is restricted to guarded local or protected-CI Node tooling.
 export function createDb(connectionString: string) {
   const client = postgres(connectionString, { max: 5, fetch_types: false });
   return drizzle(client, { schema });

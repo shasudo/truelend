@@ -4,3 +4,4 @@ build
 .turbo
 coverage
 pnpm-lock.yaml
+apps/*/cloudflare-env.d.ts

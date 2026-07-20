@@ -76,8 +76,13 @@ export async function listLeads(db: Database, f: LeadFilters) {
 }
 
 export async function getLead(db: Database, id: string) {
-  const [lead] = await db.select().from(schema.leads).where(eq(schema.leads.id, id)).limit(1);
-  if (!lead) return null;
+  const [result] = await db
+    .select({ lead: schema.leads, partnerType: schema.partners.type })
+    .from(schema.leads)
+    .leftJoin(schema.partners, eq(schema.leads.partnerId, schema.partners.userId))
+    .where(eq(schema.leads.id, id))
+    .limit(1);
+  if (!result) return null;
 
   const [notes, cases] = await Promise.all([
     db
@@ -93,7 +98,7 @@ export async function getLead(db: Database, id: string) {
       .orderBy(desc(schema.loanCases.createdAt)),
   ]);
 
-  return { lead, notes, cases };
+  return { lead: result.lead, partnerType: result.partnerType, notes, cases };
 }
 
 export async function listEmployees(db: Database) {

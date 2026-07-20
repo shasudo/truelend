@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { LockKeyhole, Send } from "lucide-react";
 import { Button, Checkbox, Field, Input, Select, Textarea } from "@truelend/ui";
-import { contactReasonValues, contactSchema } from "@/lib/schemas";
+import { contactReasonValues, contactSchema } from "@/lib/lead-schemas";
 import {
   FormSuccess,
   NoScriptFallback,
@@ -111,25 +111,23 @@ export function ContactForm() {
         </Field>
       </div>
       <Field label="Your message" htmlFor="con-message" required error={err.message?.message}>
-        <div className="relative">
-          <Textarea
-            id="con-message"
-            maxLength={1000}
-            placeholder="Type your message here…"
-            className="min-h-32 pb-8"
-            aria-invalid={!!err.message}
-            aria-describedby="con-message-count"
-            {...register("message")}
-          />
-          <span
-            id="con-message-count"
-            className="absolute bottom-2.5 right-3.5 text-xs tabular-nums text-muted"
-            aria-live="polite"
-          >
-            {messageLength}/1000
-          </span>
-        </div>
+        <Textarea
+          id="con-message"
+          maxLength={1000}
+          placeholder="Type your message here…"
+          className="min-h-32"
+          aria-invalid={!!err.message}
+          aria-describedby="con-message-count"
+          {...register("message")}
+        />
       </Field>
+      <p
+        id="con-message-count"
+        className="-mt-3 text-right text-xs tabular-nums text-muted"
+        aria-live="polite"
+      >
+        {messageLength}/1000
+      </p>
 
       <label className="flex gap-3 text-sm leading-relaxed text-navy-600">
         <Checkbox

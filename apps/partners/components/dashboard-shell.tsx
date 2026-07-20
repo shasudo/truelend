@@ -26,10 +26,11 @@ import {
   X,
 } from "lucide-react";
 import { Logo, cx } from "@truelend/ui";
-import { partnerTypeLabels } from "@truelend/reference";
+import { partnerTypeLabel } from "@truelend/reference";
 import { authClient } from "@truelend/auth/client";
-import type { Partner } from "@truelend/db";
 import { PartnerIdChip } from "./partner-id-chip";
+
+type PartnerType = "business" | "referral";
 
 interface NavItem {
   label: string;
@@ -45,19 +46,22 @@ interface NavGroup {
 function useSignOut() {
   const router = useRouter();
   const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string>();
   async function signOut() {
     if (pending) return;
     setPending(true);
+    setError(undefined);
     try {
       const { error } = await authClient.signOut();
       if (error) throw new Error("Sign out failed");
       router.push("/login");
       router.refresh();
     } catch {
+      setError("Could not sign out. Please try again.");
       setPending(false);
     }
   }
-  return { signOut, pending };
+  return { signOut, pending, error };
 }
 
 function NavLinks({ groups, onNavigate }: { groups: NavGroup[]; onNavigate?: () => void }) {
@@ -107,20 +111,21 @@ function UserCard({
   referenceId,
 }: {
   name: string;
-  type: Partner["type"];
+  type: PartnerType;
   referenceId: string;
 }) {
-  const { signOut, pending } = useSignOut();
+  const { signOut, pending, error } = useSignOut();
   return (
     <div className="border-t border-hairline p-3">
       <div className="px-2 py-1.5">
         <p className="truncate text-sm font-semibold text-navy-950">{name}</p>
         <span className="mt-1 inline-block rounded-full bg-navy-800/[0.07] px-2 py-0.5 text-xs font-semibold text-navy-600">
-          {partnerTypeLabels[type]}
+          {partnerTypeLabel(type)}
         </span>
       </div>
       <PartnerIdChip referenceId={referenceId} className="mt-2 w-full justify-between" />
       <button
+        type="button"
         onClick={signOut}
         disabled={pending}
         className="mt-1 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-navy-600 transition-colors hover:bg-red-50 hover:text-red-700 disabled:opacity-50"
@@ -128,21 +133,28 @@ function UserCard({
         <LogOut className="h-4.5 w-4.5 shrink-0" aria-hidden />
         {pending ? "Signing out…" : "Sign out"}
       </button>
+      {error && (
+        <p role="alert" className="px-3 pt-1 text-xs text-red-700">
+          {error}
+        </p>
+      )}
     </div>
   );
 }
 
 export function DashboardShell({
-  partner,
+  partnerType,
+  referenceId,
   name,
   children,
 }: {
-  partner: Partner;
+  partnerType: PartnerType;
+  referenceId: string;
   name: string;
   children: ReactNode;
 }) {
   const [open, setOpen] = useState(false);
-  const business = partner.type === "business";
+  const business = partnerType === "business";
 
   const navGroups: NavGroup[] = business
     ? [
@@ -218,7 +230,7 @@ export function DashboardShell({
         <nav className="flex-1 overflow-y-auto p-3" aria-label="Main">
           <NavLinks groups={navGroups} />
         </nav>
-        <UserCard name={name} type={partner.type} referenceId={partner.referenceId} />
+        <UserCard name={name} type={partnerType} referenceId={referenceId} />
       </aside>
 
       <div className="flex min-h-screen flex-1 flex-col">
@@ -236,10 +248,13 @@ export function DashboardShell({
               </button>
             </Dialog.Trigger>
             <Dialog.Portal>
-              <Dialog.Overlay className="fixed inset-0 z-50 bg-navy-950/40 backdrop-blur-sm data-[state=open]:animate-[fade-in_200ms_ease-out]" />
-              <Dialog.Content className="fixed inset-y-0 left-0 z-50 flex w-72 max-w-[85vw] flex-col bg-white data-[state=open]:animate-[drawer-in-left_250ms_var(--ease-out-quart)]">
+              <Dialog.Overlay className="fixed inset-0 z-50 bg-navy-950/40 backdrop-blur-sm motion-safe:data-[state=open]:animate-[fade-in_200ms_ease-out]" />
+              <Dialog.Content className="fixed inset-y-0 left-0 z-50 flex w-72 max-w-[85vw] flex-col bg-white motion-safe:data-[state=open]:animate-[drawer-in-left_250ms_var(--ease-out-quart)]">
                 <div className="flex h-14 items-center justify-between border-b border-hairline px-4">
                   <Dialog.Title className="sr-only">Menu</Dialog.Title>
+                  <Dialog.Description className="sr-only">
+                    Navigate the partner workspace.
+                  </Dialog.Description>
                   <span className="text-navy-800">
                     <Logo />
                   </span>
@@ -255,7 +270,7 @@ export function DashboardShell({
                 <nav className="flex-1 overflow-y-auto p-3" aria-label="Main">
                   <NavLinks groups={navGroups} onNavigate={() => setOpen(false)} />
                 </nav>
-                <UserCard name={name} type={partner.type} referenceId={partner.referenceId} />
+                <UserCard name={name} type={partnerType} referenceId={referenceId} />
               </Dialog.Content>
             </Dialog.Portal>
           </Dialog.Root>

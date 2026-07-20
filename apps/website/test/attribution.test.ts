@@ -7,7 +7,7 @@ import {
   refFromSearch,
 } from "../lib/attribution";
 
-test("attribution keeps first touch, updates last touch, and expires", () => {
+void test("attribution keeps first touch, updates last touch, and expires", () => {
   const now = 1_000;
   const first = resolveAttribution(null, { source: "google", campaign: "launch" }, now);
   const second = resolveAttribution(
@@ -29,7 +29,7 @@ test("attribution keeps first touch, updates last touch, and expires", () => {
   );
 });
 
-test("partner ref is first-touch, normalized, survives UTM touches, and expires", () => {
+void test("partner ref is first-touch, normalized, survives UTM touches, and expires", () => {
   const now = 1_000;
   const first = resolveAttribution(null, {}, now, "bp100002");
   assert.equal(first.fields.ref, "BP100002"); // lowercased input normalized
@@ -47,7 +47,7 @@ test("partner ref is first-touch, normalized, survives UTM touches, and expires"
   );
 });
 
-test("refFromSearch accepts only BP/RP partner codes", () => {
+void test("refFromSearch accepts only BP/RP partner codes", () => {
   assert.equal(refFromSearch(new URLSearchParams("ref=BP100002")), "BP100002");
   assert.equal(refFromSearch(new URLSearchParams("ref=rp100002")), "RP100002");
   assert.equal(refFromSearch(new URLSearchParams("ref=DROP TABLE partners")), undefined);
@@ -55,7 +55,7 @@ test("refFromSearch accepts only BP/RP partner codes", () => {
   assert.equal(refFromSearch(new URLSearchParams("")), undefined);
 });
 
-test("corrupt, oversized, and blocked-style attribution inputs remain optional", () => {
+void test("corrupt, oversized, and blocked-style attribution inputs remain optional", () => {
   assert.deepEqual(resolveAttribution("{not-json", {}).fields, {});
   assert.deepEqual(resolveAttribution("x".repeat(5_000), {}).fields, {});
   assert.deepEqual(touchFromSearch(new URLSearchParams("utm_source=" + "x".repeat(200))), {

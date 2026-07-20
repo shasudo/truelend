@@ -12,6 +12,27 @@ interface RevealProps {
   className?: string;
 }
 
+let revealObserver: IntersectionObserver | undefined;
+
+function observeReveal(element: HTMLElement): () => void {
+  if (!("IntersectionObserver" in window)) {
+    element.dataset.visible = "true";
+    return () => undefined;
+  }
+  revealObserver ??= new IntersectionObserver(
+    (entries, observer) => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting) continue;
+        (entry.target as HTMLElement).dataset.visible = "true";
+        observer.unobserve(entry.target);
+      }
+    },
+    { rootMargin: "0px 0px -80px", threshold: 0.01 },
+  );
+  revealObserver.observe(element);
+  return () => revealObserver?.unobserve(element);
+}
+
 export function Reveal({ children, delay = 0, immediate, className }: RevealProps) {
   const ref = useRef<HTMLDivElement>(null);
 
@@ -22,22 +43,13 @@ export function Reveal({ children, delay = 0, immediate, className }: RevealProp
       element.dataset.visible = "true";
       return;
     }
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry?.isIntersecting) {
-          element.dataset.visible = "true";
-          observer.disconnect();
-        }
-      },
-      { rootMargin: "0px 0px -80px", threshold: 0.01 },
-    );
-    observer.observe(element);
-    return () => observer.disconnect();
+    return observeReveal(element);
   }, [immediate]);
 
   return (
     <div
       ref={ref}
+      data-visible={immediate ? "true" : undefined}
       className={cx("tl-reveal", className)}
       style={{ "--reveal-delay": `${delay}s` } as CSSProperties}
     >

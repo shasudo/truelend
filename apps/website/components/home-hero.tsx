@@ -15,6 +15,7 @@ import {
   WalletCards,
 } from "lucide-react";
 import { Button } from "@truelend/ui";
+import { bankName, type BankSlug } from "@truelend/reference";
 import { Reveal } from "@/components/reveal";
 
 const profileDetails = [
@@ -34,7 +35,7 @@ const assessments = [
 
 const lenderMatches = [
   {
-    bank: "ICICI Bank",
+    bankSlug: "icici",
     mark: "i",
     markClass: "bg-red-600 text-white",
     match: "Excellent match",
@@ -44,7 +45,7 @@ const lenderMatches = [
     probability: "96%",
   },
   {
-    bank: "HDFC Bank",
+    bankSlug: "hdfc",
     mark: "H",
     markClass: "bg-navy-800 text-white",
     match: "Strong match",
@@ -54,7 +55,7 @@ const lenderMatches = [
     probability: "94%",
   },
   {
-    bank: "SBI",
+    bankSlug: "sbi",
     mark: "S",
     markClass: "bg-navy-500 text-white",
     match: "Good match",
@@ -63,7 +64,16 @@ const lenderMatches = [
     rate: "8.35%",
     probability: "90%",
   },
-];
+] satisfies ReadonlyArray<{
+  bankSlug: BankSlug;
+  mark: string;
+  markClass: string;
+  match: string;
+  matchClass: string;
+  amount: string;
+  rate: string;
+  probability: string;
+}>;
 
 const assurances = [
   { label: "Confidential", icon: LockKeyhole },
@@ -170,7 +180,7 @@ function LenderPanel() {
       <ul className="space-y-2">
         {lenderMatches.map((lender, i) => (
           <li
-            key={lender.bank}
+            key={lender.bankSlug}
             className="animate-[tl-highlight_4.4s_ease-in-out_infinite] rounded-xl border border-navy-100 bg-white p-3 shadow-[0_10px_28px_-24px_rgba(20,32,74,0.55)]"
             style={{ animationDelay: `${1.5 + i * 0.18}s` }}
           >
@@ -181,7 +191,7 @@ function LenderPanel() {
                 >
                   {lender.mark}
                 </span>
-                <span className="truncate">{lender.bank}</span>
+                <span className="truncate">{bankName(lender.bankSlug)}</span>
               </p>
               <span
                 className={`shrink-0 rounded-full px-2 py-1 text-[0.48rem] font-bold ${lender.matchClass}`}

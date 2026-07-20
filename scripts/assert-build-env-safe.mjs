@@ -34,7 +34,7 @@ for (const name of nextEnvFiles) {
 
 if (unsafe.length > 0) {
   throw new Error(
-    `${app} production build refused: ${unsafe.join(", ")} contains a database connection value that OpenNext can bundle. Run pnpm bootstrap:local to move Hyperdrive overrides to .dev.vars.`,
+    `${app} production build refused: ${unsafe.join(", ")} contains a database connection value that OpenNext can bundle. Move Hyperdrive overrides to .dev.vars and keep direct DATABASE_URL values only in packages/db/.env.`,
   );
 }
 

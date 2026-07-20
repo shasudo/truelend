@@ -26,20 +26,45 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm format:check
-      - run: pnpm cf:validate
-      - run: pnpm lint
-      - run: pnpm typecheck
-      - run: pnpm test
+      - run: pnpm check
       - run: pnpm audit --audit-level high
       - run: pnpm build
         env:
           NEXT_TELEMETRY_DISABLED: "1"
 
-  migrate:
+  worker-artifacts:
     needs: ci
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        app: [website, admin, partners]
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Build deployable Worker artifact
+        run: pnpm --filter @truelend/${{ matrix.app }} worker:build
+        env:
+          NEXT_TELEMETRY_DISABLED: "1"
+          # Cloudflare's public test key keeps PR builds deterministic. Production
+          # artifacts are rebuilt below with the protected production variable.
+          NEXT_PUBLIC_TURNSTILE_SITE_KEY: 1x00000000000000000000AA
+      - name: Dry-run and scan Worker artifact
+        run: |
+          pnpm --filter @truelend/${{ matrix.app }} worker:dry-run
+          node scripts/scan-worker-bundle.mjs "${{ matrix.app }}" "apps/${{ matrix.app }}/.wrangler/deploy-bundle"
+
+  migrate:
+    needs: [ci, worker-artifacts]
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
+    environment: production
     timeout-minutes: 10
     concurrency:
       group: database-migration
@@ -52,22 +77,35 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Verify production configuration before mutation
+        run: |
+          for app in website admin partners; do
+            pnpm --filter @truelend/${app} exec wrangler secret list --format json > "/tmp/${app}-worker-secrets.json"
+            node scripts/assert-production-config.mjs "${app}" "/tmp/${app}-worker-secrets.json"
+          done
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          HEALTHCHECK_SECRET: ${{ secrets.HEALTHCHECK_SECRET }}
+          NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${{ vars.NEXT_PUBLIC_TURNSTILE_SITE_KEY }}
       - run: pnpm db:preflight
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          TRUELEND_PRODUCTION_DATABASE_APPROVED: "true"
       - run: pnpm db:migrate
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          TRUELEND_PRODUCTION_DATABASE_APPROVED: "true"
 
   deploy:
-    needs: [ci, migrate]
+    needs: [ci, worker-artifacts, migrate]
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
     environment: production
     timeout-minutes: 20
     strategy:
       # Deploy every worker; an unchanged worker is a harmless no-op version bump.
-      # ponytail: path-filter the matrix if CI minutes ever bite — shared packages/* fan out to all three.
+      # ponytail: every release deploys all apps; add path filtering if median deploy time exceeds 10 minutes.
       fail-fast: false
       matrix:
         app: [website, admin, partners]
@@ -91,21 +129,22 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           HEALTHCHECK_SECRET: ${{ secrets.HEALTHCHECK_SECRET }}
           NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${{ vars.NEXT_PUBLIC_TURNSTILE_SITE_KEY }}
-      - name: Build immutable Worker artifact
+      - name: Build production Worker artifact
         run: pnpm --filter @truelend/${{ matrix.app }} worker:build
         env:
           NEXT_TELEMETRY_DISABLED: "1"
           NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${{ vars.NEXT_PUBLIC_TURNSTILE_SITE_KEY }}
           NEXT_PUBLIC_CF_BEACON_TOKEN: ${{ vars.NEXT_PUBLIC_CF_BEACON_TOKEN }}
-      - name: Validate and scan exact upload bundle
+      - name: Dry-run and scan upload candidate
         run: |
           pnpm --filter @truelend/${{ matrix.app }} worker:dry-run
           node scripts/scan-worker-bundle.mjs "${{ matrix.app }}" "apps/${{ matrix.app }}/.wrangler/deploy-bundle"
-      - name: Deploy tested artifact
+      - name: Deploy with OpenNext
         run: pnpm --filter @truelend/${{ matrix.app }} worker:deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          TRUELEND_PRODUCTION_DEPLOY_APPROVED: "true"
       - name: Verify release or roll back
         shell: bash
         run: |

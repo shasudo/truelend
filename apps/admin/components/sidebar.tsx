@@ -43,19 +43,22 @@ interface SidebarUser {
 function useSignOut() {
   const router = useRouter();
   const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string>();
   async function signOut() {
     if (pending) return;
     setPending(true);
+    setError(undefined);
     try {
       const { error } = await adminAuthClient.signOut();
       if (error) throw new Error("Sign out failed");
       router.push("/login");
       router.refresh();
     } catch {
+      setError("Could not sign out. Please try again.");
       setPending(false);
     }
   }
-  return { signOut, pending };
+  return { signOut, pending, error };
 }
 
 function NavLinks({ isAdmin, onNavigate }: { isAdmin: boolean; onNavigate?: () => void }) {
@@ -89,7 +92,7 @@ function NavLinks({ isAdmin, onNavigate }: { isAdmin: boolean; onNavigate?: () =
 }
 
 function UserCard({ user }: { user: SidebarUser }) {
-  const { signOut, pending } = useSignOut();
+  const { signOut, pending, error } = useSignOut();
   return (
     <div className="border-t border-hairline p-3">
       <div className="px-2 py-1.5">
@@ -100,6 +103,7 @@ function UserCard({ user }: { user: SidebarUser }) {
         </span>
       </div>
       <button
+        type="button"
         onClick={signOut}
         disabled={pending}
         className="mt-1 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-navy-600 transition-colors hover:bg-red-50 hover:text-red-700 disabled:opacity-50"
@@ -107,6 +111,11 @@ function UserCard({ user }: { user: SidebarUser }) {
         <LogOut className="h-4.5 w-4.5 shrink-0" aria-hidden />
         {pending ? "Signing out…" : "Sign out"}
       </button>
+      {error && (
+        <p role="alert" className="px-3 pt-1 text-xs text-red-700">
+          {error}
+        </p>
+      )}
     </div>
   );
 }
@@ -144,10 +153,13 @@ export function MobileNav({ user }: { user: SidebarUser }) {
           </button>
         </Dialog.Trigger>
         <Dialog.Portal>
-          <Dialog.Overlay className="fixed inset-0 z-50 bg-navy-950/40 backdrop-blur-sm data-[state=open]:animate-[fade-in_200ms_ease-out]" />
-          <Dialog.Content className="fixed inset-y-0 left-0 z-50 flex w-72 max-w-[85vw] flex-col bg-white data-[state=open]:animate-[drawer-in-left_250ms_var(--ease-out-quart)]">
+          <Dialog.Overlay className="fixed inset-0 z-50 bg-navy-950/40 backdrop-blur-sm motion-safe:data-[state=open]:animate-[fade-in_200ms_ease-out]" />
+          <Dialog.Content className="fixed inset-y-0 left-0 z-50 flex w-72 max-w-[85vw] flex-col bg-white motion-safe:data-[state=open]:animate-[drawer-in-left_250ms_var(--ease-out-quart)]">
             <div className="flex h-14 items-center justify-between border-b border-hairline px-4">
               <Dialog.Title className="sr-only">Menu</Dialog.Title>
+              <Dialog.Description className="sr-only">
+                Navigate the admin workspace.
+              </Dialog.Description>
               <span className="text-navy-800">
                 <Logo />
               </span>

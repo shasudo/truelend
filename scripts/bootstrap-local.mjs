@@ -9,17 +9,64 @@ const turnstileSecretKey = "1x0000000000000000000000000000000AA";
 const databaseUrl = "postgres://postgres:postgres@localhost:5432/truelend";
 let migrated = 0;
 
+function migrateLegacyDatabaseUrl(app, legacyContents) {
+  const lines = legacyContents.split(/\r?\n/);
+  const databaseLines = lines.filter((line) => /^\s*DATABASE_URL\s*=\s*\S+/i.test(line));
+  if (databaseLines.length === 0) return legacyContents;
+  if (databaseLines.length > 1) {
+    console.warn(`kept apps/${app}/.env because it contains multiple DATABASE_URL assignments`);
+    return null;
+  }
+
+  const databaseEnv = resolve(root, "packages/db/.env");
+  const assignment = databaseLines[0].trim();
+  if (existsSync(databaseEnv)) {
+    const existing = readFileSync(databaseEnv, "utf8");
+    const existingAssignment = existing
+      .split(/\r?\n/)
+      .find((line) => /^\s*DATABASE_URL\s*=\s*\S+/i.test(line))
+      ?.trim();
+    if (existingAssignment && existingAssignment !== assignment) {
+      console.warn(
+        `kept apps/${app}/.env because its DATABASE_URL differs from packages/db/.env; resolve the two local values manually`,
+      );
+      return null;
+    }
+    if (!existingAssignment) {
+      writeFileSync(databaseEnv, `${existing.trimEnd()}\n${assignment}\n`, {
+        encoding: "utf8",
+        mode: 0o600,
+      });
+      chmodSync(databaseEnv, 0o600);
+    }
+  } else {
+    mkdirSync(dirname(databaseEnv), { recursive: true });
+    writeFileSync(
+      databaseEnv,
+      `# Local Node database tooling only. Remote targets remain CI-guarded.\n${assignment}\n`,
+      { encoding: "utf8", mode: 0o600 },
+    );
+    chmodSync(databaseEnv, 0o600);
+  }
+
+  console.log(`moved apps/${app}/.env DATABASE_URL to packages/db/.env`);
+  return lines.filter((line) => !databaseLines.includes(line)).join("\n");
+}
+
 for (const app of ["website", "admin", "partners"]) {
   const legacy = resolve(root, `apps/${app}/.env`);
   const developmentOnly = resolve(root, `apps/${app}/.env.development.local`);
   if (existsSync(legacy) && !existsSync(developmentOnly)) {
+    const migratedContents = migrateLegacyDatabaseUrl(app, readFileSync(legacy, "utf8"));
+    if (migratedContents == null) continue;
     renameSync(legacy, developmentOnly);
+    writeFileSync(developmentOnly, migratedContents, { encoding: "utf8", mode: 0o600 });
     chmodSync(developmentOnly, 0o600);
     console.log(`migrated apps/${app}/.env to .env.development.local`);
     migrated += 1;
   } else if (existsSync(legacy)) {
     console.warn(
-      `kept apps/${app}/.env because .env.development.local already exists; merge it manually before a production build`,
+      `kept apps/${app}/.env because .env.development.local already exists; move browser-safe values into .env.development.local, move Worker values into .dev.vars, then remove the legacy file`,
     );
   }
 }
@@ -76,9 +123,8 @@ const files = new Map([
   ],
   [
     "apps/partners/.dev.vars",
-    `BETTER_AUTH_SECRET=${secret()}\nBETTER_AUTH_URL=http://localhost:3002\nTURNSTILE_SECRET_KEY=${turnstileSecretKey}\nHEALTHCHECK_SECRET=${secret()}\nRESEND_API_KEY=\nCLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE=${databaseUrl}\n`,
+    `BETTER_AUTH_SECRET=${secret()}\nBETTER_AUTH_URL=http://localhost:3002\nTURNSTILE_SECRET_KEY=${turnstileSecretKey}\nTURNSTILE_SITE_KEY=${turnstileSiteKey}\nHEALTHCHECK_SECRET=${secret()}\nRESEND_API_KEY=\nCLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE=${databaseUrl}\n`,
   ],
-  ["apps/partners/.env.development.local", `NEXT_PUBLIC_TURNSTILE_SITE_KEY=${turnstileSiteKey}\n`],
   [
     "apps/admin/.env.development.local",
     "# Admin has no browser-visible local variables. Hyperdrive is in .dev.vars.\n",
@@ -98,6 +144,35 @@ for (const [relativePath, contents] of files) {
   chmodSync(file, 0o600);
   console.log(`created ${relativePath}`);
   created += 1;
+}
+
+// Partner Turnstile is a Worker runtime binding. Move the obsolete Next public
+// variable into .dev.vars so local setup exercises the same boundary as deploys.
+{
+  const nextEnv = resolve(root, "apps/partners/.env.development.local");
+  if (existsSync(nextEnv)) {
+    const lines = readFileSync(nextEnv, "utf8").split(/\r?\n/);
+    const legacy = lines.find((line) => /^\s*NEXT_PUBLIC_TURNSTILE_SITE_KEY\s*=/.test(line));
+    if (legacy) {
+      const value = legacy.slice(legacy.indexOf("=") + 1).trim();
+      const devVars = resolve(root, "apps/partners/.dev.vars");
+      const existing = readFileSync(devVars, "utf8");
+      if (!/^\s*TURNSTILE_SITE_KEY\s*=/m.test(existing)) {
+        writeFileSync(devVars, `${existing.trimEnd()}\nTURNSTILE_SITE_KEY=${value}\n`, {
+          encoding: "utf8",
+          mode: 0o600,
+        });
+        chmodSync(devVars, 0o600);
+      }
+      writeFileSync(nextEnv, lines.filter((line) => line !== legacy).join("\n"), {
+        encoding: "utf8",
+        mode: 0o600,
+      });
+      chmodSync(nextEnv, 0o600);
+      console.log("moved partners Turnstile site key from Next env to .dev.vars");
+      migrated += 1;
+    }
+  }
 }
 
 console.log(

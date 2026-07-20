@@ -1,21 +1,22 @@
-// NOTE: phone / whatsapp / email / address are PLACEHOLDERS until TrueLend
-// provides approved production values.
+import { appUrls } from "@truelend/reference";
+
+// Approval state and the visible draft notice are owned by content/approval.ts.
 
 export const site = {
   name: "TrueLend",
   tagline: "Lending Choices, Simplified.",
   slogan: "Before You Borrow. Think TrueLend.",
-  url: "https://truelend.in",
+  url: appUrls.website,
   // Partner site landing page. Deep-linking to /dashboard bounces logged-out
   // visitors to sign-in; the landing page is the correct public entry point.
-  partnerUrl: "https://partner.truelend.in",
+  partnerUrl: appUrls.partners,
   phone: "+91 98765 43210",
   phoneHref: "tel:+919876543210",
   whatsappHref: "https://wa.me/919876543210",
   email: "hello@truelend.in",
   address: "Hyderabad, Telangana, India",
-  // City-centre fallback matching the generic address above. Replace these two
-  // values with the approved office coordinates when the business confirms them;
+  // ponytail: city-centre coordinates match the generic address. Replace them
+  // when the content approval manifest names an approved office location;
   // the embedded map and directions link both derive from this single source.
   location: {
     latitude: 17.385044,
@@ -25,7 +26,7 @@ export const site = {
   nav: [
     { label: "Products", href: "/products" },
     { label: "How It Works", href: "/#how-it-works" },
-    { label: "Partner Network", href: "https://partner.truelend.in" },
+    { label: "Partner Network", href: appUrls.partners },
     { label: "Resources", href: "/blog" },
     { label: "About", href: "/about" },
     { label: "Contact", href: "/contact" },

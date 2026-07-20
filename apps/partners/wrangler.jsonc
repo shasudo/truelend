@@ -47,7 +47,8 @@
     // render Turnstile after the Worker is deployed.
     "TURNSTILE_SITE_KEY": "0x4AAAAAAD0gmfEKR5XdzhJR",
     // Email (Resend). RESEND_API_KEY is a secret; TEAM_EMAIL receives partner
-    // lead alerts. Missing key = no-op.
+    // lead alerts. Local development may omit delivery; production preflight
+    // requires the API key.
     "EMAIL_FROM": "TrueLend <hello@truelend.in>",
     "TEAM_EMAIL": "shathwik@icloud.com",
   },

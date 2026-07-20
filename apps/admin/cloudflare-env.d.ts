@@ -1,24 +1,22 @@
-// Types for the Cloudflare bindings declared in wrangler.jsonc.
-// Regenerate from wrangler.jsonc with: pnpm cf-typegen:admin
-import type { Hyperdrive, Fetcher, R2Bucket, RateLimit } from "@cloudflare/workers-types";
-
-declare global {
-  interface CloudflareEnv {
-    ASSETS: Fetcher;
-    HYPERDRIVE: Hyperdrive;
-    BUCKET: R2Bucket;
-    AUTH_RATE_LIMITER: RateLimit;
-    BETTER_AUTH_URL: string;
-    /** Secret — set via .dev.vars locally, `wrangler secret put` in prod. */
-    BETTER_AUTH_SECRET: string;
-    /** Protects /api/health/ready; set as a Worker secret. */
-    HEALTHCHECK_SECRET?: string;
-    // Email (Resend) — see @truelend/email. Missing key = no-op.
-    RESEND_API_KEY?: string;
-    EMAIL_FROM?: string;
-    TEAM_EMAIL?: string;
-    PARTNERS_URL?: string;
-  }
+/* eslint-disable */
+// Generated from wrangler.jsonc by scripts/check-cloudflare-types.mjs. Do not edit.
+interface __BaseEnv_CloudflareEnv {
+	BUCKET: R2Bucket;
+	HYPERDRIVE: Hyperdrive;
+	AUTH_RATE_LIMITER: RateLimit;
+	ASSETS: Fetcher;
+	BETTER_AUTH_URL: "https://admin.truelend.in";
+	EMAIL_FROM: "TrueLend <hello@truelend.in>";
+	TEAM_EMAIL: "shathwik@icloud.com";
+	PARTNERS_URL: "https://partner.truelend.in";
 }
-
-export {};
+declare namespace Cloudflare {
+	interface Env extends __BaseEnv_CloudflareEnv {}
+}
+interface CloudflareEnv extends Cloudflare.Env {}
+type StringifyValues<EnvType extends Record<string, unknown>> = {
+	[Binding in keyof EnvType]: EnvType[Binding] extends string ? EnvType[Binding] : string;
+};
+declare namespace NodeJS {
+	interface ProcessEnv extends StringifyValues<Pick<Cloudflare.Env, "BETTER_AUTH_URL" | "EMAIL_FROM" | "TEAM_EMAIL" | "PARTNERS_URL">> {}
+}

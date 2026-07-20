@@ -1,17 +1,17 @@
 {
-  "extends": "@truelend/typescript-config/base.json",
+  "extends": "@truelend/typescript-config/next.json",
   "compilerOptions": {
-    "lib": ["ES2022", "DOM", "DOM.Iterable"],
-    "jsx": "preserve",
-    "allowJs": true,
-    "incremental": true,
-    "noEmit": true,
-    "types": ["node"],
-    "plugins": [{ "name": "next" }],
     "paths": {
       "@/*": ["./*"]
     }
   },
-  "include": ["next-env.d.ts", "cloudflare-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "include": [
+    "next-env.d.ts",
+    "cloudflare-env.d.ts",
+    "cloudflare-secrets.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts"
+  ],
   "exclude": ["node_modules", ".next", ".open-next"]
 }

@@ -37,7 +37,7 @@ const referralMessages = [
 
 export default async function MarketingPage() {
   const { partner } = await requirePartner();
-  const business = partner!.type === "business";
+  const business = partner.type === "business";
   const messages = business ? businessMessages : referralMessages;
 
   return (

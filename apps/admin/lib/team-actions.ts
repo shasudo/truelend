@@ -10,7 +10,7 @@ import { getAuthContext } from "./auth";
 const ROLES = ["admin", "employee"] as const;
 
 // better-auth's admin plugin types roles as "user" | "admin"; TrueLend stores
-// custom string roles (employee now; partner/referral later) as plain text.
+// employee and partner roles as plain text.
 // Cast at the API boundary — the value is stored verbatim at runtime.
 const asRole = (r: string): "admin" => r as "admin";
 

@@ -20,6 +20,7 @@ import {
   earningsLabel,
   productName,
   leadStatusLabels,
+  pipelineStatusTone,
   formatPaise,
   formatDate,
 } from "@truelend/reference";
@@ -124,9 +125,9 @@ function QuickActions({ business }: { business: boolean }) {
 export default async function DashboardPage() {
   const { session, partner } = await requirePartner();
   const { db } = getAuthContext();
-  const partnerId = partner!.userId;
-  const business = partner!.type === "business";
-  const label = earningsLabel(partner!.type);
+  const partnerId = partner.userId;
+  const business = partner.type === "business";
+  const label = earningsLabel(partner.type);
 
   const [m, leads, pipeline] = await Promise.all([
     getPartnerMetrics(db, partnerId),
@@ -155,7 +156,7 @@ export default async function DashboardPage() {
               TrueLend {business ? "Business" : "Referral"} Partner
             </p>
             <PartnerIdChip
-              referenceId={partner!.referenceId}
+              referenceId={partner.referenceId}
               className="shadow-[0_18px_36px_-30px_rgba(7,13,36,0.9)]"
             />
           </div>
@@ -277,7 +278,7 @@ export default async function DashboardPage() {
         <h2 id="referral-link-title" className="sr-only">
           Referral link
         </h2>
-        <ReferralLinkCard referenceId={partner!.referenceId} />
+        <ReferralLinkCard referenceId={partner.referenceId} />
       </section>
 
       <div className="mt-7 grid gap-4 xl:grid-cols-[minmax(0,1.7fr)_minmax(280px,0.7fr)]">
@@ -326,7 +327,7 @@ export default async function DashboardPage() {
                   </p>
                 </div>
                 <StatusBadge
-                  status={lead.status}
+                  tone={pipelineStatusTone(lead.status)}
                   label={leadStatusLabels[lead.status] ?? lead.status}
                 />
               </li>

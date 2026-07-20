@@ -1,7 +1,8 @@
 import { Card } from "@truelend/ui";
+import { isKycEditable } from "@truelend/reference";
 import { requirePartner, getAuthContext } from "@/lib/auth";
-import { getPartnerDocuments } from "@/lib/partner-queries";
-import { kycEditable } from "@/lib/onboarding";
+import { getPartnerDocumentTypes } from "@/lib/kyc-document-queries";
+import { toKycFormValues } from "@/lib/kyc-form-values";
 import { KycDetailsForm } from "@/components/kyc-details-form";
 import { KycUpload } from "@/components/kyc-upload";
 import { PartnerPageHeader } from "@/components/partner-page-header";
@@ -11,8 +12,8 @@ export const dynamic = "force-dynamic";
 export default async function KycPage() {
   const { partner } = await requirePartner();
   const { db } = getAuthContext();
-  const documents = partner ? await getPartnerDocuments(db, partner.userId) : [];
-  const editable = partner ? kycEditable(partner) : true;
+  const documentTypes = await getPartnerDocumentTypes(db, partner.userId);
+  const editable = isKycEditable(partner);
 
   return (
     <div className="max-w-3xl">
@@ -24,24 +25,22 @@ export default async function KycPage() {
 
       {!editable && (
         <p className="mt-5 rounded-lg border border-navy-800/15 bg-navy-800/[0.05] px-4 py-3 text-sm text-navy-700">
-          {partner?.status === "verified"
+          {partner.status === "verified"
             ? "Your account is verified, so your KYC is locked. Contact us to change any details."
             : "Your application is under review — details and documents are locked until it's decided."}
         </p>
       )}
 
-      {partner && (
-        <section className="mt-6">
-          <h2 className="mb-4 font-display text-lg font-bold text-navy-950">Details</h2>
-          <Card className="p-6">
-            <KycDetailsForm partner={partner} editable={editable} />
-          </Card>
-        </section>
-      )}
+      <section className="mt-6">
+        <h2 className="mb-4 font-display text-lg font-bold text-navy-950">Details</h2>
+        <Card className="p-6">
+          <KycDetailsForm values={toKycFormValues(partner)} editable={editable} />
+        </Card>
+      </section>
 
       <section className="mt-8">
         <h2 className="mb-4 font-display text-lg font-bold text-navy-950">Documents</h2>
-        <KycUpload documents={documents} editable={editable} />
+        <KycUpload uploadedDocumentTypes={documentTypes} editable={editable} />
       </section>
     </div>
   );

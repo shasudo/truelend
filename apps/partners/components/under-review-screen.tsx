@@ -1,6 +1,5 @@
 import { CheckCircle2, Clock, BadgeCheck, Mail } from "lucide-react";
 import { Card, Container, HexPattern, Logo, SubmitButton } from "@truelend/ui";
-import type { Partner } from "@truelend/db";
 import { reopenApplication } from "@/lib/kyc-actions";
 import { SignOutButton } from "@/components/sign-out-button";
 
@@ -10,14 +9,7 @@ const steps = [
   { icon: BadgeCheck, title: "Verified — start earning", state: "todo" as const },
 ];
 
-export function UnderReviewScreen({
-  name,
-  email,
-}: {
-  name: string;
-  email: string;
-  partner: Partner;
-}) {
+export function UnderReviewScreen({ name, email }: { name: string; email: string }) {
   return (
     <div className="relative min-h-screen overflow-hidden">
       <HexPattern className="-right-40 -top-40 h-[520px] w-[520px] text-navy-800/[0.05]" />

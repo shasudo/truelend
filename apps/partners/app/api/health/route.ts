@@ -1,5 +1,4 @@
-import { healthHeaders } from "@truelend/health";
-import type { HealthResponse } from "@truelend/types";
+import { healthHeaders, type HealthResponse } from "@truelend/health";
 
 export const dynamic = "force-dynamic";
 

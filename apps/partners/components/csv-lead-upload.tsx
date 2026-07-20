@@ -8,7 +8,7 @@ import { submitLeadsCsv, type CsvState } from "@/lib/lead-actions";
 
 // Fixed column order the parser expects; sample row uses a real product slug.
 const TEMPLATE_CSV = `name,phone,email,city,product,message
-Ravi Kumar,9876543210,ravi@example.com,Mumbai,${products[0]?.slug ?? ""},Looking for a personal loan
+Ravi Kumar,9876543210,ravi@example.com,Mumbai,${products[0].slug},Looking for a personal loan
 Priya Shah,9812345678,,Pune,,Call back after 6pm
 `;
 

@@ -4,7 +4,9 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./actions": "./src/actions.ts",
+    "./server": "./src/server.ts"
   },
   "scripts": {
     "lint": "eslint .",
@@ -13,6 +15,7 @@
   },
   "devDependencies": {
     "@truelend/eslint-config": "workspace:*",
+    "@truelend/typescript-config": "workspace:*",
     "@types/node": "catalog:",
     "eslint": "catalog:",
     "tsx": "catalog:",

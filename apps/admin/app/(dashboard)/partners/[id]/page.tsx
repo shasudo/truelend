@@ -3,15 +3,17 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, FileText, Check, X } from "lucide-react";
 import { Card, Field, Textarea, Stat, SubmitButton, cx } from "@truelend/ui";
 import {
-  partnerTypeLabels,
-  partnerStatusLabels,
+  evaluatePartnerApplication,
+  partnerTypeLabel,
+  partnerStatusLabel,
   partnerDocTypeLabels,
-  partnerDocTypes,
   productName,
   earningsLabel,
   formatPaise,
   formatDate,
   formatDateTime,
+  type PartnerApplicationEvaluation,
+  type PartnerReviewState,
 } from "@truelend/reference";
 import { PageTitle } from "@/components/page-title";
 import { PayoutForm } from "@/components/payout-form";
@@ -41,6 +43,27 @@ function Detail({ label, value }: { label: string; value: string | null | undefi
   );
 }
 
+function getApprovalBlockedMessage(
+  reviewState: PartnerReviewState,
+  application: PartnerApplicationEvaluation,
+): string | null {
+  if (application.canApprove) return null;
+  if (reviewState.status === "rejected") {
+    return "Partner must correct and resubmit their application before approval.";
+  }
+  if (!reviewState.submittedAt) return "Partner hasn't submitted their application yet.";
+  if (application.missingFields.length > 0) {
+    return "Required KYC and bank details are incomplete.";
+  }
+  if (application.missingDocumentTypes.length > 0) {
+    const documents = application.missingDocumentTypes.map(
+      (documentType) => partnerDocTypeLabels[documentType],
+    );
+    return `Missing: ${documents.join(", ")}.`;
+  }
+  return "This application isn't eligible for approval in its current state.";
+}
+
 export default async function PartnerDetailPage({ params }: { params: Promise<{ id: string }> }) {
   await requireAdmin();
   const { id } = await params;
@@ -52,32 +75,9 @@ export default async function PartnerDetailPage({ params }: { params: Promise<{ 
   const noun = earningsLabel(partner.type);
   const business = partner.type === "business";
   const uploadedDocTypes = new Set<string>(documents.map((document) => document.docType));
-  const missingRequiredDocs = partnerDocTypes.filter(
-    (document) => document.required && !uploadedDocTypes.has(document.type),
-  );
-  // Mirrors partners/lib/onboarding.ts isApplicationComplete — keep in sync.
-  const detailsComplete = Boolean(
-    partner.pan &&
-    partner.address &&
-    partner.bankName &&
-    partner.accountHolder &&
-    partner.accountNumber &&
-    partner.bankBranch &&
-    partner.ifsc &&
-    partner.nomineeName &&
-    partner.nomineeAadhaar &&
-    partner.nomineePhone &&
-    (partner.type === "business"
-      ? partner.productsHandled?.length &&
-        partner.yearsExperience != null &&
-        partner.monthlyVolumeLoansPaise != null &&
-        partner.monthlyVolumeInsurancePaise != null &&
-        partner.monthlyVolumeMutualFundsPaise != null &&
-        partner.residenceAddress
-      : partner.occupation && partner.designation),
-  );
-  const canApprove =
-    Boolean(partner.submittedAt) && detailsComplete && missingRequiredDocs.length === 0;
+  const application = evaluatePartnerApplication(partner, uploadedDocTypes);
+  const { canApprove } = application;
+  const approvalBlockedMessage = getApprovalBlockedMessage(partner, application);
 
   return (
     <>
@@ -90,7 +90,7 @@ export default async function PartnerDetailPage({ params }: { params: Promise<{ 
 
       <PageTitle
         title={partner.businessName || name}
-        subtitle={partnerTypeLabels[partner.type]}
+        subtitle={partnerTypeLabel(partner.type)}
         actions={
           <span
             className={cx(
@@ -98,7 +98,7 @@ export default async function PartnerDetailPage({ params }: { params: Promise<{ 
               statusStyles[partner.status],
             )}
           >
-            {partnerStatusLabels[partner.status]}
+            {partnerStatusLabel(partner.status)}
           </span>
         }
       />
@@ -112,7 +112,7 @@ export default async function PartnerDetailPage({ params }: { params: Promise<{ 
               <Detail label="Email" value={email} />
               <Detail label="Phone" value={partner.phone} />
               {business && <Detail label="Alternative phone" value={partner.alternatePhone} />}
-              <Detail label="Type" value={partnerTypeLabels[partner.type]} />
+              <Detail label="Type" value={partnerTypeLabel(partner.type)} />
               {partner.businessName && <Detail label="Business" value={partner.businessName} />}
               <Detail label="Registered" value={formatDate(partner.createdAt)} />
               <Detail
@@ -199,7 +199,7 @@ export default async function PartnerDetailPage({ params }: { params: Promise<{ 
                     <span className="flex items-center gap-3">
                       <FileText className="h-5 w-5 text-navy-500" aria-hidden />
                       <span className="font-medium text-navy-950">
-                        {partnerDocTypeLabels[doc.docType] ?? doc.docType}
+                        {partnerDocTypeLabels[doc.docType]}
                       </span>
                     </span>
                     <span className="text-xs text-muted">{formatDateTime(doc.uploadedAt)}</span>
@@ -242,14 +242,8 @@ export default async function PartnerDetailPage({ params }: { params: Promise<{ 
                 >
                   <Check className="h-4 w-4" aria-hidden /> Approve partner
                 </SubmitButton>
-                {!canApprove && (
-                  <p className="mt-2 text-xs text-muted">
-                    {!partner.submittedAt
-                      ? "Partner hasn't submitted their application yet."
-                      : !detailsComplete
-                        ? "Required KYC and bank details are incomplete."
-                        : `Missing: ${missingRequiredDocs.map((document) => document.label).join(", ")}.`}
-                  </p>
+                {approvalBlockedMessage && (
+                  <p className="mt-2 text-xs text-muted">{approvalBlockedMessage}</p>
                 )}
               </form>
               <form action={rejectPartnerAction} className="mt-3 space-y-2">

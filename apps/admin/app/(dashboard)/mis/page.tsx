@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Card } from "@truelend/ui";
-import { partnerTypeLabels, formatPaise } from "@truelend/reference";
+import { partnerTypeLabel, formatPaise } from "@truelend/reference";
 import { PageTitle } from "@/components/page-title";
 import { requireAdmin, getAuthContext } from "@/lib/auth";
 import { getMisByProduct, getMisByChannel, getMisByPartner, type MisRow } from "@/lib/mis-queries";
@@ -164,7 +164,7 @@ export default async function MisPage() {
                       {p.label}
                     </Link>
                   </td>
-                  <td className="px-5 py-3.5 text-navy-600">{partnerTypeLabels[p.type]}</td>
+                  <td className="px-5 py-3.5 text-navy-600">{partnerTypeLabel(p.type)}</td>
                   <td className="px-5 py-3.5 text-right tabular-nums text-navy-700">{p.leads}</td>
                   <td className="px-5 py-3.5 text-right tabular-nums text-navy-700">
                     {p.disbursed}

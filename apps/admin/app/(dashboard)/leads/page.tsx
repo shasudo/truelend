@@ -18,7 +18,7 @@ import {
   type LeadFilters,
   type LeadStatus,
   type LeadKind,
-} from "@/lib/queries";
+} from "@/lib/lead-queries";
 
 export const dynamic = "force-dynamic";
 
@@ -74,7 +74,7 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
     <>
       <PageTitle
         title="Leads"
-        subtitle={`${total} ${total === 1 ? "lead" : "leads"} from the website`}
+        subtitle={`${total} ${total === 1 ? "lead" : "leads"} across website and partner channels`}
       />
 
       <Card className="mb-6 p-4">

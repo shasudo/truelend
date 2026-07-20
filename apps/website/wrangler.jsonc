@@ -31,15 +31,15 @@
   ],
   // Email (Resend). RESEND_API_KEY is a secret (wrangler secret put). EMAIL_FROM
   // must be a verified Resend sender; onboarding@resend.dev works for testing to
-  // your own account email. Set TEAM_EMAIL to route new-lead alerts. Empty
-  // TEAM_EMAIL / missing key = email is a silent no-op.
+  // your own account email. Set TEAM_EMAIL to route new-lead alerts. Local
+  // development may omit delivery; production preflight requires the API key.
   "vars": {
     "EMAIL_FROM": "TrueLend <hello@truelend.in>",
     "TEAM_EMAIL": "shathwik@icloud.com",
   },
   // Postgres (Neon), pooled by Hyperdrive. The id is not a secret — credentials
   // live inside the Hyperdrive config on Cloudflare. For local dev/preview the
-  // connection string comes from apps/website/.env via
+  // connection string comes from apps/website/.dev.vars via
   // CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE (gitignored);
   // localConnectionString below is only the fallback when that env is unset.
   "hyperdrive": [

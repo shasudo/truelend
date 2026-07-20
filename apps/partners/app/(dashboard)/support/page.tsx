@@ -33,7 +33,7 @@ const topics = [
 
 export default async function SupportPage() {
   const { partner } = await requirePartner();
-  const business = partner!.type === "business";
+  const business = partner.type === "business";
 
   return (
     <div className="mx-auto max-w-6xl">

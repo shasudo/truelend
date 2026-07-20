@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
+import { appUrls } from "@truelend/reference";
 
-const baseUrl = "https://partner.truelend.in";
+const baseUrl = appUrls.partners;
 
 export default function sitemap(): MetadataRoute.Sitemap {
   return [

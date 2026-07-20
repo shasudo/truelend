@@ -1,0 +1,17 @@
+export const validationPatterns = {
+  indianMobile: /^[6-9]\d{9}$/,
+  pincode: /^\d{6}$/,
+  rupeeAmount: /^\d{1,10}$/,
+  smallInteger: /^\d{1,3}$/,
+} as const;
+
+export const validationMessages = {
+  indianMobile: "Enter a valid 10-digit mobile number",
+  pincode: "Enter a 6-digit PIN code",
+  rupeeAmount: "Enter the amount in rupees (digits only)",
+  smallInteger: "Numbers only",
+} as const;
+
+export function normalizeIndianMobile(value: string): string {
+  return value.trim().replace(/[\s-]/g, "");
+}

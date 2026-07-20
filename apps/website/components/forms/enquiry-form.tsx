@@ -11,8 +11,9 @@ import {
   securedProducts,
   businessProducts,
   cardProducts,
+  type ProductSlug,
 } from "@truelend/reference";
-import { enquiryFormSchema } from "@/lib/schemas";
+import { enquiryFormSchema } from "@/lib/lead-schemas";
 import {
   FormSuccess,
   NoScriptFallback,
@@ -30,7 +31,7 @@ function Legend({ children }: { children: ReactNode }) {
   );
 }
 
-export function EnquiryForm({ defaultProduct = "" }: { defaultProduct?: string }) {
+export function EnquiryForm({ defaultProduct = "" }: { defaultProduct?: ProductSlug | "" }) {
   const {
     form,
     onSubmit,

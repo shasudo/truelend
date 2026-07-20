@@ -62,7 +62,7 @@ const referralModules = [
 
 export default async function TrainingPage() {
   const { partner } = await requirePartner();
-  const business = partner!.type === "business";
+  const business = partner.type === "business";
   const modules = business ? businessModules : referralModules;
 
   return (

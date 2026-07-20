@@ -1,8 +1,8 @@
-import { readFileSync } from "node:fs";
 import type { NextConfig } from "next";
 import createMDX from "@next/mdx";
 import remarkFrontmatter from "remark-frontmatter";
 import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
+import { loadHyperdriveDevOverride } from "../../scripts/load-hyperdrive-dev-override.mjs";
 
 const csp =
   "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'self'; form-action 'self'; " +
@@ -19,7 +19,6 @@ const nextConfig: NextConfig = {
     "@truelend/health",
     "@truelend/reference",
     "@truelend/turnstile",
-    "@truelend/types",
     "@truelend/ui",
   ],
   // Security headers on every response. HSTS has no `preload` on purpose —
@@ -27,8 +26,8 @@ const nextConfig: NextConfig = {
   // add it once you're sure every subdomain is HTTPS-only. Next emits inline
   // bootstrap scripts; third-party allowances are limited to Turnstile and
   // Cloudflare Web Analytics.
-  // ponytail: this block is duplicated in the admin/partners configs — a
-  // config-time shared import is fragile, so 3 copies of a static list it is.
+  // Each host keeps this block explicit because its CSP and framing policy are
+  // intentionally different; do not mechanically merge the three configs.
   async headers() {
     return [
       {
@@ -55,30 +54,15 @@ const nextConfig: NextConfig = {
   },
 };
 
-// Blog posts are .mdx files compiled into the bundle at build time — no
-// runtime fs, which Workers doesn't have. remark-frontmatter strips the YAML
-// block from rendered output; lib/blog.ts reads it separately via gray-matter.
+// Blog posts are compiled into the bundle. remark-frontmatter strips YAML from
+// rendered output; generate-blog-index.ts validates and indexes that metadata.
 const withMDX = createMDX({ options: { remarkPlugins: [remarkFrontmatter] } });
 
 export default withMDX(nextConfig);
 
-// Development binding injection can inline local connection strings when it is
-// evaluated during a production build, so never initialize it outside next dev.
+// Evaluating development bindings during a production build can inline local
+// connection strings, so initialize them only for next dev.
 if (process.env.NODE_ENV === "development") {
-  // wrangler's getPlatformProxy resolves the Hyperdrive local connection string
-  // from process.env, but our local secrets live in .dev.vars (which only
-  // injects Worker bindings). Bridge the override across before init so dev
-  // connects to the real database instead of the localhost placeholder.
-  const hyperdriveKey = "CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE";
-  if (!process.env[hyperdriveKey]) {
-    try {
-      const line = readFileSync(".dev.vars", "utf8")
-        .split("\n")
-        .find((l) => l.startsWith(`${hyperdriveKey}=`));
-      if (line) process.env[hyperdriveKey] = line.slice(hyperdriveKey.length + 1).trim();
-    } catch {
-      // no .dev.vars — nothing to bridge
-    }
-  }
+  loadHyperdriveDevOverride();
   void initOpenNextCloudflareForDev();
 }

@@ -6,7 +6,7 @@ import { and, eq, ne, sql } from "drizzle-orm";
 import { z } from "zod";
 import { schema, type Database, type NewLoanCase } from "@truelend/db";
 import { getMutationContext } from "./auth";
-import { banks, products, rupeesToPaise } from "@truelend/reference";
+import { banks, productSlugs, rupeesToPaise } from "@truelend/reference";
 
 type CaseStatus = (typeof schema.loanCaseStatus.enumValues)[number];
 
@@ -22,10 +22,8 @@ const leadStatusForCase: Record<CaseStatus, (typeof schema.leadStatus.enumValues
 };
 
 // Business precedence of a loan-case outcome, best first. A lead can have many
-// lender cases; its pipeline position is the BEST outcome across all of them —
-// one lender declining must never override another approving or disbursing.
-// (The old code used enum declaration order as precedence, which put declined
-// after approved and looked at only the edited case — both wrong.)
+// lender cases, so one decline must never override another lender's approval or
+// disbursal.
 const CASE_OUTCOME_RANK = ["disbursed", "approved", "logged_in", "declined"] as const;
 
 // Best outcome among a lead's cases, or null if it has none. Pure; kept local
@@ -78,7 +76,6 @@ const amounts = {
 };
 
 const lenderSlugs = banks.map((bank) => bank.slug) as [string, ...string[]];
-const productSlugs = products.map((product) => product.slug) as [string, ...string[]];
 
 function amountPaise(d: Record<string, string | undefined>) {
   return {

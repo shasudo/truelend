@@ -5,6 +5,7 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
+    "./server": "./src/index.ts",
     "./admin-client": "./src/admin-client.ts",
     "./client": "./src/client.ts",
     "./forms": "./src/forms.tsx"

@@ -14,7 +14,7 @@ export default async function LeadsPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { partner } = await requirePartner();
-  if (partner?.type === "referral") redirect("/refer");
+  if (partner.type === "referral") redirect("/refer");
   const initialProduct = preselectedProduct((await searchParams).product);
 
   return (

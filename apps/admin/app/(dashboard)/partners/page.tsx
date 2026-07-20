@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Card } from "@truelend/ui";
-import { partnerTypeLabels, partnerStatusLabels, formatDate } from "@truelend/reference";
+import { partnerTypeLabel, partnerStatusLabel, formatDate } from "@truelend/reference";
 import { schema } from "@truelend/db";
 import { PageTitle } from "@/components/page-title";
 import { requireAdmin, getAuthContext } from "@/lib/auth";
@@ -90,7 +90,7 @@ export default async function PartnersPage({ searchParams }: { searchParams: Pro
                   </Link>
                   <div className="text-xs text-muted">{p.email}</div>
                 </td>
-                <td className="px-5 py-3.5 text-navy-600">{partnerTypeLabels[p.type]}</td>
+                <td className="px-5 py-3.5 text-navy-600">{partnerTypeLabel(p.type)}</td>
                 <td className="px-5 py-3.5">
                   <span
                     className={cx(
@@ -98,7 +98,7 @@ export default async function PartnersPage({ searchParams }: { searchParams: Pro
                       statusStyles[p.status],
                     )}
                   >
-                    {partnerStatusLabels[p.status]}
+                    {partnerStatusLabel(p.status)}
                   </span>
                 </td>
                 <td className="px-5 py-3.5 text-right tabular-nums text-navy-600">{p.docCount}</td>

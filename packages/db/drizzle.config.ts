@@ -1,17 +1,15 @@
 import { defineConfig } from "drizzle-kit";
+import { assertSafeDatabaseTarget } from "./scripts/database-target";
+import { loadLocalDatabaseEnv } from "./scripts/load-local-env";
 
 // Migrations run from Node (not the Worker), so they need a direct connection.
 // The Worker connects via the Cloudflare Hyperdrive binding instead.
-try {
-  // ponytail: Node 20.12+ built-in — no dotenv dependency.
-  process.loadEnvFile(".env");
-} catch {
-  // No .env file — fall back to an ambient DATABASE_URL.
-}
+loadLocalDatabaseEnv();
 
 const url = process.env.DATABASE_URL;
 if (!url)
   throw new Error("DATABASE_URL is required for drizzle-kit (see packages/db/.env.example)");
+assertSafeDatabaseTarget(url);
 
 export default defineConfig({
   schema: "./src/schema.ts",

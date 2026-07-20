@@ -18,8 +18,8 @@ import { schema } from "@truelend/db";
 import { PageTitle } from "@/components/page-title";
 import { StatusBadge } from "@/components/status-badge";
 import { getAuthContext } from "@/lib/auth";
-import { getLead, listEmployees } from "@/lib/queries";
-import { updateLeadPipelineAction, addLeadNoteAction } from "@/lib/actions";
+import { getLead, listEmployees } from "@/lib/lead-queries";
+import { updateLeadPipelineAction, addLeadNoteAction } from "@/lib/lead-actions";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Lead details" };
@@ -38,7 +38,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
   const { db } = getAuthContext();
   const [data, employees] = await Promise.all([getLead(db, id), listEmployees(db)]);
   if (!data) notFound();
-  const { lead, notes, cases } = data;
+  const { lead, partnerType, notes, cases } = data;
 
   return (
     <>
@@ -51,7 +51,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
 
       <PageTitle
         title={lead.name ?? "Unnamed lead"}
-        subtitle={`${leadKindLabels[lead.kind]} · ${channelForKind(lead.kind)}`}
+        subtitle={`${leadKindLabels[lead.kind]} · ${channelForKind(lead.kind, partnerType)}`}
         actions={<StatusBadge status={lead.status} />}
       />
 

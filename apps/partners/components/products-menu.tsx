@@ -1,5 +1,5 @@
 import { ChevronDown, MoveUpRight } from "lucide-react";
-import { CATEGORIES, itemsFor } from "@truelend/reference";
+import { appUrls, CATEGORIES, itemsFor } from "@truelend/reference";
 
 // The public site's Products mega-menu, mirrored for the partner marketing
 // header off the same shared taxonomy. Every link is an absolute cross-origin
@@ -7,7 +7,7 @@ import { CATEGORIES, itemsFor } from "@truelend/reference";
 // browsing products is on their way there anyway. CSS-only reveal (group-hover
 // + group-focus-within) so it works on hover and via keyboard with no client
 // state — this header stays a server component.
-const PUBLIC_SITE = "https://truelend.in";
+const PUBLIC_SITE = appUrls.website;
 
 export function ProductsMenu() {
   return (

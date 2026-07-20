@@ -1,5 +1,14 @@
 const encoder = new TextEncoder();
 
+export interface HealthResponse {
+  status: "ok" | "error";
+  service: string;
+  timestamp: string;
+  db?: "ok" | "error";
+  turnstile?: "ok" | "error";
+  auth?: "ok" | "error";
+}
+
 async function digest(value: string): Promise<Uint8Array> {
   return new Uint8Array(await crypto.subtle.digest("SHA-256", encoder.encode(value)));
 }
@@ -17,6 +26,10 @@ export async function isReadinessAuthorized(
     difference |= actual[index]! ^ expected[index]!;
   }
   return supplied.length > 0 && difference === 0;
+}
+
+export function hasConfiguredValues(...values: readonly unknown[]): boolean {
+  return values.every((value) => typeof value === "string" && value.trim().length > 0);
 }
 
 export function healthHeaders(): HeadersInit {

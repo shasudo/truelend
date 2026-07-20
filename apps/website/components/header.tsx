@@ -66,7 +66,7 @@ export function Header() {
             onClick={(event) => {
               if (event.target === event.currentTarget) event.currentTarget.close();
             }}
-            className="fixed inset-y-0 right-0 left-auto m-0 h-dvh w-80 max-w-[85vw] border-0 bg-navy-950 p-6 text-white backdrop:bg-navy-950/50 backdrop:backdrop-blur-sm open:flex open:flex-col open:animate-[drawer-in_250ms_var(--ease-out-quart)]"
+            className="fixed inset-y-0 right-0 left-auto m-0 h-dvh w-80 max-w-[85vw] border-0 bg-navy-950 p-6 text-white backdrop:bg-navy-950/50 backdrop:backdrop-blur-sm open:flex open:flex-col motion-safe:open:animate-[drawer-in-right_250ms_var(--ease-out-quart)]"
           >
             <h2 id="mobile-menu-title" className="sr-only">
               Menu

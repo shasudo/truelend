@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { PhoneCall, SearchCheck, BadgeCheck, ShieldCheck } from "lucide-react";
 import { Card, Container } from "@truelend/ui";
-import { products } from "@truelend/reference";
+import { isProductSlug } from "@truelend/reference";
 import { PageHeader } from "@/components/page-header";
 import { EnquiryForm } from "@/components/forms/enquiry-form";
 import { site } from "@/content/site";
@@ -38,9 +38,7 @@ export default async function EnquiryPage({
 }) {
   const requested = (await searchParams).product;
   const requestedSlug = typeof requested === "string" ? requested : "";
-  const defaultProduct = products.some((product) => product.slug === requestedSlug)
-    ? requestedSlug
-    : "";
+  const defaultProduct = isProductSlug(requestedSlug) ? requestedSlug : "";
 
   return (
     <>

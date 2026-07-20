@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 
 export default async function ProductsPage() {
   const { partner } = await requirePartner();
-  const business = partner!.type === "business";
+  const business = partner.type === "business";
   const submitHref = business ? "/leads" : "/refer";
 
   return (

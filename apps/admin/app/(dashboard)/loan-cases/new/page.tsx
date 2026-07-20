@@ -5,7 +5,7 @@ import { Button, Card, SubmitButton } from "@truelend/ui";
 import { PageTitle } from "@/components/page-title";
 import { LoanCaseFields } from "@/components/loan-case-fields";
 import { getAuthContext } from "@/lib/auth";
-import { getLead } from "@/lib/queries";
+import { getLead } from "@/lib/lead-queries";
 import { createLoanCaseAction } from "@/lib/loan-actions";
 
 export const dynamic = "force-dynamic";

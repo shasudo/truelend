@@ -1,10 +1,12 @@
+import type { ProductSlug } from "./products";
+
 // Product catalog taxonomy — ported from the TrueLend product research set.
 // Shared because two apps render it: the website drives
 // /products/all/[category]/[item] from it, and the partners site shows the same
 // tree in its public Products menu. The rich per-item content it indexes stays
 // in the website (content/catalog/content.json) — only the taxonomy is shared.
 // `enquirySlug` maps each category/column onto a canonical `products` slug (see
-// ./index.ts) so every CTA lands on /enquiry?product=<slug> preselected.
+// ./products.ts) so every CTA lands on /enquiry?product=<slug> preselected.
 
 export type CatalogItem = {
   slug: string;
@@ -16,7 +18,7 @@ export type CatalogItem = {
 export type CatalogColumn = {
   heading: string;
   /** Overrides the category enquirySlug for this column's items. */
-  enquirySlug?: string;
+  enquirySlug?: ProductSlug;
   items: CatalogItem[];
 };
 
@@ -27,7 +29,7 @@ export type CatalogCategory = {
   navLabel?: string;
   tagline: string;
   /** Canonical enquiry product slug (must exist in @truelend/reference). */
-  enquirySlug: string;
+  enquirySlug: ProductSlug;
   facts: { label: string; value: string }[];
   columns: CatalogColumn[];
 };
@@ -342,7 +344,7 @@ export function itemsFor(category: CatalogCategory): CatalogItem[] {
 }
 
 /** Enquiry product slug for a specific item (column override wins). */
-export function enquirySlugFor(category: CatalogCategory, slug: string): string {
+export function enquirySlugFor(category: CatalogCategory, slug: string): ProductSlug {
   for (const column of category.columns) {
     if (column.items.some((it) => it.slug === slug)) {
       return column.enquirySlug ?? category.enquirySlug;

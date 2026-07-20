@@ -5,8 +5,8 @@ import { useForm, type DefaultValues, type FieldValues, type Resolver } from "re
 import { Turnstile } from "@marsidev/react-turnstile";
 import { CheckCircle2, MessageCircle } from "lucide-react";
 import { Button } from "@truelend/ui";
-import type { TurnstileAction } from "@truelend/turnstile";
-import { submitLead } from "@/lib/actions";
+import type { TurnstileAction } from "@truelend/turnstile/actions";
+import { submitLead } from "@/lib/lead-actions";
 import {
   resolveAttribution,
   touchFromSearch,

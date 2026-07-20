@@ -11,11 +11,11 @@ export default async function EarningsPage() {
   const { partner } = await requirePartner();
   const { db } = getAuthContext();
   const [metrics, payouts] = await Promise.all([
-    getPartnerMetrics(db, partner!.userId),
-    getPartnerPayouts(db, partner!.userId),
+    getPartnerMetrics(db, partner.userId),
+    getPartnerPayouts(db, partner.userId),
   ]);
-  const business = partner!.type === "business";
-  const label = earningsLabel(partner!.type);
+  const business = partner.type === "business";
+  const label = earningsLabel(partner.type);
   const balance = metrics.earnedPaise - metrics.paidPaise;
 
   return (

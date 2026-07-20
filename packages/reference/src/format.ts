@@ -34,6 +34,22 @@ export function paiseToRupeesInput(paise: number | null | undefined): string {
   return paise == null ? "" : String(paise / 100);
 }
 
+/** Normalize an integer returned by a database aggregate without losing precision. */
+export function normalizeSafeInteger(value: unknown, label = "Numeric aggregate"): number {
+  if (value == null) return 0;
+  if (typeof value !== "number" && typeof value !== "string") {
+    throw new TypeError(`${label} must be a number or numeric string`);
+  }
+  if (typeof value === "string" && value.trim() === "") {
+    throw new TypeError(`${label} must not be blank`);
+  }
+  const normalized = Number(value);
+  if (!Number.isSafeInteger(normalized)) {
+    throw new RangeError(`${label} exceeds JavaScript's safe integer range`);
+  }
+  return normalized;
+}
+
 const dateFmt = new Intl.DateTimeFormat("en-IN", {
   day: "numeric",
   month: "short",
