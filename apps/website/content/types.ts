@@ -22,10 +22,7 @@ export interface ProductCategory {
   name: string;
   shortName: string;
   icon: LucideIcon;
-  /**
-   * Decorative card image under public/images/products. Generation notes and
-   * the shared visual brief are in docs/product-imagery.md.
-   */
+  /** Decorative card image under public/images/products. */
   image: string;
   tagline: string;
   description: string;
