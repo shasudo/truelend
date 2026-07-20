@@ -45,7 +45,7 @@ Before requesting review, run `pnpm install --frozen-lockfile` and every command
 - Merging to `main` starts the production workflow, but deployment must remain gated by required reviewers on the protected GitHub `production` Environment.
 - Production secrets and variables belong only in the production Environment or Cloudflare secret storage. Never place them in source, Wrangler `vars`, build output, shell arguments, or logs.
 - Do not deploy production from a developer workstation. Manual `pnpm deploy:*` is for isolated development/staging accounts only unless an approved incident runbook explicitly authorizes a production break-glass action.
-- Follow `docs/runbooks/release-and-rollback.md` and `docs/runbooks/migrations.md`. A healthy code build does not authorize production release when external P0 controls remain open.
+- A healthy code build does not authorize production release when external P0 controls remain open.
 
 ## Authentication boundaries
 
