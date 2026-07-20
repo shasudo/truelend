@@ -6,9 +6,7 @@ import {
   Check,
   ChevronRight,
   FileText,
-  Gauge,
   Headset,
-  House,
   Landmark,
   LockKeyhole,
   ShieldCheck,
@@ -24,8 +22,6 @@ const profileDetails = [
   { label: "Employment & income", detail: "Details", icon: BriefcaseBusiness },
   { label: "Loan requirement", detail: "Details", icon: FileText },
   { label: "Existing obligations", detail: "(EMI, loans)", icon: WalletCards },
-  { label: "Credit profile", detail: "(CIBIL, score)", icon: Gauge },
-  { label: "Property or business", detail: "Details (if any)", icon: House },
 ];
 
 const assessments = [
@@ -239,12 +235,10 @@ function LenderPanel() {
 
 function FlowConnections() {
   const intakePaths = [
-    "M195 80 C218 80 208 104 231 104",
-    "M195 148 C222 148 207 178 231 178",
-    "M195 216 C222 216 208 252 231 252",
-    "M195 284 C222 284 208 326 231 326",
-    "M195 352 C222 352 208 400 231 400",
-    "M195 420 C218 420 216 400 231 400",
+    "M195 128 C220 128 208 128 231 128",
+    "M195 210 C220 210 208 210 231 210",
+    "M195 292 C220 292 208 292 231 292",
+    "M195 374 C220 374 208 374 231 374",
   ];
   const matchPaths = [
     "M493 104 C516 104 504 76 526 76",
@@ -253,8 +247,8 @@ function FlowConnections() {
     "M493 326 C518 326 504 344 526 344",
     "M493 400 C516 400 506 430 526 430",
   ];
-  const sourceDots = [80, 148, 216, 284, 352, 420];
-  const coreLeftDots = [104, 178, 252, 326, 400];
+  const sourceDots = [128, 210, 292, 374];
+  const coreLeftDots = [128, 210, 292, 374];
   const coreRightDots = [104, 178, 252, 326, 400];
   const lenderDots = [76, 160, 252, 344, 430];
 
@@ -338,18 +332,6 @@ function BorrowingIntelligenceVisual() {
       aria-label="How TrueLend matches a borrower profile to suitable lenders"
     >
       <div className="absolute inset-10 rounded-full bg-navy-200/30 blur-3xl" aria-hidden />
-      <div className="relative mb-3 flex items-center justify-center gap-2 text-[0.6rem] font-bold uppercase tracking-[0.14em] text-navy-600 lg:ml-[22%] lg:mr-[18%]">
-        <span
-          className="hidden h-px flex-1 border-t border-dashed border-navy-300 lg:block"
-          aria-hidden
-        />
-        <LockKeyhole className="h-3 w-3" aria-hidden />
-        Data secure & confidential
-        <span
-          className="hidden h-px flex-1 border-t border-dashed border-navy-300 lg:block"
-          aria-hidden
-        />
-      </div>
       <div className="relative grid items-center gap-8 lg:grid-cols-[0.78fr_1.05fr_0.95fr] lg:gap-10">
         <FlowConnections />
         <div className="relative z-10 after:absolute after:-bottom-8 after:left-1/2 after:h-8 after:border-l after:border-dashed after:border-navy-300 lg:after:hidden">
@@ -362,9 +344,18 @@ function BorrowingIntelligenceVisual() {
           <LenderPanel />
         </div>
       </div>
-      <div className="relative mt-3 flex items-center justify-center gap-2 text-[0.58rem] font-bold uppercase tracking-[0.12em] text-navy-600 before:absolute before:-top-3 before:left-1/2 before:h-3 before:border-l before:border-dashed before:border-navy-300">
-        <ShieldCheck className="h-3 w-3" aria-hidden />
-        100% secure process
+      <div className="relative mt-4 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[0.6rem] font-bold uppercase tracking-[0.12em] text-navy-600 before:absolute before:-top-4 before:left-1/2 before:h-4 before:border-l before:border-dashed before:border-navy-300">
+        <span className="inline-flex items-center gap-1.5">
+          <LockKeyhole className="h-3 w-3" aria-hidden />
+          Data secure &amp; confidential
+        </span>
+        <span className="text-navy-300" aria-hidden>
+          |
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <ShieldCheck className="h-3 w-3" aria-hidden />
+          100% secure process
+        </span>
       </div>
     </div>
   );

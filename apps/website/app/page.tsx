@@ -1,4 +1,5 @@
-import { MoveUpRight } from "lucide-react";
+import Link from "next/link";
+import { ArrowRight, MoveUpRight } from "lucide-react";
 import { Container, SectionHeading } from "@truelend/ui";
 import { Reveal } from "@/components/reveal";
 import { HomeHero } from "@/components/home-hero";
@@ -38,34 +39,68 @@ const steps = [
 
 const whyItems = [
   {
-    title: "Access to multiple banks & NBFCs",
-    desc: "One enquiry puts our partner lenders in play — not just the one whose branch you walked into.",
+    title: "Access to Multiple Lending Partners",
+    desc: "Compare suitable borrowing options across multiple banks, NBFCs and Fintech lenders through a single advisory relationship.",
   },
   {
-    title: "Expert advisors you can trust",
-    desc: "People who read credit policy for a living, sitting on your side of the table.",
+    title: "Experienced Borrowing Advisors",
+    desc: "Work with advisors who understand lending policies and help you make informed borrowing decisions.",
   },
   {
-    title: "Higher approval probability",
-    desc: "Your file goes where it fits the credit model — approval odds rise before you apply.",
+    title: "Better Loan Choices",
+    desc: "We compare more than interest rates, including eligibility, repayment flexibility, processing timelines and overall suitability.",
   },
   {
-    title: "Better rates & loan options",
-    desc: "Lenders compete for a well-presented file. You collect the difference.",
+    title: "Better Prepared Applications",
+    desc: "Complete documentation and structured guidance help present your application more effectively.",
   },
   {
-    title: "Faster turnaround time",
-    desc: "Complete documentation the first time cuts weeks of back-and-forth.",
+    title: "Faster Processing Support",
+    desc: "We coordinate with lending partners and keep you informed throughout the process.",
   },
   {
-    title: "End-to-end support",
-    desc: "From first call to disbursal — and for every loan after this one.",
+    title: "End-to-End Assistance",
+    desc: "From your first conversation until loan disbursement, we’re available to guide and support you.",
   },
   {
-    title: "100% safe & confidential",
-    desc: "Your documents move only to the lender you approve. No spam calls, ever.",
+    title: "Secure & Confidential",
+    desc: "Your information is shared only with relevant lending partners after your consent and handled with appropriate care.",
   },
 ];
+
+const homeProductCopy: Record<string, { name?: string; tagline: string }> = {
+  "personal-loan": { tagline: "Quick funds when needed." },
+  "business-loan": { tagline: "Funding to grow your business." },
+  "home-loan": { tagline: "Finance your dream home." },
+  "loan-against-property": { tagline: "Unlock the value of your property." },
+  "vehicle-loan": { name: "Car Loan", tagline: "Finance your new or used vehicle." },
+  "education-loan": {
+    name: "Educational Loan",
+    tagline: "Support higher educational goals.",
+  },
+  "working-capital": { name: "Working Capital Loan", tagline: "Manage your business cash flow." },
+  "equipment-finance": {
+    name: "Medical Equipment Loan",
+    tagline: "Empower your medical infrastructure.",
+  },
+  "credit-cards": { tagline: "Cards matched to your spending needs." },
+};
+
+const homeProductOrder = [
+  "personal-loan",
+  "business-loan",
+  "home-loan",
+  "loan-against-property",
+  "vehicle-loan",
+  "education-loan",
+  "working-capital",
+  "equipment-finance",
+  "credit-cards",
+];
+
+const homeProductCards = homeProductOrder
+  .map((slug) => loanProductCards.find((product) => product.slug === slug))
+  .filter((product): product is (typeof loanProductCards)[number] => Boolean(product));
 
 export default function Home() {
   const posts = getAllPosts().slice(0, 3);
@@ -76,27 +111,34 @@ export default function Home() {
       <PartnerStrip />
 
       <section id="how-it-works" className="scroll-mt-20">
-        <Container className="py-12 sm:py-16">
+        <Container className="py-20 sm:py-24 lg:pl-14">
           <Reveal>
-            <SectionHeading
-              eyebrow="Our Borrowing Intelligence Framework"
-              eyebrowClassName="text-muted"
-              title="How We Help You Borrow Better"
-              titleClassName="text-red-600"
-              lede="Every borrower is unique. Before recommending a lender, our experienced borrowing advisors understand your borrowing requirement, review your financial profile, compare lending policies across multiple banks, NBFCs and Fintech Lenders and guide you through every step of the borrowing journey."
-            />
+            <div className="max-w-3xl">
+              <p className="text-sm font-bold uppercase tracking-[0.18em] text-muted">
+                Our Borrowing Intelligence Framework
+              </p>
+              <h2 className="mt-4 text-balance font-display text-4xl font-extrabold tracking-tight text-red-600 sm:text-5xl">
+                How We Help You Borrow Better
+              </h2>
+              <p className="mt-6 max-w-[46rem] text-lg leading-8 text-navy-600">
+                Every borrower is unique. Before recommending a lender, our experienced Borrowing
+                Advisors understand your borrowing requirement, review your financial profile,
+                compare lending policies across multiple banks, NBFCs and Fintech lenders, and guide
+                you through every step of the borrowing journey.
+              </p>
+            </div>
           </Reveal>
-          <ol className="mt-6 grid gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
+          <ol className="mt-14 grid gap-x-12 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
             {steps.map((step, i) => (
-              <li key={step.title} className="border-t border-hairline pt-3">
+              <li key={step.title}>
                 <Reveal delay={(i % 3) * 0.08}>
-                  <span className="font-display text-2xl font-extrabold tabular-nums text-red-600">
+                  <span className="font-display text-4xl font-extrabold tabular-nums leading-none text-red-600">
                     {String(i + 1).padStart(2, "0")}
                   </span>
-                  <h3 className="mt-1.5 font-display text-lg font-bold text-navy-950">
+                  <h3 className="mt-3 font-display text-xl font-bold text-navy-950 sm:text-2xl">
                     {step.title}
                   </h3>
-                  <p className="mt-1 text-sm leading-relaxed text-navy-600">{step.desc}</p>
+                  <p className="mt-3 max-w-sm text-base leading-7 text-navy-600">{step.desc}</p>
                 </Reveal>
               </li>
             ))}
@@ -108,17 +150,50 @@ export default function Home() {
         <Container className="py-20 sm:py-24">
           <Reveal>
             <SectionHeading
-              title="Loan products you can help people get"
-              lede="From personal and home loans to business finance and credit cards—introduce anyone to the product they need, and we match them with the right lender."
+              eyebrow="Borrowing Solutions"
+              title="Borrowing Solutions for Every Need"
+              lede="Whether you’re buying a home, expanding your business, managing personal finances or funding higher education, we help you choose the right borrowing solution from the right lender."
+              center
+              className="max-w-[44rem]"
+              titleClassName="text-navy-950 sm:text-5xl"
+              ledeClassName="mx-auto max-w-[44rem] text-lg leading-8"
             />
           </Reveal>
           <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {loanProductCards.map((p, i) => (
-              <Reveal key={p.slug} delay={(i % 3) * 0.06}>
-                <CategoryCard product={p} />
-              </Reveal>
-            ))}
+            {homeProductCards.map((product, i) => {
+              const copy = homeProductCopy[product.slug];
+              return (
+                <Reveal key={product.slug} delay={(i % 3) * 0.06}>
+                  <CategoryCard
+                    product={product}
+                    name={copy?.name}
+                    tagline={copy?.tagline}
+                    showRate={false}
+                    centered
+                  />
+                </Reveal>
+              );
+            })}
           </div>
+          <Reveal>
+            <div className="mt-10 flex flex-col items-center justify-between gap-5 rounded-2xl border border-hairline bg-white px-6 py-5 text-center sm:flex-row sm:text-left">
+              <div>
+                <p className="font-display text-lg font-bold text-navy-950">
+                  Need help choosing the right solution?
+                </p>
+                <p className="mt-1 text-sm text-navy-600">
+                  An experienced Borrowing Advisor can help you compare your options.
+                </p>
+              </div>
+              <Link
+                href="/enquiry"
+                className="inline-flex shrink-0 items-center gap-2 font-semibold text-red-600 hover:text-red-700"
+              >
+                Talk to a Borrowing Advisor
+                <ArrowRight className="h-4 w-4" aria-hidden />
+              </Link>
+            </div>
+          </Reveal>
         </Container>
       </section>
 
@@ -126,20 +201,23 @@ export default function Home() {
         <Container className="grid gap-12 py-20 sm:py-24 lg:grid-cols-[0.85fr_1.15fr]">
           <Reveal>
             <SectionHeading
-              className="lg:sticky lg:top-24"
-              eyebrow="Why choose TrueLend"
-              title="Advice that sits on your side of the table"
-              lede="Banks optimise for their book. Dealers optimise for their payout. Somebody should be optimising for you."
+              className="max-w-[26rem] lg:sticky lg:top-24"
+              eyebrow="Why Borrowers Choose TrueLend"
+              eyebrowClassName="text-muted"
+              title="Advice that works for you, not just the lender"
+              lede="At TrueLend, we believe better borrowing decisions begin with better understanding. We take time to understand your needs, evaluate suitable lending options and guide you towards a borrowing solution that fits your profile—not just today’s requirement, but your long-term financial well-being."
+              titleClassName="text-navy-950 sm:text-5xl"
+              ledeClassName="text-lg leading-8"
             />
           </Reveal>
           <div>
             {whyItems.map((item, i) => (
               <Reveal key={item.title} delay={i * 0.04}>
-                <div className="flex gap-4 border-b border-hairline py-5 first:border-t">
+                <div className="flex gap-4 border-b border-hairline py-6 first:border-t">
                   <MoveUpRight className="mt-1 h-4 w-4 shrink-0 text-red-600" aria-hidden />
                   <div>
-                    <h3 className="font-semibold text-navy-950">{item.title}</h3>
-                    <p className="mt-1 text-sm leading-relaxed text-navy-600">{item.desc}</p>
+                    <h3 className="font-display text-lg font-bold text-navy-950">{item.title}</h3>
+                    <p className="mt-2 text-base leading-7 text-navy-600">{item.desc}</p>
                   </div>
                 </div>
               </Reveal>
@@ -153,8 +231,9 @@ export default function Home() {
           <Reveal>
             <SectionHeading
               eyebrow="The ledger"
-              title="Borrowing, explained without the fine print"
-              lede="Notes from our advisory desk on scores, switching and the real cost of convenient money."
+              title="Insights That Help You Borrow Better"
+              lede="Practical insights, borrowing tips and expert guidance from the TrueLend team to help you understand loans, avoid common mistakes and make informed borrowing decisions."
+              ledeClassName="max-w-3xl text-lg leading-8"
             />
           </Reveal>
           {posts.length === 0 ? (

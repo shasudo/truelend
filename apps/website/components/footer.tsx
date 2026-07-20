@@ -33,8 +33,9 @@ export function Footer() {
             <Logo tagline />
           </Link>
           <p className="mt-5 max-w-xs text-sm leading-relaxed text-on-dark-muted">
-            {site.tagline} We compare offers across India&rsquo;s leading banks and NBFCs and walk
-            with you from enquiry to disbursement.
+            TrueLend is a borrowing advisory platform that helps individuals and businesses compare
+            suitable borrowing options across multiple banks, NBFCs and Fintech lenders. We guide
+            you from enquiry to disbursement with objective, advisor-led support.
           </p>
         </div>
 
