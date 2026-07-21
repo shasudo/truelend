@@ -18,9 +18,9 @@ export default function BlogPage() {
   return (
     <>
       <PageHeader
-        eyebrow="The ledger"
-        title="Borrowing, explained without the fine print"
-        lede="Notes from our advisory desk — the arithmetic, the policy quirks and the negotiating leverage lenders assume you don't know."
+        eyebrow="The Ledger"
+        title="Insights That Help You Borrow Better"
+        lede="Practical insights, borrowing tips and expert guidance from the TrueLend team to help you understand loans, avoid common mistakes and make informed borrowing decisions."
       />
       <section>
         <Container className="py-16 sm:py-20">
