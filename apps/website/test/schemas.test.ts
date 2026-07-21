@@ -11,10 +11,15 @@ const validEnquiry = {
   kind: "enquiry",
   name: "Asha Rao",
   phone: "9876543210",
+  email: "asha@example.com",
+  city: "Bengaluru",
   productSlug: "home-loan",
   loanAmount: "2500000",
+  loanPurpose: "Home Purchase",
   employmentType: "salaried",
+  employerName: "Acme Corp",
   monthlyIncome: "80000",
+  experienceYears: "5",
   pincode: "560001",
   consent: true,
 };
@@ -27,6 +32,15 @@ void test("enquiry form enforces the loan-application core for loans", () => {
   assert.equal(enquiryFormSchema.safeParse({ ...validEnquiry, pincode: "56" }).success, false);
   assert.equal(
     enquiryFormSchema.safeParse({ ...validEnquiry, loanAmount: "25 lakh" }).success,
+    false,
+  );
+  // Fields promoted to required by the assessment form redesign.
+  assert.equal(enquiryFormSchema.safeParse({ ...validEnquiry, email: "" }).success, false);
+  assert.equal(enquiryFormSchema.safeParse({ ...validEnquiry, city: "" }).success, false);
+  assert.equal(enquiryFormSchema.safeParse({ ...validEnquiry, loanPurpose: "" }).success, false);
+  assert.equal(enquiryFormSchema.safeParse({ ...validEnquiry, employerName: "" }).success, false);
+  assert.equal(
+    enquiryFormSchema.safeParse({ ...validEnquiry, experienceYears: "" }).success,
     false,
   );
 });

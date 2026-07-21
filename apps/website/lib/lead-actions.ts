@@ -109,20 +109,35 @@ export async function submitLead(input: unknown): Promise<SubmitResult> {
       partnerId = rows[0]?.user_id;
     }
 
-    // Loan-application detail exists only on the enquiry/referral variants.
-    const loanCols =
+    // Loan-application detail exists only on the enquiry/referral variants, and
+    // the two forms capture different fields — hence the kind-narrowed blocks.
+    const sharedLoan =
       d.kind === "enquiry" || d.kind === "referral"
         ? {
             loanAmountPaise: rupeesToPaise(d.loanAmount),
             tenureMonths: intOrNull(d.tenureMonths),
             loanPurpose: blank(d.loanPurpose),
             pincode: blank(d.pincode),
-            residenceType: d.residenceType || undefined,
             employmentType: d.employmentType || undefined,
             monthlyIncomePaise: rupeesToPaise(d.monthlyIncome),
             employerName: blank(d.employerName),
             experienceYears: intOrNull(d.experienceYears),
             existingEmiPaise: rupeesToPaise(d.existingEmi),
+          }
+        : {};
+    const enquiryLoan =
+      d.kind === "enquiry"
+        ? {
+            preferredEmiPaise: rupeesToPaise(d.preferredEmi),
+            outstandingLoanAmountPaise: rupeesToPaise(d.outstandingLoanAmount),
+            creditCardOutstandingPaise: rupeesToPaise(d.creditCardOutstanding),
+            existingWithEmployer: blank(d.existingWithEmployer),
+          }
+        : {};
+    const referralLoan =
+      d.kind === "referral"
+        ? {
+            residenceType: d.residenceType || undefined,
             assetValuePaise: rupeesToPaise(d.assetValue),
             annualTurnoverPaise: rupeesToPaise(d.annualTurnover),
           }
@@ -133,7 +148,9 @@ export async function submitLead(input: unknown): Promise<SubmitResult> {
       const [lead] = await tx
         .insert(schema.leads)
         .values({
-          ...loanCols,
+          ...sharedLoan,
+          ...enquiryLoan,
+          ...referralLoan,
           kind: d.kind,
           name: "name" in d ? blank(d.name) : undefined,
           phone: "phone" in d ? blank(d.phone) : undefined,

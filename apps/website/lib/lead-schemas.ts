@@ -3,6 +3,7 @@ import {
   productSlugs,
   employmentTypeValues,
   residenceTypeValues,
+  loanPurposes,
   cardProducts,
   normalizeIndianMobile,
   validationMessages,
@@ -27,18 +28,6 @@ const smallIntOptional = z
   .optional();
 const pincode = z.string().trim().regex(validationPatterns.pincode, validationMessages.pincode);
 
-// Required core on the self-application enquiry. Enums accept "" as input (the
-// select's placeholder) but a refine rejects it, so the empty default still
-// typechecks while an unmade choice fails validation with a clear message.
-const loanCore = {
-  loanAmount: rupeeAmount("the loan amount"),
-  employmentType: z
-    .enum(employmentTypeValues)
-    .or(z.literal(""))
-    .refine((v) => v !== "", { message: "Select your employment type" }),
-  monthlyIncome: rupeeAmount("your monthly income"),
-  pincode,
-};
 // Optional detail, shared by every detailed form.
 const loanDetails = {
   tenureMonths: smallIntOptional,
@@ -65,8 +54,6 @@ const phone = z
   .transform(normalizeIndianMobile)
   .pipe(z.string().regex(validationPatterns.indianMobile, validationMessages.indianMobile));
 
-const optionalEmail = z.email("Enter a valid email address").max(254).or(z.literal("")).optional();
-
 const consent = z.boolean().refine((v) => v === true, "Please accept to proceed");
 
 const optionalAttribution = z.preprocess(
@@ -87,22 +74,50 @@ const base = {
   ref: optionalAttribution,
 };
 
+// Self-application enquiry — fields mirror the on-page assessment form 1:1.
+// Enums accept "" as input (the select placeholder) but a refine rejects it, so
+// the empty default still typechecks while an unmade choice fails with a clear
+// message. Amounts are digit-only rupee strings, converted to paise server-side.
 export const enquirySchema = z.object({
   kind: z.literal("enquiry"),
-  name: z.string().trim().min(2, "Please tell us your name").max(100),
-  phone,
-  email: optionalEmail,
-  city: z.string().trim().max(100).optional(),
+  // 01 · Loan requirement
   productSlug: z
     .enum(productSlugs)
     .or(z.literal(""))
     .refine((v) => v !== "", { message: "Select the product you need" }),
-  message: z.string().trim().max(2000).optional(),
-  ...loanCore,
   // Cards have no loan amount; requiredness is enforced per-product in
   // enquiryFormSchema (below) so the server union stays a plain ZodObject.
   loanAmount: rupeeAmountOptional,
-  ...loanDetails,
+  loanPurpose: z
+    .enum(loanPurposes)
+    .or(z.literal(""))
+    .refine((v) => v !== "", { message: "Select the purpose of the loan" }),
+  tenureMonths: smallIntOptional,
+  preferredEmi: rupeeAmountOptional,
+  // 02 · About you
+  name: z.string().trim().min(2, "Please tell us your name").max(100),
+  phone,
+  email: z.email("Enter a valid email address").max(254),
+  city: z.string().trim().min(1, "Enter your city").max(100),
+  pincode,
+  // 03 · Employment & income
+  employmentType: z
+    .enum(employmentTypeValues)
+    .or(z.literal(""))
+    .refine((v) => v !== "", { message: "Select your employment type" }),
+  employerName: z.string().trim().min(1, "Enter your employer or business name").max(160),
+  monthlyIncome: rupeeAmount("your monthly income"),
+  experienceYears: z
+    .string()
+    .trim()
+    .regex(validationPatterns.smallInteger, "Select your work experience"),
+  existingWithEmployer: z.string().trim().max(40).optional(),
+  // 04 · Existing borrowings
+  existingEmi: rupeeAmountOptional,
+  outstandingLoanAmount: rupeeAmountOptional,
+  creditCardOutstanding: rupeeAmountOptional,
+  // 05 · Additional information
+  message: z.string().trim().max(500).optional(),
   ...base,
 });
 

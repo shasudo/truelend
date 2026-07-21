@@ -151,6 +151,10 @@ export const leads = pgTable(
     existingEmiPaise: bigint("existing_emi_paise", { mode: "number" }),
     assetValuePaise: bigint("asset_value_paise", { mode: "number" }),
     annualTurnoverPaise: bigint("annual_turnover_paise", { mode: "number" }),
+    preferredEmiPaise: bigint("preferred_emi_paise", { mode: "number" }),
+    outstandingLoanAmountPaise: bigint("outstanding_loan_amount_paise", { mode: "number" }),
+    creditCardOutstandingPaise: bigint("credit_card_outstanding_paise", { mode: "number" }),
+    existingWithEmployer: text("existing_with_employer"),
 
     referrerName: text("referrer_name"),
     referrerPhone: text("referrer_phone"),
@@ -204,6 +208,9 @@ export const leads = pgTable(
         and (${t.existingEmiPaise} is null or (${t.existingEmiPaise} >= 0 and ${t.existingEmiPaise} <= 9007199254740991))
         and (${t.assetValuePaise} is null or (${t.assetValuePaise} >= 0 and ${t.assetValuePaise} <= 9007199254740991))
         and (${t.annualTurnoverPaise} is null or (${t.annualTurnoverPaise} >= 0 and ${t.annualTurnoverPaise} <= 9007199254740991))
+        and (${t.preferredEmiPaise} is null or (${t.preferredEmiPaise} >= 0 and ${t.preferredEmiPaise} <= 9007199254740991))
+        and (${t.outstandingLoanAmountPaise} is null or (${t.outstandingLoanAmountPaise} >= 0 and ${t.outstandingLoanAmountPaise} <= 9007199254740991))
+        and (${t.creditCardOutstandingPaise} is null or (${t.creditCardOutstandingPaise} >= 0 and ${t.creditCardOutstandingPaise} <= 9007199254740991))
         and (${t.tenureMonths} is null or (${t.tenureMonths} >= 0 and ${t.tenureMonths} <= 600))
         and (${t.experienceYears} is null or (${t.experienceYears} >= 0 and ${t.experienceYears} <= 100))`,
     ),
