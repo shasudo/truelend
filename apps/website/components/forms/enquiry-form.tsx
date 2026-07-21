@@ -6,10 +6,10 @@ import { Button, Checkbox, Field, Input, Select, Textarea } from "@truelend/ui";
 import {
   products,
   employmentTypes,
-  residenceTypes,
   loanTenures,
-  securedProducts,
-  businessProducts,
+  loanPurposes,
+  experienceBands,
+  employerTenureLabels,
   cardProducts,
   type ProductSlug,
 } from "@truelend/reference";
@@ -23,11 +23,19 @@ import {
   useLeadForm,
 } from "./lead-form";
 
-function Legend({ children }: { children: ReactNode }) {
+const MESSAGE_LIMIT = 500;
+
+function Section({ n, title, children }: { n: string; title: string; children: ReactNode }) {
   return (
-    <legend className="font-display text-sm font-bold uppercase tracking-[0.14em] text-navy-500">
+    <fieldset className="space-y-5">
+      <legend className="mb-1 flex items-center gap-3">
+        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-50 font-display text-sm font-extrabold tabular-nums text-red-600">
+          {n}
+        </span>
+        <span className="font-display text-lg font-bold text-navy-950">{title}</span>
+      </legend>
       {children}
-    </legend>
+    </fieldset>
   );
 }
 
@@ -45,23 +53,24 @@ export function EnquiryForm({ defaultProduct = "" }: { defaultProduct?: ProductS
     failTurnstile,
   } = useLeadForm(zodResolver(enquiryFormSchema), {
     kind: "enquiry",
+    productSlug: defaultProduct,
+    loanAmount: "",
+    loanPurpose: "",
+    tenureMonths: "",
+    preferredEmi: "",
     name: "",
     phone: "",
     email: "",
     city: "",
-    productSlug: defaultProduct,
-    loanAmount: "",
-    tenureMonths: "",
-    loanPurpose: "",
     pincode: "",
-    residenceType: "",
     employmentType: "",
-    monthlyIncome: "",
     employerName: "",
+    monthlyIncome: "",
     experienceYears: "",
+    existingWithEmployer: "",
     existingEmi: "",
-    assetValue: "",
-    annualTurnover: "",
+    outstandingLoanAmount: "",
+    creditCardOutstanding: "",
     message: "",
     consent: false,
   });
@@ -69,33 +78,31 @@ export function EnquiryForm({ defaultProduct = "" }: { defaultProduct?: ProductS
   const err = formState.errors;
   const product = watch("productSlug");
   const isCard = cardProducts.has(product);
-  const showAsset = securedProducts.has(product);
-  const showTurnover = businessProducts.has(product);
+  const messageLength = watch("message")?.length ?? 0;
 
   if (succeeded) {
     return (
       <FormSuccess
-        title="Application received."
-        sub="An advisor will review your details and call you within one working day — from our number, once, and only about this application."
+        title="Assessment received."
+        sub="A Borrowing Advisor will review your details and call you within one working day — from our number, once, and only about this request."
       />
     );
   }
 
   return (
-    <form onSubmit={onSubmit} noValidate className="space-y-8">
+    <form onSubmit={onSubmit} noValidate className="space-y-9">
       <NoScriptFallback />
 
-      <fieldset className="space-y-5">
-        <Legend>{isCard ? "Card you want" : "Loan requirement"}</Legend>
+      <Section n="01" title="Your Loan Requirement">
         <div className="grid gap-5 sm:grid-cols-2">
           <Field
-            label={isCard ? "Credit card" : "Loan you need"}
+            label={isCard ? "Credit card" : "Loan product"}
             htmlFor="enq-product"
             required
             error={err.productSlug?.message}
           >
             <Select id="enq-product" aria-invalid={!!err.productSlug} {...register("productSlug")}>
-              <option value="">{isCard ? "Select a card" : "Select a loan"}</option>
+              <option value="">{isCard ? "Select a card" : "Select loan type"}</option>
               {products.map((p) => (
                 <option key={p.slug} value={p.slug}>
                   {p.name}
@@ -119,10 +126,25 @@ export function EnquiryForm({ defaultProduct = "" }: { defaultProduct?: ProductS
               />
             </Field>
           )}
+          <Field
+            label="Purpose of loan"
+            htmlFor="enq-purpose"
+            required
+            error={err.loanPurpose?.message}
+          >
+            <Select id="enq-purpose" aria-invalid={!!err.loanPurpose} {...register("loanPurpose")}>
+              <option value="">Select purpose</option>
+              {loanPurposes.map((purpose) => (
+                <option key={purpose} value={purpose}>
+                  {purpose}
+                </option>
+              ))}
+            </Select>
+          </Field>
           {!isCard && (
             <Field label="Preferred tenure" htmlFor="enq-tenure" error={err.tenureMonths?.message}>
               <Select id="enq-tenure" {...register("tenureMonths")}>
-                <option value="">No preference</option>
+                <option value="">Select tenure</option>
                 {loanTenures.map((t) => (
                   <option key={t.value} value={t.value}>
                     {t.label}
@@ -133,27 +155,28 @@ export function EnquiryForm({ defaultProduct = "" }: { defaultProduct?: ProductS
           )}
           {!isCard && (
             <Field
-              label="Purpose (optional)"
-              htmlFor="enq-purpose"
-              error={err.loanPurpose?.message}
+              label="Preferred EMI (optional)"
+              htmlFor="enq-preferred-emi"
+              error={err.preferredEmi?.message}
             >
               <Input
-                id="enq-purpose"
-                placeholder="e.g. Buying a home, business expansion"
-                {...register("loanPurpose")}
+                id="enq-preferred-emi"
+                inputMode="numeric"
+                placeholder="e.g. 25000"
+                {...register("preferredEmi")}
               />
             </Field>
           )}
         </div>
-      </fieldset>
+      </Section>
 
-      <fieldset className="space-y-5">
-        <Legend>About you</Legend>
+      <Section n="02" title="About You">
         <div className="grid gap-5 sm:grid-cols-2">
           <Field label="Full name" htmlFor="enq-name" required error={err.name?.message}>
             <Input
               id="enq-name"
               autoComplete="name"
+              placeholder="Enter your full name"
               aria-invalid={!!err.name}
               {...register("name")}
             />
@@ -164,9 +187,28 @@ export function EnquiryForm({ defaultProduct = "" }: { defaultProduct?: ProductS
               type="tel"
               inputMode="numeric"
               autoComplete="tel-national"
-              placeholder="10-digit mobile"
+              placeholder="Enter 10 digit mobile number"
               aria-invalid={!!err.phone}
               {...register("phone")}
+            />
+          </Field>
+          <Field label="Email" htmlFor="enq-email" required error={err.email?.message}>
+            <Input
+              id="enq-email"
+              type="email"
+              autoComplete="email"
+              placeholder="Enter your email"
+              aria-invalid={!!err.email}
+              {...register("email")}
+            />
+          </Field>
+          <Field label="City" htmlFor="enq-city" required error={err.city?.message}>
+            <Input
+              id="enq-city"
+              autoComplete="address-level2"
+              placeholder="Enter your city"
+              aria-invalid={!!err.city}
+              {...register("city")}
             />
           </Field>
           <Field label="PIN code" htmlFor="enq-pin" required error={err.pincode?.message}>
@@ -174,38 +216,15 @@ export function EnquiryForm({ defaultProduct = "" }: { defaultProduct?: ProductS
               id="enq-pin"
               inputMode="numeric"
               autoComplete="postal-code"
-              placeholder="6-digit PIN"
+              placeholder="Enter PIN code"
               aria-invalid={!!err.pincode}
               {...register("pincode")}
             />
           </Field>
-          <Field label="City" htmlFor="enq-city" error={err.city?.message}>
-            <Input id="enq-city" autoComplete="address-level2" {...register("city")} />
-          </Field>
-          <Field label="Email" htmlFor="enq-email" error={err.email?.message}>
-            <Input
-              id="enq-email"
-              type="email"
-              autoComplete="email"
-              aria-invalid={!!err.email}
-              {...register("email")}
-            />
-          </Field>
-          <Field label="Residence" htmlFor="enq-residence" error={err.residenceType?.message}>
-            <Select id="enq-residence" {...register("residenceType")}>
-              <option value="">Select</option>
-              {residenceTypes.map((r) => (
-                <option key={r.value} value={r.value}>
-                  {r.label}
-                </option>
-              ))}
-            </Select>
-          </Field>
         </div>
-      </fieldset>
+      </Section>
 
-      <fieldset className="space-y-5">
-        <Legend>Employment &amp; income</Legend>
+      <Section n="03" title="Employment & Income">
         <div className="grid gap-5 sm:grid-cols-2">
           <Field
             label="Employment type"
@@ -218,7 +237,7 @@ export function EnquiryForm({ defaultProduct = "" }: { defaultProduct?: ProductS
               aria-invalid={!!err.employmentType}
               {...register("employmentType")}
             >
-              <option value="">Select</option>
+              <option value="">Select employment type</option>
               {employmentTypes.map((e) => (
                 <option key={e.value} value={e.value}>
                   {e.label}
@@ -227,7 +246,20 @@ export function EnquiryForm({ defaultProduct = "" }: { defaultProduct?: ProductS
             </Select>
           </Field>
           <Field
-            label="Net monthly income (₹)"
+            label="Employer / business name"
+            htmlFor="enq-employer"
+            required
+            error={err.employerName?.message}
+          >
+            <Input
+              id="enq-employer"
+              placeholder="Enter employer / business name"
+              aria-invalid={!!err.employerName}
+              {...register("employerName")}
+            />
+          </Field>
+          <Field
+            label="Monthly income (₹)"
             htmlFor="enq-income"
             required
             error={err.monthlyIncome?.message}
@@ -241,122 +273,133 @@ export function EnquiryForm({ defaultProduct = "" }: { defaultProduct?: ProductS
             />
           </Field>
           <Field
-            label="Employer / business name"
-            htmlFor="enq-employer"
-            error={err.employerName?.message}
-          >
-            <Input id="enq-employer" {...register("employerName")} />
-          </Field>
-          <Field
-            label="Experience / vintage (years)"
+            label="Years of experience"
             htmlFor="enq-exp"
+            required
             error={err.experienceYears?.message}
           >
-            <Input
+            <Select
               id="enq-exp"
-              inputMode="numeric"
-              placeholder="e.g. 6"
+              aria-invalid={!!err.experienceYears}
               {...register("experienceYears")}
-            />
+            >
+              <option value="">Select experience</option>
+              {experienceBands.map((band) => (
+                <option key={band.value} value={band.value}>
+                  {band.label}
+                </option>
+              ))}
+            </Select>
+          </Field>
+          <Field
+            label="Existing with employer"
+            htmlFor="enq-employer-tenure"
+            error={err.existingWithEmployer?.message}
+          >
+            <Select id="enq-employer-tenure" {...register("existingWithEmployer")}>
+              <option value="">Select duration</option>
+              {employerTenureLabels.map((label) => (
+                <option key={label} value={label}>
+                  {label}
+                </option>
+              ))}
+            </Select>
           </Field>
         </div>
-      </fieldset>
+      </Section>
 
-      <fieldset className={`space-y-5${isCard ? " hidden" : ""}`}>
-        <Legend>Obligations &amp; assets</Legend>
-        <div className="grid gap-5 sm:grid-cols-2">
-          <Field
-            label="Current EMIs / month (₹)"
-            htmlFor="enq-emi"
-            error={err.existingEmi?.message}
-          >
+      <Section n="04" title="Existing Borrowings">
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <Field label="Current monthly EMI (₹)" htmlFor="enq-emi" error={err.existingEmi?.message}>
             <Input
               id="enq-emi"
               inputMode="numeric"
-              placeholder="0 if none"
+              placeholder="e.g. 25000"
               {...register("existingEmi")}
             />
           </Field>
-          {showAsset && (
-            <Field
-              label="Property / asset value (₹)"
-              htmlFor="enq-asset"
-              error={err.assetValue?.message}
-            >
-              <Input
-                id="enq-asset"
-                inputMode="numeric"
-                placeholder="e.g. 6000000"
-                {...register("assetValue")}
-              />
-            </Field>
-          )}
-          {showTurnover && (
-            <Field
-              label="Annual turnover (₹)"
-              htmlFor="enq-turnover"
-              error={err.annualTurnover?.message}
-            >
-              <Input
-                id="enq-turnover"
-                inputMode="numeric"
-                placeholder="e.g. 12000000"
-                {...register("annualTurnover")}
-              />
-            </Field>
-          )}
+          <Field
+            label="Outstanding loan amount (₹)"
+            htmlFor="enq-outstanding"
+            error={err.outstandingLoanAmount?.message}
+          >
+            <Input
+              id="enq-outstanding"
+              inputMode="numeric"
+              placeholder="e.g. 1000000"
+              {...register("outstandingLoanAmount")}
+            />
+          </Field>
+          <Field
+            label="Credit card outstanding (₹)"
+            htmlFor="enq-cc"
+            error={err.creditCardOutstanding?.message}
+          >
+            <Input
+              id="enq-cc"
+              inputMode="numeric"
+              placeholder="e.g. 50000"
+              {...register("creditCardOutstanding")}
+            />
+          </Field>
         </div>
-      </fieldset>
+      </Section>
 
-      <Field
-        label="Anything else we should know?"
-        htmlFor="enq-message"
-        error={err.message?.message}
-      >
-        <Textarea
-          id="enq-message"
-          placeholder="Existing offers to beat, timelines, co-applicant details…"
-          {...register("message")}
-        />
-      </Field>
-
-      <label className="flex gap-3 text-sm leading-relaxed text-navy-600">
-        <Checkbox
-          aria-invalid={!!err.consent}
-          aria-describedby={err.consent ? "enq-consent-error" : undefined}
-          {...register("consent")}
-        />
-        <span>
-          I authorise TrueLend to contact me about this application via phone, WhatsApp or email.
-          This consent overrides my DND registration.
-        </span>
-      </label>
-      {err.consent && (
-        <p id="enq-consent-error" role="alert" className="text-sm text-red-600">
-          {err.consent.message}
-        </p>
-      )}
-
-      <TurnstileField
-        resetKey={turnstileKey}
-        action="lead_enquiry"
-        onToken={setToken}
-        onExpire={resetToken}
-        onError={failTurnstile}
-      />
-      <RootError message={rootError ?? turnstileError} />
-
-      <div className="space-y-2">
-        <Button
-          type="submit"
-          size="lg"
-          disabled={formState.isSubmitting || !turnstileReady}
-          className="w-full sm:w-auto"
+      <Section n="05" title="Additional Information">
+        <Field
+          label="Anything else you’d like your Borrowing Advisor to know?"
+          htmlFor="enq-message"
+          error={err.message?.message}
         >
-          {formState.isSubmitting ? "Submitting…" : "Request a Callback"}
-        </Button>
-        <TurnstilePendingHint show={!turnstileReady && !turnstileError} />
-      </div>
+          <Textarea
+            id="enq-message"
+            maxLength={MESSAGE_LIMIT}
+            placeholder="e.g. existing offers, preferred bank, urgent requirement, special circumstances etc."
+            {...register("message")}
+          />
+          <p className="mt-1 text-right text-xs tabular-nums text-muted">
+            {messageLength}/{MESSAGE_LIMIT}
+          </p>
+        </Field>
+
+        <label className="flex gap-3 text-sm leading-relaxed text-navy-600">
+          <Checkbox
+            aria-invalid={!!err.consent}
+            aria-describedby={err.consent ? "enq-consent-error" : undefined}
+            {...register("consent")}
+          />
+          <span>
+            I authorise TrueLend to contact me about my enquiry on phone, WhatsApp or email. This
+            consent overrides any DND registration.
+          </span>
+        </label>
+        {err.consent && (
+          <p id="enq-consent-error" role="alert" className="text-sm text-red-600">
+            {err.consent.message}
+          </p>
+        )}
+
+        <TurnstileField
+          resetKey={turnstileKey}
+          action="lead_enquiry"
+          onToken={setToken}
+          onExpire={resetToken}
+          onError={failTurnstile}
+        />
+        <RootError message={rootError ?? turnstileError} />
+
+        <div className="space-y-2">
+          <Button
+            type="submit"
+            size="lg"
+            disabled={formState.isSubmitting || !turnstileReady}
+            className="w-full"
+          >
+            {formState.isSubmitting ? "Submitting…" : "Start My Borrowing Assessment"}
+          </Button>
+          <TurnstilePendingHint show={!turnstileReady && !turnstileError} />
+        </div>
+      </Section>
     </form>
   );
 }

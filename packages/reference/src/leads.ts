@@ -122,3 +122,33 @@ export function tenureLabel(months: number | null | undefined): string {
     ? "—"
     : (loanTenures.find((tenure) => tenure.value === months)?.label ?? `${months} months`);
 }
+
+// Purpose-of-loan options for the detailed enquiry form. Value === label so the
+// stored `leads.loan_purpose` text reads cleanly in admin without a lookup.
+export const loanPurposes = [
+  "Home Purchase",
+  "Home Construction or Renovation",
+  "Business Expansion",
+  "Working Capital",
+  "Debt Consolidation",
+  "Education",
+  "Vehicle Purchase",
+  "Medical or Emergency",
+  "Wedding",
+  "Travel",
+  "Personal Use",
+  "Other",
+] as const;
+
+// Experience bands. `value` is the integer lower bound persisted to
+// leads.experience_years; the same labels drive the optional "time with current
+// employer" select (stored verbatim as text in leads.existing_with_employer).
+export const experienceBands = [
+  { value: 0, label: "Less than 1 year" },
+  { value: 1, label: "1–3 years" },
+  { value: 3, label: "3–5 years" },
+  { value: 5, label: "5–10 years" },
+  { value: 10, label: "More than 10 years" },
+] as const;
+
+export const employerTenureLabels = experienceBands.map((band) => band.label);

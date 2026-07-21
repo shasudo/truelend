@@ -141,8 +141,31 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
                   value={lead.experienceYears != null ? String(lead.experienceYears) : null}
                 />
                 <Detail
+                  label="Preferred EMI"
+                  value={
+                    lead.preferredEmiPaise != null ? formatPaise(lead.preferredEmiPaise) : null
+                  }
+                />
+                <Detail label="Existing with employer" value={lead.existingWithEmployer} />
+                <Detail
                   label="Current EMIs / mo"
                   value={lead.existingEmiPaise != null ? formatPaise(lead.existingEmiPaise) : null}
+                />
+                <Detail
+                  label="Outstanding loan"
+                  value={
+                    lead.outstandingLoanAmountPaise != null
+                      ? formatPaise(lead.outstandingLoanAmountPaise)
+                      : null
+                  }
+                />
+                <Detail
+                  label="Credit card outstanding"
+                  value={
+                    lead.creditCardOutstandingPaise != null
+                      ? formatPaise(lead.creditCardOutstandingPaise)
+                      : null
+                  }
                 />
                 <Detail
                   label="Asset value"
