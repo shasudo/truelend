@@ -1,4 +1,11 @@
-export { createDb, ping, type Database } from "./client";
+export {
+  assertPartnerRegistrationSchemaReady,
+  createDb,
+  ping,
+  pingPartnerRegistrationSchema,
+  type Database,
+  type PartnerRegistrationSchemaProbe,
+} from "./client";
 export * as schema from "./schema";
 export type {
   Lead,
