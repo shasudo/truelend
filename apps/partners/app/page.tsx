@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { Button, Card, Container } from "@truelend/ui";
 import { contactPhone, referralPartnerEmail } from "@truelend/reference";
+import { LoanProductsSection } from "@/components/loan-products-section";
 import { PublicHeader } from "@/components/public-header";
 
 const journey = [
@@ -280,6 +281,8 @@ export default function Home() {
             </div>
           </Container>
         </section>
+
+        <LoanProductsSection />
 
         <section id="how-it-works" className="scroll-mt-20 border-b border-hairline bg-red-50/30">
           <Container className="max-w-[1240px] py-4">
