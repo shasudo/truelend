@@ -88,6 +88,13 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           HEALTHCHECK_SECRET: ${{ secrets.HEALTHCHECK_SECRET }}
           NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${{ vars.NEXT_PUBLIC_TURNSTILE_SITE_KEY }}
+      - name: Remove legacy Business Partner development data
+        run: pnpm db:cleanup-legacy-business
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          TRUELEND_PRODUCTION_DATABASE_APPROVED: "true"
+          TRUELEND_LEGACY_BUSINESS_CLEANUP_APPROVED: "true"
+          TRUELEND_EXPECTED_LEGACY_BUSINESS_USERS: "2"
       - run: pnpm db:preflight
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}

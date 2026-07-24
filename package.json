@@ -28,6 +28,7 @@
     "cf-typegen:admin": "pnpm --filter @truelend/admin cf-typegen",
     "cf-typegen:partners": "pnpm --filter @truelend/partners cf-typegen",
     "cf:validate": "pnpm --parallel --filter './apps/*' cf:validate",
+    "db:cleanup-legacy-business": "pnpm --filter @truelend/db db:cleanup-legacy-business",
     "db:check": "pnpm --filter @truelend/db db:check",
     "db:generate": "pnpm --filter @truelend/db db:generate",
     "db:preflight": "pnpm --filter @truelend/db db:preflight",
