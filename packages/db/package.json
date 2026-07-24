@@ -7,6 +7,7 @@
     ".": "./src/index.ts"
   },
   "scripts": {
+    "db:cleanup-legacy-business": "tsx scripts/cleanup-legacy-business-partners.ts",
     "db:check": "tsx scripts/check-migration-drift.ts",
     "db:generate": "drizzle-kit generate",
     "db:preflight": "tsx scripts/migration-preflight.ts",
