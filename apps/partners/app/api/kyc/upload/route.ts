@@ -148,7 +148,7 @@ export async function POST(req: Request) {
           error:
             outcome.status === 409
               ? "Your documents were locked while this upload was in progress."
-              : "No partner profile",
+              : "No Referral Partner profile",
         },
         { status: outcome.status },
       );

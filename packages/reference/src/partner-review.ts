@@ -1,14 +1,12 @@
-import type { PartnerStatus, PartnerType } from "./partners";
+import type { PartnerStatus } from "./partners";
 
-export type PartnerApplicationType = PartnerType;
 export type PartnerReviewStatus = PartnerStatus;
 
 export const partnerDocTypes = [
-  { type: "pan", label: "PAN Card", required: true },
-  { type: "aadhaar", label: "Aadhaar Card", required: true },
-  { type: "photo", label: "Passport-size Photo", required: true },
-  { type: "cheque", label: "Cancelled Cheque", required: true },
-  { type: "gst", label: "GST Certificate", required: false },
+  { type: "pan", label: "PAN Card" },
+  { type: "aadhaar", label: "Aadhaar Card" },
+  { type: "photo", label: "Passport-size Photo" },
+  { type: "cheque", label: "Cancelled Cheque" },
 ] as const;
 
 export type PartnerDocumentType = (typeof partnerDocTypes)[number]["type"];
@@ -30,7 +28,6 @@ export const partnerDocTypeLabels: Readonly<Record<PartnerDocumentType, string>>
  * enforce the same policy without coupling this reference package to Drizzle.
  */
 export interface PartnerApplicationData {
-  type: PartnerApplicationType;
   pan: string | null;
   address: string | null;
   bankName: string | null;
@@ -41,12 +38,6 @@ export interface PartnerApplicationData {
   nomineeName: string | null;
   nomineeAadhaar: string | null;
   nomineePhone: string | null;
-  productsHandled: readonly string[] | null;
-  yearsExperience: number | null;
-  monthlyVolumeLoansPaise: number | null;
-  monthlyVolumeInsurancePaise: number | null;
-  monthlyVolumeMutualFundsPaise: number | null;
-  residenceAddress: string | null;
   occupation: string | null;
   designation: string | null;
 }
@@ -56,7 +47,7 @@ export interface PartnerReviewState {
   submittedAt: Date | null;
 }
 
-export type PartnerApplicationField = Exclude<keyof PartnerApplicationData, "type">;
+export type PartnerApplicationField = keyof PartnerApplicationData;
 
 export interface PartnerApplicationEvaluation {
   missingFields: PartnerApplicationField[];
@@ -80,23 +71,12 @@ const commonRequiredFields = [
   "nomineePhone",
 ] as const satisfies readonly PartnerApplicationField[];
 
-const businessRequiredFields = [
-  "productsHandled",
-  "yearsExperience",
-  "monthlyVolumeLoansPaise",
-  "monthlyVolumeInsurancePaise",
-  "monthlyVolumeMutualFundsPaise",
-  "residenceAddress",
-] as const satisfies readonly PartnerApplicationField[];
-
 const referralRequiredFields = [
   "occupation",
   "designation",
 ] as const satisfies readonly PartnerApplicationField[];
 
-const requiredDocumentTypes = partnerDocTypes
-  .filter((document) => document.required)
-  .map((document) => document.type);
+const requiredDocumentTypes = partnerDocTypes.map((document) => document.type);
 
 function hasValue(value: unknown): boolean {
   if (typeof value === "string") return value.trim().length > 0;
@@ -108,11 +88,9 @@ function applicationCompletion(
   partner: PartnerApplicationData,
   uploadedDocumentTypes: ReadonlySet<string>,
 ) {
-  const typeRequiredFields =
-    partner.type === "business" ? businessRequiredFields : referralRequiredFields;
   const requiredFields: readonly PartnerApplicationField[] = [
     ...commonRequiredFields,
-    ...typeRequiredFields,
+    ...referralRequiredFields,
   ];
   const missingFields = requiredFields.filter((field) => !hasValue(partner[field]));
   const missingDocumentTypes = requiredDocumentTypes.filter(

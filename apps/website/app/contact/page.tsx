@@ -20,6 +20,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { Button, Card, Container } from "@truelend/ui";
+import { referralPartnerEmail } from "@truelend/reference";
 import { ContactForm } from "@/components/forms/contact-form";
 import { Reveal } from "@/components/reveal";
 import { site } from "@/content/site";
@@ -27,7 +28,7 @@ import { site } from "@/content/site";
 export const metadata: Metadata = {
   title: "Contact Us",
   description:
-    "Contact TrueLend for borrowing guidance, an existing enquiry, a partnership opportunity or general support.",
+    "Contact TrueLend for borrowing guidance, an existing enquiry, a Referral Partner opportunity or general support.",
   alternates: { canonical: "/contact" },
 };
 
@@ -42,9 +43,9 @@ const departments = [
   },
   {
     icon: Handshake,
-    title: "Partnerships",
-    email: "partner@truelend.in",
-    note: "For partnership enquiries",
+    title: "Referral Partnerships",
+    email: referralPartnerEmail,
+    note: "For Referral Partner enquiries",
   },
   {
     icon: BriefcaseBusiness,

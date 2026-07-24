@@ -13,14 +13,12 @@ interface NavigationItem {
 }
 
 const navigation: readonly NavigationItem[] = [
-  { label: "For Partners", href: "/" },
-  { label: "Partner Benefits", href: "/#benefits" },
   { label: "How It Works", href: "/#how-it-works" },
-  { label: "Who Can Join", href: "/#partner-types" },
-  { label: "Products", href: `${appUrls.website}/products`, external: true },
-  { label: "Resources", href: "/resources" },
-  { label: "About Us", href: `${appUrls.website}/about`, external: true },
-  { label: "Contact", href: `${appUrls.website}/contact`, external: true },
+  { label: "Why TrueLend", href: "/#why-truelend" },
+  { label: "Who Can Join", href: "/#who-can-join" },
+  { label: "Referral Benefits", href: "/#benefits" },
+  { label: "FAQs", href: "/#faqs" },
+  { label: "Contact Us", href: `${appUrls.website}/contact`, external: true },
 ];
 
 const linkClass =
@@ -48,7 +46,7 @@ export function PublicMobileNav() {
               Explore TrueLend
             </Dialog.Title>
             <Dialog.Description className="sr-only">
-              Navigate the public partner website.
+              Navigate the public Referral Partner website.
             </Dialog.Description>
             <Dialog.Close asChild>
               <button
@@ -81,10 +79,10 @@ export function PublicMobileNav() {
           <div className="grid gap-2 border-t border-hairline p-4">
             <Link
               className="rounded-lg bg-red-600 px-4 py-3 text-center text-sm font-semibold text-white hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600 focus-visible:ring-offset-2"
-              href="/#partner-types"
+              href="/register/referral"
               onClick={() => setOpen(false)}
             >
-              Become a partner
+              Become a Referral Partner
             </Link>
             <Link
               className="rounded-lg px-4 py-2.5 text-center text-sm font-semibold text-navy-700 hover:bg-paper focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600"

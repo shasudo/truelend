@@ -1,4 +1,4 @@
-import { appUrls } from "@truelend/reference";
+import { appUrls, contactPhone } from "@truelend/reference";
 
 // Approval state and the visible draft notice are owned by content/approval.ts.
 
@@ -10,9 +10,9 @@ export const site = {
   // Partner site landing page. Deep-linking to /dashboard bounces logged-out
   // visitors to sign-in; the landing page is the correct public entry point.
   partnerUrl: appUrls.partners,
-  phone: "+91 98765 43210",
-  phoneHref: "tel:+919876543210",
-  whatsappHref: "https://wa.me/919876543210",
+  phone: contactPhone.display,
+  phoneHref: contactPhone.href,
+  whatsappHref: contactPhone.whatsappHref,
   email: "hello@truelend.in",
   address: "Hyderabad, Telangana, India",
   // ponytail: city-centre coordinates match the generic address. Replace them
@@ -26,7 +26,7 @@ export const site = {
   nav: [
     { label: "Products", href: "/products" },
     { label: "How It Works", href: "/#how-it-works" },
-    { label: "Partner Network", href: appUrls.partners },
+    { label: "Referral Partner Network", href: appUrls.partners },
     { label: "Resources", href: "/blog" },
     { label: "About", href: "/about" },
     { label: "Contact", href: "/contact" },

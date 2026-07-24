@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { CircleHelp, FileCheck2, FolderKanban, Mail, ShieldCheck } from "lucide-react";
 import { Button, Card } from "@truelend/ui";
+import { referralPartnerEmail } from "@truelend/reference";
 import { PartnerPageHeader } from "@/components/partner-page-header";
-import { requirePartner } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -25,26 +25,19 @@ const topics = [
   {
     icon: ShieldCheck,
     title: "Account details",
-    description: "Keep your partner and contact information accurate from your profile.",
+    description: "Keep your Referral Partner and contact information accurate from your profile.",
     href: "/profile",
     action: "Open profile",
   },
 ];
 
 export default async function SupportPage() {
-  const { partner } = await requirePartner();
-  const business = partner.type === "business";
-
   return (
     <div className="mx-auto max-w-6xl">
       <PartnerPageHeader
-        eyebrow="TrueLend Partner Support"
+        eyebrow="TrueLend Referral Partner Support"
         title="How can we help?"
-        description={
-          business
-            ? "Use your live dashboard first, then contact the support team for help with a case or account."
-            : "TrueLend handles the loan journey. You can focus on the introduction and ask us whenever you need help."
-        }
+        description="TrueLend handles the loan journey. You can focus on the introduction and ask us whenever you need help."
       />
 
       <div className="mt-6 grid gap-4 lg:grid-cols-3">
@@ -71,8 +64,8 @@ export default async function SupportPage() {
               Still need support?
             </h2>
             <p className="mt-2 text-sm leading-relaxed text-navy-800">
-              Email the TrueLend team from your registered address so we can identify your partner
-              account.
+              Email the TrueLend team from your registered address so we can identify your Referral
+              Partner account.
             </p>
           </div>
           <div className="flex flex-col items-start justify-center p-6 sm:p-8">
@@ -85,10 +78,10 @@ export default async function SupportPage() {
                   Email support
                 </p>
                 <a
-                  href="mailto:loans@truelend.in"
+                  href={`mailto:${referralPartnerEmail}`}
                   className="font-display text-lg font-bold text-navy-950 hover:text-red-600"
                 >
-                  loans@truelend.in
+                  {referralPartnerEmail}
                 </a>
               </div>
             </div>
@@ -97,8 +90,10 @@ export default async function SupportPage() {
               KYC files.
             </p>
             <Button asChild className="mt-5">
-              <a href="mailto:loans@truelend.in?subject=TrueLend%20Partner%20Support">
-                Email Partner Support
+              <a
+                href={`mailto:${referralPartnerEmail}?subject=TrueLend%20Referral%20Partner%20Support`}
+              >
+                Email Referral Partner Support
               </a>
             </Button>
           </div>
@@ -108,4 +103,4 @@ export default async function SupportPage() {
   );
 }
 
-export const metadata = { title: "Partner support" };
+export const metadata = { title: "Referral partner support" };

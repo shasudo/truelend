@@ -1,6 +1,6 @@
 import { Clock, XCircle, Send, CheckCircle2 } from "lucide-react";
 import { Card, Container, Logo, SubmitButton } from "@truelend/ui";
-import { evaluatePartnerApplication, partnerTypeLabel } from "@truelend/reference";
+import { evaluatePartnerApplication } from "@truelend/reference";
 import type { Partner } from "@truelend/db";
 import { KycDetailsForm } from "@/components/kyc-details-form";
 import { KycUpload } from "@/components/kyc-upload";
@@ -43,11 +43,10 @@ export function PartnerStatusScreen({
                 {rejected ? "Application not approved" : "Verification in progress"}
               </h1>
               <p className="mt-1 text-sm leading-relaxed text-navy-600">
-                Hi {name.split(" ")[0]} — you registered as a{" "}
-                <strong>{partnerTypeLabel(partner.type)}</strong>.{" "}
+                Hi {name.split(" ")[0]} — you registered as a <strong>Referral Partner</strong>.{" "}
                 {rejected
                   ? "Please review the note below, correct your documents, and they'll be re-checked."
-                  : "Upload your documents below; our team verifies partners within one working day."}
+                  : "Upload your documents below; our team verifies Referral Partners within one working day."}
               </p>
               {rejected && partner.rejectionReason && (
                 <p className="mt-3 rounded-lg border border-red-200 bg-white px-4 py-2.5 text-sm text-red-700">

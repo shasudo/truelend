@@ -3,9 +3,8 @@ import test from "node:test";
 
 import { channelForKind } from "../src/leads";
 
-void test("partner lead channels take precedence over the website lead kind", () => {
-  assert.equal(channelForKind("enquiry", "business"), "Business Partner");
-  assert.equal(channelForKind("referral", "referral"), "Referral Partner");
-  assert.equal(channelForKind("referral", null), "Website · Referral");
-  assert.equal(channelForKind("enquiry", null), "Website · Direct");
+void test("referral-partner lead channels take precedence over the website lead kind", () => {
+  assert.equal(channelForKind("referral", true), "Referral Partner");
+  assert.equal(channelForKind("referral"), "Website · Referral");
+  assert.equal(channelForKind("enquiry"), "Website · Direct");
 });

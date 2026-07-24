@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Card } from "@truelend/ui";
-import { partnerTypeLabel, formatPaise } from "@truelend/reference";
+import { formatPaise } from "@truelend/reference";
 import { PageTitle } from "@/components/page-title";
 import { requireAdmin, getAuthContext } from "@/lib/auth";
 import { getMisByProduct, getMisByChannel, getMisByPartner, type MisRow } from "@/lib/mis-queries";
@@ -121,7 +121,7 @@ export default async function MisPage() {
 
   return (
     <>
-      <PageTitle title="MIS" subtitle="Product-, channel- and partner-wise performance" />
+      <PageTitle title="MIS" subtitle="Product-, channel- and referral-partner-wise performance" />
 
       <section className="mb-8">
         <h2 className="mb-3 font-display text-lg font-bold text-navy-950">By product</h2>
@@ -134,13 +134,12 @@ export default async function MisPage() {
       </section>
 
       <section>
-        <h2 className="mb-3 font-display text-lg font-bold text-navy-950">By partner</h2>
+        <h2 className="mb-3 font-display text-lg font-bold text-navy-950">By Referral Partner</h2>
         <Card className="overflow-x-auto">
           <table className="w-full min-w-[720px] text-left text-sm">
             <thead>
               <tr className="border-b border-hairline text-xs font-semibold uppercase tracking-[0.1em] text-navy-500">
-                <th className="px-5 py-3 font-semibold">Partner</th>
-                <th className="px-5 py-3 font-semibold">Type</th>
+                <th className="px-5 py-3 font-semibold">Referral Partner</th>
                 <th className="px-5 py-3 text-right font-semibold">Leads</th>
                 <th className="px-5 py-3 text-right font-semibold">Disbursed</th>
                 <th className="px-5 py-3 text-right font-semibold">Volume</th>
@@ -152,8 +151,8 @@ export default async function MisPage() {
             <tbody>
               {byPartner.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="px-5 py-12 text-center text-muted">
-                    No partner-sourced leads yet.
+                  <td colSpan={7} className="px-5 py-12 text-center text-muted">
+                    No Referral Partner-sourced leads yet.
                   </td>
                 </tr>
               )}
@@ -164,7 +163,6 @@ export default async function MisPage() {
                       {p.label}
                     </Link>
                   </td>
-                  <td className="px-5 py-3.5 text-navy-600">{partnerTypeLabel(p.type)}</td>
                   <td className="px-5 py-3.5 text-right tabular-nums text-navy-700">{p.leads}</td>
                   <td className="px-5 py-3.5 text-right tabular-nums text-navy-700">
                     {p.disbursed}

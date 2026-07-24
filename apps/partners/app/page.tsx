@@ -4,167 +4,184 @@ import {
   ArrowRight,
   BadgeIndianRupee,
   BookOpenCheck,
-  Briefcase,
-  BriefcaseBusiness,
   Building2,
-  Car,
-  ChartNoAxesCombined,
-  CreditCard,
+  Check,
+  CircleCheckBig,
+  Clock3,
   FileCheck2,
+  Gift,
   GraduationCap,
-  Handshake,
   Headset,
-  Home as HomeIcon,
-  IndianRupee,
-  Megaphone,
+  HeartHandshake,
+  LockKeyhole,
+  Phone,
+  Rocket,
   ShieldCheck,
+  Smartphone,
   Sparkles,
-  Tractor,
-  User,
   UserRoundPlus,
+  UsersRound,
+  WalletCards,
 } from "lucide-react";
-import { Button, Card, Container, HexPattern, SectionHeading } from "@truelend/ui";
-import { products, type ProductSlug } from "@truelend/reference";
-import { PartnerBenefitsPanel } from "@/components/partner-benefits-panel";
-import { PartnerPathCards } from "@/components/partner-path-cards";
+import { Button, Card, Container } from "@truelend/ui";
+import { contactPhone, referralPartnerEmail } from "@truelend/reference";
 import { PublicHeader } from "@/components/public-header";
 
-const heroBenefits = [
-  { icon: Headset, label: "Reliable support" },
-  { icon: ChartNoAxesCombined, label: "Transparent tracking" },
-  { icon: ShieldCheck, label: "Consent-led sharing" },
-  { icon: Handshake, label: "Two partner paths" },
-];
-
-const productPresentation = {
-  "personal-loan": {
-    icon: User,
-    blurb: "Quick funds for personal needs.",
-    image: "/images/products/personal-loan.avif",
-  },
-  "home-loan": {
-    icon: HomeIcon,
-    blurb: "Turn a dream home into reality.",
-    image: "/images/products/home-loan.avif",
-  },
-  "business-loan": {
-    icon: Briefcase,
-    blurb: "Fuel business growth and expansion.",
-    image: "/images/products/business-loan.avif",
-  },
-  "loan-against-property": {
-    icon: Building2,
-    blurb: "Unlock the value in owned property.",
-    image: "/images/products/loan-against-property.avif",
-  },
-  "credit-cards": {
-    icon: CreditCard,
-    blurb: "Everyday convenience and flexibility.",
-    image: "/images/products/credit-cards.avif",
-  },
-  "education-loan": {
-    icon: GraduationCap,
-    blurb: "Invest in a brighter future.",
-    image: "/images/products/education-loan.avif",
-  },
-  "vehicle-loan": {
-    icon: Car,
-    blurb: "Finance the right car or vehicle.",
-    image: "/images/products/vehicle-loan.avif",
-  },
-  "working-capital": {
-    icon: IndianRupee,
-    blurb: "Breathing room for the operating cycle.",
-    image: "/images/products/working-capital.avif",
-  },
-  "equipment-finance": {
-    icon: Tractor,
-    blurb: "Fund machines that pay for themselves.",
-    image: "/images/products/equipment-finance.avif",
-  },
-} satisfies Record<
-  ProductSlug,
+const journey = [
   {
-    icon: typeof User;
-    blurb: string;
-    image: string;
-  }
->;
-
-const loanProducts = products.map((product) => ({
-  ...product,
-  ...productPresentation[product.slug],
-}));
+    icon: UserRoundPlus,
+    title: "You Refer",
+    description: "Share borrower details in less than 30 seconds.",
+    tone: "bg-blue-50 text-blue-700",
+  },
+  {
+    icon: Headset,
+    title: "TrueLend Advisor",
+    description: "Our experts understand the requirement and guide the borrower.",
+    tone: "bg-red-50 text-red-600",
+  },
+  {
+    icon: Building2,
+    title: "Right Bank / NBFC",
+    description: "We match the borrower with a suitable lender.",
+    tone: "bg-sun-100 text-navy-800",
+  },
+  {
+    icon: CircleCheckBig,
+    title: "Loan Disbursed",
+    description: "The borrower receives the loan with complete support.",
+    tone: "bg-emerald-50 text-emerald-700",
+  },
+  {
+    icon: Gift,
+    title: "You Earn",
+    description: "Receive a referral reward after successful disbursal.",
+    tone: "bg-purple-50 text-purple-700",
+  },
+] as const;
 
 const steps = [
   {
     icon: UserRoundPlus,
-    title: "Join",
-    description: "Choose the Business or Referral Partner path and create your account.",
+    title: "Know Someone Who Needs a Loan?",
+    description: "Personal, home, business, education or any other loan.",
   },
   {
     icon: FileCheck2,
-    title: "Share or submit",
-    description: "Refer someone or submit a complete customer loan opportunity.",
+    title: "Share Their Details",
+    description: "Submit basic details with consent in less than 30 seconds.",
   },
   {
     icon: Headset,
-    title: "We coordinate",
-    description: "The TrueLend team connects with the customer and manages the next steps.",
+    title: "We Take It From Here",
+    description: "Our advisors connect with the borrower and handle everything.",
   },
   {
-    icon: ChartNoAxesCombined,
-    title: "Track progress",
-    description: "Follow every introduction and status update from your partner dashboard.",
+    icon: Building2,
+    title: "Loan Disbursed",
+    description: "The borrower receives the right loan with complete support.",
+  },
+  {
+    icon: Gift,
+    title: "You Earn",
+    description: "Receive your referral incentive after successful disbursal.",
+  },
+] as const;
+
+const advantages = [
+  {
+    icon: ShieldCheck,
+    title: "No Expertise Required",
+    description: "You refer; our experienced team handles the rest.",
+  },
+  {
+    icon: FileCheck2,
+    title: "No Paperwork",
+    description: "No documentation or lender follow-ups are needed from you.",
+  },
+  {
+    icon: Smartphone,
+    title: "Real-time Tracking",
+    description: "Track every referral from your dashboard in real time.",
+  },
+  {
+    icon: WalletCards,
+    title: "Timely Rewards",
+    description: "Transparent referral incentives recorded in one ledger.",
+  },
+  {
+    icon: Headset,
+    title: "Dedicated Support",
+    description: "A referral-support team is always available to help.",
+  },
+  {
+    icon: GraduationCap,
+    title: "Learn & Grow",
+    description: "Use training, insights and sharing tools to grow.",
+  },
+] as const;
+
+const trustPoints = [
+  "Experienced borrowing advisors",
+  "Multiple lending banks and NBFCs",
+  "Transparent referral tracking",
+  "End-to-end loan support",
+] as const;
+
+const whoCanJoin = [
+  "Salaried professionals",
+  "Self-employed professionals",
+  "Real-estate professionals",
+  "Insurance and investment advisors",
+  "Teachers, students and homemakers",
+  "Retired professionals and community leaders",
+] as const;
+
+const benefits = [
+  {
+    icon: Rocket,
+    title: "Start immediately",
+    description: "Registration is quick and there are no joining fees or sales targets.",
+  },
+  {
+    icon: HeartHandshake,
+    title: "Help your network",
+    description: "Give people you know a reliable introduction when they need a loan.",
   },
   {
     icon: BadgeIndianRupee,
-    title: "Earn",
-    description: "Eligible successful cases generate business commissions or referral rewards.",
-  },
-];
-
-const assurances = [
-  {
-    icon: BriefcaseBusiness,
-    title: "Purpose-built paths",
-    description: "Different experiences for loan professionals and network-led referrers.",
-  },
-  {
-    icon: ShieldCheck,
-    title: "Responsible introductions",
-    description: "Customer details are shared with consent through a secure partner portal.",
-  },
-  {
-    icon: ChartNoAxesCombined,
-    title: "Clear visibility",
-    description: "Customers, referrals, statuses and earnings stay organized in one place.",
-  },
-  {
-    icon: Headset,
-    title: "Human support",
-    description: "TrueLend coordinates the loan journey and helps partners when needed.",
-  },
-];
-
-const resources = [
-  {
-    icon: Megaphone,
-    title: "Marketing materials",
-    description: "Ready-to-use outreach ideas and responsible sharing guidance.",
+    title: "Earn on success",
+    description: "Eligible disbursals create a clear referral incentive in your dashboard.",
   },
   {
     icon: BookOpenCheck,
-    title: "Partner learning",
-    description:
-      "Role-specific basics for better referrals, complete cases and clear expectations.",
+    title: "TrueLend handles the work",
+    description: "Our advisors manage lender matching, coordination and follow-up.",
+  },
+] as const;
+
+const faqs = [
+  {
+    question: "Do I need lending experience?",
+    answer:
+      "No. You only make a consent-led introduction. TrueLend’s borrowing advisors handle the loan journey.",
   },
   {
-    icon: Headset,
-    title: "Partner support",
-    description: "Guidance for account verification, live opportunities and referral questions.",
+    question: "Is there a registration fee or target?",
+    answer:
+      "No. Joining is free, and the referral program has no mandatory sales target or upfront investment.",
   },
-];
+  {
+    question: "When do I receive a referral incentive?",
+    answer:
+      "An eligible incentive is recorded after a referred borrower’s loan is successfully disbursed and verified by the TrueLend team.",
+  },
+  {
+    question: "Can I track my referrals?",
+    answer:
+      "Yes. Your Referral Partner dashboard shows every submitted referral, its current stage and your recorded incentives.",
+  },
+] as const;
 
 export default function Home() {
   return (
@@ -172,118 +189,141 @@ export default function Home() {
       <PublicHeader />
 
       <main id="main-content" tabIndex={-1}>
-        <section className="relative overflow-hidden border-b border-hairline">
-          <HexPattern className="-left-32 -top-24 h-[520px] w-[520px] text-navy-800/[0.04]" />
-          <div
-            aria-label="Two Indian business professionals shaking hands in a modern office"
-            role="img"
-            className="absolute inset-y-0 right-0 hidden w-[58%] bg-cover bg-right lg:block"
-            style={{ backgroundImage: "url('/images/partner-handshake-hero-branded.jpg')" }}
-          >
-            <div
-              aria-hidden
-              className="absolute inset-0 bg-[linear-gradient(90deg,var(--color-paper)_0%,transparent_42%)]"
-            />
-          </div>
-          <Container className="relative z-10 flex min-h-[650px] max-w-[1380px] items-center py-14 sm:py-20 lg:py-24">
-            <div className="w-full max-w-2xl lg:max-w-[49%]">
-              <p className="inline-flex items-center gap-2 rounded-full border border-navy-800/10 bg-navy-50 px-4 py-2 text-xs font-bold uppercase tracking-[0.12em] text-navy-800">
-                <Handshake className="h-4 w-4 text-red-600" aria-hidden />
-                Join the TrueLend Partner Network
+        <section className="overflow-hidden border-b border-hairline bg-white">
+          <Container className="grid max-w-[1240px] items-center gap-8 py-10 lg:min-h-[438px] lg:grid-cols-[470px_210px_minmax(0,400px)] lg:py-4">
+            <div>
+              <p className="inline-flex items-center gap-2 rounded-full bg-red-50 px-4 py-1.5 text-xs font-bold text-red-700">
+                <Rocket className="h-3.5 w-3.5" aria-hidden />
+                Now onboarding our first 1,000 Referral Partners
               </p>
-              <h1 className="mt-5 text-balance font-display text-5xl font-extrabold leading-[1.02] tracking-tight text-navy-950 sm:text-6xl">
-                Help People Get The <span className="text-red-600">Right Loan.</span>
+              <h1 className="mt-4 font-display text-[2.65rem] font-extrabold leading-[1.08] tracking-tight text-navy-950">
+                <span className="block">Help People</span>
+                <span className="block lg:whitespace-nowrap">Get the Right Loan.</span>
+                <span className="block text-red-600 lg:whitespace-nowrap">
+                  Earn When They Succeed.
+                </span>
               </h1>
-              <p className="mt-6 max-w-xl text-lg leading-relaxed text-navy-600">
-                Partner with TrueLend to help your family, friends, clients and contacts get the
-                right loan from the right lender. We’ll take care of everything—from understanding
-                their needs and matching them with the right lender to loan disbursement—while you
-                strengthen relationships and earn for every successfully disbursed loan.
+              <p className="mt-4 max-w-[455px] text-sm leading-6 text-navy-600">
+                Join the TrueLend Referral Network. Refer friends, family, colleagues or customers
+                who need a loan. Our experienced advisors handle the entire borrowing journey—from
+                lender selection to disbursal.
               </p>
-              <div className="mt-8 flex flex-wrap gap-3">
-                <Button size="lg" asChild>
-                  <a href="#partner-types">
-                    Become a partner <ArrowRight className="h-4 w-4" aria-hidden />
-                  </a>
+              <div className="mt-5 flex flex-wrap gap-3">
+                <Button asChild>
+                  <Link href="/register/referral">
+                    Become a Referral Partner <ArrowRight className="h-4 w-4" aria-hidden />
+                  </Link>
+                </Button>
+                <Button variant="outline" asChild>
+                  <a href="#how-it-works">Learn How It Works</a>
                 </Button>
               </div>
+              <p className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-navy-500">
+                <LockKeyhole className="h-3.5 w-3.5" aria-hidden />
+                Free to join <span aria-hidden>•</span> No registration fee{" "}
+                <span aria-hidden>•</span> No hidden charges
+              </p>
+            </div>
 
-              <ul className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4">
-                {heroBenefits.map((benefit) => (
-                  <li
-                    key={benefit.label}
-                    className="flex items-center gap-2.5 text-xs font-semibold text-navy-700"
-                  >
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-hairline bg-white text-navy-700">
-                      <benefit.icon className="h-4 w-4" aria-hidden />
+            <ol className="relative space-y-1">
+              {journey.map((item, index) => (
+                <li key={item.title} className="relative flex gap-3">
+                  <div className="flex flex-col items-center">
+                    <span
+                      className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white shadow-sm ${item.tone}`}
+                    >
+                      <item.icon className="h-5 w-5" aria-hidden />
                     </span>
-                    {benefit.label}
-                  </li>
-                ))}
-              </ul>
+                    {index < journey.length - 1 && (
+                      <span
+                        className="mt-1 h-5 border-l border-dashed border-navy-300"
+                        aria-hidden
+                      />
+                    )}
+                  </div>
+                  <div>
+                    <h2 className="font-display text-xs font-bold text-navy-950">{item.title}</h2>
+                    <p className="mt-0.5 text-[0.65rem] leading-4 text-navy-600">
+                      {item.description}
+                    </p>
+                  </div>
+                </li>
+              ))}
+            </ol>
 
-              <div className="relative mt-10 aspect-[2/1] overflow-hidden rounded-2xl border border-hairline bg-white shadow-[0_24px_60px_-40px_rgba(7,13,36,0.7)] lg:hidden">
-                <Image
-                  src="/images/partner-handshake-hero-branded.jpg"
-                  alt="Two Indian business professionals shaking hands in a modern office"
-                  fill
-                  priority
-                  unoptimized
-                  sizes="calc(100vw - 40px)"
-                  className="object-cover object-center"
-                />
-              </div>
+            <div className="relative mx-auto min-h-[420px] w-full max-w-[400px] self-end">
+              <div
+                aria-hidden
+                className="absolute inset-x-3 bottom-0 top-10 rounded-[48%_48%_20%_20%] bg-red-50"
+              />
+              <Image
+                src="/images/referral-hero-v2.png"
+                alt="A TrueLend Referral Partner using his phone"
+                fill
+                priority
+                sizes="(min-width: 1024px) 400px, 70vw"
+                className="object-contain object-bottom"
+              />
+              <Card className="absolute bottom-3 right-0 w-[220px] p-3.5 shadow-[0_20px_50px_-28px_rgba(7,13,36,0.8)]">
+                <p className="flex items-center gap-2 font-display text-xs font-bold text-red-600">
+                  <ShieldCheck className="h-4 w-4" aria-hidden /> Built on trust
+                </p>
+                <ul className="mt-2 space-y-1 text-[0.65rem] text-navy-700">
+                  {trustPoints.map((point) => (
+                    <li key={point} className="flex gap-2">
+                      <Check className="h-3.5 w-3.5 shrink-0 text-emerald-700" aria-hidden />
+                      {point}
+                    </li>
+                  ))}
+                </ul>
+              </Card>
             </div>
           </Container>
-
-          <div className="absolute bottom-10 right-8 z-20 hidden w-44 space-y-3 xl:block">
-            {[
-              { icon: Handshake, label: "Help your network", tone: "bg-white" },
-              { icon: BadgeIndianRupee, label: "Earn by your path", tone: "bg-navy-50" },
-              { icon: ShieldCheck, label: "We coordinate the rest", tone: "bg-sun-50" },
-            ].map((item) => (
-              <div
-                key={item.label}
-                className={`flex items-center gap-3 rounded-xl border border-hairline ${item.tone} p-3 shadow-[0_14px_32px_-24px_rgba(7,13,36,0.7)]`}
-              >
-                <item.icon className="h-5 w-5 shrink-0 text-red-600" aria-hidden />
-                <span className="text-xs font-bold leading-tight text-navy-950">{item.label}</span>
-              </div>
-            ))}
-          </div>
         </section>
 
-        <section
-          id="loan-products"
-          className="scroll-mt-16 border-b border-hairline bg-paper-deep/40"
-        >
-          <Container className="reveal max-w-[1380px] py-16 sm:py-20">
-            <SectionHeading
-              eyebrow="Loan products"
-              title="Loan products you can help people get"
-              lede="From personal and home loans to business finance and credit cards—introduce anyone to the product they need, and we match them with the right lender."
-            />
-            <div className="mt-10 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-              {loanProducts.map((product) => (
-                <div
-                  key={product.slug}
-                  className="overflow-hidden rounded-xl border border-hairline bg-white"
-                >
-                  <div className="relative aspect-[3/2] overflow-hidden border-b border-hairline">
-                    <Image
-                      src={product.image}
-                      alt=""
-                      fill
-                      sizes="(min-width: 1024px) 260px, (min-width: 640px) 33vw, 50vw"
-                      className="object-cover object-center"
-                    />
-                    <span className="absolute bottom-3 left-3 flex h-10 w-10 items-center justify-center rounded-xl bg-white/90 text-navy-800 shadow-[0_12px_24px_-18px_rgba(7,13,36,0.8)] backdrop-blur-sm">
-                      <product.icon className="h-5 w-5" aria-hidden />
-                    </span>
+        <section id="how-it-works" className="scroll-mt-20 border-b border-hairline bg-red-50/30">
+          <Container className="max-w-[1240px] py-4">
+            <div className="text-center">
+              <h2 className="font-display text-2xl font-extrabold text-navy-950">How It Works</h2>
+              <p className="mt-1 text-xs text-navy-600">Simple steps. Maximum impact.</p>
+            </div>
+            <ol className="mt-5 grid gap-3 md:grid-cols-3 xl:grid-cols-5">
+              {steps.map((step, index) => (
+                <li key={step.title} className="relative grid grid-cols-[48px_1fr] gap-3 p-2">
+                  <span className="absolute -top-2 left-0 flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-[0.6rem] font-bold text-white">
+                    {index + 1}
+                  </span>
+                  <span className="flex h-12 w-12 items-center justify-center rounded-full bg-red-50 text-red-600">
+                    <step.icon className="h-5 w-5" aria-hidden />
+                  </span>
+                  <div>
+                    <h3 className="font-display text-xs font-bold leading-4 text-navy-950">
+                      {step.title}
+                    </h3>
+                    <p className="mt-1 text-[0.65rem] leading-4 text-navy-600">
+                      {step.description}
+                    </p>
                   </div>
-                  <div className="p-4">
-                    <h3 className="font-display font-bold text-navy-950">{product.name}</h3>
-                    <p className="mt-1.5 text-xs leading-relaxed text-navy-600">{product.blurb}</p>
+                </li>
+              ))}
+            </ol>
+
+            <div className="mt-4 grid gap-2 rounded-2xl border border-hairline bg-white p-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+              {advantages.map((advantage) => (
+                <div
+                  key={advantage.title}
+                  className="grid grid-cols-[32px_1fr] gap-2 rounded-xl p-2"
+                >
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-red-50">
+                    <advantage.icon className="h-4 w-4 text-red-600" aria-hidden />
+                  </span>
+                  <div>
+                    <h3 className="font-display text-[0.65rem] font-bold text-navy-950">
+                      {advantage.title}
+                    </h3>
+                    <p className="mt-1 text-[0.6rem] leading-4 text-navy-600">
+                      {advantage.description}
+                    </p>
                   </div>
                 </div>
               ))}
@@ -291,80 +331,109 @@ export default function Home() {
           </Container>
         </section>
 
-        <section id="partner-types" className="scroll-mt-16">
-          <Container className="reveal max-w-[1380px] py-16 sm:py-20">
-            <SectionHeading
-              eyebrow="Two ways to partner with TrueLend"
-              title="Choose the right partnership"
-              lede="Bring complete loan business as an experienced professional, or simply introduce people from your trusted network."
-            />
-            <div className="mt-10 grid gap-5 xl:grid-cols-[minmax(0,3fr)_minmax(280px,1fr)]">
-              <PartnerPathCards />
-              <PartnerBenefitsPanel />
+        <section id="why-truelend" className="scroll-mt-20">
+          <Container className="grid max-w-[1380px] items-center gap-10 py-16 lg:grid-cols-2 lg:py-20">
+            <div className="rounded-3xl bg-navy-950 p-7 text-white sm:p-10">
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-sun-400">
+                Why TrueLend
+              </p>
+              <h2 className="mt-3 font-display text-3xl font-extrabold tracking-tight sm:text-4xl">
+                <strong className="font-extrabold">WHY BORROWERS CHOOSE TRUELEND</strong>
+              </h2>
+              <p className="mt-4 max-w-xl leading-relaxed text-on-dark-muted">
+                Borrowers get one helpful point of contact, access to multiple lenders, clear
+                guidance and end-to-end support without being left to navigate the process alone.
+              </p>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              {[
+                {
+                  icon: UsersRound,
+                  title: "Human guidance",
+                  text: "An experienced advisor understands each borrower’s requirement.",
+                },
+                {
+                  icon: Building2,
+                  title: "Multiple lenders",
+                  text: "Suitable banks and NBFCs are compared for the borrower’s needs.",
+                },
+                {
+                  icon: Clock3,
+                  title: "Clear updates",
+                  text: "Borrowers and referrers can follow progress without guesswork.",
+                },
+                {
+                  icon: ShieldCheck,
+                  title: "Consent-led support",
+                  text: "Customer information is shared responsibly and only when needed.",
+                },
+              ].map((item) => (
+                <Card key={item.title} className="p-5">
+                  <item.icon className="h-6 w-6 text-red-600" aria-hidden />
+                  <h3 className="mt-4 font-display font-bold text-navy-950">{item.title}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-navy-600">{item.text}</p>
+                </Card>
+              ))}
             </div>
           </Container>
         </section>
 
-        <section
-          id="how-it-works"
-          className="scroll-mt-16 border-y border-hairline bg-paper-deep/55"
-        >
-          <Container className="reveal max-w-[1380px] py-16 sm:py-20">
-            <div className="grid gap-8 lg:grid-cols-[240px_minmax(0,1fr)] lg:items-start">
+        <section id="who-can-join" className="scroll-mt-20 border-y border-hairline bg-white">
+          <Container className="max-w-[1380px] py-16 sm:py-20">
+            <div className="grid gap-10 lg:grid-cols-[0.8fr_1.2fr]">
               <div>
-                <p className="text-xs font-bold uppercase tracking-[0.14em] text-red-600">
-                  How it works
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-red-600">
+                  Open to everyone
                 </p>
-                <h2 className="mt-2 font-display text-3xl font-extrabold tracking-tight text-navy-950">
-                  Simple. Transparent. Partner-friendly.
+                <h2 className="mt-2 font-display text-3xl font-extrabold text-navy-950">
+                  Who Can Join?
                 </h2>
-                <p className="mt-3 text-sm leading-relaxed text-navy-600">
-                  The same five-step journey, adapted to your Business or Referral Partner path.
+                <p className="mt-4 leading-relaxed text-navy-600">
+                  Anyone with a trusted personal or professional network can become a TrueLend
+                  Referral Partner. Lending experience is not required.
                 </p>
+                <Button asChild className="mt-6">
+                  <Link href="/register/referral">
+                    Join the Referral Network <ArrowRight className="h-4 w-4" aria-hidden />
+                  </Link>
+                </Button>
               </div>
-              <ol className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-                {steps.map((step, index) => (
+              <ul className="grid gap-3 sm:grid-cols-2">
+                {whoCanJoin.map((person) => (
                   <li
-                    key={step.title}
-                    className="relative rounded-xl border border-hairline bg-white p-5"
+                    key={person}
+                    className="flex items-center gap-3 rounded-xl border border-hairline bg-paper px-4 py-4 text-sm font-semibold text-navy-800"
                   >
-                    <div className="flex items-center justify-between gap-3">
-                      <span className="flex h-10 w-10 items-center justify-center rounded-full bg-navy-50 text-navy-700">
-                        <step.icon className="h-5 w-5" aria-hidden />
-                      </span>
-                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-red-600 text-xs font-bold text-white">
-                        {index + 1}
-                      </span>
-                    </div>
-                    <h3 className="mt-4 font-display font-bold text-navy-950">{step.title}</h3>
-                    <p className="mt-1.5 text-xs leading-relaxed text-navy-600">
-                      {step.description}
-                    </p>
+                    <CircleCheckBig className="h-5 w-5 shrink-0 text-red-600" aria-hidden />
+                    {person}
                   </li>
                 ))}
-              </ol>
+              </ul>
             </div>
           </Container>
         </section>
 
-        <section id="benefits" className="scroll-mt-16">
-          <Container className="reveal max-w-[1380px] py-16 sm:py-20">
-            <SectionHeading
-              eyebrow="Built for trust"
-              title="A partner experience that stays clear at every step"
-              lede="Useful tools, responsible sharing and human support—without making the portal harder than it needs to be."
-            />
-            <div className="mt-10 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-              {assurances.map((assurance) => (
-                <Card key={assurance.title} className="p-6">
-                  <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-sun-100 text-navy-800">
-                    <assurance.icon className="h-5 w-5" aria-hidden />
+        <section id="benefits" className="scroll-mt-20">
+          <Container className="max-w-[1380px] py-16 sm:py-20">
+            <div className="text-center">
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-red-600">
+                Referral Partner benefits
+              </p>
+              <h2 className="mt-2 font-display text-3xl font-extrabold text-navy-950">
+                Help people. Build trust. Earn on success.
+              </h2>
+            </div>
+            <div className="mt-10 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+              {benefits.map((benefit) => (
+                <Card key={benefit.title} className="p-6">
+                  <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-red-50 text-red-600">
+                    <benefit.icon className="h-6 w-6" aria-hidden />
                   </span>
                   <h3 className="mt-5 font-display text-lg font-bold text-navy-950">
-                    {assurance.title}
+                    {benefit.title}
                   </h3>
                   <p className="mt-2 text-sm leading-relaxed text-navy-600">
-                    {assurance.description}
+                    {benefit.description}
                   </p>
                 </Card>
               ))}
@@ -372,83 +441,79 @@ export default function Home() {
           </Container>
         </section>
 
-        <section className="border-y border-hairline bg-white">
-          <Container className="reveal max-w-[1380px] py-16 sm:py-20">
-            <div className="flex flex-wrap items-end justify-between gap-4">
-              <div className="max-w-2xl">
-                <p className="text-xs font-bold uppercase tracking-[0.14em] text-red-600">
-                  Partner toolkit
-                </p>
-                <h2 className="mt-2 font-display text-3xl font-extrabold tracking-tight text-navy-950">
-                  Resources that help you act with confidence
-                </h2>
-              </div>
-              <Button variant="outline" asChild>
-                <Link href="/resources">
-                  Explore resources <ArrowRight className="h-4 w-4" aria-hidden />
-                </Link>
-              </Button>
+        <section id="faqs" className="scroll-mt-20 border-y border-hairline bg-white">
+          <Container className="max-w-4xl py-16 sm:py-20">
+            <div className="text-center">
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-red-600">
+                Common questions
+              </p>
+              <h2 className="mt-2 font-display text-3xl font-extrabold text-navy-950">FAQs</h2>
             </div>
-            <div className="mt-8 grid gap-4 md:grid-cols-3">
-              {resources.map((resource) => (
-                <Card key={resource.title} className="flex gap-4 p-6">
-                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-navy-900 text-sun-400">
-                    <resource.icon className="h-5 w-5" aria-hidden />
-                  </span>
-                  <div>
-                    <h3 className="font-display text-lg font-bold text-navy-950">
-                      {resource.title}
-                    </h3>
-                    <p className="mt-1 text-sm leading-relaxed text-navy-600">
-                      {resource.description}
-                    </p>
-                  </div>
-                </Card>
+            <div className="mt-8 divide-y divide-hairline rounded-2xl border border-hairline bg-paper px-5 sm:px-7">
+              {faqs.map((faq) => (
+                <details key={faq.question} className="group py-5">
+                  <summary className="cursor-pointer list-none font-display font-bold text-navy-950">
+                    <span className="flex items-center justify-between gap-4">
+                      {faq.question}
+                      <span className="text-xl text-red-600 group-open:rotate-45" aria-hidden>
+                        +
+                      </span>
+                    </span>
+                  </summary>
+                  <p className="mt-3 max-w-3xl text-sm leading-relaxed text-navy-600">
+                    {faq.answer}
+                  </p>
+                </details>
               ))}
             </div>
           </Container>
         </section>
 
-        <section className="relative overflow-hidden bg-navy-900 text-white">
-          <HexPattern className="-left-28 -top-44 h-[420px] w-[420px] text-white/[0.06]" />
-          <Container className="reveal max-w-[1380px] py-14 sm:py-16">
-            <div className="relative z-10">
-              <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.14em] text-sun-400">
-                <Sparkles className="h-4 w-4" aria-hidden /> Ready to get started?
+        <section className="bg-navy-950 text-white">
+          <Container className="flex max-w-[1380px] flex-col justify-between gap-8 py-12 lg:flex-row lg:items-center">
+            <div>
+              <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-sun-400">
+                <Sparkles className="h-4 w-4" aria-hidden /> Ready to make an introduction?
               </p>
-              <h2 className="mt-3 max-w-2xl text-balance font-display text-3xl font-extrabold tracking-tight sm:text-4xl">
-                Join the TrueLend Partner Network and make your next introduction count.
+              <h2 className="mt-3 max-w-2xl font-display text-3xl font-extrabold">
+                Become a TrueLend Referral Partner today.
               </h2>
-              <div className="mt-6 flex flex-wrap gap-3">
-                <Button size="lg" asChild>
-                  <a href="#partner-types">
-                    Become a partner <ArrowRight className="h-4 w-4" aria-hidden />
-                  </a>
-                </Button>
-                <Button size="lg" variant="outline-inverse" asChild>
-                  <Link href="/login">Partner sign in</Link>
-                </Button>
-              </div>
+              <p className="mt-3 text-sm text-on-dark-muted">
+                Need help? Call or WhatsApp{" "}
+                <a className="font-bold text-white" href={contactPhone.href}>
+                  {contactPhone.display}
+                </a>{" "}
+                or email{" "}
+                <a className="font-bold text-white" href={`mailto:${referralPartnerEmail}`}>
+                  {referralPartnerEmail}
+                </a>
+                .
+              </p>
             </div>
+            <Button size="lg" asChild>
+              <Link href="/register/referral">
+                Become a Referral Partner <ArrowRight className="h-4 w-4" aria-hidden />
+              </Link>
+            </Button>
           </Container>
         </section>
       </main>
 
-      <footer className="border-t border-hairline">
-        <Container className="flex max-w-[1380px] flex-col items-center justify-between gap-4 py-8 text-sm text-navy-500 sm:flex-row">
+      <footer className="border-t border-hairline bg-white">
+        <Container className="flex max-w-[1380px] flex-col items-center justify-between gap-4 py-7 text-sm text-navy-500 sm:flex-row">
           <p>© {new Date().getFullYear()} TrueLend. All rights reserved.</p>
           <nav className="flex flex-wrap justify-center gap-x-5 gap-y-2" aria-label="Footer">
-            <Link href="/#partner-types" className="hover:text-navy-800">
-              Partner types
-            </Link>
-            <Link href="/#how-it-works" className="hover:text-navy-800">
-              How it works
-            </Link>
-            <Link href="/resources" className="hover:text-navy-800">
-              Partner resources
-            </Link>
+            <a
+              href={contactPhone.href}
+              className="inline-flex items-center gap-1 hover:text-navy-800"
+            >
+              <Phone className="h-4 w-4" aria-hidden /> {contactPhone.compact}
+            </a>
+            <a href={`mailto:${referralPartnerEmail}`} className="hover:text-navy-800">
+              {referralPartnerEmail}
+            </a>
             <Link href="/login" className="hover:text-navy-800">
-              Sign in
+              Referral Partner sign in
             </Link>
           </nav>
         </Container>

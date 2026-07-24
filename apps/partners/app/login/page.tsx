@@ -11,18 +11,21 @@ export const metadata: Metadata = {
 export default function LoginPage() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center gap-8 px-5 py-12">
-      <Link href="/" aria-label="TrueLend Partners home" className="text-navy-800">
+      <Link href="/" aria-label="TrueLend Referral Partners home" className="text-navy-800">
         <Logo tagline />
       </Link>
       <Card className="w-full max-w-sm p-8">
         <h1 className="font-display text-xl font-extrabold tracking-tight text-navy-950">
-          Partner sign in
+          Referral Partner sign in
         </h1>
-        <p className="mt-1 text-sm text-navy-500">Access your partner dashboard.</p>
+        <p className="mt-1 text-sm text-navy-500">Access your Referral Partner dashboard.</p>
         <LoginForm redirectTo="/dashboard">
           <p className="text-center text-sm text-navy-500">
-            New partner?{" "}
-            <Link href="/#partner-types" className="font-semibold text-red-600 hover:text-red-700">
+            New Referral Partner?{" "}
+            <Link
+              href="/register/referral"
+              className="font-semibold text-red-600 hover:text-red-700"
+            >
               Create an account
             </Link>
           </p>

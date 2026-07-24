@@ -1,129 +1,173 @@
 import Image from "next/image";
 import Link from "next/link";
-import { BadgeCheck } from "lucide-react";
-import { Card, Container, HexPattern } from "@truelend/ui";
+import {
+  ArrowLeft,
+  ChartNoAxesCombined,
+  Gift,
+  Headset,
+  HeartHandshake,
+  Rocket,
+  ShieldCheck,
+  UserRoundPlus,
+} from "lucide-react";
+import { Card, Container } from "@truelend/ui";
+import { contactPhone } from "@truelend/reference";
 import { PublicHeader } from "@/components/public-header";
 import { RegisterForm } from "@/components/register-form";
 
-// One dedicated signup screen per partner type — no path comparison, no type
-// toggle. Kept as a single component so both pages stay visually in sync.
-const copy = {
-  business: {
-    eyebrow: "TrueLend Business Partner",
-    title: "Become a Business Partner",
-    lede: "Already source loan business? Register to bring complete loan cases, track every stage, and earn business commissions.",
-    bullets: [
-      "Business commissions on successful cases",
-      "Dedicated relationship manager",
-      "Lead and case tracking dashboard",
-      "Marketing resources and training",
-    ],
-    image: "/images/business-partner.jpg",
-    imageAlt: "Indian business partner and loan professional in a navy suit",
-    imageWidth: 1024,
-    imageHeight: 683,
-    cardTitle: "Create your Business Partner account",
-    switchLabel: "Prefer to simply refer people?",
-    switchHref: "/register/referral",
-    switchCta: "Become a Referral Partner",
+const reasons = [
+  {
+    icon: UserRoundPlus,
+    title: "Quick & simple registration",
+    description: "Create your account in a few easy steps.",
   },
-  referral: {
-    eyebrow: "TrueLend Referral Partner",
-    title: "Become a Referral Partner",
-    lede: "Have a trusted network but no lending experience? Introduce people who need a loan and earn referral rewards.",
-    bullets: [
-      "Referral rewards for successful introductions",
-      "No investment and no sales targets",
-      "No documentation expertise required",
-      "End-to-end support from TrueLend",
-    ],
-    image: "/images/partner-referral-network.jpg",
-    imageAlt:
-      "TrueLend Referral Partner poster explaining referral rewards, no investment and flexible working",
-    imageWidth: 1024,
-    imageHeight: 1536,
-    cardTitle: "Create your Referral Partner account",
-    switchLabel: "Already source loan business?",
-    switchHref: "/register/business",
-    switchCta: "Become a Business Partner",
+  {
+    icon: Gift,
+    title: "Start referring immediately",
+    description: "No waiting, sales targets or joining fee.",
   },
-} as const;
+  {
+    icon: ShieldCheck,
+    title: "Secure by design",
+    description: "Your account and submitted information are protected.",
+  },
+  {
+    icon: Headset,
+    title: "We’re here to help",
+    description: "Our referral-support team is always with you.",
+  },
+] as const;
 
-export function DedicatedRegister({
-  type,
-  siteKey,
-}: {
-  type: "business" | "referral";
-  siteKey?: string;
-}) {
-  const c = copy[type];
+const communityBenefits = [
+  {
+    icon: UserRoundPlus,
+    title: "Growing Community",
+    description: "Join our early Referral Partner community.",
+  },
+  {
+    icon: Rocket,
+    title: "Be a Pioneer",
+    description: "Build a trusted network from the start.",
+  },
+  {
+    icon: ChartNoAxesCombined,
+    title: "Unlimited Potential",
+    description: "More referrals, more impact and rewards.",
+  },
+  {
+    icon: HeartHandshake,
+    title: "Make a Difference",
+    description: "Help people get the right loan.",
+  },
+] as const;
 
+export function DedicatedRegister({ siteKey }: { siteKey?: string }) {
   return (
     <>
       <PublicHeader />
 
-      <main id="main-content" tabIndex={-1}>
-        <section className="relative overflow-hidden border-b border-hairline">
-          <HexPattern className="-left-44 -top-32 h-[520px] w-[520px] text-navy-800/[0.04]" />
-          <Container className="grid items-start gap-10 py-12 sm:py-16 lg:grid-cols-[minmax(0,1fr)_minmax(340px,0.82fr)] lg:py-20">
-            <div>
-              <p className="flex items-center gap-3 text-xs font-bold uppercase tracking-[0.18em] text-red-600">
-                <span aria-hidden className="h-px w-8 bg-red-600" />
-                {c.eyebrow}
-              </p>
-              <h1 className="mt-5 text-balance font-display text-4xl font-extrabold leading-tight tracking-tight text-navy-950 sm:text-5xl">
-                {c.title}
-              </h1>
-              <p className="mt-5 max-w-xl text-lg leading-relaxed text-navy-600">{c.lede}</p>
-              <ul className="mt-6 grid gap-3 text-sm text-navy-700 sm:grid-cols-2">
-                {c.bullets.map((item) => (
-                  <li key={item} className="flex gap-2.5">
-                    <BadgeCheck className="mt-0.5 h-4 w-4 shrink-0 text-red-600" aria-hidden />
-                    {item}
-                  </li>
+      <main id="main-content" tabIndex={-1} className="bg-red-50/20">
+        <Container className="grid max-w-[1240px] gap-7 py-6 lg:grid-cols-[590px_minmax(0,1fr)]">
+          <section className="relative">
+            <Link
+              href="/"
+              className="inline-flex items-center gap-2 text-sm font-semibold text-red-600 hover:text-red-700"
+            >
+              <ArrowLeft className="h-4 w-4" aria-hidden /> Back to home
+            </Link>
+            <h1 className="mt-5 max-w-xl text-balance font-display text-4xl font-extrabold leading-[1.08] tracking-tight text-navy-950">
+              Join the <span className="text-red-600">TrueLend</span>
+              <br />
+              Referral Network
+            </h1>
+            <p className="mt-3 max-w-sm text-base leading-relaxed text-navy-600">
+              Fill in your details to get started. It takes less than two minutes.
+            </p>
+
+            <div className="relative mt-4 min-h-[390px]">
+              <div className="relative z-10 w-[275px] space-y-4 pt-3">
+                {reasons.map((reason) => (
+                  <div key={reason.title} className="flex gap-3">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-50 text-red-600">
+                      <reason.icon className="h-5 w-5" aria-hidden />
+                    </span>
+                    <div>
+                      <h2 className="font-display text-sm font-bold text-navy-950">
+                        {reason.title}
+                      </h2>
+                      <p className="mt-1 text-xs leading-relaxed text-navy-600">
+                        {reason.description}
+                      </p>
+                    </div>
+                  </div>
                 ))}
-              </ul>
-              <figure className="mt-8 overflow-hidden rounded-2xl border border-hairline bg-white p-2 shadow-[0_28px_70px_-45px_rgba(7,13,36,0.6)]">
-                <Image
-                  src={c.image}
-                  alt={c.imageAlt}
-                  width={c.imageWidth}
-                  height={c.imageHeight}
-                  priority
-                  sizes="(min-width: 1024px) 620px, calc(100vw - 40px)"
-                  className="h-auto w-full rounded-xl"
+              </div>
+              <div className="absolute -top-28 right-0 h-[400px] w-[300px] overflow-hidden">
+                <div
+                  aria-hidden
+                  className="absolute inset-x-5 bottom-4 top-16 rounded-[50%_50%_20%_20%] bg-red-50"
                 />
-              </figure>
+                <Image
+                  src="/images/referral-registration-v2.png"
+                  alt="A TrueLend Referral Partner registering with his phone"
+                  fill
+                  priority
+                  sizes="300px"
+                  className="origin-bottom scale-110 object-contain object-bottom"
+                />
+              </div>
+              <Card className="absolute right-3 top-[166px] z-10 w-[220px] border-0 bg-white/95 p-4 shadow-[0_20px_45px_-26px_rgba(7,13,36,0.85)] backdrop-blur">
+                <p className="font-display text-sm font-bold text-navy-950">
+                  “I refer. TrueLend handles the rest.”
+                </p>
+                <p className="mt-2 text-xs font-semibold text-navy-700">— Anil Kumar</p>
+                <p className="text-[0.65rem] text-navy-500">Referral Partner</p>
+                <p className="mt-1 text-sm tracking-[0.12em] text-sun-500" aria-label="5 stars">
+                  ★★★★★
+                </p>
+              </Card>
+              <div className="absolute bottom-0 left-0 w-[280px] rounded-2xl bg-blue-50 px-4 py-3 text-xs text-navy-700">
+                <p className="font-bold text-navy-950">Need help?</p>
+                <p className="mt-1">
+                  Call or WhatsApp us at{" "}
+                  <a className="font-bold text-red-600" href={contactPhone.href}>
+                    {contactPhone.compact}
+                  </a>
+                </p>
+                <p className="mt-1 text-navy-600">Mon – Sat (10 AM – 6 PM)</p>
+              </div>
             </div>
 
-            <Card className="w-full p-6 sm:p-8 lg:sticky lg:top-20">
-              <p className="text-xs font-bold uppercase tracking-[0.14em] text-red-600">
-                Create your account
-              </p>
-              <h2 className="mt-2 font-display text-2xl font-extrabold tracking-tight text-navy-950">
-                {c.cardTitle}
-              </h2>
-              <p className="mt-2 text-sm leading-relaxed text-navy-600">
-                Complete your details, then upload verification documents after registration.
-              </p>
-              <div className="mt-7">
-                <RegisterForm type={type} siteKey={siteKey} />
-              </div>
-              <p className="mt-6 text-center text-sm text-navy-500">
-                Already a partner?{" "}
-                <Link href="/login" className="font-semibold text-red-600 hover:text-red-700">
-                  Sign in
-                </Link>
-              </p>
-              <p className="mt-3 text-center text-sm text-navy-500">
-                {c.switchLabel}{" "}
-                <Link href={c.switchHref} className="font-semibold text-red-600 hover:text-red-700">
-                  {c.switchCta}
-                </Link>
-              </p>
-            </Card>
-          </Container>
-        </section>
+            <div className="mt-4 grid grid-cols-2 gap-2 rounded-2xl bg-blue-50/70 p-3 sm:grid-cols-4">
+              {communityBenefits.map((benefit) => (
+                <div key={benefit.title} className="flex gap-2">
+                  <benefit.icon className="mt-0.5 h-4 w-4 shrink-0 text-red-600" aria-hidden />
+                  <div>
+                    <p className="text-[0.65rem] font-bold text-navy-950">{benefit.title}</p>
+                    <p className="mt-1 text-[0.6rem] leading-relaxed text-navy-600">
+                      {benefit.description}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <Card className="h-fit w-full p-6 shadow-[0_28px_70px_-42px_rgba(7,13,36,0.55)] lg:sticky lg:top-24">
+            <RegisterForm siteKey={siteKey} />
+
+            <p className="mt-5 text-center text-sm text-navy-500">
+              Already a Referral Partner?{" "}
+              <Link href="/login" className="font-semibold text-red-600 hover:text-red-700">
+                Sign in
+              </Link>
+            </p>
+            <p className="mt-3 flex items-center justify-center gap-2 text-xs text-navy-500">
+              <Rocket className="h-4 w-4 text-red-600" aria-hidden />
+              Free to join · No registration fee
+            </p>
+          </Card>
+        </Container>
       </main>
     </>
   );

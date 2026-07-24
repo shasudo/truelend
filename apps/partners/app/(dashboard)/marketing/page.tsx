@@ -1,24 +1,8 @@
 import { BadgeCheck, Forward, Megaphone, MessageCircleMore, Share2 } from "lucide-react";
 import { Card } from "@truelend/ui";
 import { PartnerPageHeader } from "@/components/partner-page-header";
-import { requirePartner } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
-
-const businessMessages = [
-  {
-    title: "New customer introduction",
-    copy: "Looking for the right loan? I work with TrueLend to help customers navigate their options and documentation. Message me with the loan type and amount you need.",
-  },
-  {
-    title: "Document-ready follow-up",
-    copy: "Planning to apply for a loan? Keeping your income, identity and address documents ready can make the process smoother. I can help you get started with TrueLend.",
-  },
-  {
-    title: "Network message",
-    copy: "If someone in your network is exploring a home, business, personal, vehicle or education loan, connect them with me. I’ll coordinate the case with TrueLend.",
-  },
-];
 
 const referralMessages = [
   {
@@ -36,35 +20,26 @@ const referralMessages = [
 ];
 
 export default async function MarketingPage() {
-  const { partner } = await requirePartner();
-  const business = partner.type === "business";
-  const messages = business ? businessMessages : referralMessages;
-
   return (
     <div className="mx-auto max-w-6xl">
       <PartnerPageHeader
         eyebrow="Share with confidence"
-        title={business ? "Marketing Resources" : "Marketing Materials"}
-        description={
-          business
-            ? "Ready-to-use outreach ideas that help you start useful customer conversations."
-            : "Simple messages you can share with people you already know—no sales pitch required."
-        }
+        title="Marketing Materials"
+        description="Simple messages you can share with people you already know—no sales pitch required."
       />
 
       <section className="relative mt-6 overflow-hidden rounded-2xl bg-sun-400 p-6 text-navy-950 sm:p-8">
         <div aria-hidden className="absolute -right-8 -top-16 h-56 w-32 rotate-12 bg-red-600" />
         <div className="relative max-w-2xl">
           <p className="text-xs font-extrabold uppercase tracking-[0.16em]">
-            TrueLend Partner Network
+            TrueLend Referral Partner Network
           </p>
           <h2 className="mt-3 text-balance font-display text-4xl font-extrabold leading-none sm:text-5xl">
-            {business ? "Bring business. Earn commission." : "Refer loans. Earn extra income."}
+            Refer loans. Earn extra income.
           </h2>
           <p className="mt-4 max-w-lg font-medium leading-relaxed text-navy-800">
-            {business
-              ? "Dedicated support, transparent tracking and practical resources for every case you source."
-              : "No investment. No sales targets. TrueLend handles the loan journey from introduction onward."}
+            No investment. No sales targets. TrueLend handles the loan journey from introduction
+            onward.
           </p>
         </div>
       </section>
@@ -80,7 +55,7 @@ export default async function MarketingPage() {
           Personalize the wording and share only with people who expect to hear from you.
         </p>
         <div className="mt-4 grid gap-4 lg:grid-cols-3">
-          {messages.map((message, index) => (
+          {referralMessages.map((message, index) => (
             <Card key={message.title} className="flex h-full flex-col p-5">
               <div className="flex items-center justify-between gap-3">
                 <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-navy-800 text-sun-400">

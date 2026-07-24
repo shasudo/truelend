@@ -13,18 +13,14 @@ import {
 import { submitLead, type LeadState } from "@/lib/lead-actions";
 
 export function PartnerLeadForm({
-  variant,
   initialProduct = "",
 }: {
-  variant: "business" | "referral";
   /** Preselected product slug — callers must validate it against `products`. */
   initialProduct?: string;
 }) {
   const [state, action, pending] = useActionState<LeadState, FormData>(submitLead, {});
   const formRef = useRef<HTMLFormElement>(null);
   const [product, setProduct] = useState(initialProduct);
-  const who = variant === "referral" ? "friend" : "customer";
-  const Who = variant === "referral" ? "Friend's" : "Customer";
   const showAsset = securedProducts.has(product);
   const showTurnover = businessProducts.has(product);
 
@@ -83,10 +79,10 @@ export function PartnerLeadForm({
 
       <fieldset className="space-y-5">
         <legend className="font-display text-sm font-bold uppercase tracking-[0.14em] text-navy-500">
-          {who === "friend" ? "Your friend" : "Customer"}
+          Borrower details
         </legend>
         <div className="grid gap-5 sm:grid-cols-2">
-          <Field label={`${Who} name`} htmlFor="name" required>
+          <Field label="Borrower's name" htmlFor="name" required>
             <Input id="name" name="name" autoComplete="off" maxLength={120} required />
           </Field>
           <Field label="Mobile number" htmlFor="phone" required>
@@ -191,7 +187,7 @@ export function PartnerLeadForm({
           id="message"
           name="message"
           maxLength={2000}
-          placeholder={`Timelines, why the ${who} is a good fit…`}
+          placeholder="Timelines, context, or anything that will help our advisor…"
         />
       </Field>
 
@@ -203,8 +199,8 @@ export function PartnerLeadForm({
           className="mt-1 h-4 w-4 shrink-0 accent-navy-800"
         />
         <span>
-          I confirm that this {who} authorized me to share these details with TrueLend and agreed to
-          be contacted about lending products.
+          I confirm that this borrower authorized me to share these details with TrueLend and agreed
+          to be contacted about lending products.
         </span>
       </label>
 
@@ -221,13 +217,13 @@ export function PartnerLeadForm({
           role="status"
           className="rounded-lg border border-navy-800/15 bg-navy-800/[0.05] px-4 py-3 text-sm text-navy-700"
         >
-          {variant === "referral" ? "Referral" : "Loan case"} submitted — our team will take it from
-          here and you can track it on your dashboard.
+          Referral submitted — our team will take it from here and you can track it on your
+          dashboard.
         </p>
       )}
 
       <Button type="submit" size="lg" disabled={pending}>
-        {pending ? "Submitting…" : variant === "referral" ? "Submit referral" : "Submit loan case"}
+        {pending ? "Submitting…" : "Submit referral"}
       </Button>
     </form>
   );

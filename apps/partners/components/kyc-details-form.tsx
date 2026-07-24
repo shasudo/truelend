@@ -1,8 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import { Button, Checkbox, Field, Input, Textarea } from "@truelend/ui";
-import { partnerProductOptions, paiseToRupeesInput } from "@truelend/reference";
+import { Button, Field, Input, Textarea } from "@truelend/ui";
 import { savePartnerKyc, type KycState } from "@/lib/kyc-actions";
 import type { KycFormValues } from "@/lib/kyc-form-values";
 
@@ -14,16 +13,12 @@ export function KycDetailsForm({
   editable?: boolean;
 }) {
   const [state, action, pending] = useActionState<KycState, FormData>(savePartnerKyc, {});
-  const business = values.type === "business";
 
   return (
     <form action={action} className="space-y-5">
       {/* Native fieldset[disabled] freezes every control inside, incl. submit,
           when KYC is locked (under review / verified). */}
       <fieldset disabled={!editable} className="space-y-8">
-        {/* type is immutable — the server re-checks it against the DB row. */}
-        <input type="hidden" name="type" value={values.type} />
-
         <div className="space-y-5">
           <div className="grid gap-5 sm:grid-cols-2">
             <Field label="PAN number" htmlFor="pan" required>
@@ -38,145 +33,44 @@ export function KycDetailsForm({
                 required
               />
             </Field>
-            {business && (
-              <Field label="GST number (if registered)" htmlFor="gst">
-                <Input
-                  id="gst"
-                  name="gst"
-                  defaultValue={values.gst ?? ""}
-                  placeholder="22ABCDE1234F1Z5"
-                  autoCapitalize="characters"
-                  maxLength={15}
-                  className="uppercase"
-                />
-              </Field>
-            )}
-            {business && (
-              <Field label="Alternative mobile number" htmlFor="alternatePhone">
-                <Input
-                  id="alternatePhone"
-                  name="alternatePhone"
-                  type="tel"
-                  inputMode="numeric"
-                  placeholder="10-digit mobile"
-                  defaultValue={values.alternatePhone ?? ""}
-                />
-              </Field>
-            )}
           </div>
         </div>
 
-        {business ? (
-          <fieldset className="space-y-5">
-            <legend className="text-sm font-medium text-navy-800">Professional profile</legend>
-            <fieldset>
-              <legend className="mb-2 text-sm text-navy-700">
-                Products handled <span className="text-red-600">*</span>
-              </legend>
-              <div className="grid gap-2 sm:grid-cols-3">
-                {partnerProductOptions.map((product) => (
-                  <label key={product} className="flex items-start gap-2 text-sm text-navy-700">
-                    <Checkbox
-                      name="productsHandled"
-                      value={product}
-                      defaultChecked={values.productsHandled?.includes(product) ?? false}
-                    />
-                    {product}
-                  </label>
-                ))}
-              </div>
-            </fieldset>
-            <div className="grid gap-5 sm:grid-cols-2">
-              <Field
-                label="Years of experience in financial services distribution"
-                htmlFor="yearsExperience"
+        <fieldset className="space-y-5">
+          <legend className="text-sm font-medium text-navy-800">Professional profile</legend>
+          <div className="grid gap-5 sm:grid-cols-2">
+            <Field label="Occupation" htmlFor="occupation" required>
+              <Input
+                id="occupation"
+                name="occupation"
+                defaultValue={values.occupation ?? ""}
+                maxLength={120}
                 required
-              >
-                <Input
-                  id="yearsExperience"
-                  name="yearsExperience"
-                  type="number"
-                  inputMode="numeric"
-                  min={0}
-                  max={99}
-                  defaultValue={values.yearsExperience ?? ""}
-                  required
-                />
-              </Field>
-            </div>
-            <fieldset className="space-y-5">
-              <legend className="text-sm text-navy-700">Current monthly volume (₹)</legend>
-              <div className="grid gap-5 sm:grid-cols-3">
-                <Field label="Loans" htmlFor="monthlyVolumeLoans" required>
-                  <Input
-                    id="monthlyVolumeLoans"
-                    name="monthlyVolumeLoans"
-                    inputMode="numeric"
-                    placeholder="0"
-                    defaultValue={paiseToRupeesInput(values.monthlyVolumeLoansPaise)}
-                    required
-                  />
-                </Field>
-                <Field label="Insurance" htmlFor="monthlyVolumeInsurance" required>
-                  <Input
-                    id="monthlyVolumeInsurance"
-                    name="monthlyVolumeInsurance"
-                    inputMode="numeric"
-                    placeholder="0"
-                    defaultValue={paiseToRupeesInput(values.monthlyVolumeInsurancePaise)}
-                    required
-                  />
-                </Field>
-                <Field label="Mutual funds" htmlFor="monthlyVolumeMutualFunds" required>
-                  <Input
-                    id="monthlyVolumeMutualFunds"
-                    name="monthlyVolumeMutualFunds"
-                    inputMode="numeric"
-                    placeholder="0"
-                    defaultValue={paiseToRupeesInput(values.monthlyVolumeMutualFundsPaise)}
-                    required
-                  />
-                </Field>
-              </div>
-            </fieldset>
-          </fieldset>
-        ) : (
-          <fieldset className="space-y-5">
-            <legend className="text-sm font-medium text-navy-800">Professional profile</legend>
-            <div className="grid gap-5 sm:grid-cols-2">
-              <Field label="Occupation" htmlFor="occupation" required>
-                <Input
-                  id="occupation"
-                  name="occupation"
-                  defaultValue={values.occupation ?? ""}
-                  maxLength={120}
-                  required
-                />
-              </Field>
-              <Field label="Designation" htmlFor="designation" required>
-                <Input
-                  id="designation"
-                  name="designation"
-                  defaultValue={values.designation ?? ""}
-                  maxLength={120}
-                  required
-                />
-              </Field>
-            </div>
-            <Field label="Experience (if any)" htmlFor="experienceNote">
-              <Textarea
-                id="experienceNote"
-                name="experienceNote"
-                defaultValue={values.experienceNote ?? ""}
-                className="min-h-16"
-                maxLength={500}
               />
             </Field>
-          </fieldset>
-        )}
+            <Field label="Designation" htmlFor="designation" required>
+              <Input
+                id="designation"
+                name="designation"
+                defaultValue={values.designation ?? ""}
+                maxLength={120}
+                required
+              />
+            </Field>
+          </div>
+          <Field label="Experience (if any)" htmlFor="experienceNote">
+            <Textarea
+              id="experienceNote"
+              name="experienceNote"
+              defaultValue={values.experienceNote ?? ""}
+              className="min-h-16"
+              maxLength={500}
+            />
+          </Field>
+        </fieldset>
 
         <div className="space-y-5">
-          <Field label={business ? "Office address" : "Current address"} htmlFor="address" required>
+          <Field label="Current address" htmlFor="address" required>
             <Textarea
               id="address"
               name="address"
@@ -187,24 +81,11 @@ export function KycDetailsForm({
               required
             />
           </Field>
-          {business && (
-            <Field label="Residence address" htmlFor="residenceAddress" required>
-              <Textarea
-                id="residenceAddress"
-                name="residenceAddress"
-                defaultValue={values.residenceAddress ?? ""}
-                placeholder="House, street, city, state, PIN"
-                className="min-h-20"
-                maxLength={500}
-                required
-              />
-            </Field>
-          )}
         </div>
 
         <fieldset className="space-y-5">
           <legend className="text-sm font-medium text-navy-800">
-            Bank account (for {business ? "payouts" : "incentives"})
+            Bank account (for referral incentives)
           </legend>
           <div className="grid gap-5 sm:grid-cols-2">
             <Field label="Bank name" htmlFor="bankName" required>

@@ -3,11 +3,11 @@
 TrueLend is a pnpm/Turborepo monorepo with three Next.js App Router applications deployed as
 separate Cloudflare Workers through OpenNext.
 
-| Workspace       | Responsibility                                                  | Local port |
-| --------------- | --------------------------------------------------------------- | ---------: |
-| `apps/website`  | Public product content and lead capture                         |       3000 |
-| `apps/admin`    | Staff operations and authenticated KYC review                   |       3001 |
-| `apps/partners` | Partner registration, onboarding, leads, and private KYC upload |       3002 |
+| Workspace       | Responsibility                                                           | Local port |
+| --------------- | ------------------------------------------------------------------------ | ---------: |
+| `apps/website`  | Public product content and lead capture                                  |       3000 |
+| `apps/admin`    | Staff operations and authenticated KYC review                            |       3001 |
+| `apps/partners` | Referral Partner registration, onboarding, leads, and private KYC upload |       3002 |
 
 There is no separate API service. Route handlers and server actions are the server boundary. Shared
 runtime behavior belongs in a focused package under `packages/`.
@@ -61,7 +61,7 @@ protected credentials and GitHub Environment approval remain the authorization b
 apps/
   website/           public Worker
   admin/             staff-only Worker
-  partners/          partner Worker
+  partners/          Referral Partner Worker
 packages/
   auth/              host-specific Better Auth factories and forms
   db/                Drizzle schema, migrations, and database client

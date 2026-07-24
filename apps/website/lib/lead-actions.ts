@@ -96,8 +96,8 @@ export async function submitLead(input: unknown): Promise<SubmitResult> {
         : undefined;
   const db = createDb(env.HYPERDRIVE.connectionString);
   try {
-    // Resolve an affiliate ref (BP…/RP…) to the partner it credits. A rejected
-    // partner earns nothing; an unknown code silently falls back to direct.
+    // Resolve an RP affiliate ref to the Referral Partner it credits. A rejected
+    // Referral Partner earns nothing; an unknown code silently falls back to direct.
     const refCode = d.ref?.trim().toUpperCase();
     let partnerId: string | undefined;
     if (refCode) {
@@ -178,7 +178,7 @@ export async function submitLead(input: unknown): Promise<SubmitResult> {
         entityType: "lead",
         entityId: lead?.id,
         after: {
-          source: partnerId ? "partner_referral_link" : "website_form",
+          source: partnerId ? "referral_partner_link" : "website_form",
           kind: d.kind,
           contactReason: d.kind === "contact" ? d.reason : undefined,
           partnerRef: partnerId ? refCode : undefined,
@@ -194,7 +194,7 @@ export async function submitLead(input: unknown): Promise<SubmitResult> {
         city: "city" in d ? d.city : undefined,
         product: "productSlug" in d && d.productSlug ? productName(d.productSlug) : undefined,
         message: contactMessage,
-        source: partnerId ? `Partner referral · ${refCode}` : `Website · ${leadKindLabels[d.kind]}`,
+        source: partnerId ? `Referral Partner · ${refCode}` : `Website · ${leadKindLabels[d.kind]}`,
       }),
     );
     return { ok: true };

@@ -70,7 +70,7 @@ const base = {
   utmLastSource: optionalAttribution,
   utmLastMedium: optionalAttribution,
   utmLastCampaign: optionalAttribution,
-  // Partner affiliate ref (BP…/RP…); resolved to a partner in submitLead.
+  // Referral Partner affiliate ref (RP…); resolved in submitLead.
   ref: optionalAttribution,
 };
 

@@ -4,14 +4,13 @@ import { ArrowLeft, FileText, Check, X } from "lucide-react";
 import { Card, Field, Textarea, Stat, SubmitButton, cx } from "@truelend/ui";
 import {
   evaluatePartnerApplication,
-  partnerTypeLabel,
   partnerStatusLabel,
   partnerDocTypeLabels,
   productName,
-  earningsLabel,
   formatPaise,
   formatDate,
   formatDateTime,
+  referralTypeLabel,
   type PartnerApplicationEvaluation,
   type PartnerReviewState,
 } from "@truelend/reference";
@@ -26,7 +25,7 @@ import {
 } from "@/lib/partner-actions";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Partner details" };
+export const metadata = { title: "Referral Partner details" };
 
 const statusStyles: Record<string, string> = {
   pending: "bg-navy-800/[0.08] text-navy-700",
@@ -49,9 +48,11 @@ function getApprovalBlockedMessage(
 ): string | null {
   if (application.canApprove) return null;
   if (reviewState.status === "rejected") {
-    return "Partner must correct and resubmit their application before approval.";
+    return "The Referral Partner must correct and resubmit their application before approval.";
   }
-  if (!reviewState.submittedAt) return "Partner hasn't submitted their application yet.";
+  if (!reviewState.submittedAt) {
+    return "The Referral Partner hasn't submitted their application yet.";
+  }
   if (application.missingFields.length > 0) {
     return "Required KYC and bank details are incomplete.";
   }
@@ -72,8 +73,7 @@ export default async function PartnerDetailPage({ params }: { params: Promise<{ 
   if (!data) notFound();
   const { partner, name, email, documents, payouts, leads, earnedPaise, paidPaise } = data;
   const balance = earnedPaise - paidPaise;
-  const noun = earningsLabel(partner.type);
-  const business = partner.type === "business";
+  const noun = "Incentive";
   const uploadedDocTypes = new Set<string>(documents.map((document) => document.docType));
   const application = evaluatePartnerApplication(partner, uploadedDocTypes);
   const { canApprove } = application;
@@ -85,12 +85,12 @@ export default async function PartnerDetailPage({ params }: { params: Promise<{ 
         href="/partners"
         className="mb-4 inline-flex items-center gap-1.5 text-sm text-navy-500 hover:text-navy-800"
       >
-        <ArrowLeft className="h-4 w-4" aria-hidden /> Back to partners
+        <ArrowLeft className="h-4 w-4" aria-hidden /> Back to Referral Partners
       </Link>
 
       <PageTitle
-        title={partner.businessName || name}
-        subtitle={partnerTypeLabel(partner.type)}
+        title={name}
+        subtitle="Referral Partner"
         actions={
           <span
             className={cx(
@@ -111,9 +111,17 @@ export default async function PartnerDetailPage({ params }: { params: Promise<{ 
               <Detail label="Contact name" value={name} />
               <Detail label="Email" value={email} />
               <Detail label="Phone" value={partner.phone} />
-              {business && <Detail label="Alternative phone" value={partner.alternatePhone} />}
-              <Detail label="Type" value={partnerTypeLabel(partner.type)} />
-              {partner.businessName && <Detail label="Business" value={partner.businessName} />}
+              <Detail label="Program" value="Referral Partner" />
+              <Detail label="Referral type" value={referralTypeLabel(partner.referralType)} />
+              <Detail label="City" value={partner.city} />
+              <Detail
+                label="Date of birth"
+                value={
+                  partner.dateOfBirth
+                    ? formatDate(new Date(`${partner.dateOfBirth}T00:00:00Z`))
+                    : null
+                }
+              />
               <Detail label="Registered" value={formatDate(partner.createdAt)} />
               <Detail
                 label="Submitted for review"
@@ -125,34 +133,11 @@ export default async function PartnerDetailPage({ params }: { params: Promise<{ 
           </Card>
 
           <Card className="p-6">
-            <h2 className="font-display text-lg font-bold text-navy-950">
-              {business ? "Business profile" : "Referral profile"}
-            </h2>
+            <h2 className="font-display text-lg font-bold text-navy-950">Referral profile</h2>
             <dl className="mt-5 grid grid-cols-2 gap-5">
-              {business ? (
-                <>
-                  <Detail label="Products handled" value={partner.productsHandled?.join(", ")} />
-                  <Detail label="Years experience" value={partner.yearsExperience?.toString()} />
-                  <Detail
-                    label="Monthly volume · Loans"
-                    value={formatPaise(partner.monthlyVolumeLoansPaise)}
-                  />
-                  <Detail
-                    label="Monthly volume · Insurance"
-                    value={formatPaise(partner.monthlyVolumeInsurancePaise)}
-                  />
-                  <Detail
-                    label="Monthly volume · Mutual funds"
-                    value={formatPaise(partner.monthlyVolumeMutualFundsPaise)}
-                  />
-                </>
-              ) : (
-                <>
-                  <Detail label="Occupation" value={partner.occupation} />
-                  <Detail label="Designation" value={partner.designation} />
-                  <Detail label="Experience" value={partner.experienceNote} />
-                </>
-              )}
+              <Detail label="Occupation" value={partner.occupation} />
+              <Detail label="Designation" value={partner.designation} />
+              <Detail label="Experience" value={partner.experienceNote} />
             </dl>
           </Card>
 
@@ -160,12 +145,7 @@ export default async function PartnerDetailPage({ params }: { params: Promise<{ 
             <h2 className="font-display text-lg font-bold text-navy-950">KYC details</h2>
             <dl className="mt-5 grid grid-cols-2 gap-5">
               <Detail label="PAN" value={partner.pan} />
-              {business && <Detail label="GST" value={partner.gst} />}
-              <Detail
-                label={business ? "Office address" : "Current address"}
-                value={partner.address}
-              />
-              {business && <Detail label="Residence address" value={partner.residenceAddress} />}
+              <Detail label="Current address" value={partner.address} />
               <Detail label="Bank name" value={partner.bankName} />
               <Detail label="Account holder" value={partner.accountHolder} />
               <Detail label="Account number" value={partner.accountNumber} />
@@ -238,9 +218,9 @@ export default async function PartnerDetailPage({ params }: { params: Promise<{ 
                   className="w-full"
                   disabled={!canApprove}
                   pendingText="Approving…"
-                  confirm={`Approve ${partner.businessName || name} and grant them portal access? They'll be emailed a confirmation.`}
+                  confirm={`Approve ${name} as a Referral Partner and grant portal access? They'll be emailed a confirmation.`}
                 >
-                  <Check className="h-4 w-4" aria-hidden /> Approve partner
+                  <Check className="h-4 w-4" aria-hidden /> Approve Referral Partner
                 </SubmitButton>
                 {approvalBlockedMessage && (
                   <p className="mt-2 text-xs text-muted">{approvalBlockedMessage}</p>
@@ -254,7 +234,7 @@ export default async function PartnerDetailPage({ params }: { params: Promise<{ 
                     name="reason"
                     required
                     maxLength={500}
-                    placeholder="Shown to the partner"
+                    placeholder="Shown to the Referral Partner"
                     className="min-h-16 text-sm"
                   />
                 </Field>
@@ -262,7 +242,7 @@ export default async function PartnerDetailPage({ params }: { params: Promise<{ 
                   variant="outline"
                   className="w-full text-red-700 hover:bg-red-50"
                   pendingText="Rejecting…"
-                  confirm={`Reject ${partner.businessName || name} and email them this reason? This can't be undone.`}
+                  confirm={`Reject ${name}'s Referral Partner application and email them this reason? This can't be undone.`}
                 >
                   <X className="h-4 w-4" aria-hidden /> Reject
                 </SubmitButton>
@@ -274,7 +254,7 @@ export default async function PartnerDetailPage({ params }: { params: Promise<{ 
             <Card className="p-6">
               <h2 className="font-display text-lg font-bold text-navy-950">Verification</h2>
               <p className="mt-2 text-sm text-navy-500">
-                Verified — this partner has portal access.
+                Verified — this Referral Partner has portal access.
               </p>
               <form action={revokePartnerAction} className="mt-4">
                 <input type="hidden" name="partnerId" value={partner.userId} />
@@ -282,7 +262,7 @@ export default async function PartnerDetailPage({ params }: { params: Promise<{ 
                   variant="outline"
                   className="w-full"
                   pendingText="Revoking…"
-                  confirm="Revoke verification and return this partner to pending? They'll lose portal access until re-approved."
+                  confirm="Revoke verification and return this Referral Partner to pending? They'll lose portal access until re-approved."
                 >
                   Revoke verification
                 </SubmitButton>

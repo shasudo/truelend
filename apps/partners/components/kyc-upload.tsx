@@ -14,9 +14,7 @@ export function KycUpload({
   editable?: boolean;
 }) {
   const uploadedTypes = new Set(uploadedDocumentTypes);
-  const allRequiredDone = partnerDocTypes
-    .filter((d) => d.required)
-    .every((d) => uploadedTypes.has(d.type));
+  const allRequiredDone = partnerDocTypes.every((d) => uploadedTypes.has(d.type));
 
   return (
     <div className="space-y-3">
@@ -44,7 +42,7 @@ function DocRow({
   uploaded,
   editable,
 }: {
-  doc: { type: string; label: string; required: boolean };
+  doc: { type: string; label: string };
   uploaded: boolean;
   editable: boolean;
 }) {
@@ -95,10 +93,7 @@ function DocRow({
           )}
         </span>
         <div>
-          <p className="font-medium text-navy-950">
-            {doc.label}
-            {!doc.required && <span className="ml-2 text-xs text-muted">Optional</span>}
-          </p>
+          <p className="font-medium text-navy-950">{doc.label}</p>
           {error ? (
             <p role="alert" className="text-xs text-red-600">
               {error}

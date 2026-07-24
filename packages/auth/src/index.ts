@@ -75,9 +75,9 @@ export async function allowSensitiveAuthRequest(
  * betterAuth() construction itself does no I/O.
  *
  * Roles come from the admin plugin's plain-text `role` column: admin|employee
- * (internal staff), business|referral (partners set explicitly at registration).
+ * (internal staff), referral (Referral Partners set explicitly at registration).
  * The default below is deliberately a NON-staff role. The partner host blocks
- * the raw signup route, and registerPartner assigns business|referral; this
+ * the raw signup route, and registerPartner assigns referral; this
  * default is defense-in-depth if that route boundary is accidentally exposed.
  */
 function baseAuthOptions(db: Database, opts: CreateAuthOptions) {

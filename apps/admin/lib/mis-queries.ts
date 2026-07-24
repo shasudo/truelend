@@ -73,14 +73,13 @@ export async function getLeadsByProduct(db: Database): Promise<NamedCount[]> {
 
 export async function getLeadsByChannel(db: Database): Promise<NamedCount[]> {
   const rows = (await db.$client`
-    select le.kind, pt.type as partner_type, count(*)::int as n
-    from leads le left join partners pt on pt.user_id = le.partner_id
-    group by le.kind, pt.type
+    select le.kind, (le.partner_id is not null) as is_partner_lead, count(*)::int as n
+    from leads le
+    group by le.kind, (le.partner_id is not null)
   `) as Row[];
   const counts = new Map<string, number>();
   for (const row of rows) {
-    const partnerType = typeof row.partner_type === "string" ? row.partner_type : null;
-    const channel = channelForKind(String(row.kind), partnerType);
+    const channel = channelForKind(String(row.kind), row.is_partner_lead === true);
     counts.set(channel, (counts.get(channel) ?? 0) + num(row.n));
   }
   return [...counts].map(([name, count]) => ({ name, count }));
@@ -101,13 +100,8 @@ export interface MisRow {
 }
 
 // Channel is derived in SQL (below, inlined so it can be a GROUP BY key):
-// partner attribution (le.partner_id → partner type) wins over website kind.
-const CHANNEL_ORDER = [
-  "Website · Direct",
-  "Website · Referral",
-  "Business Partner",
-  "Referral Partner",
-];
+// Referral-partner attribution wins over website kind.
+const CHANNEL_ORDER = ["Website · Direct", "Website · Referral", "Referral Partner"];
 
 export async function getMisByProduct(db: Database): Promise<MisRow[]> {
   const sql = db.$client;
@@ -157,20 +151,18 @@ export async function getMisByChannel(db: Database): Promise<MisRow[]> {
   const leadRows = (await sql`
     select
       case
-        when le.partner_id is not null and pt.type = 'business' then 'Business Partner'
-        when le.partner_id is not null and pt.type = 'referral' then 'Referral Partner'
+        when le.partner_id is not null then 'Referral Partner'
         when le.kind = 'referral' then 'Website · Referral'
         else 'Website · Direct'
       end as channel,
       count(*)::int as n
-    from leads le left join partners pt on pt.user_id = le.partner_id
+    from leads le
     group by 1
   `) as Row[];
   const caseRows = (await sql`
     select
       case
-        when le.partner_id is not null and pt.type = 'business' then 'Business Partner'
-        when le.partner_id is not null and pt.type = 'referral' then 'Referral Partner'
+        when le.partner_id is not null then 'Referral Partner'
         when le.kind = 'referral' then 'Website · Referral'
         else 'Website · Direct'
       end as channel,
@@ -183,7 +175,6 @@ export async function getMisByChannel(db: Database): Promise<MisRow[]> {
       coalesce(sum(lc.payout_paise),0) as payout
     from loan_cases lc
       join leads le on le.id = lc.lead_id
-      left join partners pt on pt.user_id = le.partner_id
     group by 1
   `) as Row[];
 
@@ -213,7 +204,6 @@ export async function getMisByChannel(db: Database): Promise<MisRow[]> {
 interface PartnerMisRow {
   key: string;
   label: string;
-  type: string;
   leads: number;
   disbursed: number;
   disbursedVolumePaise: number;
@@ -222,10 +212,10 @@ interface PartnerMisRow {
   balancePaise: number;
 }
 
-// Per-partner business summary (only partners who've sourced a lead).
+// Per-referral-partner summary (only partners who've sourced a lead).
 export async function getMisByPartner(db: Database): Promise<PartnerMisRow[]> {
   const rows = (await db.$client`
-    select p.user_id as key, coalesce(p.business_name, u.name) as label, p.type,
+    select p.user_id as key, u.name as label,
       (select count(*)::int from leads where partner_id = p.user_id) as leads,
       (select count(*)::int from loan_cases lc join leads le on le.id = lc.lead_id
         where le.partner_id = p.user_id and lc.status = 'disbursed') as disbursed,
@@ -245,7 +235,6 @@ export async function getMisByPartner(db: Database): Promise<PartnerMisRow[]> {
     return {
       key: String(r.key),
       label: String(r.label),
-      type: String(r.type),
       leads: num(r.leads),
       disbursed: num(r.disbursed),
       disbursedVolumePaise: num(r.volume),

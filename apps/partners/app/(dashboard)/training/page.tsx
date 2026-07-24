@@ -1,41 +1,10 @@
 import Link from "next/link";
-import {
-  ArrowRight,
-  BadgeCheck,
-  BookOpenCheck,
-  ClipboardCheck,
-  GraduationCap,
-  ShieldCheck,
-} from "lucide-react";
+import { ArrowRight, BadgeCheck, ClipboardCheck, GraduationCap, ShieldCheck } from "lucide-react";
 import { Button, Card } from "@truelend/ui";
 import { PartnerPageHeader } from "@/components/partner-page-header";
 import { requirePartner } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
-
-const businessModules = [
-  {
-    icon: ClipboardCheck,
-    title: "Build a complete case",
-    description:
-      "Confirm customer intent, product need, contact details and relevant context before submitting.",
-    points: ["Capture consent", "Add accurate contact details", "Include useful case notes"],
-  },
-  {
-    icon: BookOpenCheck,
-    title: "Understand the pipeline",
-    description:
-      "Use lead and loan-case status to set clear expectations without overpromising outcomes.",
-    points: ["Track milestones", "Follow document readiness", "Escalate through support"],
-  },
-  {
-    icon: ShieldCheck,
-    title: "Work responsibly",
-    description:
-      "Protect customer information and keep every claim accurate, clear and consent-led.",
-    points: ["Use the secure portal", "Never promise approval", "Avoid collecting excess data"],
-  },
-];
 
 const referralModules = [
   {
@@ -61,24 +30,18 @@ const referralModules = [
 ];
 
 export default async function TrainingPage() {
-  const { partner } = await requirePartner();
-  const business = partner.type === "business";
-  const modules = business ? businessModules : referralModules;
+  await requirePartner();
 
   return (
     <div className="mx-auto max-w-6xl">
       <PartnerPageHeader
-        eyebrow={business ? "Partner training" : "Learn the basics"}
-        title={business ? "Training" : "Learn & Earn"}
-        description={
-          business
-            ? "Practical guidance for better case quality, cleaner coordination and responsible sourcing."
-            : "No lending experience required—learn how to make useful, consent-led introductions."
-        }
+        eyebrow="Learn the basics"
+        title="Learn & Earn"
+        description="No lending experience required—learn how to make useful, consent-led introductions."
       />
 
       <div className="mt-6 grid gap-4 lg:grid-cols-3">
-        {modules.map((module, index) => (
+        {referralModules.map((module, index) => (
           <Card key={module.title} className="p-6">
             <div className="flex items-center justify-between gap-3">
               <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-navy-800 text-sun-400">
@@ -108,14 +71,12 @@ export default async function TrainingPage() {
             Ready to act?
           </p>
           <h2 className="mt-2 font-display text-2xl font-bold">
-            {business
-              ? "Turn your next opportunity into a complete case."
-              : "Make your first helpful introduction."}
+            Make your first helpful introduction.
           </h2>
         </div>
         <Button asChild className="shrink-0">
-          <Link href={business ? "/leads" : "/refer"}>
-            {business ? "Submit New Loan Case" : "Refer Someone"}
+          <Link href="/refer">
+            Refer Someone
             <ArrowRight className="h-4 w-4" aria-hidden />
           </Link>
         </Button>
@@ -124,4 +85,4 @@ export default async function TrainingPage() {
   );
 }
 
-export const metadata = { title: "Training" };
+export const metadata = { title: "Learn and earn" };

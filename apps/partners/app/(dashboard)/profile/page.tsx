@@ -1,6 +1,6 @@
 import { requirePartner } from "@/lib/auth";
 import { Card } from "@truelend/ui";
-import { partnerTypeLabel, partnerStatusLabel } from "@truelend/reference";
+import { partnerStatusLabel, referralTypeLabel } from "@truelend/reference";
 import { ProfileForm } from "@/components/profile-form";
 
 export const dynamic = "force-dynamic";
@@ -31,9 +31,10 @@ export default async function ProfilePage() {
       <Card className="mt-6 p-6">
         <dl>
           <Row label="Email" value={session.user.email} />
-          <Row label="Partner type" value={partnerTypeLabel(partner.type)} />
+          <Row label="Program" value="Referral Partner" />
+          <Row label="Referral type" value={referralTypeLabel(partner.referralType)} />
+          <Row label="City" value={partner.city} />
           <Row label="Status" value={partnerStatusLabel(partner.status)} />
-          {partner.businessName && <Row label="Business" value={partner.businessName} />}
         </dl>
         <p className="mt-4 text-xs text-muted">
           To change your email or KYC details, contact your relationship manager.

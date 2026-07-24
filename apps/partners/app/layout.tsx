@@ -19,11 +19,11 @@ const inter = Inter({
 export const metadata: Metadata = {
   metadataBase: new URL(appUrls.partners),
   title: {
-    default: "TrueLend Partners",
-    template: "%s — TrueLend Partners",
+    default: "TrueLend Referral Partners",
+    template: "%s — TrueLend Referral Partners",
   },
   description:
-    "Partner with TrueLend — distribute loans, refer customers, earn on every disbursal.",
+    "Become a TrueLend Referral Partner — refer borrowers and earn after successful disbursals.",
   alternates: { canonical: "/" },
 };
 

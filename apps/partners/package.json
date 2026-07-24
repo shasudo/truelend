@@ -33,7 +33,6 @@
     "drizzle-orm": "catalog:",
     "lucide-react": "catalog:",
     "next": "catalog:",
-    "papaparse": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
     "zod": "catalog:"
@@ -45,7 +44,6 @@
     "@truelend/eslint-config": "workspace:*",
     "@truelend/typescript-config": "workspace:*",
     "@types/node": "catalog:",
-    "@types/papaparse": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
     "eslint": "catalog:",

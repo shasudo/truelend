@@ -24,28 +24,8 @@ const commonApplication = {
   nomineePhone: "9876543210",
 };
 
-const businessApplication: PartnerApplicationData = {
-  ...commonApplication,
-  type: "business",
-  productsHandled: ["Loans"],
-  yearsExperience: 5,
-  monthlyVolumeLoansPaise: 100_000,
-  monthlyVolumeInsurancePaise: 0,
-  monthlyVolumeMutualFundsPaise: 0,
-  residenceAddress: "Home address",
-  occupation: null,
-  designation: null,
-};
-
 const referralApplication: PartnerApplicationData = {
   ...commonApplication,
-  type: "referral",
-  productsHandled: null,
-  yearsExperience: null,
-  monthlyVolumeLoansPaise: null,
-  monthlyVolumeInsurancePaise: null,
-  monthlyVolumeMutualFundsPaise: null,
-  residenceAddress: null,
   occupation: "Teacher",
   designation: "Senior",
 };
@@ -77,82 +57,36 @@ void test("application completeness requires every common field and mandatory do
     "nomineePhone",
   ];
 
-  assert.equal(isApplicationComplete(businessApplication, allRequiredDocuments), true);
   assert.equal(isApplicationComplete(referralApplication, allRequiredDocuments), true);
 
   for (const field of commonFields) {
-    const incomplete = { ...businessApplication, [field]: null };
+    const incomplete = { ...referralApplication, [field]: null };
     assert.equal(isApplicationComplete(incomplete, allRequiredDocuments), false, field);
   }
 
   assert.deepEqual(
     evaluatePartnerApplication(
-      { ...businessApplication, status: "pending", submittedAt: null },
+      { ...referralApplication, status: "pending", submittedAt: null },
       new Set(["pan", "aadhaar", "photo"]),
     ).missingDocumentTypes,
     ["cheque"],
   );
-  assert.equal(
-    isApplicationComplete(businessApplication, new Set([...allRequiredDocuments, "gst"])),
-    true,
-  );
 });
 
-void test("partner-type requirements are complete, exclusive, and accept zero-valued metrics", () => {
-  const businessFields: PartnerApplicationField[] = [
-    "productsHandled",
-    "yearsExperience",
-    "monthlyVolumeLoansPaise",
-    "monthlyVolumeInsurancePaise",
-    "monthlyVolumeMutualFundsPaise",
-    "residenceAddress",
-  ];
-
-  for (const field of businessFields) {
-    const emptyValue = field === "productsHandled" ? [] : null;
-    const incomplete = { ...businessApplication, [field]: emptyValue };
-    assert.equal(isApplicationComplete(incomplete, allRequiredDocuments), false, field);
-  }
-
-  assert.equal(
-    isApplicationComplete(
-      {
-        ...businessApplication,
-        yearsExperience: 0,
-        monthlyVolumeLoansPaise: 0,
-      },
-      allRequiredDocuments,
-    ),
-    true,
-  );
-  assert.equal(
-    isApplicationComplete(
-      { ...businessApplication, occupation: null, designation: null },
-      allRequiredDocuments,
-    ),
-    true,
-  );
+void test("referral occupation and designation are required", () => {
   assert.equal(
     isApplicationComplete({ ...referralApplication, occupation: "   " }, allRequiredDocuments),
     false,
   );
   assert.equal(
-    isApplicationComplete(
-      {
-        ...referralApplication,
-        productsHandled: null,
-        yearsExperience: null,
-        residenceAddress: null,
-      },
-      allRequiredDocuments,
-    ),
-    true,
+    isApplicationComplete({ ...referralApplication, designation: null }, allRequiredDocuments),
+    false,
   );
 });
 
 void test("submission and approval permissions follow the review state", () => {
   const draft = evaluatePartnerApplication(
-    { ...businessApplication, status: "pending", submittedAt: null },
+    { ...referralApplication, status: "pending", submittedAt: null },
     allRequiredDocuments,
   );
   assert.deepEqual(
@@ -161,7 +95,7 @@ void test("submission and approval permissions follow the review state", () => {
   );
 
   const submitted = evaluatePartnerApplication(
-    { ...businessApplication, status: "pending", submittedAt: new Date() },
+    { ...referralApplication, status: "pending", submittedAt: new Date() },
     allRequiredDocuments,
   );
   assert.deepEqual(
@@ -174,7 +108,7 @@ void test("submission and approval permissions follow the review state", () => {
   );
 
   const rejected = evaluatePartnerApplication(
-    { ...businessApplication, status: "rejected", submittedAt: new Date() },
+    { ...referralApplication, status: "rejected", submittedAt: new Date() },
     allRequiredDocuments,
   );
   assert.deepEqual(
@@ -187,7 +121,7 @@ void test("submission and approval permissions follow the review state", () => {
   );
 
   const verified = evaluatePartnerApplication(
-    { ...businessApplication, status: "verified", submittedAt: new Date() },
+    { ...referralApplication, status: "verified", submittedAt: new Date() },
     allRequiredDocuments,
   );
   assert.deepEqual(

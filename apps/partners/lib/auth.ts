@@ -75,7 +75,7 @@ export const requirePartnerSession = cache(async (): Promise<PartnerSessionConte
 
 export async function requirePartner(): Promise<{ session: PartnerSession; partner: Partner }> {
   const context = await requirePartnerSession();
-  if (!context.partner) redirect("/#partner-types");
+  if (!context.partner) redirect("/register/referral");
   return { session: context.session, partner: context.partner };
 }
 
@@ -97,7 +97,7 @@ export async function requirePartnerApi(): Promise<
     const partner = rows[0];
     if (!partner) {
       ctx.waitUntil(db.$client.end());
-      return new Response("No partner profile", { status: 403 });
+      return new Response("No Referral Partner profile", { status: 403 });
     }
     return { partner, db, ctx, env };
   } catch (error) {

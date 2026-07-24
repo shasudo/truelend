@@ -1,6 +1,6 @@
 import { BadgeIndianRupee, CircleCheckBig, Clock3, WalletCards } from "lucide-react";
 import { Card, StatTile } from "@truelend/ui";
-import { earningsLabel, formatDate, formatPaise } from "@truelend/reference";
+import { formatDate, formatPaise, referralRewardLabel } from "@truelend/reference";
 import { PartnerPageHeader } from "@/components/partner-page-header";
 import { requirePartner, getAuthContext } from "@/lib/auth";
 import { getPartnerMetrics, getPartnerPayouts } from "@/lib/dashboard-queries";
@@ -14,24 +14,22 @@ export default async function EarningsPage() {
     getPartnerMetrics(db, partner.userId),
     getPartnerPayouts(db, partner.userId),
   ]);
-  const business = partner.type === "business";
-  const label = earningsLabel(partner.type);
   const balance = metrics.earnedPaise - metrics.paidPaise;
 
   return (
     <div className="mx-auto max-w-6xl">
       <PartnerPageHeader
-        eyebrow={business ? "Commercials" : "Your earnings"}
-        title={business ? "Commission" : "Rewards Earned"}
-        description={
-          business
-            ? "A clear view of commission earned, received and awaiting payment."
-            : "Track every referral reward without targets, fees or complicated reports."
-        }
+        eyebrow="Your earnings"
+        title="Rewards Earned"
+        description="Track every referral reward without targets, fees or complicated reports."
       />
 
       <div className="mt-6 grid gap-3 sm:grid-cols-3">
-        <StatTile label={`${label} earned`} value={formatPaise(metrics.earnedPaise)} accent />
+        <StatTile
+          label={`${referralRewardLabel} earned`}
+          value={formatPaise(metrics.earnedPaise)}
+          accent
+        />
         <StatTile label="Received" value={formatPaise(metrics.paidPaise)} />
         <StatTile label="Balance" value={formatPaise(balance)} />
       </div>
@@ -42,9 +40,7 @@ export default async function EarningsPage() {
             <WalletCards className="h-5 w-5" aria-hidden />
           </span>
           <div>
-            <h2 className="font-display text-lg font-bold text-navy-950">
-              {business ? "Commission ledger" : "Reward history"}
-            </h2>
+            <h2 className="font-display text-lg font-bold text-navy-950">Reward history</h2>
             <p className="text-xs text-navy-500">Latest 50 entries</p>
           </div>
         </div>
@@ -52,12 +48,10 @@ export default async function EarningsPage() {
           <div className="px-6 py-14 text-center">
             <BadgeIndianRupee className="mx-auto h-8 w-8 text-red-600" aria-hidden />
             <h3 className="mt-3 font-display text-lg font-bold text-navy-950">
-              {business ? "No commission entries yet" : "No referral rewards yet"}
+              No referral rewards yet
             </h3>
             <p className="mx-auto mt-1 max-w-md text-sm text-navy-600">
-              {business
-                ? "Commission entries will appear here after eligible loan disbursals are recorded."
-                : "Eligible rewards will appear here after a successful referral is recorded."}
+              Eligible rewards will appear here after a successful referral is recorded.
             </p>
           </div>
         ) : (
@@ -81,7 +75,7 @@ export default async function EarningsPage() {
                   </span>
                   <div className="min-w-0">
                     <p className="font-semibold text-navy-950">
-                      {entry.kind === "paid" ? "Payment received" : `${label} earned`}
+                      {entry.kind === "paid" ? "Payment received" : `${referralRewardLabel} earned`}
                     </p>
                     <p className="truncate text-xs text-navy-500">
                       {entry.note || formatDate(entry.createdAt)}
@@ -106,4 +100,4 @@ export default async function EarningsPage() {
   );
 }
 
-export const metadata = { title: "Commission and rewards" };
+export const metadata = { title: "Referral rewards" };
