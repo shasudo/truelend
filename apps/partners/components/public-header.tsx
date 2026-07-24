@@ -1,7 +1,7 @@
 import Link from "next/link";
+import { UserRound } from "lucide-react";
 import { Button, Container, Logo } from "@truelend/ui";
 import { appUrls } from "@truelend/reference";
-import { ProductsMenu } from "@/components/products-menu";
 import { PublicMobileNav } from "@/components/public-mobile-nav";
 
 export function PublicHeader() {
@@ -13,70 +13,56 @@ export function PublicHeader() {
       >
         Skip to content
       </a>
-      <Container className="flex h-20 max-w-[1380px] items-center justify-between gap-6">
-        <Link href="/" aria-label="TrueLend Partners home" className="text-navy-800">
-          <Logo />
+      <Container className="flex h-[78px] max-w-[1240px] items-center justify-between gap-5">
+        <Link href="/" aria-label="TrueLend Referral Partners home" className="text-navy-800">
+          <Logo tagline />
         </Link>
-        {/* Eight items at text-base is a wide nav: nowrap stops links breaking
-            across two lines inside the bar, and the tighter gap keeps it inside
-            the container at the xl breakpoint where this nav first appears. */}
         <nav
-          className="hidden flex-1 items-center justify-center gap-5 whitespace-nowrap xl:flex"
+          className="hidden flex-1 items-center justify-center gap-7 whitespace-nowrap xl:flex"
           aria-label="Public"
         >
           <Link
-            href="/"
-            className="border-b-2 border-transparent py-7 text-base font-semibold text-navy-950 hover:border-red-600"
-          >
-            For Partners
-          </Link>
-          <Link
-            href="/#benefits"
-            className="text-base font-medium text-navy-700 hover:text-red-600"
-          >
-            Partner Benefits
-          </Link>
-          <Link
             href="/#how-it-works"
-            className="text-base font-medium text-navy-700 hover:text-red-600"
+            className="border-b-2 border-transparent py-7 text-sm font-semibold text-navy-950 hover:border-red-600"
           >
             How It Works
           </Link>
           <Link
-            href="/#partner-types"
-            className="text-base font-medium text-navy-700 hover:text-red-600"
+            href="/#why-truelend"
+            className="text-sm font-medium text-navy-700 hover:text-red-600"
+          >
+            Why TrueLend
+          </Link>
+          <Link
+            href="/#who-can-join"
+            className="text-sm font-medium text-navy-700 hover:text-red-600"
           >
             Who Can Join
           </Link>
-          <ProductsMenu />
-          <Link
-            href="/resources"
-            className="text-base font-medium text-navy-700 hover:text-red-600"
-          >
-            Resources
+          <Link href="/#benefits" className="text-sm font-medium text-navy-700 hover:text-red-600">
+            Referral Benefits
+          </Link>
+          <Link href="/#faqs" className="text-sm font-medium text-navy-700 hover:text-red-600">
+            FAQs
           </Link>
           <a
-            href={`${appUrls.website}/about`}
-            className="text-base font-medium text-navy-700 hover:text-red-600"
-          >
-            About Us
-          </a>
-          <a
             href={`${appUrls.website}/contact`}
-            className="text-base font-medium text-navy-700 hover:text-red-600"
+            className="text-sm font-medium text-navy-700 hover:text-red-600"
           >
-            Contact
+            Contact Us
           </a>
         </nav>
         <div className="flex items-center gap-2 sm:gap-3">
           <span className="hidden min-[480px]:inline-flex">
-            <Button variant="ghost" size="sm" asChild>
-              <Link href="/login">Sign in</Link>
+            <Button variant="outline" size="sm" className="h-10 whitespace-nowrap px-5" asChild>
+              <Link href="/login">
+                <UserRound className="h-4 w-4" aria-hidden /> Sign In
+              </Link>
             </Button>
           </span>
           <span className="hidden sm:inline-flex">
-            <Button size="sm" className="whitespace-nowrap px-3 sm:px-4" asChild>
-              <Link href="/#partner-types">Become a partner</Link>
+            <Button size="sm" className="h-10 whitespace-nowrap px-3 sm:px-5" asChild>
+              <Link href="/register/referral">Become a Referral Partner</Link>
             </Button>
           </span>
           <PublicMobileNav />

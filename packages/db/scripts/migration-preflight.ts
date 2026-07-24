@@ -28,7 +28,7 @@ try {
     select
       (select count(*) from "user"
         where role is not null
-          and role not in ('admin', 'employee', 'business', 'referral', 'partner_pending'))
+          and role not in ('admin', 'employee', 'referral', 'partner_pending'))
         as "invalidRoles",
       (select count(*) from (
         select provider_id, account_id from account

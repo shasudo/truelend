@@ -1,4 +1,4 @@
-import { partnerTypeLabels } from "./partners";
+import { referralPartnerLabel } from "./partners";
 
 export const leadKindValues = ["enquiry", "referral", "contact", "cibil_notify"] as const;
 export type LeadKind = (typeof leadKindValues)[number];
@@ -63,9 +63,8 @@ export function pipelineStatusTone(status: string): PipelineStatusTone {
   return pipelineStatusTones[status] ?? "neutral";
 }
 
-export function channelForKind(kind: string, partnerType?: string | null): string {
-  if (partnerType === "business") return partnerTypeLabels.business;
-  if (partnerType === "referral") return partnerTypeLabels.referral;
+export function channelForKind(kind: string, isPartnerLead = false): string {
+  if (isPartnerLead) return referralPartnerLabel;
   return kind === "referral" ? "Website · Referral" : "Website · Direct";
 }
 

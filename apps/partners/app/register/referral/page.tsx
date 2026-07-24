@@ -15,5 +15,5 @@ export const dynamic = "force-dynamic";
 
 export default function ReferralRegisterPage() {
   const { env } = getCloudflareContext();
-  return <DedicatedRegister type="referral" siteKey={env.TURNSTILE_SITE_KEY} />;
+  return <DedicatedRegister siteKey={env.TURNSTILE_SITE_KEY} />;
 }

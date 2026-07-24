@@ -5,6 +5,7 @@ import {
   text,
   boolean,
   bigint,
+  date,
   integer,
   timestamp,
   jsonb,
@@ -20,7 +21,6 @@ import {
   loanCaseStatusValues,
   partnerDocumentTypeValues,
   partnerStatusValues,
-  partnerTypeValues,
   payoutKindValues,
   residenceTypeValues,
 } from "@truelend/reference";
@@ -49,7 +49,7 @@ export const user = pgTable(
   (t) => [
     check(
       "user_role_valid",
-      sql`${t.role} is null or ${t.role} in ('admin', 'employee', 'business', 'referral', 'partner_pending')`,
+      sql`${t.role} is null or ${t.role} in ('admin', 'employee', 'referral', 'partner_pending')`,
     ),
   ],
 );
@@ -137,8 +137,8 @@ export const leads = pgTable(
     message: text("message"),
 
     // Loan-application detail captured by the detailed lead forms. Requiredness
-    // is enforced per-form by zod; the columns stay nullable (partner/CSV/older
-    // leads may omit them). Money is integer paise, converted at the boundary.
+    // is enforced per-form by zod; the columns stay nullable (Referral Partner
+    // and older leads may omit them). Money is integer paise, converted at the boundary.
     loanAmountPaise: bigint("loan_amount_paise", { mode: "number" }),
     tenureMonths: integer("tenure_months"),
     loanPurpose: text("loan_purpose"),
@@ -168,7 +168,7 @@ export const leads = pgTable(
 
     consent: boolean("consent").notNull().default(false),
     // Proof of the consent above: when it was captured, from where (website
-    // form, partner submission, CSV bulk), and which terms/privacy version.
+    // form or Referral Partner submission), and which terms/privacy version.
     consentAt: timestamp("consent_at", { withTimezone: true }),
     consentSource: text("consent_source"),
     consentVersion: text("consent_version"),
@@ -176,7 +176,7 @@ export const leads = pgTable(
     status: leadStatus("status").notNull().default("new"),
     assignedTo: text("assigned_to").references(() => user.id, { onDelete: "set null" }),
 
-    // sourced by a partner (null = website/direct). Channel derives from this.
+    // sourced by a Referral Partner (null = website/direct). Channel derives from this.
     partnerId: text("partner_id").references(() => partners.userId, { onDelete: "set null" }),
 
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -297,50 +297,34 @@ export const loanCases = pgTable(
   ],
 );
 
-export const partnerType = pgEnum("partner_type", partnerTypeValues);
 export const partnerStatus = pgEnum("partner_status", partnerStatusValues);
 export const partnerDocType = pgEnum("partner_doc_type", partnerDocumentTypeValues);
 export const payoutKind = pgEnum("payout_kind", payoutKindValues);
 
-// 1:1 with a better-auth user (user_id is the PK). The user's `role` column
-// mirrors `type` (business|referral) for auth; this row holds partner data.
+// 1:1 with a better-auth referral-partner user (user_id is the PK).
 export const partners = pgTable(
   "partners",
   {
     userId: text("user_id")
       .primaryKey()
       .references(() => user.id, { onDelete: "cascade" }),
-    type: partnerType("type").notNull(),
     status: partnerStatus("status").notNull().default("pending"),
-    // Human-readable partner reference shown as the partner's ID. BP<seq> for
-    // business, RP<seq> for referral, generated at signup from the
-    // partners_reference_seq sequence (see migration 0011). Unique per partner.
+    // Human-readable RP<seq> reference generated at signup from the
+    // partners_reference_seq sequence. Unique per referral partner.
     referenceId: text("reference_id").notNull().unique(),
     phone: text("phone"),
-    // business only
-    alternatePhone: text("alternate_phone"),
-    businessName: text("business_name"),
+    dateOfBirth: date("date_of_birth", { mode: "string" }),
+    city: text("city"),
+    referralType: text("referral_type"),
     pan: text("pan"),
-    gst: text("gst"),
 
-    // Professional profile — business partners list what they distribute today
-    // (jsonb array of partnerProductOptions labels), years in the trade and the
-    // self-reported monthly volume they move, product-wise. Volumes are money:
-    // integer paise, never floats, converted at the form boundary.
-    productsHandled: jsonb("products_handled").$type<string[]>(),
-    yearsExperience: integer("years_experience"),
-    monthlyVolumeLoansPaise: bigint("monthly_volume_loans_paise", { mode: "number" }),
-    monthlyVolumeInsurancePaise: bigint("monthly_volume_insurance_paise", { mode: "number" }),
-    monthlyVolumeMutualFundsPaise: bigint("monthly_volume_mutual_funds_paise", { mode: "number" }),
-    // referral only
+    // Referral-partner professional profile.
     occupation: text("occupation"),
     designation: text("designation"),
     experienceNote: text("experience_note"),
 
-    // address: current address (referral) / office address (business) — kept as
-    // the primary address the verified constraint already requires.
+    // Current address.
     address: text("address"),
-    residenceAddress: text("residence_address"),
 
     // Bank account for payouts/incentives
     bankName: text("bank_name"),

@@ -38,7 +38,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
   const { db } = getAuthContext();
   const [data, employees] = await Promise.all([getLead(db, id), listEmployees(db)]);
   if (!data) notFound();
-  const { lead, partnerType, notes, cases } = data;
+  const { lead, isPartnerLead, notes, cases } = data;
 
   return (
     <>
@@ -51,7 +51,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
 
       <PageTitle
         title={lead.name ?? "Unnamed lead"}
-        subtitle={`${leadKindLabels[lead.kind]} · ${channelForKind(lead.kind, partnerType)}`}
+        subtitle={`${leadKindLabels[lead.kind]} · ${channelForKind(lead.kind, isPartnerLead)}`}
         actions={<StatusBadge status={lead.status} />}
       />
 

@@ -5,7 +5,7 @@
 @source "../../../packages/ui/src";
 
 @media (prefers-reduced-motion: no-preference) {
-  /* Smooth glide for in-page anchor jumps (e.g. "Become a partner" → the cards). */
+  /* Smooth glide for in-page anchor jumps (e.g. "Become a Referral Partner" → registration). */
   html {
     scroll-behavior: smooth;
   }

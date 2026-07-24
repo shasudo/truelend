@@ -29,7 +29,7 @@ const nav: NavItem[] = [
   { label: "Overview", href: "/", icon: LayoutDashboard },
   { label: "Leads", href: "/leads", icon: Inbox },
   { label: "Loan Cases", href: "/loan-cases", icon: Banknote },
-  { label: "Partners", href: "/partners", icon: Handshake, adminOnly: true },
+  { label: "Referral Partners", href: "/partners", icon: Handshake, adminOnly: true },
   { label: "MIS", href: "/mis", icon: BarChart3, adminOnly: true },
   { label: "Team", href: "/team", icon: Users, adminOnly: true },
 ];

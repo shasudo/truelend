@@ -5,10 +5,11 @@ import { redirect } from "next/navigation";
 import { eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { schema } from "@truelend/db";
+import { notifyPartnerRegistration } from "@truelend/email";
 import { verifyTurnstile } from "@truelend/turnstile/server";
 import {
   normalizeIndianMobile,
-  partnerTypeValues,
+  referralTypeValues,
   validationMessages,
   validationPatterns,
 } from "@truelend/reference";
@@ -19,29 +20,36 @@ export type RegisterState = {
   error?: string;
 };
 
-const registerSchema = z
-  .object({
-    type: z.enum(partnerTypeValues),
-    name: z.string().trim().min(2, "Please enter your name").max(120),
-    email: z.string().trim().toLowerCase().pipe(z.email("Enter a valid email").max(254)),
-    phone: z
-      .string()
-      .trim()
-      .transform(normalizeIndianMobile)
-      .pipe(z.string().regex(validationPatterns.indianMobile, validationMessages.indianMobile)),
-    password: z.string().min(8, "Password must be at least 8 characters").max(128),
-    businessName: z.string().trim().max(160).optional(),
-    turnstileToken: z.string().max(2048).optional(),
-  })
-  .superRefine((data, context) => {
-    if (data.type === "business" && !data.businessName) {
-      context.addIssue({
-        code: "custom",
-        path: ["businessName"],
-        message: "Enter your business or firm name",
-      });
-    }
-  });
+const registerSchema = z.object({
+  name: z.string().trim().min(2, "Please enter your name").max(120),
+  dateOfBirth: z
+    .string()
+    .date("Enter a valid date of birth")
+    .refine((value) => new Date(`${value}T00:00:00Z`).getTime() < Date.now(), {
+      message: "Date of birth must be in the past",
+    }),
+  referralType: z.enum(referralTypeValues),
+  city: z.string().trim().min(2, "Please select your city").max(100),
+  pan: z
+    .string()
+    .trim()
+    .transform((value) => value.toUpperCase())
+    .pipe(
+      z
+        .string()
+        .regex(/^[A-Z]{5}[0-9]{4}[A-Z]$/, "Enter a valid PAN (e.g. ABCDE1234F)")
+        .or(z.literal("")),
+    ),
+  experienceNote: z.string().trim().max(80).optional().default(""),
+  email: z.string().trim().toLowerCase().pipe(z.email("Enter a valid email").max(254)),
+  phone: z
+    .string()
+    .trim()
+    .transform(normalizeIndianMobile)
+    .pipe(z.string().regex(validationPatterns.indianMobile, validationMessages.indianMobile)),
+  password: z.string().min(8, "Password must be at least 8 characters").max(128),
+  turnstileToken: z.string().max(2048).optional(),
+});
 
 export async function registerPartner(
   _prev: RegisterState,
@@ -57,6 +65,7 @@ export async function registerPartner(
   const d = parsed.data;
   const { auth, db, ctx, env } = getAuthContext();
   let createdUserId: string | undefined;
+  let referenceId: string | undefined;
   try {
     const requestHeaders = await headers();
     const ip = requestHeaders.get("cf-connecting-ip") ?? "anonymous";
@@ -97,27 +106,46 @@ export async function registerPartner(
     });
     createdUserId = res.user.id;
     await db.transaction(async (tx) => {
-      await tx.update(schema.user).set({ role: d.type }).where(eq(schema.user.id, createdUserId!));
+      await tx
+        .update(schema.user)
+        .set({ role: "referral" })
+        .where(eq(schema.user.id, createdUserId!));
       // The database sequence makes the reference id unique under concurrency.
       // Sequence gaps after failed transactions are expected and harmless.
-      const prefix = d.type === "business" ? "BP" : "RP";
-      await tx.insert(schema.partners).values({
-        userId: createdUserId!,
-        type: d.type,
-        status: "pending",
-        referenceId: sql`${prefix} || lpad(nextval('partners_reference_seq')::text, 6, '0')`,
-        phone: d.phone,
-        businessName: d.type === "business" ? d.businessName! : null,
-      });
+      const [createdPartner] = await tx
+        .insert(schema.partners)
+        .values({
+          userId: createdUserId!,
+          status: "pending",
+          referenceId: sql`'RP' || lpad(nextval('partners_reference_seq')::text, 6, '0')`,
+          phone: d.phone,
+          dateOfBirth: d.dateOfBirth,
+          city: d.city,
+          referralType: d.referralType,
+          pan: d.pan || null,
+          experienceNote: d.experienceNote || null,
+        })
+        .returning({ referenceId: schema.partners.referenceId });
+      referenceId = createdPartner?.referenceId;
       await tx.insert(schema.auditLog).values({
         actorId: createdUserId,
         actorEmail: d.email,
         action: "partner.register",
         entityType: "partner",
         entityId: createdUserId,
-        after: { type: d.type, status: "pending" },
+        after: { program: "referral", status: "pending" },
       });
     });
+    if (referenceId) {
+      ctx.waitUntil(
+        notifyPartnerRegistration(env, {
+          to: d.email,
+          name: d.name,
+          referenceId,
+          dashboardUrl: `${env.BETTER_AUTH_URL}/dashboard`,
+        }),
+      );
+    }
   } catch (error) {
     // better-auth owns signup and therefore cannot share the application
     // transaction. Compensate if our role/profile transaction fails.

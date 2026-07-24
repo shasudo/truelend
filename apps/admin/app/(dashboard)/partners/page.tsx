@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Card } from "@truelend/ui";
-import { partnerTypeLabel, partnerStatusLabel, formatDate } from "@truelend/reference";
+import { partnerStatusLabel, formatDate } from "@truelend/reference";
 import { schema } from "@truelend/db";
 import { PageTitle } from "@/components/page-title";
 import { requireAdmin, getAuthContext } from "@/lib/auth";
@@ -37,7 +37,7 @@ export default async function PartnersPage({ searchParams }: { searchParams: Pro
 
   return (
     <>
-      <PageTitle title="Partners" subtitle="Business & referral partner accounts" />
+      <PageTitle title="Referral Partners" subtitle="Referral Partner accounts" />
 
       <div className="mb-6 flex gap-2">
         {tabs.map((t) => (
@@ -57,11 +57,10 @@ export default async function PartnersPage({ searchParams }: { searchParams: Pro
       </div>
 
       <Card className="overflow-x-auto">
-        <table className="w-full min-w-[760px] text-left text-sm">
+        <table className="w-full min-w-[680px] text-left text-sm">
           <thead>
             <tr className="border-b border-hairline text-xs font-semibold uppercase tracking-[0.1em] text-navy-500">
               <th className="px-5 py-3 font-semibold">Name</th>
-              <th className="px-5 py-3 font-semibold">Type</th>
               <th className="px-5 py-3 font-semibold">Status</th>
               <th className="px-5 py-3 text-right font-semibold">Docs</th>
               <th className="px-5 py-3 text-right font-semibold">Leads</th>
@@ -71,8 +70,8 @@ export default async function PartnersPage({ searchParams }: { searchParams: Pro
           <tbody>
             {partners.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-5 py-12 text-center text-muted">
-                  No partners{status ? ` with status "${status}"` : ""} yet.
+                <td colSpan={5} className="px-5 py-12 text-center text-muted">
+                  No Referral Partners{status ? ` with status "${status}"` : ""} yet.
                 </td>
               </tr>
             )}
@@ -86,11 +85,10 @@ export default async function PartnersPage({ searchParams }: { searchParams: Pro
                     href={`/partners/${p.userId}`}
                     className="font-semibold text-navy-950 hover:text-red-600"
                   >
-                    {p.businessName || p.name}
+                    {p.name}
                   </Link>
                   <div className="text-xs text-muted">{p.email}</div>
                 </td>
-                <td className="px-5 py-3.5 text-navy-600">{partnerTypeLabel(p.type)}</td>
                 <td className="px-5 py-3.5">
                   <span
                     className={cx(
@@ -114,4 +112,4 @@ export default async function PartnersPage({ searchParams }: { searchParams: Pro
     </>
   );
 }
-export const metadata = { title: "Partners" };
+export const metadata = { title: "Referral Partners" };

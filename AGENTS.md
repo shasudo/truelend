@@ -24,11 +24,11 @@ TrueLend is a pnpm/Turborepo monorepo. Its three Next.js App Router applications
 deploy as separate Cloudflare Workers through OpenNext; dependency versions are centralized in
 `pnpm-workspace.yaml`.
 
-| App             | Purpose                          | Local port | Trust and storage boundary                                               |
-| --------------- | -------------------------------- | ---------: | ------------------------------------------------------------------------ |
-| `apps/website`  | Public content and lead capture  |       3000 | Public, no user-auth surface, and must never receive a KYC R2 binding    |
-| `apps/admin`    | Internal staff operations        |       3001 | Staff authorization; authenticated KYC reads and sensitive mutations     |
-| `apps/partners` | Business/referral partner portal |       3002 | Partner auth, onboarding, leads, and KYC uploads intended for private R2 |
+| App             | Purpose                         | Local port | Trust and storage boundary                                                        |
+| --------------- | ------------------------------- | ---------: | --------------------------------------------------------------------------------- |
+| `apps/website`  | Public content and lead capture |       3000 | Public, no user-auth surface, and must never receive a KYC R2 binding             |
+| `apps/admin`    | Internal staff operations       |       3001 | Staff authorization; authenticated KYC reads and sensitive mutations              |
+| `apps/partners` | Referral Partner portal         |       3002 | Referral Partner auth, onboarding, leads, and KYC uploads intended for private R2 |
 
 There is no separate API service. Route handlers and server actions are the server boundary.
 PostgreSQL is accessed with Drizzle/postgres.js through each Worker's Hyperdrive binding. Partners

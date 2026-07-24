@@ -74,7 +74,7 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
     <>
       <PageTitle
         title="Leads"
-        subtitle={`${total} ${total === 1 ? "lead" : "leads"} across website and partner channels`}
+        subtitle={`${total} ${total === 1 ? "lead" : "leads"} across website and Referral Partner channels`}
       />
 
       <Card className="mb-6 p-4">

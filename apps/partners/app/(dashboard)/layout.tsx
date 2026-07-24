@@ -11,11 +11,20 @@ export const metadata: Metadata = { robots: { index: false, follow: false } };
 
 export default async function DashboardLayout({ children }: { children: ReactNode }) {
   const { session, partner } = await requirePartnerSession();
-  if (!partner) redirect("/#partner-types");
+  if (!partner) redirect("/register/referral");
 
   if (partner.status !== "verified") {
     if (partner.submittedAt && partner.status !== "rejected") {
-      return <UnderReviewScreen name={session.user.name} email={session.user.email} />;
+      return (
+        <UnderReviewScreen
+          name={session.user.name}
+          email={session.user.email}
+          referenceId={partner.referenceId}
+          submittedAt={partner.submittedAt}
+          referralType={partner.referralType}
+          city={partner.city}
+        />
+      );
     }
     const { db } = getAuthContext();
     const documentTypes = await getPartnerDocumentTypes(db, partner.userId);
@@ -29,11 +38,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
   }
 
   return (
-    <DashboardShell
-      partnerType={partner.type}
-      referenceId={partner.referenceId}
-      name={session.user.name}
-    >
+    <DashboardShell referenceId={partner.referenceId} name={session.user.name}>
       {children}
     </DashboardShell>
   );

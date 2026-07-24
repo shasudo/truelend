@@ -13,7 +13,7 @@ export interface LeadAttribution {
   utmLastSource?: string;
   utmLastMedium?: string;
   utmLastCampaign?: string;
-  /** Partner reference id (BP…/RP…) from a shared affiliate link. */
+  /** Referral Partner reference id (RP…) from a shared affiliate link. */
   ref?: string;
 }
 
@@ -27,9 +27,9 @@ interface StoredAttribution {
 const clean = (value: unknown) =>
   typeof value === "string" ? value.trim().slice(0, 100) || undefined : undefined;
 
-// Partner reference ids are BP/RP + a sequence number; reject anything else so a
+// Referral Partner reference ids are RP + a sequence number; reject anything else so a
 // hostile ?ref= can't smuggle junk into storage or the lead payload.
-const REF_RE = /^(?:BP|RP)\d{4,}$/;
+const REF_RE = /^RP\d{4,}$/;
 function sanitizeRef(value: unknown): string | undefined {
   if (typeof value !== "string") return undefined;
   const v = value.trim().toUpperCase().slice(0, 32);
@@ -87,7 +87,7 @@ export function resolveAttribution(
   }
 
   const cleanCurrent = sanitizeTouch(current);
-  // First partner to refer keeps the credit; a later ?ref= does not overwrite.
+  // The first Referral Partner keeps the credit; a later ?ref= does not overwrite.
   const ref = stored?.ref ?? sanitizeRef(currentRef);
 
   if (hasTouch(cleanCurrent)) {

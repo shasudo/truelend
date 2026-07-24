@@ -220,7 +220,7 @@ export async function recordPayoutAction(
         .where(eq(schema.partners.userId, parsed.data.partnerId))
         .limit(1)
         .for("update");
-      if (!partner) return { error: "Partner not found." };
+      if (!partner) return { error: "Referral Partner not found." };
       if (parsed.data.kind === "paid") {
         const [sums] = await tx
           .select({

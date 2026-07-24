@@ -1,4 +1,3 @@
-import { redirect } from "next/navigation";
 import { Card } from "@truelend/ui";
 import { requirePartner } from "@/lib/auth";
 import { PartnerLeadForm } from "@/components/partner-lead-form";
@@ -14,7 +13,6 @@ export default async function ReferPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { partner } = await requirePartner();
-  if (partner.type === "business") redirect("/leads");
   const initialProduct = preselectedProduct((await searchParams).product);
 
   return (
@@ -30,7 +28,7 @@ export default async function ReferPage({
       </div>
 
       <Card className="mt-4 p-6 sm:p-8">
-        <PartnerLeadForm variant="referral" initialProduct={initialProduct} />
+        <PartnerLeadForm initialProduct={initialProduct} />
       </Card>
     </div>
   );

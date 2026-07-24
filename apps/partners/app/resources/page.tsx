@@ -5,8 +5,9 @@ import { Button, Card, Container, SectionHeading } from "@truelend/ui";
 import { PublicHeader } from "@/components/public-header";
 
 export const metadata: Metadata = {
-  title: "Partner resources",
-  description: "Training, product guidelines and marketing collateral for TrueLend partners.",
+  title: "Referral Partner resources",
+  description:
+    "Training, product guidelines and marketing collateral for TrueLend Referral Partners.",
   alternates: { canonical: "/resources" },
 };
 
@@ -29,7 +30,7 @@ const sections = [
   {
     icon: HelpCircle,
     title: "Support",
-    desc: "Status guidance, document help and a direct route to TrueLend Partner Support.",
+    desc: "Status guidance, document help and a direct route to TrueLend Referral Partner Support.",
   },
 ];
 
@@ -42,9 +43,9 @@ export default function ResourcesPage() {
           <Container className="py-16 sm:py-20">
             <SectionHeading
               as="h1"
-              eyebrow="Partner resources"
-              title="Everything you need to sell with confidence"
-              lede="Business and Referral Partners receive a tailored resource area after signing in."
+              eyebrow="Referral Partner resources"
+              title="Everything you need to refer with confidence"
+              lede="Referral Partners receive a tailored resource area after signing in."
             />
           </Container>
         </section>
@@ -62,13 +63,15 @@ export default function ResourcesPage() {
         <section className="bg-navy-900 text-white">
           <Container className="flex flex-col items-start justify-between gap-6 py-12 sm:flex-row sm:items-center">
             <div>
-              <h2 className="font-display text-2xl font-bold">Access your partner toolkit</h2>
+              <h2 className="font-display text-2xl font-bold">
+                Access your Referral Partner toolkit
+              </h2>
               <p className="mt-1 text-sm text-on-dark-muted">
                 Sign in for role-specific marketing, training, tracking and support.
               </p>
             </div>
             <Button asChild>
-              <Link href="/login">Partner sign in</Link>
+              <Link href="/login">Referral Partner sign in</Link>
             </Button>
           </Container>
         </section>

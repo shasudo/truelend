@@ -16,9 +16,7 @@ interface PartnerListRow {
   userId: string;
   name: string;
   email: string;
-  type: string;
   status: string;
-  businessName: string | null;
   createdAt: Date;
   leadCount: number;
   docCount: number;
@@ -27,7 +25,7 @@ interface PartnerListRow {
 export async function listPartners(db: Database, status?: string): Promise<PartnerListRow[]> {
   const s = status ?? null;
   const rows = (await db.$client`
-    select p.user_id, p.type, p.status, p.business_name, p.created_at, u.name, u.email,
+    select p.user_id, p.status, p.created_at, u.name, u.email,
       (select count(*)::int from leads l where l.partner_id = p.user_id) as lead_count,
       (select count(*)::int from partner_documents d where d.partner_id = p.user_id) as doc_count
     from partners p join "user" u on u.id = p.user_id
@@ -38,9 +36,7 @@ export async function listPartners(db: Database, status?: string): Promise<Partn
     userId: String(r.user_id),
     name: String(r.name),
     email: String(r.email),
-    type: String(r.type),
     status: String(r.status),
-    businessName: (r.business_name as string | null) ?? null,
     // Raw postgres.js (fetch_types:false) returns timestamptz as a string.
     createdAt: new Date(String(r.created_at)),
     leadCount: num(r.lead_count),

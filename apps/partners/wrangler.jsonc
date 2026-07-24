@@ -34,11 +34,6 @@
       "namespace_id": "1003",
       "simple": { "limit": 20, "period": 60 },
     },
-    {
-      "name": "CSV_IMPORT_RATE_LIMITER",
-      "namespace_id": "1004",
-      "simple": { "limit": 2, "period": 60 },
-    },
   ],
   "vars": {
     // Overridden to http://localhost:3002 in .dev.vars for local dev.
@@ -46,10 +41,10 @@
     // A site key is public. Pass it at runtime so the registration form can
     // render Turnstile after the Worker is deployed.
     "TURNSTILE_SITE_KEY": "0x4AAAAAAD0gmfEKR5XdzhJR",
-    // Email (Resend). RESEND_API_KEY is a secret; TEAM_EMAIL receives partner
+    // Email (Resend). RESEND_API_KEY is a secret; TEAM_EMAIL receives Referral Partner
     // lead alerts. Local development may omit delivery; production preflight
     // requires the API key.
-    "EMAIL_FROM": "TrueLend <hello@truelend.in>",
+    "EMAIL_FROM": "TrueLend Referral Partners <partner@trulend.in>",
     "TEAM_EMAIL": "shathwik@icloud.com",
   },
   // Same account-level Hyperdrive config (shared Neon pool) the other apps use.

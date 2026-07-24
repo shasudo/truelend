@@ -9,6 +9,8 @@ interface EmailEnv {
   RESEND_API_KEY?: string;
   /** e.g. "TrueLend <hello@truelend.in>" */
   EMAIL_FROM?: string;
+  /** Dedicated sender for referral-partner decisions and communication. */
+  PARTNER_EMAIL?: string;
   /** where internal alerts (new leads) are sent */
   TEAM_EMAIL?: string;
 }
@@ -22,7 +24,7 @@ interface SendEmailOptions {
 }
 
 type SendResult = { ok: true; skipped?: boolean } | { ok: false; error: string };
-type EmailContext = "bulk_lead" | "new_lead" | "partner_decision" | "password_reset";
+type EmailContext = "new_lead" | "partner_registration" | "partner_decision" | "password_reset";
 
 // Callers fire-and-forget through ctx.waitUntil, so a failed SendResult is
 // never read. Log at the send boundary so failures/skips still surface in
@@ -109,7 +111,7 @@ interface NewLeadInfo {
   city?: string | null;
   product?: string | null;
   message?: string | null;
-  /** e.g. "Website enquiry", "Business partner: Acme Distributors" */
+  /** e.g. "Website enquiry", "Referral Partner: Anil Kumar" */
   source: string;
 }
 
@@ -146,23 +148,37 @@ export function notifyNewLead(env: EmailEnv, lead: NewLeadInfo): Promise<SendRes
   });
 }
 
-/** One escaped summary for a partner CSV import (never one email per row). */
-export function notifyBulkLeadImport(
+interface PartnerRegistrationInfo {
+  to: string;
+  name: string;
+  referenceId: string;
+  dashboardUrl: string;
+}
+
+/** Confirms that a Referral Partner registration was received for review. */
+export function notifyPartnerRegistration(
   env: EmailEnv,
-  info: { source: string; count: number },
+  info: PartnerRegistrationInfo,
 ): Promise<SendResult> {
-  if (!env.EMAIL_FROM || !env.TEAM_EMAIL)
-    return Promise.resolve(logSkip("bulk-lead alert (EMAIL_FROM/TEAM_EMAIL unset)"));
+  const from = env.PARTNER_EMAIL ?? env.EMAIL_FROM;
+  if (!from)
+    return Promise.resolve(logSkip("partner-registration email (PARTNER_EMAIL/EMAIL_FROM unset)"));
+  const first = info.name.split(" ")[0] ?? info.name;
   const html = emailLayout(
-    heading("Bulk lead upload") +
+    heading("Your application has been submitted") +
+      para(`Hi ${esc(first)}, thank you for joining the TrueLend Referral Network.`) +
       para(
-        `<strong>${esc(info.source)}</strong> imported <strong>${info.count}</strong> new ${info.count === 1 ? "lead" : "leads"}.`,
-      ),
+        `Your Referral Partner reference ID is <strong>${esc(info.referenceId)}</strong>. Keep it for future support requests.`,
+      ) +
+      para(
+        "Our team will review your application and contact you if any additional information is needed.",
+      ) +
+      `<div style="margin-top:8px;">${button(info.dashboardUrl, "View application status")}</div>`,
   );
-  return sendEmail(env.RESEND_API_KEY, "bulk_lead", {
-    from: env.EMAIL_FROM,
-    to: env.TEAM_EMAIL,
-    subject: `Bulk lead import: ${info.count} ${info.count === 1 ? "lead" : "leads"}`,
+  return sendEmail(env.RESEND_API_KEY, "partner_registration", {
+    from,
+    to: info.to,
+    subject: "We received your TrueLend Referral Partner application",
     html,
   });
 }
@@ -175,35 +191,39 @@ interface PartnerDecisionInfo {
   loginUrl: string;
 }
 
-/** Emails a partner when their application is verified or rejected. */
+/** Emails a Referral Partner when their application is verified or rejected. */
 export function notifyPartnerDecision(
   env: EmailEnv,
   info: PartnerDecisionInfo,
 ): Promise<SendResult> {
-  if (!env.EMAIL_FROM) return Promise.resolve(logSkip("partner-decision email (EMAIL_FROM unset)"));
+  const from = env.PARTNER_EMAIL ?? env.EMAIL_FROM;
+  if (!from)
+    return Promise.resolve(logSkip("partner-decision email (PARTNER_EMAIL/EMAIL_FROM unset)"));
   const first = info.name.split(" ")[0] ?? info.name;
   const html =
     info.decision === "verified"
       ? emailLayout(
           heading("You're verified! 🎉") +
-            para(`Hi ${esc(first)}, your TrueLend partner account has been verified.`) +
+            para(`Hi ${esc(first)}, your TrueLend Referral Partner account has been verified.`) +
             para("You can now sign in, submit leads, and track them through to disbursal.") +
             `<div style="margin-top:8px;">${button(info.loginUrl, "Go to your dashboard")}</div>`,
         )
       : emailLayout(
           heading("Your application needs attention") +
-            para(`Hi ${esc(first)}, we couldn't verify your partner application just yet.`) +
+            para(
+              `Hi ${esc(first)}, we couldn't verify your referral-partner application just yet.`,
+            ) +
             (info.reason ? para(`<strong>Reason:</strong> ${esc(info.reason)}`) : "") +
             para("Please sign in, correct your details or documents, and resubmit.") +
             `<div style="margin-top:8px;">${button(info.loginUrl, "Update your application")}</div>`,
         );
   return sendEmail(env.RESEND_API_KEY, "partner_decision", {
-    from: env.EMAIL_FROM,
+    from,
     to: info.to,
     subject:
       info.decision === "verified"
-        ? "You're verified — welcome to TrueLend Partners"
-        : "Action needed on your TrueLend partner application",
+        ? "You're verified — welcome to TrueLend Referral Partners"
+        : "Action needed on your TrueLend Referral Partner application",
     html,
   });
 }

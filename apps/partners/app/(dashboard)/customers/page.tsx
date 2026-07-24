@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, Handshake, UsersRound } from "lucide-react";
+import { ArrowLeft, ArrowRight, Handshake } from "lucide-react";
 import { Button, Card, StatusBadge } from "@truelend/ui";
 import { formatDate, leadStatusLabels, pipelineStatusTone, productName } from "@truelend/reference";
 import { PartnerPageHeader } from "@/components/partner-page-header";
@@ -21,22 +21,16 @@ export default async function CustomersPage({
     partner.userId,
     Number.isFinite(requestedPage) ? requestedPage : 1,
   );
-  const business = partner.type === "business";
-  const submitHref = business ? "/leads" : "/refer";
 
   return (
     <div className="mx-auto max-w-7xl">
       <PartnerPageHeader
-        eyebrow={business ? "Customer book" : "Your network"}
-        title={business ? "My Customers" : "My Referrals"}
-        description={
-          business
-            ? "Every customer sourced by you, with their current TrueLend status."
-            : "A simple list of the people you introduced and where each referral stands."
-        }
+        eyebrow="Your network"
+        title="My Referrals"
+        description="A simple list of the people you introduced and where each referral stands."
         action={
           <Button asChild>
-            <Link href={submitHref}>{business ? "Submit New Loan Case" : "Refer Someone"}</Link>
+            <Link href="/refer">Refer Someone</Link>
           </Button>
         }
       />
@@ -45,15 +39,11 @@ export default async function CustomersPage({
         <div className="flex items-center justify-between border-b border-hairline px-5 py-4 sm:px-6">
           <div className="flex items-center gap-3">
             <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-sun-100 text-navy-800">
-              {business ? (
-                <UsersRound className="h-5 w-5" aria-hidden />
-              ) : (
-                <Handshake className="h-5 w-5" aria-hidden />
-              )}
+              <Handshake className="h-5 w-5" aria-hidden />
             </span>
             <div>
               <h2 className="font-display font-bold text-navy-950">
-                {result.total.toLocaleString("en-IN")} {business ? "customers" : "referrals"}
+                {result.total.toLocaleString("en-IN")} referrals
               </h2>
               <p className="text-xs text-navy-500">Newest first</p>
             </div>
@@ -63,15 +53,13 @@ export default async function CustomersPage({
         {result.rows.length === 0 ? (
           <div className="px-6 py-14 text-center">
             <p className="font-display text-lg font-bold text-navy-950">
-              {business ? "Your customer book is ready" : "Your first referral starts here"}
+              Your first referral starts here
             </p>
             <p className="mx-auto mt-2 max-w-md text-sm text-navy-600">
-              {business
-                ? "Submit a complete loan case and it will appear here for tracking."
-                : "Introduce someone who needs a loan. TrueLend will handle the rest."}
+              Introduce someone who needs a loan. TrueLend will handle the rest.
             </p>
             <Button asChild className="mt-5">
-              <Link href={submitHref}>{business ? "Submit a case" : "Refer someone"}</Link>
+              <Link href="/refer">Refer someone</Link>
             </Button>
           </div>
         ) : (
@@ -139,7 +127,7 @@ export default async function CustomersPage({
         {result.pageCount > 1 && (
           <nav
             className="flex items-center justify-between border-t border-hairline px-5 py-4 text-sm"
-            aria-label={`${business ? "Customer" : "Referral"} pages`}
+            aria-label="Referral pages"
           >
             {result.page > 1 ? (
               <Link
@@ -171,4 +159,4 @@ export default async function CustomersPage({
   );
 }
 
-export const metadata = { title: "Customers and referrals" };
+export const metadata = { title: "My referrals" };

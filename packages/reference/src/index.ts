@@ -1,5 +1,6 @@
 export * from "./app-urls";
 export * from "./catalog";
+export * from "./contact";
 export * from "./format";
 export * from "./leads";
 export * from "./partner-review";

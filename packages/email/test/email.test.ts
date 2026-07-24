@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { sendPasswordReset } from "../src/index";
+import { notifyPartnerRegistration, sendPasswordReset } from "../src/index";
 
 void test("email failures log bounded metadata without provider bodies or message content", async () => {
   const originalFetch = globalThis.fetch;
@@ -34,5 +34,45 @@ void test("email failures log bounded metadata without provider bodies or messag
   } finally {
     globalThis.fetch = originalFetch;
     console.error = originalError;
+  }
+});
+
+void test("Referral Partner registration email uses the dedicated sender", async () => {
+  const originalFetch = globalThis.fetch;
+  let requestBody: Record<string, unknown> | undefined;
+
+  globalThis.fetch = async (_input, init) => {
+    requestBody = JSON.parse(String(init?.body)) as Record<string, unknown>;
+    return new Response(null, { status: 200 });
+  };
+  try {
+    const result = await notifyPartnerRegistration(
+      {
+        RESEND_API_KEY: "synthetic-api-key",
+        EMAIL_FROM: "TrueLend <hello@example.test>",
+        PARTNER_EMAIL: "TrueLend Referral Partners <partner@example.test>",
+      },
+      {
+        to: "recipient@example.test",
+        name: "Synthetic Partner",
+        referenceId: "RP000001",
+        dashboardUrl: "https://partner.example.test/dashboard",
+      },
+    );
+
+    assert.deepEqual(result, { ok: true });
+    assert.ok(requestBody);
+    const html = requestBody.html;
+    assert.equal(typeof html, "string");
+    if (typeof html !== "string") throw new TypeError("Expected an HTML email body");
+    assert.match(html, /RP000001/);
+    assert.deepEqual(requestBody, {
+      from: "TrueLend Referral Partners <partner@example.test>",
+      to: ["recipient@example.test"],
+      subject: "We received your TrueLend Referral Partner application",
+      html,
+    });
+  } finally {
+    globalThis.fetch = originalFetch;
   }
 });

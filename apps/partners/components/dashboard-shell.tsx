@@ -7,30 +7,22 @@ import * as Dialog from "@radix-ui/react-dialog";
 import {
   BadgeIndianRupee,
   BookOpenCheck,
-  ChartNoAxesCombined,
   CircleHelp,
   FileCheck2,
-  FolderKanban,
   Handshake,
   LayoutDashboard,
   LayoutGrid,
   LibraryBig,
-  Megaphone,
   NotebookTabs,
   User,
-  UsersRound,
   LogOut,
-  Briefcase,
   UserRoundPlus,
   Menu,
   X,
 } from "lucide-react";
 import { Logo, cx } from "@truelend/ui";
-import { partnerTypeLabel } from "@truelend/reference";
 import { authClient } from "@truelend/auth/client";
 import { PartnerIdChip } from "./partner-id-chip";
-
-type PartnerType = "business" | "referral";
 
 interface NavItem {
   label: string;
@@ -105,22 +97,14 @@ function NavLinks({ groups, onNavigate }: { groups: NavGroup[]; onNavigate?: () 
   );
 }
 
-function UserCard({
-  name,
-  type,
-  referenceId,
-}: {
-  name: string;
-  type: PartnerType;
-  referenceId: string;
-}) {
+function UserCard({ name, referenceId }: { name: string; referenceId: string }) {
   const { signOut, pending, error } = useSignOut();
   return (
     <div className="border-t border-hairline p-3">
       <div className="px-2 py-1.5">
         <p className="truncate text-sm font-semibold text-navy-950">{name}</p>
         <span className="mt-1 inline-block rounded-full bg-navy-800/[0.07] px-2 py-0.5 text-xs font-semibold text-navy-600">
-          {partnerTypeLabel(type)}
+          Referral Partner
         </span>
       </div>
       <PartnerIdChip referenceId={referenceId} className="mt-2 w-full justify-between" />
@@ -143,77 +127,43 @@ function UserCard({
 }
 
 export function DashboardShell({
-  partnerType,
   referenceId,
   name,
   children,
 }: {
-  partnerType: PartnerType;
   referenceId: string;
   name: string;
   children: ReactNode;
 }) {
   const [open, setOpen] = useState(false);
-  const business = partnerType === "business";
-
-  const navGroups: NavGroup[] = business
-    ? [
-        {
-          label: "Business",
-          items: [
-            { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-            { label: "Products", href: "/products", icon: LayoutGrid },
-            { label: "Submit New Loan Case", href: "/leads", icon: Briefcase },
-            { label: "My Customers", href: "/customers", icon: UsersRound },
-            { label: "Pipeline", href: "/pipeline", icon: FolderKanban },
-            { label: "Document Status", href: "/kyc", icon: FileCheck2 },
-          ],
-        },
-        {
-          label: "Grow",
-          items: [
-            { label: "Commission", href: "/earnings", icon: BadgeIndianRupee },
-            { label: "Marketing Resources", href: "/marketing", icon: Megaphone },
-            { label: "Training", href: "/training", icon: BookOpenCheck },
-            { label: "Reports", href: "/reports", icon: ChartNoAxesCombined },
-          ],
-        },
-        {
-          label: "Account",
-          items: [
-            { label: "Support", href: "/support", icon: CircleHelp },
-            { label: "Profile", href: "/profile", icon: User },
-          ],
-        },
-      ]
-    : [
-        {
-          label: "Referrals",
-          items: [
-            { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-            { label: "Products", href: "/products", icon: LayoutGrid },
-            { label: "Refer Someone", href: "/refer", icon: UserRoundPlus },
-            { label: "My Referrals", href: "/customers", icon: Handshake },
-            { label: "Referral Status", href: "/pipeline", icon: NotebookTabs },
-            { label: "Rewards Earned", href: "/earnings", icon: BadgeIndianRupee },
-          ],
-        },
-        {
-          label: "Learn & share",
-          items: [
-            { label: "Marketing Materials", href: "/marketing", icon: LibraryBig },
-            { label: "Learn & Earn", href: "/training", icon: BookOpenCheck },
-            { label: "Support", href: "/support", icon: CircleHelp },
-          ],
-        },
-        {
-          label: "Account",
-          items: [
-            { label: "Document Status", href: "/kyc", icon: FileCheck2 },
-            { label: "Profile", href: "/profile", icon: User },
-          ],
-        },
-      ];
+  const navGroups: NavGroup[] = [
+    {
+      label: "Referrals",
+      items: [
+        { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+        { label: "Products", href: "/products", icon: LayoutGrid },
+        { label: "Refer Someone", href: "/refer", icon: UserRoundPlus },
+        { label: "My Referrals", href: "/customers", icon: Handshake },
+        { label: "Referral Status", href: "/pipeline", icon: NotebookTabs },
+        { label: "Rewards Earned", href: "/earnings", icon: BadgeIndianRupee },
+      ],
+    },
+    {
+      label: "Learn & share",
+      items: [
+        { label: "Marketing Materials", href: "/marketing", icon: LibraryBig },
+        { label: "Learn & Earn", href: "/training", icon: BookOpenCheck },
+        { label: "Support", href: "/support", icon: CircleHelp },
+      ],
+    },
+    {
+      label: "Account",
+      items: [
+        { label: "Document Status", href: "/kyc", icon: FileCheck2 },
+        { label: "Profile", href: "/profile", icon: User },
+      ],
+    },
+  ];
 
   return (
     <div className="lg:flex">
@@ -230,7 +180,7 @@ export function DashboardShell({
         <nav className="flex-1 overflow-y-auto p-3" aria-label="Main">
           <NavLinks groups={navGroups} />
         </nav>
-        <UserCard name={name} type={partnerType} referenceId={referenceId} />
+        <UserCard name={name} referenceId={referenceId} />
       </aside>
 
       <div className="flex min-h-screen flex-1 flex-col">
@@ -253,7 +203,7 @@ export function DashboardShell({
                 <div className="flex h-14 items-center justify-between border-b border-hairline px-4">
                   <Dialog.Title className="sr-only">Menu</Dialog.Title>
                   <Dialog.Description className="sr-only">
-                    Navigate the partner workspace.
+                    Navigate the referral-partner workspace.
                   </Dialog.Description>
                   <span className="text-navy-800">
                     <Logo />
@@ -270,7 +220,7 @@ export function DashboardShell({
                 <nav className="flex-1 overflow-y-auto p-3" aria-label="Main">
                   <NavLinks groups={navGroups} onNavigate={() => setOpen(false)} />
                 </nav>
-                <UserCard name={name} type={partnerType} referenceId={referenceId} />
+                <UserCard name={name} referenceId={referenceId} />
               </Dialog.Content>
             </Dialog.Portal>
           </Dialog.Root>
