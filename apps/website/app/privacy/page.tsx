@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Container } from "@truelend/ui";
+import { appUrls } from "@truelend/reference";
 import { PageHeader } from "@/components/page-header";
 
 export const metadata: Metadata = {
@@ -139,9 +140,12 @@ export default function PrivacyPage() {
               This Privacy Policy describes how [---] (“TrueLend”, “we”, “us” or “our”), acting as a
               Data Fiduciary under the Digital Personal Data Protection Act, 2023 (“DPDP Act”),
               collects, uses, discloses, stores and protects the personal data of individuals (“you”
-              or “Data Principal”) who access or use the TrueLend platform at https://truelend.in,
-              any future mobile application, or who interact with us by telephone, WhatsApp, email,
-              or through a Borrowing Advisor, including where an enquiry originates through
+              or “Data Principal”) who access or use the TrueLend platform at{" "}
+              <a href={appUrls.website} className="underline underline-offset-2">
+                {appUrls.website}
+              </a>
+              , any future mobile application, or who interact with us by telephone, WhatsApp,
+              email, or through a Borrowing Advisor, including where an enquiry originates through
               TrueLend’s Referral Partner Network (together, the “Platform”).
             </p>
             <p>

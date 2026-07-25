@@ -56,7 +56,8 @@ catalog:
 # Force-patch transitive advisories upstream hasn't bumped yet (applied tree-wide).
 # Re-check with `pnpm audit`; drop an entry once the real dependents catch up.
 overrides:
-  postcss: ">=8.5.10" # GHSA-qx2v-qp2m-jg93: build-time CSS XSS; next/tailwind pin an older 8.x
+  # GHSA-r28c-9q8g-f849: prior source-map loading may disclose arbitrary .map files.
+  postcss: "8.5.18"
   sharp: ">=0.35.0" # GHSA-f88m-g3jw-g9cj: libvips memory-safety fixes
   # GHSA-67mh-4wv8-2f99: drizzle-kit's deprecated @esbuild-kit loader pins esbuild 0.18.
   # Scope to that path only (modern tsx/wrangler esbuild untouched); 0.25.4 is already in-tree.

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Container } from "@truelend/ui";
+import { appUrls } from "@truelend/reference";
 import { PageHeader } from "@/components/page-header";
 
 export const metadata: Metadata = {
@@ -167,9 +168,11 @@ export default function TermsPage() {
               These Terms of Use (“Terms”) constitute a legally binding agreement between you
               (“User”, “you” or “your”) and [---], a company incorporated under the Companies Act,
               2013, having its registered office at [Insert Registered Office] (“TrueLend”,
-              “Company”, “we”, “us” or “our”), governing your access to and use of the website
-              https://truelend.in, any subdomains, mobile applications and related services
-              (together, the “Platform”).
+              “Company”, “we”, “us” or “our”), governing your access to and use of the website{" "}
+              <a href={appUrls.website} className="underline underline-offset-2">
+                {appUrls.website}
+              </a>
+              , any subdomains, mobile applications and related services (together, the “Platform”).
             </p>
             <p>
               By accessing or using the Platform, you agree to be bound by these Terms and by our
