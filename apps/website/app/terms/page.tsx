@@ -166,9 +166,10 @@ export default function TermsPage() {
           <div className="space-y-4">
             <p>
               These Terms of Use (“Terms”) constitute a legally binding agreement between you
-              (“User”, “you” or “your”) and [---], a company incorporated under the Companies Act,
-              2013, having its registered office at [Insert Registered Office] (“TrueLend”,
-              “Company”, “we”, “us” or “our”), governing your access to and use of the website{" "}
+              (“User”, “you” or “your”) and TRUE SOURCE DIGI TECH LLP, a limited liability
+              partnership incorporated under the Limited Liability Partnership Act, 2008, having its
+              registered office at [Insert Registered Office] (“TrueLend”, “LLP”, “we”, “us” or
+              “our”), governing your access to and use of the website{" "}
               <a href={appUrls.website} className="underline underline-offset-2">
                 {appUrls.website}
               </a>

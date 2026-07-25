@@ -87,7 +87,7 @@ const sections = [
     heading: "7. Data Security, Storage and Retention",
     paragraphs: [
       "7.1 Safeguards. We implement reasonable administrative, technical and organisational safeguards, including access controls, encryption in transit, and need-to-know access restrictions, to protect personal data against unauthorised access, loss or misuse.",
-      "7.2 Storage. Personal data is stored on secure infrastructure provided by [---] or such other hosting arrangement as TrueLend may adopt from time to time.",
+      "7.2 Storage. Personal data is stored on secure infrastructure provided by TRUE SOURCE DIGI TECH LLP or such other hosting arrangement as TrueLend may adopt from time to time.",
       "7.3 Retention. We retain personal data only for as long as necessary to fulfil the purposes described in this Policy, or as required under Applicable Law (including RBI record-retention norms), not exceeding [Retention Period], after which it is securely deleted or anonymised.",
       "7.4 Breach Notification. In the event of a personal data breach, TrueLend shall notify the Data Protection Board of India and affected Data Principals in accordance with the DPDP Act, and shall comply with applicable CERT-In incident reporting timelines.",
       "7.5 No Absolute Security. No method of transmission or storage over the internet is completely secure. While we take reasonable measures to protect your data, we cannot guarantee absolute security.",
@@ -137,10 +137,10 @@ export default function PrivacyPage() {
         <article className="space-y-10 leading-relaxed">
           <div className="space-y-4">
             <p>
-              This Privacy Policy describes how [---] (“TrueLend”, “we”, “us” or “our”), acting as a
-              Data Fiduciary under the Digital Personal Data Protection Act, 2023 (“DPDP Act”),
-              collects, uses, discloses, stores and protects the personal data of individuals (“you”
-              or “Data Principal”) who access or use the TrueLend platform at{" "}
+              This Privacy Policy describes how TRUE SOURCE DIGI TECH LLP (“TrueLend”, “we”, “us” or
+              “our”), acting as a Data Fiduciary under the Digital Personal Data Protection Act,
+              2023 (“DPDP Act”), collects, uses, discloses, stores and protects the personal data of
+              individuals (“you” or “Data Principal”) who access or use the TrueLend platform at{" "}
               <a href={appUrls.website} className="underline underline-offset-2">
                 {appUrls.website}
               </a>
