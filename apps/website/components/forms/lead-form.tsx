@@ -18,31 +18,34 @@ import { site } from "@/content/site";
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 const UTM_STORAGE_KEY = "tl-utm";
 
-function useUtm(): LeadAttribution {
-  const [utm, setUtm] = useState<LeadAttribution>({});
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    try {
-      const resolved = resolveAttribution(
-        window.localStorage.getItem(UTM_STORAGE_KEY),
-        touchFromSearch(params),
-        undefined,
-        refFromSearch(params),
-      );
-      if (resolved.serialized) {
-        window.localStorage.setItem(UTM_STORAGE_KEY, resolved.serialized);
-      } else {
-        window.localStorage.removeItem(UTM_STORAGE_KEY);
-      }
-      setUtm(resolved.fields);
-    } catch {
-      // Storage may be disabled by browser policy; attribution stays optional.
-      setUtm(
-        resolveAttribution(null, touchFromSearch(params), undefined, refFromSearch(params)).fields,
-      );
+function readAttribution(): LeadAttribution {
+  const params = new URLSearchParams(window.location.search);
+  try {
+    const resolved = resolveAttribution(
+      window.localStorage.getItem(UTM_STORAGE_KEY),
+      touchFromSearch(params),
+      undefined,
+      refFromSearch(params),
+    );
+    if (resolved.serialized) {
+      window.localStorage.setItem(UTM_STORAGE_KEY, resolved.serialized);
+    } else {
+      window.localStorage.removeItem(UTM_STORAGE_KEY);
     }
+    return resolved.fields;
+  } catch {
+    // Storage may be disabled by browser policy; current-page attribution still applies.
+    return resolveAttribution(null, touchFromSearch(params), undefined, refFromSearch(params))
+      .fields;
+  }
+}
+
+function useAttribution() {
+  useEffect(() => {
+    // Capture the referral as soon as the page hydrates so it survives navigation.
+    readAttribution();
   }, []);
-  return utm;
+  return readAttribution;
 }
 
 export function useLeadForm<T extends FieldValues>(
@@ -50,7 +53,7 @@ export function useLeadForm<T extends FieldValues>(
   defaultValues: DefaultValues<T>,
 ) {
   const form = useForm<T>({ resolver, defaultValues });
-  const utm = useUtm();
+  const getAttribution = useAttribution();
   const [succeeded, setSucceeded] = useState(false);
   const [rootError, setRootError] = useState<string>();
   const [turnstileKey, setTurnstileKey] = useState(0);
@@ -63,7 +66,9 @@ export function useLeadForm<T extends FieldValues>(
   const onSubmit = form.handleSubmit(async (values) => {
     setRootError(undefined);
     try {
-      const result = await submitLead({ ...values, ...utm, turnstileToken });
+      // Resolve again at submit time so a fast submission cannot race hydration
+      // and lose the Referral Partner reference from the current URL.
+      const result = await submitLead({ ...values, ...getAttribution(), turnstileToken });
       if (result.ok) {
         setSucceeded(true);
         return;

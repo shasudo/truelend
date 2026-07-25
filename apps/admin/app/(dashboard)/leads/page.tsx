@@ -3,6 +3,7 @@ import { Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button, Card, Input, Select, cx } from "@truelend/ui";
 import {
   products,
+  channelForKind,
   leadKindLabels,
   leadStatusLabels,
   productName,
@@ -174,7 +175,9 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
                   {lead.email && <div className="text-xs text-muted">{lead.email}</div>}
                 </td>
                 <td className="px-5 py-3.5 text-navy-600">{productName(lead.productSlug)}</td>
-                <td className="px-5 py-3.5 text-navy-600">{leadKindLabels[lead.kind]}</td>
+                <td className="px-5 py-3.5 text-navy-600">
+                  {channelForKind(lead.kind, Boolean(lead.partnerId))}
+                </td>
                 <td className="px-5 py-3.5">
                   <StatusBadge status={lead.status} />
                 </td>

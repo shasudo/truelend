@@ -16,6 +16,8 @@ import {
 } from "@truelend/reference";
 import { PageTitle } from "@/components/page-title";
 import { PayoutForm } from "@/components/payout-form";
+import { PartnerDetailsForm } from "@/components/partner-details-form";
+import { PartnerDocumentUpload } from "@/components/partner-document-upload";
 import { requireAdmin, getAuthContext } from "@/lib/auth";
 import { getPartnerDetail } from "@/lib/partner-queries";
 import {
@@ -187,6 +189,18 @@ export default async function PartnerDetailPage({ params }: { params: Promise<{ 
                 </li>
               ))}
             </ul>
+            <div className="mt-6 border-t border-hairline pt-5">
+              <h3 className="font-display text-base font-bold text-navy-950">Upload documents</h3>
+              <p className="mt-1 text-sm text-muted">
+                Replacing a verified partner’s document returns their application to review.
+              </p>
+              <div className="mt-4">
+                <PartnerDocumentUpload
+                  partnerId={partner.userId}
+                  uploadedDocumentTypes={documents.map((document) => document.docType)}
+                />
+              </div>
+            </div>
           </Card>
 
           <Card className="p-6">
@@ -209,6 +223,16 @@ export default async function PartnerDetailPage({ params }: { params: Promise<{ 
         </div>
 
         <div className="space-y-6">
+          <Card className="p-6">
+            <h2 className="font-display text-lg font-bold text-navy-950">Edit partner details</h2>
+            <p className="mt-2 text-sm text-muted">
+              Update the Referral Partner’s profile, KYC, and payout information.
+            </p>
+            <div className="mt-5">
+              <PartnerDetailsForm partner={partner} />
+            </div>
+          </Card>
+
           {partner.status !== "verified" && (
             <Card className="p-6">
               <h2 className="font-display text-lg font-bold text-navy-950">Verification</h2>

@@ -7,9 +7,17 @@ import { z } from "zod";
 import { schema, type Database } from "@truelend/db";
 import { notifyPartnerDecision } from "@truelend/email";
 import { getAuthContext, getMutationContext } from "./auth";
-import { evaluatePartnerApplication, formatPaise, rupeesToPaise } from "@truelend/reference";
+import {
+  evaluatePartnerApplication,
+  formatPaise,
+  normalizeIndianMobile,
+  rupeesToPaise,
+  validationMessages,
+  validationPatterns,
+} from "@truelend/reference";
 
 export type PayoutResult = { ok?: boolean; error?: string };
+export type PartnerDetailsResult = { ok?: boolean; error?: string };
 
 async function admin() {
   const { db, ctx, user } = await getMutationContext();
@@ -35,6 +43,170 @@ async function partnerContact(db: Database, partnerId: string) {
 }
 
 const idSchema = z.object({ partnerId: z.string().min(1) });
+
+const emptyToNull = (value: string) => {
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+};
+
+const isIsoDate = (value: string) => {
+  if (value.length === 0) return true;
+  const date = new Date(`${value}T00:00:00Z`);
+  return !Number.isNaN(date.valueOf()) && date.toISOString().slice(0, 10) === value;
+};
+
+const optionalText = (max: number) => z.string().trim().max(max).transform(emptyToNull);
+
+const optionalUpper = (pattern: RegExp, message: string) =>
+  z
+    .string()
+    .trim()
+    .transform((value) => (value.length > 0 ? value.toUpperCase() : null))
+    .pipe(z.string().regex(pattern, message).nullable());
+
+const partnerDetailsSchema = z.object({
+  partnerId: z.string().min(1),
+  phone: z
+    .string()
+    .trim()
+    .transform((value) => (value.length > 0 ? normalizeIndianMobile(value) : null))
+    .pipe(
+      z.string().regex(validationPatterns.indianMobile, validationMessages.indianMobile).nullable(),
+    ),
+  dateOfBirth: z
+    .string()
+    .trim()
+    .regex(/^$|^\d{4}-\d{2}-\d{2}$/, "Enter a valid date")
+    .refine(isIsoDate, "Enter a valid date")
+    .transform(emptyToNull),
+  city: optionalText(120),
+  referralType: optionalText(120),
+  occupation: optionalText(120),
+  designation: optionalText(120),
+  experienceNote: optionalText(500),
+  pan: optionalUpper(/^[A-Z]{5}[0-9]{4}[A-Z]$/, "Enter a valid PAN (e.g. ABCDE1234F)"),
+  address: optionalText(500),
+  bankName: optionalText(120),
+  accountHolder: optionalText(160),
+  accountNumber: z
+    .string()
+    .trim()
+    .transform((value) => (value.length > 0 ? value : null))
+    .pipe(
+      z
+        .string()
+        .regex(/^\d{9,18}$/, "Enter a valid account number")
+        .nullable(),
+    ),
+  bankBranch: optionalText(120),
+  ifsc: optionalUpper(/^[A-Z]{4}0[A-Z0-9]{6}$/, "Enter a valid IFSC (e.g. HDFC0001234)"),
+  nomineeName: optionalText(160),
+  nomineeAadhaar: z
+    .string()
+    .trim()
+    .transform((value) => {
+      const normalized = value.replace(/\s/g, "");
+      return normalized.length > 0 ? normalized : null;
+    })
+    .pipe(
+      z
+        .string()
+        .regex(/^\d{12}$/, "Enter a valid 12-digit Aadhaar")
+        .nullable(),
+    ),
+  nomineePhone: z
+    .string()
+    .trim()
+    .transform((value) => (value.length > 0 ? normalizeIndianMobile(value) : null))
+    .pipe(
+      z.string().regex(validationPatterns.indianMobile, validationMessages.indianMobile).nullable(),
+    ),
+});
+
+const kycFields = [
+  "pan",
+  "address",
+  "bankName",
+  "accountHolder",
+  "accountNumber",
+  "bankBranch",
+  "ifsc",
+  "nomineeName",
+  "nomineeAadhaar",
+  "nomineePhone",
+] as const;
+
+export async function updatePartnerDetailsAction(
+  _prev: PartnerDetailsResult,
+  formData: FormData,
+): Promise<PartnerDetailsResult> {
+  const { db, ctx, isAdmin, adminId, adminEmail } = await admin();
+  try {
+    if (!isAdmin || !adminId) return { error: "Not authorized." };
+    const parsed = partnerDetailsSchema.safeParse(Object.fromEntries(formData));
+    if (!parsed.success) {
+      return { error: parsed.error.issues[0]?.message ?? "Please check the fields." };
+    }
+    const details = parsed.data;
+    const saved = await db.transaction(async (tx) => {
+      const [partner] = await tx
+        .select()
+        .from(schema.partners)
+        .where(eq(schema.partners.userId, details.partnerId))
+        .limit(1)
+        .for("update");
+      if (!partner) return false;
+
+      const changedKycFields = kycFields.filter((field) => partner[field] !== details[field]);
+      const requiresReview = partner.status === "verified" && changedKycFields.length > 0;
+      const now = new Date();
+      await tx
+        .update(schema.partners)
+        .set({
+          phone: details.phone,
+          dateOfBirth: details.dateOfBirth,
+          city: details.city,
+          referralType: details.referralType,
+          occupation: details.occupation,
+          designation: details.designation,
+          experienceNote: details.experienceNote,
+          pan: details.pan,
+          address: details.address,
+          bankName: details.bankName,
+          accountHolder: details.accountHolder,
+          accountNumber: details.accountNumber,
+          bankBranch: details.bankBranch,
+          ifsc: details.ifsc,
+          nomineeName: details.nomineeName,
+          nomineeAadhaar: details.nomineeAadhaar,
+          nomineePhone: details.nomineePhone,
+          ...(requiresReview
+            ? { status: "pending" as const, submittedAt: now, verifiedBy: null, verifiedAt: null }
+            : {}),
+        })
+        .where(eq(schema.partners.userId, details.partnerId));
+      await tx.insert(schema.auditLog).values({
+        actorId: adminId,
+        actorEmail: adminEmail,
+        action: "partner.admin_details_update",
+        entityType: "partner",
+        entityId: details.partnerId,
+        // Names only: the audit log must not duplicate KYC, bank, or Aadhaar values.
+        after: {
+          fields: Object.keys(details).filter((field) => field !== "partnerId"),
+          reviewReset: requiresReview,
+        },
+      });
+      return true;
+    });
+    if (!saved) return { error: "Referral Partner not found." };
+    revalidatePath(`/partners/${details.partnerId}`);
+    revalidatePath("/partners");
+    return { ok: true };
+  } finally {
+    ctx.waitUntil(db.$client.end());
+  }
+}
 
 export async function approvePartnerAction(formData: FormData) {
   const { db, ctx, env, isAdmin, adminId, adminEmail } = await admin();

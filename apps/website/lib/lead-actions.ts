@@ -178,10 +178,15 @@ export async function submitLead(input: unknown): Promise<SubmitResult> {
         entityType: "lead",
         entityId: lead?.id,
         after: {
-          source: partnerId ? "referral_partner_link" : "website_form",
+          source: partnerId
+            ? "referral_partner_link"
+            : refCode
+              ? "unresolved_referral_partner_link"
+              : "website_form",
           kind: d.kind,
           contactReason: d.kind === "contact" ? d.reason : undefined,
-          partnerRef: partnerId ? refCode : undefined,
+          partnerRef: refCode,
+          partnerResolved: refCode ? Boolean(partnerId) : undefined,
           consentVersion: customerConsentVersion,
         },
       });
