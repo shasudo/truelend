@@ -12,7 +12,7 @@ export default function ForgotPasswordPage() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center gap-8 px-5 py-12">
       <div className="text-navy-800">
-        <Logo tagline />
+        <Logo />
       </div>
       <Card className="w-full max-w-sm p-8">
         <h1 className="font-display text-xl font-extrabold tracking-tight text-navy-950">

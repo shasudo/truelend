@@ -12,7 +12,7 @@ export default function LoginPage() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center gap-8 px-5 py-12">
       <Link href="/" aria-label="TrueLend Referral Partners home" className="text-navy-800">
-        <Logo tagline />
+        <Logo />
       </Link>
       <Card className="w-full max-w-sm p-8">
         <h1 className="font-display text-xl font-extrabold tracking-tight text-navy-950">

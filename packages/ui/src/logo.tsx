@@ -36,23 +36,17 @@ export function LogoMark({ className }: { className?: string }) {
 
 interface LogoProps {
   className?: string;
-  tagline?: boolean;
 }
 
 /** Inherits color: wrap in `text-navy-800` on paper, `text-white` on navy. */
-export function Logo({ className, tagline = false }: LogoProps) {
+export function Logo({ className }: LogoProps) {
   return (
     <span className={cx("inline-flex items-center gap-2.5", className)}>
-      <LogoMark className={tagline ? "h-11 w-11" : "h-9 w-9"} />
+      <LogoMark className="h-9 w-9" />
       <span className="font-display leading-none">
         <span className="block text-[1.45rem] font-extrabold tracking-tight">
           True<span className="font-medium">Lend</span>
         </span>
-        {tagline && (
-          <span className="mt-1 block font-sans text-[0.5rem] font-medium uppercase tracking-[0.22em] opacity-65">
-            Before You Borrow. Think <span className="text-red-600 opacity-100">TrueLend.</span>
-          </span>
-        )}
       </span>
     </span>
   );

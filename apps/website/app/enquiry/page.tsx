@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -126,7 +127,21 @@ export default async function EnquiryPage({
         ))}
       </PageHeader>
 
-      <Container className="grid gap-8 py-16 sm:py-20 lg:grid-cols-[1.35fr_0.8fr]">
+      <Container className="py-8 sm:py-10">
+        <figure className="overflow-hidden rounded-3xl border border-hairline bg-paper shadow-sm">
+          <Image
+            src="/images/pages/enquiry-advisor-hero.png"
+            alt="A borrower reviewing options with a TrueLend Borrowing Advisor on a video call"
+            width={1672}
+            height={941}
+            priority
+            sizes="(min-width: 1280px) 1200px, (min-width: 640px) calc(100vw - 4rem), calc(100vw - 2rem)"
+            className="h-56 w-full object-cover object-center sm:h-80 lg:h-96"
+          />
+        </figure>
+      </Container>
+
+      <Container className="grid gap-8 pb-16 pt-8 sm:pb-20 sm:pt-10 lg:grid-cols-[1.35fr_0.8fr]">
         <Card className="p-7 sm:p-9">
           <EnquiryForm defaultProduct={defaultProduct} />
         </Card>

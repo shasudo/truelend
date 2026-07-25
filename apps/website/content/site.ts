@@ -5,7 +5,6 @@ import { appUrls, contactPhone } from "@truelend/reference";
 export const site = {
   name: "TrueLend",
   tagline: "Lending Choices, Simplified.",
-  slogan: "Before You Borrow. Think TrueLend.",
   url: appUrls.website,
   // Partner site landing page. Deep-linking to /dashboard bounces logged-out
   // visitors to sign-in; the landing page is the correct public entry point.

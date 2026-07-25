@@ -15,7 +15,7 @@ export function PublicHeader() {
       </a>
       <Container className="flex h-[78px] max-w-[1240px] items-center justify-between gap-5">
         <Link href="/" aria-label="TrueLend Referral Partners home" className="text-navy-800">
-          <Logo tagline />
+          <Logo />
         </Link>
         <nav
           className="hidden flex-1 items-center justify-center gap-7 whitespace-nowrap xl:flex"

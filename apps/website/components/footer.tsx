@@ -30,7 +30,7 @@ export function Footer() {
       <Container className="grid gap-12 py-14 lg:grid-cols-[1.4fr_1fr_1fr_1.2fr]">
         <div>
           <Link href="/" aria-label="TrueLend home" className="text-white">
-            <Logo tagline />
+            <Logo />
           </Link>
           <p className="mt-5 max-w-xs text-sm leading-relaxed text-on-dark-muted">
             TrueLend is a borrowing advisory platform that helps individuals and businesses compare

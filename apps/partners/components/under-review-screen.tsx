@@ -75,7 +75,7 @@ export function UnderReviewScreen({
       <header className="border-b border-hairline bg-white/95 backdrop-blur">
         <Container className="flex h-[78px] max-w-[1240px] items-center justify-between gap-6">
           <span className="text-navy-800">
-            <Logo tagline />
+            <Logo />
           </span>
           <nav className="hidden items-center gap-8 text-sm font-medium text-navy-800 lg:flex">
             <Link href="/#how-it-works" className="hover:text-red-600">
