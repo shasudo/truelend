@@ -51,10 +51,10 @@ export const getAuthContext = cache((): AuthContext => {
   return { db, auth, ctx, env };
 });
 
-async function getSession(): Promise<PartnerSession | null> {
+export const getOptionalPartnerSession = cache(async (): Promise<PartnerSession | null> => {
   const { auth } = getAuthContext();
   return auth.api.getSession({ headers: await headers() });
-}
+});
 
 interface PartnerSessionContext {
   session: PartnerSession;
@@ -63,7 +63,7 @@ interface PartnerSessionContext {
 
 export const requirePartnerSession = cache(async (): Promise<PartnerSessionContext> => {
   const { db } = getAuthContext();
-  const session = await getSession();
+  const session = await getOptionalPartnerSession();
   if (!session) redirect("/login");
   const rows = await db
     .select()
@@ -84,7 +84,7 @@ export async function requirePartnerApi(): Promise<
 > {
   const { db, ctx, env } = getAuthContext();
   try {
-    const session = await getSession();
+    const session = await getOptionalPartnerSession();
     if (!session) {
       ctx.waitUntil(db.$client.end());
       return new Response("Unauthorized", { status: 401 });

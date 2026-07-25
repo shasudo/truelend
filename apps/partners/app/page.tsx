@@ -24,7 +24,7 @@ import {
   WalletCards,
 } from "lucide-react";
 import { Button, Card, Container } from "@truelend/ui";
-import { contactPhone, referralPartnerEmail } from "@truelend/reference";
+import { appUrls, contactPhone, referralPartnerEmail } from "@truelend/reference";
 import { LoanProductsSection } from "@/components/loan-products-section";
 import { PublicHeader } from "@/components/public-header";
 
@@ -191,16 +191,16 @@ export default function Home() {
 
       <main id="main-content" tabIndex={-1}>
         <section className="overflow-hidden border-b border-hairline bg-white">
-          <Container className="grid max-w-[1240px] items-center gap-8 py-10 lg:min-h-[438px] lg:grid-cols-[470px_210px_minmax(0,400px)] lg:py-4">
+          <Container className="grid max-w-[1240px] items-center gap-8 py-10 lg:min-h-[438px] lg:grid-cols-[minmax(0,1.15fr)_minmax(190px,0.65fr)_minmax(230px,0.8fr)] lg:py-4 xl:grid-cols-[520px_210px_minmax(0,350px)]">
             <div>
               <p className="inline-flex items-center gap-2 rounded-full bg-red-50 px-4 py-1.5 text-xs font-bold text-red-700">
                 <Rocket className="h-3.5 w-3.5" aria-hidden />
                 Now onboarding our first 1,000 Referral Partners
               </p>
-              <h1 className="mt-4 font-display text-[2.65rem] font-extrabold leading-[1.08] tracking-tight text-navy-950">
+              <h1 className="mt-4 font-display text-[2.4rem] font-extrabold leading-[1.08] tracking-tight text-navy-950 min-[360px]:text-[2.65rem]">
                 <span className="block">Help People</span>
-                <span className="block lg:whitespace-nowrap">Get the Right Loan.</span>
-                <span className="block text-red-600 lg:whitespace-nowrap">
+                <span className="block xl:whitespace-nowrap">Get the Right Loan.</span>
+                <span className="block text-red-600 xl:whitespace-nowrap">
                   Earn When They Succeed.
                 </span>
               </h1>
@@ -226,7 +226,7 @@ export default function Home() {
               </p>
             </div>
 
-            <ol className="relative space-y-1">
+            <ol className="relative space-y-3 lg:space-y-1">
               {journey.map((item, index) => (
                 <li key={item.title} className="relative flex gap-3">
                   <div className="flex flex-col items-center">
@@ -243,8 +243,8 @@ export default function Home() {
                     )}
                   </div>
                   <div>
-                    <h2 className="font-display text-xs font-bold text-navy-950">{item.title}</h2>
-                    <p className="mt-0.5 text-[0.65rem] leading-4 text-navy-600">
+                    <h2 className="font-display text-sm font-bold text-navy-950">{item.title}</h2>
+                    <p className="mt-0.5 text-xs font-medium leading-5 text-navy-600 lg:text-[0.7rem] lg:leading-4">
                       {item.description}
                     </p>
                   </div>
@@ -253,10 +253,6 @@ export default function Home() {
             </ol>
 
             <div className="relative mx-auto min-h-[420px] w-full max-w-[400px] self-end">
-              <div
-                aria-hidden
-                className="absolute inset-x-3 bottom-0 top-10 rounded-[48%_48%_20%_20%] bg-red-50"
-              />
               <Image
                 src="/images/referral-hero-v2.png"
                 alt="A TrueLend Referral Partner using his phone"
@@ -269,7 +265,7 @@ export default function Home() {
                 <p className="flex items-center gap-2 font-display text-xs font-bold text-red-600">
                   <ShieldCheck className="h-4 w-4" aria-hidden /> Built on trust
                 </p>
-                <ul className="mt-2 space-y-1 text-[0.65rem] text-navy-700">
+                <ul className="mt-2 space-y-1 text-xs text-navy-700">
                   {trustPoints.map((point) => (
                     <li key={point} className="flex gap-2">
                       <Check className="h-3.5 w-3.5 shrink-0 text-emerald-700" aria-hidden />
@@ -285,12 +281,12 @@ export default function Home() {
         <LoanProductsSection />
 
         <section id="how-it-works" className="scroll-mt-20 border-b border-hairline bg-red-50/30">
-          <Container className="max-w-[1240px] py-4">
+          <Container className="max-w-[1240px] py-12 sm:py-14">
             <div className="text-center">
               <h2 className="font-display text-2xl font-extrabold text-navy-950">How It Works</h2>
               <p className="mt-1 text-xs text-navy-600">Simple steps. Maximum impact.</p>
             </div>
-            <ol className="mt-5 grid gap-3 md:grid-cols-3 xl:grid-cols-5">
+            <ol className="mt-6 grid gap-5 md:grid-cols-3 xl:grid-cols-5">
               {steps.map((step, index) => (
                 <li key={step.title} className="relative grid grid-cols-[48px_1fr] gap-3 p-2">
                   <span className="absolute -top-2 left-0 flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-[0.6rem] font-bold text-white">
@@ -300,33 +296,29 @@ export default function Home() {
                     <step.icon className="h-5 w-5" aria-hidden />
                   </span>
                   <div>
-                    <h3 className="font-display text-xs font-bold leading-4 text-navy-950">
+                    <h3 className="font-display text-sm font-bold leading-5 text-navy-950">
                       {step.title}
                     </h3>
-                    <p className="mt-1 text-[0.65rem] leading-4 text-navy-600">
-                      {step.description}
-                    </p>
+                    <p className="mt-1 text-xs leading-5 text-navy-600">{step.description}</p>
                   </div>
                 </li>
               ))}
             </ol>
 
-            <div className="mt-4 grid gap-2 rounded-2xl border border-hairline bg-white p-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+            <div className="mt-6 grid gap-3 rounded-2xl border border-hairline bg-white p-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
               {advantages.map((advantage) => (
                 <div
                   key={advantage.title}
-                  className="grid grid-cols-[32px_1fr] gap-2 rounded-xl p-2"
+                  className="grid grid-cols-[36px_1fr] gap-3 rounded-xl p-2"
                 >
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-red-50">
+                  <span className="flex h-9 w-9 items-center justify-center rounded-full bg-red-50">
                     <advantage.icon className="h-4 w-4 text-red-600" aria-hidden />
                   </span>
                   <div>
-                    <h3 className="font-display text-[0.65rem] font-bold text-navy-950">
+                    <h3 className="font-display text-xs font-bold text-navy-950">
                       {advantage.title}
                     </h3>
-                    <p className="mt-1 text-[0.6rem] leading-4 text-navy-600">
-                      {advantage.description}
-                    </p>
+                    <p className="mt-1 text-xs leading-5 text-navy-600">{advantage.description}</p>
                   </div>
                 </div>
               ))}
@@ -518,6 +510,12 @@ export default function Home() {
             <Link href="/login" className="hover:text-navy-800">
               Referral Partner sign in
             </Link>
+            <a href={`${appUrls.website}/terms`} className="hover:text-navy-800">
+              Terms of Use
+            </a>
+            <a href={`${appUrls.website}/privacy`} className="hover:text-navy-800">
+              Privacy Policy
+            </a>
           </nav>
         </Container>
       </footer>

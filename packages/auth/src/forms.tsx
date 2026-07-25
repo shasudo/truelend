@@ -81,18 +81,15 @@ export function ForgotPasswordForm() {
     setPending(true);
     try {
       const form = new FormData(e.currentTarget);
-      const { error } = await authClient.requestPasswordReset({
+      await authClient.requestPasswordReset({
         email: String(form.get("email")),
         redirectTo: "/reset-password",
       });
-      if (error) {
-        setError("The request could not be completed. Please try again.");
-        return;
-      }
-      // The same response is shown for existing and unknown accounts.
+      // Keep the browser response identical for unknown accounts and server-side
+      // delivery failures. The server still fails closed and records the failure.
       setSent(true);
     } catch {
-      setError("The request could not be completed. Please try again.");
+      setError("Password recovery is temporarily unavailable. Please try again.");
     } finally {
       setPending(false);
     }

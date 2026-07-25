@@ -1,6 +1,6 @@
 import { appUrls, contactPhone } from "@truelend/reference";
 
-// Approval state and the visible draft notice are owned by content/approval.ts.
+// Approval state is owned by content/approval.ts.
 
 export const site = {
   name: "TrueLend",

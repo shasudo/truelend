@@ -105,7 +105,7 @@ export default async function DashboardPage() {
       <section className="relative overflow-hidden rounded-2xl bg-sun-400 px-6 py-7 text-navy-950 shadow-[0_28px_70px_-50px_rgba(7,13,36,0.7)] sm:px-8 sm:py-9">
         <div
           aria-hidden
-          className="absolute -right-12 -top-20 h-72 w-72 rotate-12 rounded-[3rem] bg-red-600"
+          className="absolute -right-12 -top-20 hidden h-72 w-72 rotate-12 rounded-[3rem] bg-red-600 sm:block"
         />
         <div
           aria-hidden
@@ -122,7 +122,7 @@ export default async function DashboardPage() {
               className="shadow-[0_18px_36px_-30px_rgba(7,13,36,0.9)]"
             />
           </div>
-          <h1 className="mt-4 max-w-2xl text-balance font-display text-3xl font-extrabold leading-tight tracking-tight sm:text-4xl">
+          <h1 className="mt-4 max-w-2xl text-balance font-display text-2xl font-extrabold leading-tight tracking-tight min-[380px]:text-3xl sm:text-4xl">
             Welcome, {firstName}. <span className="text-red-600">Your network can open doors.</span>
           </h1>
           <p className="mt-3 max-w-2xl text-sm font-medium leading-relaxed text-navy-800 sm:text-base">
@@ -150,7 +150,7 @@ export default async function DashboardPage() {
             Your referral progress
           </h2>
         </div>
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-6">
+        <div className="grid grid-cols-1 gap-3 min-[380px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
           <StatTile label="Referrals" value={metrics.totalLeads.toLocaleString("en-IN")} />
           <StatTile
             label="In progress"

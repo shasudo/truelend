@@ -29,7 +29,10 @@ export default async function MarketingPage() {
       />
 
       <section className="relative mt-6 overflow-hidden rounded-2xl bg-sun-400 p-6 text-navy-950 sm:p-8">
-        <div aria-hidden className="absolute -right-8 -top-16 h-56 w-32 rotate-12 bg-red-600" />
+        <div
+          aria-hidden
+          className="absolute -right-8 -top-16 hidden h-56 w-32 rotate-12 bg-red-600 sm:block"
+        />
         <div className="relative max-w-2xl">
           <p className="text-xs font-extrabold uppercase tracking-[0.16em]">
             TrueLend Referral Partner Network
@@ -67,7 +70,7 @@ export default async function MarketingPage() {
                     <Share2 className="h-4.5 w-4.5" aria-hidden />
                   )}
                 </span>
-                <span className="text-[0.65rem] font-bold uppercase tracking-[0.12em] text-muted">
+                <span className="text-xs font-bold uppercase tracking-[0.12em] text-muted">
                   Template {index + 1}
                 </span>
               </div>

@@ -1,11 +1,17 @@
 "use client";
 
 import { useActionState, useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { ArrowLeft, ArrowRight, Info, LockKeyhole, ShieldCheck } from "lucide-react";
 import { Turnstile } from "@marsidev/react-turnstile";
 import { Button, Field, Input, Select } from "@truelend/ui";
-import { referralTypeOptions } from "@truelend/reference";
+import { appUrls, referralPartnerEmail, referralTypeOptions } from "@truelend/reference";
 import { registerPartner, type RegisterState } from "@/lib/signup-actions";
+import {
+  registrationErrorNeedsNewVerification,
+  registrationErrorOffersAccountHelp,
+  type RegistrationStep,
+} from "@/lib/registration-flow";
 
 const steps = ["Basic Details", "Contact Details", "Verification", "Complete"] as const;
 
@@ -30,10 +36,20 @@ const experienceOptions = [
   "More than 10 years",
 ] as const;
 
-type RegistrationStep = 1 | 2 | 3;
+export interface RegistrationAccountSummary {
+  email: string;
+  name: string;
+}
 
-export function RegisterForm({ siteKey }: { siteKey?: string }) {
+export function RegisterForm({
+  siteKey,
+  account,
+}: {
+  siteKey?: string;
+  account?: RegistrationAccountSummary;
+}) {
   const formRef = useRef<HTMLFormElement>(null);
+  const errorRef = useRef<HTMLDivElement>(null);
   const [step, setStep] = useState<RegistrationStep>(1);
   const [turnstileToken, setTurnstileToken] = useState<string>();
   const [turnstileKey, setTurnstileKey] = useState(0);
@@ -42,10 +58,20 @@ export function RegisterForm({ siteKey }: { siteKey?: string }) {
 
   useEffect(() => {
     if (!state.error) return;
-    setStep(3);
-    setTurnstileToken(undefined);
-    setTurnstileKey((key) => key + 1);
-  }, [state]);
+    setStep(state.step ?? 3);
+    if (registrationErrorNeedsNewVerification(state.code)) {
+      setTurnstileToken(undefined);
+      setTurnstileKey((key) => key + 1);
+    }
+    for (const [name, value] of Object.entries(state.values ?? {})) {
+      const control = formRef.current?.elements.namedItem(name);
+      if (control instanceof HTMLInputElement || control instanceof HTMLSelectElement) {
+        control.value = value;
+      }
+    }
+    const frame = window.requestAnimationFrame(() => errorRef.current?.focus());
+    return () => window.cancelAnimationFrame(frame);
+  }, [state.code, state.error, state.step, state.values]);
 
   function advance(from: RegistrationStep, to: RegistrationStep) {
     const section = formRef.current?.querySelector<HTMLElement>(`[data-step="${from}"]`);
@@ -83,7 +109,7 @@ export function RegisterForm({ siteKey }: { siteKey?: string }) {
                 {number}
               </span>
               <span
-                className={`mt-2 block text-[0.65rem] font-semibold ${
+                className={`mt-2 block text-xs font-semibold ${
                   active ? "text-red-600" : "text-navy-600"
                 }`}
               >
@@ -94,19 +120,70 @@ export function RegisterForm({ siteKey }: { siteKey?: string }) {
         })}
       </ol>
 
+      {account && (
+        <div className="mt-6 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-navy-700">
+          <p className="font-semibold text-navy-950">Continue your signed-in registration</p>
+          <p className="mt-1 break-words">
+            Finish the Referral Partner profile for <strong>{account.email}</strong>.
+          </p>
+        </div>
+      )}
+
+      {state.error && (
+        <div
+          ref={errorRef}
+          role="alert"
+          tabIndex={-1}
+          className="mt-5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 outline-none focus-visible:ring-2 focus-visible:ring-red-600"
+        >
+          <p className="font-semibold">{state.error}</p>
+          {registrationErrorOffersAccountHelp(state.code) && (
+            <p className="mt-2 leading-relaxed">
+              If you may already have an account,{" "}
+              <Link href="/login" className="font-bold underline underline-offset-2">
+                sign in
+              </Link>{" "}
+              or{" "}
+              <Link href="/forgot-password" className="font-bold underline underline-offset-2">
+                reset your password
+              </Link>
+              . Otherwise, check your details and try again.
+            </p>
+          )}
+          {state.code === "account_conflict" && (
+            <p className="mt-2 leading-relaxed">
+              Sign out and use a different account, or contact{" "}
+              <a
+                href={`mailto:${referralPartnerEmail}`}
+                className="font-bold underline underline-offset-2"
+              >
+                Referral Partner support
+              </a>
+              .
+            </p>
+          )}
+          {!account && (
+            <p className="mt-2 text-xs leading-relaxed">
+              For security, re-enter your password before submitting again.
+            </p>
+          )}
+        </div>
+      )}
+
       <section data-step="1" className={step === 1 ? "mt-8" : "hidden"}>
         <h2 className="font-display text-xl font-extrabold tracking-tight text-navy-950">
           Basic Details
         </h2>
         <p className="mt-1 text-sm text-navy-600">Please tell us a little about yourself.</p>
 
-        <div className="mt-6 grid gap-x-4 gap-y-5 sm:grid-cols-2">
+        <div className="mt-6 grid gap-x-4 gap-y-5 xl:grid-cols-2">
           <Field label="Full Name" htmlFor="name" required>
             <Input
               id="name"
               name="name"
               autoComplete="name"
               maxLength={120}
+              defaultValue={account?.name}
               placeholder="Enter your full name"
               required
             />
@@ -184,10 +261,12 @@ export function RegisterForm({ siteKey }: { siteKey?: string }) {
           Contact Details
         </h2>
         <p className="mt-1 text-sm text-navy-600">
-          Add the secure account details you’ll use to access your dashboard.
+          {account
+            ? "Add the mobile number we should use for your Referral Partner profile."
+            : "Add the secure account details you’ll use to access your dashboard."}
         </p>
 
-        <div className="mt-6 grid gap-x-4 gap-y-5 sm:grid-cols-2">
+        <div className="mt-6 grid gap-x-4 gap-y-5 xl:grid-cols-2">
           <Field label="Mobile Number" htmlFor="phone" required>
             <Input
               id="phone"
@@ -199,29 +278,37 @@ export function RegisterForm({ siteKey }: { siteKey?: string }) {
               required
             />
           </Field>
-          <Field label="Email" htmlFor="email" required>
-            <Input
-              id="email"
-              name="email"
-              type="email"
-              autoComplete="email"
-              maxLength={254}
-              placeholder="Enter your email"
-              required
-            />
-          </Field>
-          <Field label="Password" htmlFor="password" required>
-            <Input
-              id="password"
-              name="password"
-              type="password"
-              autoComplete="new-password"
-              minLength={8}
-              maxLength={128}
-              placeholder="Minimum 8 characters"
-              required
-            />
-          </Field>
+          {account ? (
+            <Field label="Signed-in email" htmlFor="signedInEmail">
+              <Input id="signedInEmail" value={account.email} readOnly disabled />
+            </Field>
+          ) : (
+            <>
+              <Field label="Email" htmlFor="email" required>
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  maxLength={254}
+                  placeholder="Enter your email"
+                  required
+                />
+              </Field>
+              <Field label="Password" htmlFor="password" required>
+                <Input
+                  id="password"
+                  name="password"
+                  type="password"
+                  autoComplete="new-password"
+                  minLength={8}
+                  maxLength={128}
+                  placeholder="Minimum 8 characters"
+                  required
+                />
+              </Field>
+            </>
+          )}
         </div>
 
         <div className="mt-8 flex items-center justify-between gap-3">
@@ -246,28 +333,30 @@ export function RegisterForm({ siteKey }: { siteKey?: string }) {
         </p>
 
         <input type="hidden" name="turnstileToken" value={turnstileToken ?? ""} />
-        <div className="mt-6 flex justify-center">
-          {siteKey ? (
-            <Turnstile
-              key={turnstileKey}
-              siteKey={siteKey}
-              onSuccess={(token) => {
-                setTurnstileError(undefined);
-                setTurnstileToken(token);
-              }}
-              onExpire={() => setTurnstileToken(undefined)}
-              onTimeout={() => setTurnstileToken(undefined)}
-              onError={() => {
-                setTurnstileToken(undefined);
-                setTurnstileError("Human verification could not load. Refresh and try again.");
-              }}
-              options={{ theme: "light", action: "partner_registration" }}
-            />
-          ) : (
-            <p className="rounded-lg bg-paper-deep px-4 py-3 text-xs text-navy-600">
-              Human verification is disabled in this local environment.
-            </p>
-          )}
+        <div className="relative mt-6 h-[65px] w-full">
+          <div className="absolute left-1/2 top-0 w-[300px] -translate-x-1/2 min-[380px]:static min-[380px]:w-full min-[380px]:translate-x-0">
+            {siteKey ? (
+              <Turnstile
+                key={turnstileKey}
+                siteKey={siteKey}
+                onSuccess={(token) => {
+                  setTurnstileError(undefined);
+                  setTurnstileToken(token);
+                }}
+                onExpire={() => setTurnstileToken(undefined)}
+                onTimeout={() => setTurnstileToken(undefined)}
+                onError={() => {
+                  setTurnstileToken(undefined);
+                  setTurnstileError("Human verification could not load. Refresh and try again.");
+                }}
+                options={{ theme: "light", action: "partner_registration", size: "flexible" }}
+              />
+            ) : (
+              <p className="rounded-lg bg-paper-deep px-4 py-3 text-xs text-navy-600">
+                Human verification is disabled in this local environment.
+              </p>
+            )}
+          </div>
         </div>
 
         {turnstileError && (
@@ -275,28 +364,41 @@ export function RegisterForm({ siteKey }: { siteKey?: string }) {
             {turnstileError}
           </p>
         )}
-        {state.error && (
-          <p
-            role="alert"
-            className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+        <div className="mt-7 flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full sm:w-auto"
+            onClick={() => setStep(2)}
           >
-            {state.error}
-          </p>
-        )}
-
-        <div className="mt-7 flex items-center justify-between gap-3">
-          <Button type="button" variant="outline" onClick={() => setStep(2)}>
             <ArrowLeft className="h-4 w-4" aria-hidden /> Back
           </Button>
           <Button
             type="submit"
             disabled={pending || Boolean(siteKey && !turnstileToken)}
-            className="min-w-[220px]"
+            className="w-full sm:min-w-[220px] sm:w-auto"
           >
             {pending ? "Creating your account…" : "Submit Application"}
             {!pending && <ArrowRight className="h-4 w-4" aria-hidden />}
           </Button>
         </div>
+        <p className="mt-4 text-center text-xs leading-relaxed text-navy-500">
+          By submitting, you agree to the{" "}
+          <a
+            href={`${appUrls.website}/terms`}
+            className="font-semibold text-red-600 underline underline-offset-2 hover:text-red-700"
+          >
+            Terms of Use
+          </a>{" "}
+          and the{" "}
+          <a
+            href={`${appUrls.website}/privacy`}
+            className="font-semibold text-red-600 underline underline-offset-2 hover:text-red-700"
+          >
+            Privacy Policy
+          </a>
+          .
+        </p>
       </section>
 
       <div className="mt-6 rounded-xl bg-blue-50 px-4 py-3">

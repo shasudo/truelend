@@ -63,7 +63,7 @@ function NavLinks({ groups, onNavigate }: { groups: NavGroup[]; onNavigate?: () 
     <>
       {groups.map((group, index) => (
         <div key={group.label} className={cx(index > 0 && "mt-5")}>
-          <p className="mb-1.5 px-3 text-[0.65rem] font-bold uppercase tracking-[0.16em] text-muted">
+          <p className="mb-1.5 px-3 text-xs font-bold uppercase tracking-[0.14em] text-muted">
             {group.label}
           </p>
           <div className="space-y-0.5">
@@ -229,7 +229,7 @@ export function DashboardShell({
         <main
           id="main-content"
           tabIndex={-1}
-          className="flex-1 bg-[radial-gradient(circle_at_top_right,var(--color-sun-50),transparent_32rem)] px-5 py-6 sm:px-8 sm:py-8 xl:px-10"
+          className="flex-1 bg-[radial-gradient(circle_at_top_right,var(--color-sun-50),transparent_32rem)] px-4 py-6 sm:px-8 sm:py-8 xl:px-10"
         >
           {children}
         </main>

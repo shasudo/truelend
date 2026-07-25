@@ -33,7 +33,7 @@ export function PartnerIdChip({
       )}
     >
       <div className="leading-tight">
-        <p className="text-[0.6rem] font-bold uppercase tracking-[0.14em] text-muted">
+        <p className="text-xs font-bold uppercase tracking-[0.1em] text-muted">
           Your Referral Partner ID
         </p>
         <p className="font-display text-sm font-extrabold tracking-wide tabular-nums text-navy-950">

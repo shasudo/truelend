@@ -1,8 +1,7 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
 import test from "node:test";
 import { products as productReferences } from "@truelend/reference";
-import { publicContentApproval, publicContentNotice } from "../content/approval";
+import { publicContentApproval } from "../content/approval";
 import { catalogFallbackOnlyKeys, contentFor } from "../content/catalog/content";
 import { products as productContent } from "../content/products";
 
@@ -28,14 +27,8 @@ void test("rich product content covers the canonical product reference exactly",
 });
 
 void test("public content cannot be marked approved without named evidence", () => {
-  const layout = readFileSync(new URL("../app/layout.tsx", import.meta.url), "utf8");
-  assert.match(layout, /<DraftContentNotice\s*\/>/);
-
   if (publicContentApproval.status === "blocked") {
     assert.ok(publicContentApproval.blockedAreas.length > 0);
-    const notice = publicContentNotice();
-    assert.ok(notice);
-    for (const area of publicContentApproval.blockedAreas) assert.ok(notice.includes(area));
     return;
   }
   assert.ok(publicContentApproval.owner.trim().length > 0);

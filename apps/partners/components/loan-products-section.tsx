@@ -82,7 +82,7 @@ export function LoanProductsSection() {
           title="Loan products you can help people get"
           lede="From personal and home loans to business finance and credit cards—introduce anyone to the product they need, and we match them with the right lender."
         />
-        <div className="mt-10 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+        <div className="mt-10 grid grid-cols-1 gap-3 min-[380px]:grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
           {loanProducts.map((product) => (
             <article
               key={product.slug}
@@ -93,7 +93,7 @@ export function LoanProductsSection() {
                   src={product.image}
                   alt=""
                   fill
-                  sizes="(min-width: 1024px) 240px, (min-width: 640px) 33vw, 50vw"
+                  sizes="(min-width: 1024px) 240px, (min-width: 640px) 33vw, (min-width: 380px) 50vw, calc(100vw - 40px)"
                   className="object-cover object-center"
                 />
                 <span className="absolute bottom-3 left-3 flex h-10 w-10 items-center justify-center rounded-xl bg-white/90 text-navy-800 shadow-[0_12px_24px_-18px_rgba(7,13,36,0.8)] backdrop-blur-sm">

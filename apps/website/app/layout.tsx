@@ -4,7 +4,6 @@ import { Plus_Jakarta_Sans, Inter } from "next/font/google";
 import { appUrls } from "@truelend/reference";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
-import { DraftContentNotice } from "@/components/draft-content-notice";
 import { canonical, jsonLd } from "@/lib/metadata";
 import "./globals.css";
 
@@ -67,7 +66,6 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           Skip to content
         </a>
         <Header />
-        <DraftContentNotice />
         <main id="main-content" className="flex-1">
           {children}
         </main>

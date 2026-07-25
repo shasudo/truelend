@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import type { ProductCategory } from "./types";
 
-// Approval state and the visible draft notice are owned by content/approval.ts.
+// Approval state is owned by content/approval.ts.
 
 export const products: ProductCategory[] = [
   {
