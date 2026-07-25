@@ -74,7 +74,7 @@ const terms = [
   {
     heading: "7. Fees, Charges and Payments",
     paragraphs: [
-      "7.1 Advisory Services. As on the Effective Date, TrueLend does not charge Users any fee for its loan comparison and borrowing advisory Services, save as expressly stated at the time of a specific service offering: [Insert Fee Structure].",
+      "7.1 Advisory Services. As on the Effective Date, TrueLend does not charge Users any fee for its loan comparison and borrowing advisory Services.",
       "7.2 Lender Charges. Any processing fee, interest, prepayment charge, penal charge or other cost is levied solely by the Partner Lender in accordance with its sanction letter and key fact statement, and must be reviewed by the User prior to accepting a loan offer.",
       "7.3 No Handling of Loan Funds. TrueLend does not collect loan repayments, EMIs or disbursement amounts on behalf of any Partner Lender. All payment flows occur directly between the User and the Partner Lender or its authorised payment channel.",
       "7.4 Taxes. Any applicable taxes, including GST, on fees charged by TrueLend (if any) shall be borne by the User in addition to such fees, unless stated otherwise.",
@@ -125,11 +125,10 @@ const terms = [
     heading: "12. Governing Law and Dispute Resolution",
     paragraphs: [
       "12.1 Governing Law. These Terms shall be governed by and construed in accordance with the laws of India.",
-      "12.2 Grievance Officer. In accordance with the Information Technology Act, 2000 and the Consumer Protection (E-Commerce) Rules, 2020, TrueLend has appointed a Grievance Officer to address User grievances relating to the Platform: [Insert Grievance Officer], reachable at [Insert Customer Support Email].",
-      "12.3 Escalation. Users should first raise grievances with TrueLend’s customer support. TrueLend shall endeavour to acknowledge grievances within 48 hours and resolve them within 30 (Thirty) days.",
-      "12.4 Lender-Specific Grievances. Grievances relating specifically to the sanction, disbursement, servicing or recovery of a loan must additionally be raised with the concerned Partner Lender’s grievance redressal mechanism, and, where unresolved, may be escalated to the RBI Integrated Ombudsman Scheme or other applicable forum.",
-      "12.5 Jurisdiction. Subject to Clause 12.4, the courts at Hyderabad, Telangana shall have exclusive jurisdiction over disputes arising out of or in connection with these Terms.",
-      "12.6 Arbitration. Any dispute arising out of or in connection with these Terms, including its existence, validity or termination, shall be referred to and finally resolved by arbitration under the Arbitration and Conciliation Act, 1996. The arbitration shall be conducted by a sole arbitrator appointed by mutual consent of the parties, seated at Hyderabad, Telangana, in the English language, and the award shall be final and binding on the parties.",
+      "12.2 Escalation. Users should first raise grievances with TrueLend’s customer support. TrueLend shall endeavour to acknowledge grievances within 48 (Forty-Eight) hours and resolve them within 30 (Thirty) days.",
+      "12.3 Lender-Specific Grievances. Grievances relating specifically to the sanction, disbursement, servicing or recovery of a loan must additionally be raised with the concerned Partner Lender’s grievance redressal mechanism, and, where unresolved, may be escalated to the RBI Integrated Ombudsman Scheme or other applicable forum.",
+      "12.4 Jurisdiction. Subject to Clause 12.4, the courts at Hyderabad, Telangana shall have exclusive jurisdiction over disputes arising out of or in connection with these Terms.",
+      "12.5 Arbitration. Any dispute arising out of or in connection with these Terms, including its existence, validity or termination, shall be referred to and finally resolved by arbitration under the Arbitration and Conciliation Act, 1996. The arbitration shall be conducted by a sole arbitrator appointed by mutual consent of the parties, seated at Hyderabad, Telangana, in the English language, and the award shall be final and binding on the parties.",
     ],
   },
   {
@@ -162,14 +161,16 @@ export default function TermsPage() {
         lede="The terms governing your access to and use of the TrueLend platform."
       />
       <Container className="max-w-3xl py-16 text-navy-700">
-        <article className="space-y-10 leading-relaxed">
+        <article className="space-y-10 text-[1.05rem] leading-8 tracking-[0.002em]">
           <div className="space-y-4">
             <p>
               These Terms of Use (“Terms”) constitute a legally binding agreement between you
               (“User”, “you” or “your”) and TRUE SOURCE DIGI TECH LLP, a limited liability
-              partnership incorporated under the Limited Liability Partnership Act, 2008, having its
-              registered office at [Insert Registered Office] (“TrueLend”, “LLP”, “we”, “us” or
-              “our”), governing your access to and use of the website{" "}
+              partnership incorporated under the provisions of the Limited Liability Partnership
+              Act, 2008 (the “Act”), read with the Limited Liability Partnership Rules, 2009 (the
+              “Rules”) (“TrueLend”, “LLP”, “we”, “us” or “our”), operating an independent loan
+              comparison and borrowing advisory platform that connects Users directly with Partner
+              Lenders, governing your access to and use of the website{" "}
               <a href={appUrls.website} className="underline underline-offset-2">
                 {appUrls.website}
               </a>
@@ -183,7 +184,9 @@ export default function TermsPage() {
           </div>
           {terms.map((section) => (
             <section key={section.heading} className="space-y-3">
-              <h2 className="font-display text-xl font-bold text-navy-950">{section.heading}</h2>
+              <h2 className="font-display text-xl font-bold tracking-tight text-navy-950">
+                {section.heading}
+              </h2>
               {section.paragraphs.map((paragraph) => (
                 <p key={paragraph}>{paragraph}</p>
               ))}

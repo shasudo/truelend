@@ -87,10 +87,9 @@ const sections = [
     heading: "7. Data Security, Storage and Retention",
     paragraphs: [
       "7.1 Safeguards. We implement reasonable administrative, technical and organisational safeguards, including access controls, encryption in transit, and need-to-know access restrictions, to protect personal data against unauthorised access, loss or misuse.",
-      "7.2 Storage. Personal data is stored on secure infrastructure provided by TRUE SOURCE DIGI TECH LLP or such other hosting arrangement as TrueLend may adopt from time to time.",
-      "7.3 Retention. We retain personal data only for as long as necessary to fulfil the purposes described in this Policy, or as required under Applicable Law (including RBI record-retention norms), not exceeding [Retention Period], after which it is securely deleted or anonymised.",
-      "7.4 Breach Notification. In the event of a personal data breach, TrueLend shall notify the Data Protection Board of India and affected Data Principals in accordance with the DPDP Act, and shall comply with applicable CERT-In incident reporting timelines.",
-      "7.5 No Absolute Security. No method of transmission or storage over the internet is completely secure. While we take reasonable measures to protect your data, we cannot guarantee absolute security.",
+      "7.2 Retention. We retain personal data only for as long as necessary to fulfil the purposes described in this Policy, or as required under Applicable Law (including RBI record-retention norms), after which it is securely deleted or anonymised.",
+      "7.3 Breach Notification. In the event of a personal data breach, TrueLend shall notify the Data Protection Board of India and affected Data Principals in accordance with the DPDP Act, and shall comply with applicable CERT-In incident reporting timelines.",
+      "7.4 No Absolute Security. No method of transmission or storage over the internet is completely secure. While we take reasonable measures to protect your data, we cannot guarantee absolute security.",
     ],
   },
   {
@@ -134,32 +133,33 @@ export default function PrivacyPage() {
         lede="How TrueLend collects, uses, discloses, stores and protects personal data."
       />
       <Container className="max-w-3xl py-16 text-navy-700">
-        <article className="space-y-10 leading-relaxed">
+        <article className="space-y-10 text-[1.05rem] leading-8 tracking-[0.002em]">
           <div className="space-y-4">
             <p>
-              This Privacy Policy describes how TRUE SOURCE DIGI TECH LLP (“TrueLend”, “we”, “us” or
-              “our”), acting as a Data Fiduciary under the Digital Personal Data Protection Act,
-              2023 (“DPDP Act”), collects, uses, discloses, stores and protects the personal data of
-              individuals (“you” or “Data Principal”) who access or use the TrueLend platform at{" "}
+              This Privacy Policy (“Policy”) describes how TRUE SOURCE DIGI TECH LLP, a limited
+              liability partnership incorporated under the provisions of the Limited Liability
+              Partnership Act, 2008 (the “Act”), read with the Limited Liability Partnership Rules,
+              2009 (the “Rules”) (“TrueLend”, “we”, “us” or “our”), acting as a Data Fiduciary under
+              the Digital Personal Data Protection Act, 2023 (“DPDP Act”), collects, uses,
+              discloses, stores and protects the personal data of individuals (“you” or “Data
+              Principal”) who access or use the website{" "}
               <a href={appUrls.website} className="underline underline-offset-2">
                 {appUrls.website}
               </a>
-              , any future mobile application, or who interact with us by telephone, WhatsApp,
-              email, or through a Borrowing Advisor, including where an enquiry originates through
-              TrueLend’s Referral Partner Network (together, the “Platform”).
+              , any future mobile application and related services (together, the “Platform”).
             </p>
             <p>
-              TrueLend is committed to handling personal data responsibly and transparently, in
-              accordance with the DPDP Act, the Information Technology Act, 2000, and other
-              Applicable Law. This Policy should be read together with our Terms of Use. By
-              accessing the Platform, submitting an enquiry, or otherwise providing personal data to
-              TrueLend, you consent to the collection, use and disclosure of such data as described
-              below.
+              TrueLend is committed to handling your personal data responsibly and transparently, in
+              accordance with the DPDP Act and other Applicable Laws. This Policy should be read
+              together with our Terms of Use. By accessing the Platform, you consent to the
+              collection, use and disclosure described below.
             </p>
           </div>
           {sections.map((section) => (
             <section key={section.heading} className="space-y-3">
-              <h2 className="font-display text-xl font-bold text-navy-950">{section.heading}</h2>
+              <h2 className="font-display text-xl font-bold tracking-tight text-navy-950">
+                {section.heading}
+              </h2>
               {"introduction" in section && <p>{section.introduction}</p>}
               {"bullets" in section && (
                 <ul className="list-disc space-y-2 pl-6">
