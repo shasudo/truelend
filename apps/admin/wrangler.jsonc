@@ -32,7 +32,7 @@
     // Referral Partner in verified/rejected emails. Local development may omit delivery;
     // production preflight requires the API key.
     "EMAIL_FROM": "TrueLend <hello@truelend.in>",
-    "PARTNER_EMAIL": "TrueLend Referral Partners <partner@trulend.in>",
+    "PARTNER_EMAIL": "TrueLend Referral Partners <partner@truelend.in>",
     "TEAM_EMAIL": "shathwik@icloud.com",
     "PARTNERS_URL": "https://partner.truelend.in",
   },

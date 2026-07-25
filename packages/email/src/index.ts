@@ -29,8 +29,9 @@ type EmailContext = "new_lead" | "partner_registration" | "partner_decision" | "
 // Callers fire-and-forget through ctx.waitUntil, so a failed SendResult is
 // never read. Log at the send boundary so failures/skips still surface in
 // Worker logs instead of vanishing.
-// ponytail: delivery failures are log-only; add queueing, retries, and alerting
-// before activation, reset, or decision email is approved for live operations.
+// ponytail: delivery failures are log-only after one idempotent transient retry;
+// add queueing and alerting before activation or decision email is approved for
+// live operations.
 function logSkip(context: string): SendResult {
   console.warn(JSON.stringify({ event: "email_skipped", context, reason: "not_configured" }));
   return { ok: true, skipped: true };
@@ -42,30 +43,68 @@ async function sendEmail(
   opts: SendEmailOptions,
 ): Promise<SendResult> {
   if (!apiKey) return logSkip(`${context} (RESEND_API_KEY unset)`);
-  try {
-    const res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: { authorization: `Bearer ${apiKey}`, "content-type": "application/json" },
-      body: JSON.stringify({
-        from: opts.from,
-        to: Array.isArray(opts.to) ? opts.to : [opts.to],
-        subject: opts.subject,
-        html: opts.html,
-        reply_to: opts.replyTo,
-      }),
-      signal: AbortSignal.timeout(10_000),
-    });
-    if (!res.ok) {
+  // Resend retains an idempotency key for 24 hours. Reusing it on a retry prevents
+  // an ambiguous network failure from creating duplicate messages.
+  const idempotencyKey = crypto.randomUUID();
+  for (let attempt = 1; attempt <= 2; attempt += 1) {
+    try {
+      const res = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+          authorization: `Bearer ${apiKey}`,
+          "content-type": "application/json",
+          "Idempotency-Key": idempotencyKey,
+        },
+        body: JSON.stringify({
+          from: opts.from,
+          to: Array.isArray(opts.to) ? opts.to : [opts.to],
+          subject: opts.subject,
+          html: opts.html,
+          reply_to: opts.replyTo,
+        }),
+        signal: AbortSignal.timeout(10_000),
+      });
+      if (res.ok) return { ok: true };
+
+      const retryable = res.status === 429 || res.status >= 500;
+      if (retryable && attempt === 1) {
+        console.warn(
+          JSON.stringify({ event: "email_send_retrying", context, status: res.status, attempt }),
+        );
+        await new Promise((resolve) => setTimeout(resolve, 250));
+        continue;
+      }
+
       const error = `Email provider rejected the request (${res.status})`;
-      console.error(JSON.stringify({ event: "email_send_failed", context, status: res.status }));
+      console.error(
+        JSON.stringify({ event: "email_send_failed", context, status: res.status, attempt }),
+      );
       return { ok: false, error };
+    } catch (cause) {
+      if (attempt === 1) {
+        console.warn(
+          JSON.stringify({
+            event: "email_send_retrying",
+            context,
+            errorType: cause instanceof Error ? cause.name : "unknown",
+            attempt,
+          }),
+        );
+        await new Promise((resolve) => setTimeout(resolve, 250));
+        continue;
+      }
+      console.error(
+        JSON.stringify({
+          event: "email_send_error",
+          context,
+          errorType: cause instanceof Error ? cause.name : "unknown",
+          attempt,
+        }),
+      );
+      return { ok: false, error: "Email provider request failed" };
     }
-    return { ok: true };
-  } catch (cause) {
-    const diagnostic = (cause instanceof Error ? cause.message : "unknown").slice(0, 240);
-    console.error(JSON.stringify({ event: "email_send_error", context, error: diagnostic }));
-    return { ok: false, error: "Email provider request failed" };
   }
+  return { ok: false, error: "Email provider request failed" };
 }
 
 /* ---- branded HTML layout (inline styles — email clients need them) ---- */

@@ -9,7 +9,7 @@ interface __BaseEnv_CloudflareEnv {
 	ASSETS: Fetcher;
 	BETTER_AUTH_URL: "https://partner.truelend.in";
 	TURNSTILE_SITE_KEY: "0x4AAAAAAD0gmfEKR5XdzhJR";
-	EMAIL_FROM: "TrueLend Referral Partners <partner@trulend.in>";
+	EMAIL_FROM: "TrueLend Referral Partners <partner@truelend.in>";
 	TEAM_EMAIL: "shathwik@icloud.com";
 }
 declare namespace Cloudflare {

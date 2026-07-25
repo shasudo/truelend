@@ -76,3 +76,39 @@ void test("Referral Partner registration email uses the dedicated sender", async
     globalThis.fetch = originalFetch;
   }
 });
+
+void test("transient provider failures retry with one idempotency key", async () => {
+  const originalFetch = globalThis.fetch;
+  const originalWarn = console.warn;
+  const idempotencyKeys: string[] = [];
+  let calls = 0;
+
+  globalThis.fetch = async (_input, init) => {
+    calls += 1;
+    const headers = new Headers(init?.headers);
+    idempotencyKeys.push(headers.get("Idempotency-Key") ?? "");
+    return new Response(null, { status: calls === 1 ? 503 : 200 });
+  };
+  console.warn = () => undefined;
+  try {
+    const result = await sendPasswordReset(
+      {
+        RESEND_API_KEY: "synthetic-api-key",
+        EMAIL_FROM: "TrueLend <test@example.test>",
+      },
+      {
+        to: "recipient@example.test",
+        name: "Synthetic User",
+        url: "https://example.test/reset?token=synthetic-token",
+      },
+    );
+
+    assert.deepEqual(result, { ok: true });
+    assert.equal(calls, 2);
+    assert.equal(idempotencyKeys[0], idempotencyKeys[1]);
+    assert.match(idempotencyKeys[0] ?? "", /^[0-9a-f-]{36}$/i);
+  } finally {
+    globalThis.fetch = originalFetch;
+    console.warn = originalWarn;
+  }
+});

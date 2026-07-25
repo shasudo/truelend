@@ -44,7 +44,7 @@
     // Email (Resend). RESEND_API_KEY is a secret; TEAM_EMAIL receives Referral Partner
     // lead alerts. Local development may omit delivery; production preflight
     // requires the API key.
-    "EMAIL_FROM": "TrueLend Referral Partners <partner@trulend.in>",
+    "EMAIL_FROM": "TrueLend Referral Partners <partner@truelend.in>",
     "TEAM_EMAIL": "shathwik@icloud.com",
   },
   // Same account-level Hyperdrive config (shared Neon pool) the other apps use.

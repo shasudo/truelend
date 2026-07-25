@@ -7,7 +7,7 @@ interface __BaseEnv_CloudflareEnv {
 	ASSETS: Fetcher;
 	BETTER_AUTH_URL: "https://admin.truelend.in";
 	EMAIL_FROM: "TrueLend <hello@truelend.in>";
-	PARTNER_EMAIL: "TrueLend Referral Partners <partner@trulend.in>";
+	PARTNER_EMAIL: "TrueLend Referral Partners <partner@truelend.in>";
 	TEAM_EMAIL: "shathwik@icloud.com";
 	PARTNERS_URL: "https://partner.truelend.in";
 }
