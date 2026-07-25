@@ -1,5 +1,5 @@
 import { getCloudflareContext } from "@opennextjs/cloudflare";
-import { createDb, ping } from "@truelend/db";
+import { createDb, ping, pingPartnerRegistrationSchema } from "@truelend/db";
 import {
   hasConfiguredValues,
   healthHeaders,
@@ -19,11 +19,18 @@ export async function GET(request: Request) {
   }
   const connection = createDb(env.HYPERDRIVE.connectionString);
   let db: "ok" | "error" = "error";
+  let registration: "ok" | "error" = "error";
   try {
     await ping(connection);
     db = "ok";
   } catch {
     db = "error";
+  }
+  try {
+    await pingPartnerRegistrationSchema(connection);
+    registration = "ok";
+  } catch {
+    registration = "error";
   } finally {
     ctx.waitUntil(connection.$client.end());
   }
@@ -31,12 +38,14 @@ export async function GET(request: Request) {
   const turnstile = hasConfiguredValues(env.TURNSTILE_SECRET_KEY, env.TURNSTILE_SITE_KEY)
     ? "ok"
     : "error";
-  const status = db === "ok" && auth === "ok" && turnstile === "ok" ? "ok" : "error";
+  const status =
+    db === "ok" && registration === "ok" && auth === "ok" && turnstile === "ok" ? "ok" : "error";
   const body: HealthResponse = {
     status,
     service: "partners",
     timestamp: new Date().toISOString(),
     db,
+    registration,
     auth,
     turnstile,
   };

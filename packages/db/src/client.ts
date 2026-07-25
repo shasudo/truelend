@@ -22,3 +22,33 @@ export async function ping(db: Database): Promise<void> {
   `;
   if (row?.nonce !== nonce) throw new Error("Database freshness probe failed");
 }
+
+export interface PartnerRegistrationSchemaProbe {
+  requiredColumnCount: string;
+  referenceSequence: string | null;
+}
+
+export function assertPartnerRegistrationSchemaReady(
+  probe: PartnerRegistrationSchemaProbe | undefined,
+): void {
+  if (probe?.requiredColumnCount !== "3" || !probe.referenceSequence) {
+    throw new Error("Referral Partner registration schema is not ready");
+  }
+}
+
+export async function pingPartnerRegistrationSchema(db: Database): Promise<void> {
+  const [probe] = await db.$client<PartnerRegistrationSchemaProbe[]>`
+    select
+      (
+        select count(*)::text
+        from information_schema.columns
+        where table_schema = current_schema()
+          and table_name = 'partners'
+          and column_name in ('date_of_birth', 'city', 'referral_type')
+      ) as "requiredColumnCount",
+      to_regclass(
+        format('%I.%I', current_schema(), 'partners_reference_seq')
+      )::text as "referenceSequence"
+  `;
+  assertPartnerRegistrationSchemaReady(probe);
+}

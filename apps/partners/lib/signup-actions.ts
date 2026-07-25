@@ -74,7 +74,13 @@ export async function registerPartner(
   let registrationComplete = false;
   let requestHadSession = false;
   let submittedValues: RegistrationFormValues | undefined;
-  let failureStage: "request" | "account_creation" | "profile_creation" = "request";
+  let failureStage:
+    | "request"
+    | "rate_limit"
+    | "human_verification"
+    | "account_creation"
+    | "profile_creation"
+    | "confirmation_scheduling" = "request";
   try {
     const requestHeaders = await headers();
     const session = await auth.api.getSession({ headers: requestHeaders });
@@ -120,6 +126,7 @@ export async function registerPartner(
     const emailKey = Array.from(new Uint8Array(emailDigest), (byte) =>
       byte.toString(16).padStart(2, "0"),
     ).join("");
+    failureStage = "rate_limit";
     const [ipLimit, emailLimit] = await Promise.all([
       env.REGISTRATION_RATE_LIMITER.limit({ key: `ip:${ip}` }),
       env.REGISTRATION_RATE_LIMITER.limit({ key: `email:${emailKey}` }),
@@ -133,6 +140,7 @@ export async function registerPartner(
       };
     }
 
+    failureStage = "human_verification";
     const human = await verifyTurnstile({
       token: profile.turnstileToken,
       secret: env.TURNSTILE_SECRET_KEY,
@@ -238,6 +246,7 @@ export async function registerPartner(
 
     registrationComplete = true;
     if (outcome.kind === "created" && outcome.referenceId) {
+      failureStage = "confirmation_scheduling";
       ctx.waitUntil(
         notifyPartnerRegistration(env, {
           to: outcome.email,
@@ -260,6 +269,7 @@ export async function registerPartner(
         console.error(
           JSON.stringify({
             event: "partner_registration_cleanup_failed",
+            failureStage,
             errorType: cleanupError instanceof Error ? cleanupError.name : "unknown",
           }),
         );

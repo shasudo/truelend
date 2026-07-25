@@ -5,6 +5,7 @@ export interface HealthResponse {
   service: string;
   timestamp: string;
   db?: "ok" | "error";
+  registration?: "ok" | "error";
   turnstile?: "ok" | "error";
   auth?: "ok" | "error";
 }
