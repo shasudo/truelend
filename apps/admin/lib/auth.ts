@@ -11,6 +11,7 @@ import {
   type CreateAuthOptions,
 } from "@truelend/auth/server";
 import { sendPasswordReset } from "@truelend/email";
+import { scheduleAdminRequestContextCleanup } from "./request-context-cleanup";
 
 export function authOptions(env: CloudflareEnv): CreateAuthOptions {
   return {
@@ -41,20 +42,29 @@ interface AuthContext {
 }
 
 /*
- * One db + auth per request, shared across layout/pages via React.cache.
- * Server actions and route handlers that OWN a connection close it with
- * ctx.waitUntil(db.$client.end()); RSC reads through this cached context
- * don't — layout and page share the client, so there is no single safe
+ * Server actions and route handlers call this factory directly so each
+ * mutation/request owns exactly one fresh client and can close it.
+ */
+export function createAuthContext(): AuthContext {
+  const { env, ctx } = getCloudflareContext();
+  const db = createDb(env.HYPERDRIVE.connectionString);
+  try {
+    const auth = createAdminAuth(db, authOptions(env));
+    return { db, auth, ctx, env };
+  } catch (error) {
+    scheduleAdminRequestContextCleanup({ db, ctx });
+    throw error;
+  }
+}
+
+/*
+ * RSC reads share one db + auth across layout/pages via React.cache. They don't
+ * close the client because layout and page share it and there is no single safe
  * owner.
  * ponytail: RSC reads skip end(); Hyperdrive reclaims idle connections.
  * Revisit if connection utilization exceeds 80% or readiness detects exhaustion.
  */
-export const getAuthContext = cache((): AuthContext => {
-  const { env, ctx } = getCloudflareContext();
-  const db = createDb(env.HYPERDRIVE.connectionString);
-  const auth = createAdminAuth(db, authOptions(env));
-  return { db, auth, ctx, env };
-});
+export const getAuthContext = cache(createAuthContext);
 
 /*
  * Staff = the two internal roles. This is the load-bearing boundary: partners
@@ -96,6 +106,7 @@ export async function requireAdmin(): Promise<AdminSession> {
 interface MutationContext {
   db: Database;
   ctx: ExecutionContext;
+  env: CloudflareEnv;
   user: AdminSession["user"] | null;
 }
 
@@ -107,13 +118,13 @@ interface MutationContext {
  * The action owns this connection and must close it via ctx.waitUntil.
  */
 export async function getMutationContext(): Promise<MutationContext> {
-  const { db, auth, ctx } = getAuthContext();
+  const { db, auth, ctx, env } = createAuthContext();
   try {
     const session = await auth.api.getSession({ headers: await headers() });
     const user = session?.user ?? null;
-    return { db, ctx, user: isStaff(user?.role) ? user : null };
+    return { db, ctx, env, user: isStaff(user?.role) ? user : null };
   } catch (error) {
-    ctx.waitUntil(db.$client.end());
+    scheduleAdminRequestContextCleanup({ db, ctx });
     throw error;
   }
 }

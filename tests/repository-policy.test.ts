@@ -206,12 +206,172 @@ void test("manual Worker secrets augment both supported environment interfaces",
   }
 });
 
-void test("partner profile mutations require an authorized partner profile", () => {
-  const action = readFileSync(
-    join(repositoryRoot, "apps", "partners", "lib", "profile-actions.ts"),
-    "utf8",
+void test("partner mutations use one explicitly owned request context", () => {
+  const partners = join(repositoryRoot, "apps", "partners");
+  const auth = readFileSync(join(partners, "lib", "auth.ts"), "utf8");
+  const owner = readFileSync(join(partners, "lib", "owned-request-context.ts"), "utf8");
+
+  assert.match(auth, /withOwnedRequestContext\(createAuthContext,/);
+  assert.match(auth, /return withPartnerRequest\(await headers\(\), run\)/);
+  assert.equal(owner.match(/\bcreate\(\)/g)?.length, 1);
+  assert.equal(owner.match(/db\.\$client\.end\(\)/g)?.length, 1);
+  assert.match(
+    owner,
+    /const context = create\(\);[\s\S]*finally \{[\s\S]*scheduleOwnedRequestContextCleanup\(context\)/,
   );
-  assert.match(action, /await requirePartner\(\)/);
+  assert.match(
+    owner,
+    /scheduleOwnedRequestContextCleanup[\s\S]*cleanup = context\.db\.\$client\.end\(\)[\s\S]*context\.ctx\.waitUntil\(reportedCleanup\)/,
+  );
+  assert.match(
+    owner,
+    /schedulePartnerBackgroundTask[\s\S]*task = createTask\(\)[\s\S]*ctx\.waitUntil\(reportedTask\)/,
+  );
+
+  const mutationBoundaries = [
+    ["lib/kyc-actions.ts", /\bwithPartnerMutation\(/],
+    ["lib/lead-actions.ts", /\bwithPartnerMutation\(/],
+    ["lib/profile-actions.ts", /\bwithPartnerMutation\(/],
+    ["app/api/kyc/upload/route.ts", /\bwithPartnerRequest\(req\.headers,/],
+  ] as const;
+  for (const [relativePath, ownedEntryPoint] of mutationBoundaries) {
+    const file = join(partners, relativePath);
+    const contents = readFileSync(file, "utf8");
+    assert.match(contents, ownedEntryPoint, `${file} must use its owned request context`);
+    assert.doesNotMatch(
+      contents,
+      /\b(?:getAuthContext|getOptionalPartnerSession|requirePartnerSession|requirePartner)\s*\(/,
+      `${file} must not create a second cached RSC context`,
+    );
+    assert.doesNotMatch(
+      contents,
+      /\b(?:createDb|getCloudflareContext)\s*\(/,
+      `${file} must not create an additional request client`,
+    );
+  }
+
+  const signup = readFileSync(join(partners, "lib", "signup-actions.ts"), "utf8");
+  assert.match(signup, /\bcreatePartnerActionContext\(\)/);
+  assert.equal(signup.match(/\bscheduleOwnedRequestContextCleanup\(ownedContext\)/g)?.length, 1);
+  assert.doesNotMatch(signup, /ctx\.waitUntil\(db\.\$client\.end\(\)\)/);
+  assert.doesNotMatch(
+    signup,
+    /\b(?:getAuthContext|getOptionalPartnerSession|requirePartnerSession|requirePartner)\s*\(/,
+  );
+
+  const authRoute = readFileSync(join(partners, "app/api/auth/[...all]/route.ts"), "utf8");
+  assert.match(authRoute, /\bscheduleOwnedRequestContextCleanup\(\{ db, ctx \}\)/);
+  assert.doesNotMatch(authRoute, /ctx\.waitUntil\(db\.\$client\.end\(\)\)/);
+
+  for (const relativePath of [
+    "lib/signup-actions.ts",
+    "lib/lead-actions.ts",
+    "app/api/kyc/upload/route.ts",
+  ]) {
+    const file = join(partners, relativePath);
+    const contents = readFileSync(file, "utf8");
+    assert.match(
+      contents,
+      /\bschedulePartnerBackgroundTask\(/,
+      `${file} must schedule background work without replacing action results`,
+    );
+    assert.doesNotMatch(contents, /\bctx\.waitUntil\(/);
+  }
+});
+
+void test("website lead work cannot be replaced by background-task failures", () => {
+  const website = join(repositoryRoot, "apps", "website");
+  const scheduler = readFileSync(join(website, "lib", "background-task.ts"), "utf8");
+  const leadActions = readFileSync(join(website, "lib", "lead-actions.ts"), "utf8");
+
+  assert.match(
+    scheduler,
+    /scheduleWebsiteBackgroundTask[\s\S]*task = createTask\(\)[\s\S]*ctx\.waitUntil\(reportedTask\)/,
+  );
+  assert.equal(leadActions.match(/\bscheduleWebsiteBackgroundTask\(/g)?.length, 2);
+  assert.doesNotMatch(leadActions, /\bctx\.waitUntil\(/);
+});
+
+void test("admin mutations do not reuse the cached Server Component context", () => {
+  const admin = join(repositoryRoot, "apps", "admin");
+  const auth = readFileSync(join(admin, "lib", "auth.ts"), "utf8");
+  const cleanup = readFileSync(join(admin, "lib", "request-context-cleanup.ts"), "utf8");
+
+  assert.match(auth, /export function createAuthContext\(\): AuthContext/);
+  assert.match(auth, /export const getAuthContext = cache\(createAuthContext\)/);
+  assert.match(
+    auth,
+    /getMutationContext\(\): Promise<MutationContext> \{[\s\S]*createAuthContext\(\)/,
+  );
+  assert.match(auth, /return \{ db, ctx, env, user:/);
+  assert.match(
+    cleanup,
+    /scheduleAdminRequestContextCleanup[\s\S]*cleanup = context\.db\.\$client\.end\(\)[\s\S]*context\.ctx\.waitUntil\(reportedCleanup\)/,
+  );
+  assert.match(
+    cleanup,
+    /scheduleAdminBackgroundTask[\s\S]*pending = task\(\)[\s\S]*ctx\.waitUntil\(reported\)/,
+  );
+
+  for (const relativePath of [
+    "lib/auth.ts",
+    "lib/lead-actions.ts",
+    "lib/loan-actions.ts",
+    "lib/partner-actions.ts",
+    "lib/team-actions.ts",
+    "app/api/auth/[...all]/route.ts",
+    "app/api/kyc/upload/route.ts",
+    "app/api/kyc/[...key]/route.ts",
+  ]) {
+    const file = join(admin, relativePath);
+    const contents = readFileSync(file, "utf8");
+    assert.match(
+      contents,
+      /\bscheduleAdminRequestContextCleanup\((?:\{ db, ctx \}|context)\)/,
+      `${file} must schedule safe owned-context cleanup`,
+    );
+    assert.doesNotMatch(contents, /ctx\.waitUntil\(db\.\$client\.end\(\)\)/);
+  }
+
+  for (const relativePath of [
+    "lib/lead-actions.ts",
+    "lib/loan-actions.ts",
+    "lib/partner-actions.ts",
+  ]) {
+    const file = join(admin, relativePath);
+    const contents = readFileSync(file, "utf8");
+    assert.match(contents, /\bgetMutationContext\(\)/, `${file} must own a mutation context`);
+    assert.doesNotMatch(
+      contents,
+      /\bgetAuthContext\s*\(/,
+      `${file} must not open a second cached RSC context`,
+    );
+  }
+
+  for (const relativePath of ["lib/team-actions.ts", "app/api/kyc/[...key]/route.ts"]) {
+    const file = join(admin, relativePath);
+    const contents = readFileSync(file, "utf8");
+    assert.match(contents, /\bcreateAuthContext\(\)/, `${file} must own a fresh context`);
+    assert.doesNotMatch(
+      contents,
+      /\bgetAuthContext\s*\(/,
+      `${file} must not reuse the cached RSC context`,
+    );
+  }
+
+  const partnerActions = readFileSync(join(admin, "lib", "partner-actions.ts"), "utf8");
+  const teamActions = readFileSync(join(admin, "lib", "team-actions.ts"), "utf8");
+  const kycUpload = readFileSync(join(admin, "app/api/kyc/upload/route.ts"), "utf8");
+  const readiness = readFileSync(join(admin, "app/api/health/ready/route.ts"), "utf8");
+
+  assert.match(partnerActions, /\bwithPartnerAdminAction</);
+  assert.match(teamActions, /\bwithTeamAdminContext</);
+  assert.match(partnerActions, /\bscheduleAdminBackgroundTask\(/);
+  assert.match(kycUpload, /\bscheduleAdminBackgroundTask\(/);
+  assert.doesNotMatch(`${partnerActions}\n${kycUpload}`, /\bctx\.waitUntil\(/);
+  assert.match(kycUpload, /if \(uploadedKey && !databaseOutcomeUnknown\)/);
+  assert.match(readiness, /\bscheduleAdminRequestContextCleanup\(\{ db: connection, ctx \}\)/);
+  assert.doesNotMatch(readiness, /\bctx\.waitUntil\(/);
 });
 
 void test("source debt uses the documented ponytail protocol", () => {

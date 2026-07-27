@@ -45,6 +45,14 @@ export const loanCaseStatusLabels: Readonly<Record<string, string>> = {
   disbursed: "Disbursed",
 } satisfies Record<LoanCaseStatus, string>;
 
+// Business precedence, best first. One lender's decline must never override
+// another lender's approval or disbursal for the same lead.
+const loanCaseOutcomeRank = ["disbursed", "approved", "logged_in", "declined"] as const;
+
+export function bestLoanCaseOutcome(statuses: readonly LoanCaseStatus[]): LoanCaseStatus | null {
+  return loanCaseOutcomeRank.find((status) => statuses.includes(status)) ?? null;
+}
+
 export type PipelineStatusTone = "neutral" | "info" | "emphasis" | "success" | "danger";
 
 const pipelineStatusTones: Readonly<Record<string, PipelineStatusTone>> = {

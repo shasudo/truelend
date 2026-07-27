@@ -6,6 +6,7 @@ import {
   isPartnerAuthEndpointAllowed,
 } from "@truelend/auth/server";
 import { authOptions } from "@/lib/auth";
+import { scheduleOwnedRequestContextCleanup } from "@/lib/owned-request-context";
 
 // Per-request auth instance; signup enabled (partners self-register). Shared
 // authOptions also wires the reset-password email sender.
@@ -21,11 +22,11 @@ async function handler(req: Request) {
     );
   }
   const db = createDb(env.HYPERDRIVE.connectionString);
-  const auth = createPartnerAuth(db, authOptions(env));
   try {
+    const auth = createPartnerAuth(db, authOptions(env));
     return await auth.handler(req);
   } finally {
-    ctx.waitUntil(db.$client.end());
+    scheduleOwnedRequestContextCleanup({ db, ctx });
   }
 }
 

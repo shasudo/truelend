@@ -13,7 +13,7 @@ import {
   validationMessages,
   validationPatterns,
 } from "@truelend/reference";
-import { getAuthContext } from "./auth";
+import { createPartnerActionContext } from "./auth";
 import {
   registrationAccountDecision,
   registrationStepForIssue,
@@ -22,6 +22,11 @@ import {
   type RegistrationFormValues,
   type RegistrationStep,
 } from "./registration-flow";
+import { reportPartnerActionFailure } from "./action-errors";
+import {
+  scheduleOwnedRequestContextCleanup,
+  schedulePartnerBackgroundTask,
+} from "./owned-request-context";
 
 export type RegisterState = {
   code?: RegistrationErrorCode;
@@ -68,7 +73,18 @@ export async function registerPartner(
   _prev: RegisterState,
   formData: FormData,
 ): Promise<RegisterState> {
-  const { auth, db, ctx, env } = getAuthContext();
+  let ownedContext: ReturnType<typeof createPartnerActionContext>;
+  try {
+    ownedContext = createPartnerActionContext();
+  } catch (error) {
+    reportPartnerActionFailure("partner_registration_context_failed", error);
+    return {
+      code: "service_unavailable",
+      error: "Registration is temporarily unavailable. Please try again shortly.",
+      step: 3,
+    };
+  }
+  const { auth, db, ctx, env } = ownedContext;
   let createdUserId: string | undefined;
   let accountCreatedInRequest = false;
   let registrationComplete = false;
@@ -246,12 +262,13 @@ export async function registerPartner(
 
     registrationComplete = true;
     if (outcome.kind === "created" && outcome.referenceId) {
+      const referenceId = outcome.referenceId;
       failureStage = "confirmation_scheduling";
-      ctx.waitUntil(
+      schedulePartnerBackgroundTask(ctx, "partner_registration_notification_failed", () =>
         notifyPartnerRegistration(env, {
           to: outcome.email,
           name: profile.name,
-          referenceId: outcome.referenceId,
+          referenceId,
           dashboardUrl: `${env.BETTER_AUTH_URL}/dashboard`,
         }),
       );
@@ -287,7 +304,8 @@ export async function registerPartner(
     if (requestHadSession) {
       return {
         code: "service_unavailable",
-        error: "We could not finish your profile right now. Your account is unchanged. Try again.",
+        error:
+          "We couldn't confirm whether your profile was completed. Reload your account status before trying again.",
         step: 3,
         values: submittedValues,
       };
@@ -300,7 +318,7 @@ export async function registerPartner(
       values: submittedValues,
     };
   } finally {
-    ctx.waitUntil(db.$client.end());
+    scheduleOwnedRequestContextCleanup(ownedContext);
   }
   redirect("/dashboard");
 }

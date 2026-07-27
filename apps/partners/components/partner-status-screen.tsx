@@ -1,12 +1,12 @@
-import { Clock, XCircle, Send, CheckCircle2 } from "lucide-react";
-import { Card, Container, Logo, SubmitButton } from "@truelend/ui";
+import { Clock, XCircle, CheckCircle2 } from "lucide-react";
+import { Card, Container, Logo } from "@truelend/ui";
 import { evaluatePartnerApplication } from "@truelend/reference";
 import type { Partner } from "@truelend/db";
+import { SubmitForReviewForm } from "@/components/application-action-forms";
 import { KycDetailsForm } from "@/components/kyc-details-form";
 import { KycUpload } from "@/components/kyc-upload";
 import { SignOutButton } from "@/components/sign-out-button";
 import { toKycFormValues } from "@/lib/kyc-form-values";
-import { submitForReview } from "@/lib/kyc-actions";
 
 export function PartnerStatusScreen({
   partner,
@@ -91,12 +91,7 @@ export function PartnerStatusScreen({
                   <CheckCircle2 className="h-5 w-5 text-navy-800" aria-hidden />
                   Everything looks complete. Submit and our team will review it.
                 </p>
-                <form action={submitForReview}>
-                  <SubmitButton size="lg" pendingText="Submitting…">
-                    <Send className="h-4 w-4" aria-hidden />
-                    Submit application
-                  </SubmitButton>
-                </form>
+                <SubmitForReviewForm />
               </div>
             ) : (
               <p className="text-sm text-navy-500">

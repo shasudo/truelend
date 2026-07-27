@@ -1,16 +1,19 @@
 "use client";
 
 import { useActionState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Button, Field, Input, Select } from "@truelend/ui";
 import { createUserAction, type CreateUserState } from "@/lib/team-actions";
 
 export function CreateUserForm() {
+  const router = useRouter();
   const [state, action, pending] = useActionState<CreateUserState, FormData>(createUserAction, {});
   const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
     if (state.ok) formRef.current?.reset();
-  }, [state]);
+    if (state.uncertain) router.refresh();
+  }, [router, state]);
 
   return (
     <form ref={formRef} action={action} className="space-y-4">

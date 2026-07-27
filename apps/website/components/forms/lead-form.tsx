@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useForm, type DefaultValues, type FieldValues, type Resolver } from "react-hook-form";
 import { Turnstile } from "@marsidev/react-turnstile";
 import { CheckCircle2, MessageCircle } from "lucide-react";
@@ -74,7 +74,7 @@ export function useLeadForm<T extends FieldValues>(
   // the user can't submit into a guaranteed "verification failed".
   const turnstileReady = !TURNSTILE_SITE_KEY || turnstileToken !== undefined;
 
-  const onSubmit = form.handleSubmit(async (values) => {
+  const submitForm = form.handleSubmit(async (values) => {
     setRootError(undefined);
     try {
       // Resolve again at submit time so a fast submission cannot race hydration
@@ -95,6 +95,11 @@ export function useLeadForm<T extends FieldValues>(
     }
   });
 
+  const onSubmit = (event: FormEvent<HTMLFormElement>) => {
+    draft.onSubmit(event);
+    return submitForm(event);
+  };
+
   return {
     form,
     draftFormRef: draft.formRef,
@@ -112,6 +117,7 @@ export function useLeadForm<T extends FieldValues>(
     },
     resetToken: () => setTurnstileToken(undefined),
     failTurnstile: () => {
+      setRootError(undefined);
       setTurnstileToken(undefined);
       setTurnstileError("Human verification could not load. Refresh the page and try again.");
     },

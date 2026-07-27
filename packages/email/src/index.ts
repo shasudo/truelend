@@ -194,7 +194,7 @@ interface PartnerRegistrationInfo {
   dashboardUrl: string;
 }
 
-/** Confirms that a Referral Partner registration was received for review. */
+/** Confirms account creation and directs the Referral Partner to complete KYC. */
 export function notifyPartnerRegistration(
   env: EmailEnv,
   info: PartnerRegistrationInfo,
@@ -204,20 +204,20 @@ export function notifyPartnerRegistration(
     return Promise.resolve(logSkip("partner-registration email (PARTNER_EMAIL/EMAIL_FROM unset)"));
   const first = info.name.split(" ")[0] ?? info.name;
   const html = emailLayout(
-    heading("Your application has been submitted") +
+    heading("Your Referral Partner account is ready") +
       para(`Hi ${esc(first)}, thank you for joining the TrueLend Referral Network.`) +
       para(
         `Your Referral Partner reference ID is <strong>${esc(info.referenceId)}</strong>. Keep it for future support requests.`,
       ) +
       para(
-        "Our team will review your application and contact you if any additional information is needed.",
+        "Sign in to add the remaining details and documents, then submit your application for review.",
       ) +
-      `<div style="margin-top:8px;">${button(info.dashboardUrl, "View application status")}</div>`,
+      `<div style="margin-top:8px;">${button(info.dashboardUrl, "Complete your application")}</div>`,
   );
   return sendEmail(env.RESEND_API_KEY, "partner_registration", {
     from,
     to: info.to,
-    subject: "We received your TrueLend Referral Partner application",
+    subject: "Complete your TrueLend Referral Partner application",
     html,
   });
 }

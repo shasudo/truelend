@@ -2,13 +2,30 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { and, eq, ne, sql } from "drizzle-orm";
+import { and, eq, ne } from "drizzle-orm";
 import { z } from "zod";
 import { schema, type Database, type NewLoanCase } from "@truelend/db";
 import { getMutationContext } from "./auth";
-import { banks, productSlugs, rupeesToPaise } from "@truelend/reference";
+import { scheduleAdminRequestContextCleanup } from "./request-context-cleanup";
+import { banks, bestLoanCaseOutcome, productSlugs, rupeesToPaise } from "@truelend/reference";
+
+export type LoanActionState = { ok?: boolean; error?: string };
 
 type CaseStatus = (typeof schema.loanCaseStatus.enumValues)[number];
+
+const UNKNOWN_CREATE_OUTCOME =
+  "We couldn't confirm whether the loan case was created. Reload the lead's loan cases before trying again.";
+const UNKNOWN_UPDATE_OUTCOME =
+  "We couldn't confirm the case update. Reload this page before trying again.";
+
+function reportLoanActionFailure(event: string, error: unknown): void {
+  console.error(
+    JSON.stringify({
+      event,
+      errorType: error instanceof Error ? error.name : "unknown",
+    }),
+  );
+}
 
 // A loan case's status drives the parent lead's pipeline position.
 // The root db or a transaction handle — recomputeLeadStatus runs inside both.
@@ -21,17 +38,6 @@ const leadStatusForCase: Record<CaseStatus, (typeof schema.leadStatus.enumValues
   disbursed: "disbursed",
 };
 
-// Business precedence of a loan-case outcome, best first. A lead can have many
-// lender cases, so one decline must never override another lender's approval or
-// disbursal.
-const CASE_OUTCOME_RANK = ["disbursed", "approved", "logged_in", "declined"] as const;
-
-// Best outcome among a lead's cases, or null if it has none. Pure; kept local
-// because this is a "use server" module (every export must be an async action).
-function bestCaseOutcome(statuses: CaseStatus[]): CaseStatus | null {
-  return CASE_OUTCOME_RANK.find((s) => statuses.includes(s)) ?? null;
-}
-
 // Recompute the parent lead's status from ALL its lender cases. Runs on every
 // case create/update, so editing an old case reflects the true aggregate rather
 // than rewinding or clobbering the lead from a single case.
@@ -40,7 +46,7 @@ async function recomputeLeadStatus(db: Executor, leadId: string) {
     .select({ status: schema.loanCases.status })
     .from(schema.loanCases)
     .where(eq(schema.loanCases.leadId, leadId));
-  const best = bestCaseOutcome(cases.map((c) => c.status));
+  const best = bestLoanCaseOutcome(cases.map((c) => c.status));
   if (!best) return;
   const target = leadStatusForCase[best];
   await db
@@ -95,13 +101,29 @@ const createSchema = z.object({
   ...amounts,
 });
 
-export async function createLoanCaseAction(formData: FormData) {
-  const { db, ctx, user } = await getMutationContext();
+export async function createLoanCaseAction(
+  _prev: LoanActionState,
+  formData: FormData,
+): Promise<LoanActionState> {
+  let context: Awaited<ReturnType<typeof getMutationContext>>;
+  try {
+    context = await getMutationContext();
+  } catch (error) {
+    reportLoanActionFailure("loan_case_create_context_failed", error);
+    return { error: UNKNOWN_CREATE_OUTCOME };
+  }
+  const { db, ctx, user } = context;
+  if (!user) {
+    scheduleAdminRequestContextCleanup({ db, ctx });
+    redirect("/login");
+  }
+
   let newId: string | undefined;
   try {
-    if (!user) redirect("/login");
     const parsed = createSchema.safeParse(Object.fromEntries(formData));
-    if (!parsed.success) return;
+    if (!parsed.success) {
+      return { error: parsed.error.issues[0]?.message ?? "Please check the case fields." };
+    }
     const d = parsed.data;
     const values: NewLoanCase = {
       leadId: d.leadId,
@@ -114,33 +136,46 @@ export async function createLoanCaseAction(formData: FormData) {
     };
     // Case insert + parent-lead recompute must land together, or the lead's
     // pipeline position can disagree with its cases.
-    await db.transaction(async (tx) => {
+    const outcome = await db.transaction(async (tx) => {
       // Serialize all case changes for the same lead so two concurrent writes
       // cannot each recompute from an incomplete view and leave a stale status.
-      await tx.execute(
-        sql`select 1 from ${schema.leads} where ${schema.leads.id} = ${d.leadId} for update`,
-      );
-      const inserted = await tx
+      const [lead] = await tx
+        .select({ id: schema.leads.id })
+        .from(schema.leads)
+        .where(eq(schema.leads.id, d.leadId))
+        .limit(1)
+        .for("update");
+      if (!lead) return { kind: "missing" } as const;
+      const [inserted] = await tx
         .insert(schema.loanCases)
         .values(values)
         .returning({ id: schema.loanCases.id });
-      newId = inserted[0]?.id;
+      if (!inserted) throw new Error("Loan case insert returned no identifier");
       await recomputeLeadStatus(tx, d.leadId);
       await tx.insert(schema.auditLog).values({
         actorId: user.id,
         actorEmail: user.email,
         action: "loan_case.create",
         entityType: "loan_case",
-        entityId: newId,
+        entityId: inserted.id,
         after: values,
       });
+      return { kind: "created", id: inserted.id } as const;
     });
+    if (outcome.kind === "missing") {
+      return { error: "Lead not found. It may have been removed." };
+    }
+    newId = outcome.id;
     revalidatePath(`/leads/${d.leadId}`);
     revalidatePath("/loan-cases");
+  } catch (error) {
+    reportLoanActionFailure("loan_case_create_failed", error);
+    return { error: UNKNOWN_CREATE_OUTCOME };
   } finally {
-    ctx.waitUntil(db.$client.end());
+    scheduleAdminRequestContextCleanup({ db, ctx });
   }
-  if (newId) redirect(`/loan-cases/${newId}`);
+  if (!newId) return { error: UNKNOWN_CREATE_OUTCOME };
+  redirect(`/loan-cases/${newId}`);
 }
 
 const updateSchema = z.object({
@@ -151,27 +186,45 @@ const updateSchema = z.object({
   ...amounts,
 });
 
-export async function updateLoanCaseAction(formData: FormData) {
-  const { db, ctx, user } = await getMutationContext();
+export async function updateLoanCaseAction(
+  _prev: LoanActionState,
+  formData: FormData,
+): Promise<LoanActionState> {
+  let context: Awaited<ReturnType<typeof getMutationContext>>;
   try {
-    if (!user) redirect("/login");
-    const parsed = updateSchema.safeParse(Object.fromEntries(formData));
-    if (!parsed.success) return;
-    const d = parsed.data;
-    let leadId: string | undefined;
+    context = await getMutationContext();
+  } catch (error) {
+    reportLoanActionFailure("loan_case_update_context_failed", error);
+    return { error: UNKNOWN_UPDATE_OUTCOME };
+  }
+  const { db, ctx, user } = context;
+  if (!user) {
+    scheduleAdminRequestContextCleanup({ db, ctx });
+    redirect("/login");
+  }
 
-    await db.transaction(async (tx) => {
+  try {
+    const parsed = updateSchema.safeParse(Object.fromEntries(formData));
+    if (!parsed.success) {
+      return { error: parsed.error.issues[0]?.message ?? "Please check the case fields." };
+    }
+    const d = parsed.data;
+
+    const outcome = await db.transaction(async (tx) => {
       const [existing] = await tx
         .select()
         .from(schema.loanCases)
         .where(eq(schema.loanCases.id, d.caseId))
         .limit(1)
         .for("update");
-      if (!existing) return;
-      leadId = existing.leadId;
-      await tx.execute(
-        sql`select 1 from ${schema.leads} where ${schema.leads.id} = ${existing.leadId} for update`,
-      );
+      if (!existing) return { kind: "missing_case" } as const;
+      const [lead] = await tx
+        .select({ id: schema.leads.id })
+        .from(schema.leads)
+        .where(eq(schema.leads.id, existing.leadId))
+        .limit(1)
+        .for("update");
+      if (!lead) return { kind: "missing_lead" } as const;
       const tsField = timestampField[d.status];
       const set: Partial<NewLoanCase> = {
         lenderSlug: d.lenderSlug,
@@ -192,13 +245,23 @@ export async function updateLoanCaseAction(formData: FormData) {
         before: existing,
         after: set,
       });
+      return { kind: "updated", leadId: existing.leadId } as const;
     });
 
-    if (!leadId) return;
+    if (outcome.kind === "missing_case") {
+      return { error: "Loan case not found. It may have been removed." };
+    }
+    if (outcome.kind === "missing_lead") {
+      return { error: "The lead for this loan case could not be found." };
+    }
     revalidatePath(`/loan-cases/${d.caseId}`);
-    revalidatePath(`/leads/${leadId}`);
+    revalidatePath(`/leads/${outcome.leadId}`);
     revalidatePath("/loan-cases");
+    return { ok: true };
+  } catch (error) {
+    reportLoanActionFailure("loan_case_update_failed", error);
+    return { error: UNKNOWN_UPDATE_OUTCOME };
   } finally {
-    ctx.waitUntil(db.$client.end());
+    scheduleAdminRequestContextCleanup({ db, ctx });
   }
 }

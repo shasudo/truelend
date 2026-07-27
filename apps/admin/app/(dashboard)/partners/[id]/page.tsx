@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, FileText, Check, X } from "lucide-react";
-import { Card, Field, Textarea, Stat, SubmitButton, cx } from "@truelend/ui";
+import { ArrowLeft, FileText } from "lucide-react";
+import { Card, Stat, cx } from "@truelend/ui";
 import {
   evaluatePartnerApplication,
   partnerStatusLabel,
@@ -18,13 +18,10 @@ import { PageTitle } from "@/components/page-title";
 import { PayoutForm } from "@/components/payout-form";
 import { PartnerDetailsForm } from "@/components/partner-details-form";
 import { PartnerDocumentUpload } from "@/components/partner-document-upload";
+import { PartnerReviewActions } from "@/components/partner-review-actions";
 import { requireAdmin, getAuthContext } from "@/lib/auth";
 import { getPartnerDetail } from "@/lib/partner-queries";
-import {
-  approvePartnerAction,
-  rejectPartnerAction,
-  revokePartnerAction,
-} from "@/lib/partner-actions";
+import { partnerRejectionRefusal } from "@/lib/partner-review-policy";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Referral Partner details" };
@@ -80,6 +77,7 @@ export default async function PartnerDetailPage({ params }: { params: Promise<{ 
   const application = evaluatePartnerApplication(partner, uploadedDocTypes);
   const { canApprove } = application;
   const approvalBlockedMessage = getApprovalBlockedMessage(partner, application);
+  const rejectionBlockedMessage = partnerRejectionRefusal(partner);
 
   return (
     <>
@@ -240,66 +238,18 @@ export default async function PartnerDetailPage({ params }: { params: Promise<{ 
             </div>
           </Card>
 
-          {partner.status !== "verified" && (
-            <Card className="p-5 sm:p-6">
-              <h2 className="font-display text-lg font-bold text-navy-950">Verification</h2>
-              <form action={approvePartnerAction} className="mt-4">
-                <input type="hidden" name="partnerId" value={partner.userId} />
-                <SubmitButton
-                  className="w-full"
-                  disabled={!canApprove}
-                  pendingText="Approving…"
-                  confirm={`Approve ${name} as a Referral Partner and grant portal access? They'll be emailed a confirmation.`}
-                >
-                  <Check className="h-4 w-4" aria-hidden /> Approve Referral Partner
-                </SubmitButton>
-                {approvalBlockedMessage && (
-                  <p className="mt-2 text-xs text-muted">{approvalBlockedMessage}</p>
-                )}
-              </form>
-              <form action={rejectPartnerAction} className="mt-3 space-y-2">
-                <input type="hidden" name="partnerId" value={partner.userId} />
-                <Field label="Rejection reason" htmlFor="rejection-reason" required>
-                  <Textarea
-                    id="rejection-reason"
-                    name="reason"
-                    required
-                    maxLength={500}
-                    placeholder="Shown to the Referral Partner"
-                    className="min-h-16 text-sm"
-                  />
-                </Field>
-                <SubmitButton
-                  variant="outline"
-                  className="w-full text-red-700 hover:bg-red-50"
-                  pendingText="Rejecting…"
-                  confirm={`Reject ${name}'s Referral Partner application and email them this reason? This can't be undone.`}
-                >
-                  <X className="h-4 w-4" aria-hidden /> Reject
-                </SubmitButton>
-              </form>
-            </Card>
-          )}
-
-          {partner.status === "verified" && (
-            <Card className="p-5 sm:p-6">
-              <h2 className="font-display text-lg font-bold text-navy-950">Verification</h2>
-              <p className="mt-2 text-sm text-navy-500">
-                Verified — this Referral Partner has portal access.
-              </p>
-              <form action={revokePartnerAction} className="mt-4">
-                <input type="hidden" name="partnerId" value={partner.userId} />
-                <SubmitButton
-                  variant="outline"
-                  className="w-full"
-                  pendingText="Revoking…"
-                  confirm="Revoke verification and return this Referral Partner to pending? They'll lose portal access until re-approved."
-                >
-                  Revoke verification
-                </SubmitButton>
-              </form>
-            </Card>
-          )}
+          <Card className="p-5 sm:p-6">
+            <h2 className="font-display text-lg font-bold text-navy-950">Verification</h2>
+            <PartnerReviewActions
+              partnerId={partner.userId}
+              partnerName={name}
+              verified={partner.status === "verified"}
+              canApprove={canApprove}
+              approvalBlockedMessage={approvalBlockedMessage}
+              canReject={rejectionBlockedMessage === null}
+              rejectionBlockedMessage={rejectionBlockedMessage}
+            />
+          </Card>
 
           <Card className="p-5 sm:p-6">
             <h2 className="font-display text-lg font-bold text-navy-950">{noun}s</h2>

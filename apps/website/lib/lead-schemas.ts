@@ -20,21 +20,23 @@ const rupeeAmountOptional = z
   .regex(validationPatterns.rupeeAmount, validationMessages.rupeeAmount)
   .or(z.literal(""))
   .optional();
-const smallIntOptional = z
-  .string()
-  .trim()
-  .regex(validationPatterns.smallInteger, validationMessages.smallInteger)
-  .or(z.literal(""))
-  .optional();
+const smallIntOptional = (maximum: number, message: string) =>
+  z
+    .string()
+    .trim()
+    .regex(validationPatterns.smallInteger, validationMessages.smallInteger)
+    .or(z.literal(""))
+    .optional()
+    .refine((value) => !value || Number(value) <= maximum, { message });
 const pincode = z.string().trim().regex(validationPatterns.pincode, validationMessages.pincode);
 
 // Optional detail, shared by every detailed form.
 const loanDetails = {
-  tenureMonths: smallIntOptional,
+  tenureMonths: smallIntOptional(600, "Tenure must be 600 months or less"),
   loanPurpose: z.string().trim().max(200).optional(),
   residenceType: z.enum(residenceTypeValues).or(z.literal("")).optional(),
   employerName: z.string().trim().max(160).optional(),
-  experienceYears: smallIntOptional,
+  experienceYears: smallIntOptional(100, "Experience must be 100 years or less"),
   existingEmi: rupeeAmountOptional,
   assetValue: rupeeAmountOptional,
   annualTurnover: rupeeAmountOptional,
@@ -85,14 +87,14 @@ export const enquirySchema = z.object({
     .enum(productSlugs)
     .or(z.literal(""))
     .refine((v) => v !== "", { message: "Select the product you need" }),
-  // Cards have no loan amount; requiredness is enforced per-product in
-  // enquiryFormSchema (below) so the server union stays a plain ZodObject.
+  // Cards have no loan amount; product-specific requiredness is added to both
+  // the client form schema and the final server union below.
   loanAmount: rupeeAmountOptional,
   loanPurpose: z
     .enum(loanPurposes)
     .or(z.literal(""))
     .refine((v) => v !== "", { message: "Select the purpose of the loan" }),
-  tenureMonths: smallIntOptional,
+  tenureMonths: smallIntOptional(600, "Tenure must be 600 months or less"),
   preferredEmi: rupeeAmountOptional,
   // 02 · About you
   name: z.string().trim().min(2, "Please tell us your name").max(100),
@@ -110,7 +112,10 @@ export const enquirySchema = z.object({
   experienceYears: z
     .string()
     .trim()
-    .regex(validationPatterns.smallInteger, "Select your work experience"),
+    .regex(validationPatterns.smallInteger, "Select your work experience")
+    .refine((value) => Number(value) <= 100, {
+      message: "Experience must be 100 years or less",
+    }),
   existingWithEmployer: z.string().trim().max(40).optional(),
   // 04 · Existing borrowings
   existingEmi: rupeeAmountOptional,
@@ -121,18 +126,20 @@ export const enquirySchema = z.object({
   ...base,
 });
 
-// Client-side resolver: everything enquirySchema checks, plus "loan amount is
-// required unless the product is a card". Kept out of the discriminated union
-// (which rejects refined schemas); the server parses with leadSchema.
-export const enquiryFormSchema = enquirySchema.superRefine((v, ctx) => {
-  if (!cardProducts.has(v.productSlug) && !v.loanAmount) {
+function requireLoanAmount(
+  value: { productSlug: string; loanAmount?: string },
+  ctx: z.RefinementCtx,
+) {
+  if (!cardProducts.has(value.productSlug) && !value.loanAmount) {
     ctx.addIssue({
       path: ["loanAmount"],
       code: z.ZodIssueCode.custom,
       message: "Enter the loan amount in rupees (digits only)",
     });
   }
-});
+}
+
+export const enquiryFormSchema = enquirySchema.superRefine(requireLoanAmount);
 
 export const referralSchema = z.object({
   kind: z.literal("referral"),
@@ -173,9 +180,8 @@ export const cibilNotifySchema = z.object({
   ...base,
 });
 
-export const leadSchema = z.discriminatedUnion("kind", [
-  enquirySchema,
-  referralSchema,
-  contactSchema,
-  cibilNotifySchema,
-]);
+export const leadSchema = z
+  .discriminatedUnion("kind", [enquirySchema, referralSchema, contactSchema, cibilNotifySchema])
+  .superRefine((value, ctx) => {
+    if (value.kind === "enquiry") requireLoanAmount(value, ctx);
+  });

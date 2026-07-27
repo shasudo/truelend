@@ -83,7 +83,7 @@ export async function verifyTurnstile({
       JSON.stringify({
         event: "turnstile_verification_error",
         action: expectedAction,
-        error: error instanceof Error ? error.message : "unknown",
+        errorType: error instanceof Error ? error.name : "unknown",
       }),
     );
     return false;

@@ -6,6 +6,7 @@ import {
   isReadinessAuthorized,
   type HealthResponse,
 } from "@truelend/health";
+import { scheduleOwnedRequestContextCleanup } from "@/lib/owned-request-context";
 
 export const dynamic = "force-dynamic";
 
@@ -32,7 +33,7 @@ export async function GET(request: Request) {
   } catch {
     registration = "error";
   } finally {
-    ctx.waitUntil(connection.$client.end());
+    scheduleOwnedRequestContextCleanup({ db: connection, ctx });
   }
   const auth = hasConfiguredValues(env.BETTER_AUTH_SECRET, env.BETTER_AUTH_URL) ? "ok" : "error";
   const turnstile = hasConfiguredValues(env.TURNSTILE_SECRET_KEY, env.TURNSTILE_SITE_KEY)

@@ -8,8 +8,9 @@ import {
   type PartnerPayout,
   type Lead,
 } from "@truelend/db";
+import { normalizeSafeInteger } from "@truelend/reference";
+import { normalizePartnerLedger } from "./partner-ledger";
 
-const num = (v: unknown) => Number(v ?? 0);
 type Row = Record<string, unknown>;
 
 interface PartnerListRow {
@@ -39,8 +40,8 @@ export async function listPartners(db: Database, status?: string): Promise<Partn
     status: String(r.status),
     // Raw postgres.js (fetch_types:false) returns timestamptz as a string.
     createdAt: new Date(String(r.created_at)),
-    leadCount: num(r.lead_count),
-    docCount: num(r.doc_count),
+    leadCount: normalizeSafeInteger(r.lead_count, "Partner lead count"),
+    docCount: normalizeSafeInteger(r.doc_count, "Partner document count"),
   }));
 }
 
@@ -91,6 +92,7 @@ export async function getPartnerDetail(db: Database, id: string): Promise<Partne
       .where(eq(schema.partnerPayouts.partnerId, id)),
   ]);
 
+  const ledgerTotals = normalizePartnerLedger(ledger?.earned, ledger?.paid);
   return {
     partner: row.partner,
     name: row.name,
@@ -98,7 +100,7 @@ export async function getPartnerDetail(db: Database, id: string): Promise<Partne
     documents,
     payouts,
     leads,
-    earnedPaise: num(ledger?.earned),
-    paidPaise: num(ledger?.paid),
+    earnedPaise: ledgerTotals.earnedPaise,
+    paidPaise: ledgerTotals.paidPaise,
   };
 }

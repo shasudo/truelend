@@ -13,10 +13,11 @@ export default function Error({
   return (
     <Card className="mx-auto mt-10 max-w-md p-8 text-center">
       <h2 className="font-display text-lg font-bold text-navy-950">
-        Something went wrong loading this page.
+        Something went wrong completing this request.
       </h2>
       <p className="mt-2 text-sm text-navy-500">
-        Please try again. If it keeps happening, contact an admin.
+        Reload and check the current status before repeating an action. If it keeps happening,
+        contact an admin.
       </p>
       <Button className="mt-5" onClick={reset}>
         Try again

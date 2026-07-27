@@ -1,12 +1,12 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
-import { Button, Card, SubmitButton } from "@truelend/ui";
+import { Card } from "@truelend/ui";
+import { CreateLoanCaseForm } from "@/components/loan-case-action-forms";
 import { PageTitle } from "@/components/page-title";
 import { LoanCaseFields } from "@/components/loan-case-fields";
 import { getAuthContext } from "@/lib/auth";
 import { getLead } from "@/lib/lead-queries";
-import { createLoanCaseAction } from "@/lib/loan-actions";
 
 export const dynamic = "force-dynamic";
 
@@ -34,16 +34,9 @@ export default async function NewLoanCasePage({
       <PageTitle title="New loan case" subtitle={`For ${lead.name ?? "this lead"}`} />
 
       <Card className="max-w-3xl p-5 sm:p-8">
-        <form action={createLoanCaseAction} className="space-y-6">
-          <input type="hidden" name="leadId" value={lead.id} />
+        <CreateLoanCaseForm leadId={lead.id} cancelHref={`/leads/${lead.id}`}>
           <LoanCaseFields defaults={{ productSlug: lead.productSlug ?? undefined }} />
-          <div className="flex flex-col gap-2 border-t border-hairline pt-6 min-[420px]:flex-row">
-            <SubmitButton pendingText="Creating…">Create loan case</SubmitButton>
-            <Button type="button" variant="ghost" asChild>
-              <Link href={`/leads/${lead.id}`}>Cancel</Link>
-            </Button>
-          </div>
-        </form>
+        </CreateLoanCaseForm>
       </Card>
     </>
   );

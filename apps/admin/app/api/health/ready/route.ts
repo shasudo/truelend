@@ -6,6 +6,7 @@ import {
   isReadinessAuthorized,
   type HealthResponse,
 } from "@truelend/health";
+import { scheduleAdminRequestContextCleanup } from "@/lib/request-context-cleanup";
 
 export const dynamic = "force-dynamic";
 
@@ -25,7 +26,7 @@ export async function GET(request: Request) {
   } catch {
     db = "error";
   } finally {
-    ctx.waitUntil(connection.$client.end());
+    scheduleAdminRequestContextCleanup({ db: connection, ctx });
   }
   const auth = hasConfiguredValues(env.BETTER_AUTH_SECRET, env.BETTER_AUTH_URL) ? "ok" : "error";
   const status = db === "ok" && auth === "ok" ? "ok" : "error";

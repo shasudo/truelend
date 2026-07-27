@@ -13,14 +13,14 @@ import {
   ShieldCheck,
   UserRound,
 } from "lucide-react";
-import { Button, Card, Container, Logo, SubmitButton } from "@truelend/ui";
+import { Button, Card, Container, Logo } from "@truelend/ui";
 import {
   contactPhone,
   formatDateTime,
   referralPartnerEmail,
   referralTypeLabel,
 } from "@truelend/reference";
-import { reopenApplication } from "@/lib/kyc-actions";
+import { ReopenApplicationForm } from "@/components/application-action-forms";
 import { SignOutButton } from "@/components/sign-out-button";
 import { PartnerIdChip } from "@/components/partner-id-chip";
 
@@ -157,9 +157,8 @@ export function UnderReviewScreen({
               <div className="mx-auto mt-7 flex max-w-[380px] items-center gap-4 rounded-2xl border border-navy-100 bg-navy-50/60 px-4 py-4 text-left sm:px-5">
                 <Mail className="h-7 w-7 shrink-0 text-navy-700" aria-hidden />
                 <p className="text-sm leading-relaxed text-navy-700">
-                  We’ve sent a confirmation email to{" "}
-                  <strong className="break-all text-navy-800">{email}</strong> with your application
-                  details.
+                  We’ll send the review decision to{" "}
+                  <strong className="break-all text-navy-800">{email}</strong>.
                 </p>
               </div>
             </div>
@@ -233,15 +232,7 @@ export function UnderReviewScreen({
               <Button variant="outline" asChild className="w-full min-[480px]:w-auto">
                 <Link href="/resources">Open Referral Partner Guide</Link>
               </Button>
-              <form action={reopenApplication}>
-                <SubmitButton
-                  className="w-full min-[480px]:w-auto"
-                  pendingText="Reopening…"
-                  confirm="Reopen your application for editing? You'll need to submit it again for review."
-                >
-                  Edit Application
-                </SubmitButton>
-              </form>
+              <ReopenApplicationForm />
             </div>
           </div>
         </Container>

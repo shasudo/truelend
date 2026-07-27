@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Check, Upload, Loader2, FileText } from "lucide-react";
 import { Card, cx } from "@truelend/ui";
@@ -52,6 +52,10 @@ function DocRow({
   const [error, setError] = useState<string>();
   const [done, setDone] = useState(uploaded);
 
+  useEffect(() => {
+    setDone(uploaded);
+  }, [uploaded]);
+
   async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -62,15 +66,21 @@ function DocRow({
     body.set("file", file);
     try {
       const res = await fetch("/api/kyc/upload", { method: "POST", body });
-      const data = (await res.json()) as { ok?: boolean; error?: string };
+      const data = (await res.json()) as {
+        ok?: boolean;
+        error?: string;
+        uncertain?: boolean;
+      };
       if (!res.ok || !data.ok) {
         setError(data.error ?? "Upload failed");
+        if (data.uncertain) router.refresh();
       } else {
         setDone(true);
         router.refresh();
       }
     } catch {
       setError("Upload failed — please try again.");
+      router.refresh();
     } finally {
       setBusy(false);
       if (inputRef.current) inputRef.current.value = "";

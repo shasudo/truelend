@@ -1,7 +1,8 @@
 import { headers } from "next/headers";
 import { eq } from "drizzle-orm";
 import { schema } from "@truelend/db";
-import { getAuthContext } from "@/lib/auth";
+import { createAuthContext } from "@/lib/auth";
+import { scheduleAdminRequestContextCleanup } from "@/lib/request-context-cleanup";
 
 // Opened via target="_blank", so error responses must be a readable page, not
 // a raw text body dumped into a blank tab. Self-contained brand-styled HTML.
@@ -22,7 +23,7 @@ function errorPage(title: string, message: string, status: number) {
 // contain slashes (kyc/{partnerId}/{doc}), hence the catch-all. Private,
 // never cached.
 export async function GET(_req: Request, { params }: { params: Promise<{ key: string[] }> }) {
-  const { auth, db, ctx, env } = getAuthContext();
+  const { auth, db, ctx, env } = createAuthContext();
   try {
     const session = await auth.api.getSession({ headers: await headers() });
     if (session?.user.role !== "admin") {
@@ -70,6 +71,6 @@ export async function GET(_req: Request, { params }: { params: Promise<{ key: st
       },
     });
   } finally {
-    ctx.waitUntil(db.$client.end());
+    scheduleAdminRequestContextCleanup({ db, ctx });
   }
 }

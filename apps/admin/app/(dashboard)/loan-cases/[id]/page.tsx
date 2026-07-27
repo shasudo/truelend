@@ -1,13 +1,13 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
-import { Card, Stat, SubmitButton } from "@truelend/ui";
+import { Card, Stat } from "@truelend/ui";
 import { bankName, productName, formatPaise, formatDateTime } from "@truelend/reference";
+import { UpdateLoanCaseForm } from "@/components/loan-case-action-forms";
 import { PageTitle } from "@/components/page-title";
 import { StatusBadge } from "@/components/status-badge";
 import { getAuthContext } from "@/lib/auth";
 import { getLoanCase } from "@/lib/loan-queries";
-import { updateLoanCaseAction } from "@/lib/loan-actions";
 import { LoanCaseFields } from "@/components/loan-case-fields";
 
 export const dynamic = "force-dynamic";
@@ -49,13 +49,9 @@ export default async function LoanCaseDetailPage({ params }: { params: Promise<{
       <div className="grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
         <Card className="p-5 sm:p-8">
           <h2 className="mb-6 font-display text-lg font-bold text-navy-950">Edit case</h2>
-          <form action={updateLoanCaseAction} className="space-y-6">
-            <input type="hidden" name="caseId" value={c.id} />
+          <UpdateLoanCaseForm caseId={c.id}>
             <LoanCaseFields defaults={c} />
-            <div className="border-t border-hairline pt-6">
-              <SubmitButton pendingText="Saving…">Save changes</SubmitButton>
-            </div>
-          </form>
+          </UpdateLoanCaseForm>
         </Card>
 
         <div className="min-w-0 space-y-6">

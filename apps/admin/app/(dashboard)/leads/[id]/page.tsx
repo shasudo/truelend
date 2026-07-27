@@ -1,10 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Plus, Phone, Mail, MapPin } from "lucide-react";
-import { Button, Card, Field, Select, Textarea, SubmitButton } from "@truelend/ui";
+import { Button, Card } from "@truelend/ui";
 import {
   leadKindLabels,
-  leadStatusLabels,
   productName,
   bankName,
   channelForKind,
@@ -14,12 +13,11 @@ import {
   employmentTypeLabels,
   residenceTypeLabels,
 } from "@truelend/reference";
-import { schema } from "@truelend/db";
+import { LeadNoteForm, LeadPipelineForm } from "@/components/lead-action-forms";
 import { PageTitle } from "@/components/page-title";
 import { StatusBadge } from "@/components/status-badge";
 import { getAuthContext } from "@/lib/auth";
 import { getLead, listEmployees } from "@/lib/lead-queries";
-import { updateLeadPipelineAction, addLeadNoteAction } from "@/lib/lead-actions";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Lead details" };
@@ -183,22 +181,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
 
           <Card className="p-5 sm:p-6">
             <h2 className="font-display text-lg font-bold text-navy-950">Notes</h2>
-            <form action={addLeadNoteAction} className="mt-4 space-y-3">
-              <input type="hidden" name="leadId" value={lead.id} />
-              <Field label="Note" htmlFor="lead-note" required>
-                <Textarea
-                  id="lead-note"
-                  name="body"
-                  required
-                  maxLength={4000}
-                  placeholder="Log a call, note next steps…"
-                  className="min-h-20"
-                />
-              </Field>
-              <SubmitButton size="sm" pendingText="Adding…">
-                Add note
-              </SubmitButton>
-            </form>
+            <LeadNoteForm leadId={lead.id} />
             <ul className="mt-6 space-y-4">
               {notes.length === 0 && <li className="text-sm text-muted">No notes yet.</li>}
               {notes.map(({ note, authorName }) => (
@@ -217,31 +200,13 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
           <Card className="p-5 sm:p-6">
             <h2 className="font-display text-lg font-bold text-navy-950">Pipeline</h2>
 
-            <form action={updateLeadPipelineAction} className="mt-4 space-y-4">
-              <input type="hidden" name="leadId" value={lead.id} />
-              <Field label="Status" htmlFor="status">
-                <Select id="status" name="status" defaultValue={lead.status}>
-                  {schema.leadStatus.enumValues.map((s) => (
-                    <option key={s} value={s}>
-                      {leadStatusLabels[s]}
-                    </option>
-                  ))}
-                </Select>
-              </Field>
-              <Field label="Assigned to" htmlFor="assignedTo">
-                <Select id="assignedTo" name="assignedTo" defaultValue={lead.assignedTo ?? ""}>
-                  <option value="">Unassigned</option>
-                  {employees.map((e) => (
-                    <option key={e.id} value={e.id}>
-                      {e.name}
-                    </option>
-                  ))}
-                </Select>
-              </Field>
-              <SubmitButton size="sm" variant="secondary" className="w-full" pendingText="Saving…">
-                Save
-              </SubmitButton>
-            </form>
+            <LeadPipelineForm
+              leadId={lead.id}
+              status={lead.status}
+              assignedTo={lead.assignedTo}
+              employees={employees}
+              caseStatuses={cases.map((loanCase) => loanCase.status)}
+            />
 
             <p className="mt-5 border-t border-hairline pt-4 text-xs text-muted">
               Created {formatDateTime(lead.createdAt)}

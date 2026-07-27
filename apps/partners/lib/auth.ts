@@ -12,6 +12,10 @@ import {
   type PartnerSession,
 } from "@truelend/auth/server";
 import { sendPasswordReset } from "@truelend/email";
+import {
+  scheduleOwnedRequestContextCleanup,
+  withOwnedRequestContext,
+} from "./owned-request-context";
 import { retryRead } from "./retry-read";
 
 export function authOptions(env: CloudflareEnv): CreateAuthOptions {
@@ -40,17 +44,33 @@ interface AuthContext {
   env: CloudflareEnv;
 }
 
+interface PartnerRequestContext extends AuthContext {
+  session: PartnerSession | null;
+  partner: Partner | null;
+}
+
+function createAuthContext(): AuthContext {
+  const { env, ctx } = getCloudflareContext();
+  const db = createDb(env.HYPERDRIVE.connectionString);
+  try {
+    const auth = createPartnerAuth(db, authOptions(env));
+    return { db, auth, ctx, env };
+  } catch (error) {
+    scheduleOwnedRequestContextCleanup({ db, ctx });
+    throw error;
+  }
+}
+
+export function createPartnerActionContext(): AuthContext {
+  return createAuthContext();
+}
+
 // One db + auth per request, React.cache-shared across layout and pages. RSC
 // reads have no single connection owner; actions and routes close clients with
 // ctx.waitUntil.
 // ponytail: Hyperdrive reclaims the cached RSC client's idle session. Revisit if
 // connection utilization exceeds 80% or readiness detects exhaustion.
-export const getAuthContext = cache((): AuthContext => {
-  const { env, ctx } = getCloudflareContext();
-  const db = createDb(env.HYPERDRIVE.connectionString);
-  const auth = createPartnerAuth(db, authOptions(env));
-  return { db, auth, ctx, env };
-});
+export const getAuthContext = cache(createAuthContext);
 
 export const getOptionalPartnerSession = cache(async (): Promise<PartnerSession | null> => {
   const { auth } = getAuthContext();
@@ -80,29 +100,37 @@ export async function requirePartner(): Promise<{ session: PartnerSession; partn
   return { session: context.session, partner: context.partner };
 }
 
-export async function requirePartnerApi(): Promise<
-  { partner: Partner; db: Database; ctx: ExecutionContext; env: CloudflareEnv } | Response
-> {
-  const { db, ctx, env } = getAuthContext();
-  try {
-    const session = await getOptionalPartnerSession();
-    if (!session) {
-      ctx.waitUntil(db.$client.end());
-      return new Response("Unauthorized", { status: 401 });
-    }
-    const rows = await db
-      .select()
-      .from(schema.partners)
-      .where(eq(schema.partners.userId, session.user.id))
-      .limit(1);
-    const partner = rows[0];
-    if (!partner) {
-      ctx.waitUntil(db.$client.end());
-      return new Response("No Referral Partner profile", { status: 403 });
-    }
-    return { partner, db, ctx, env };
-  } catch (error) {
-    ctx.waitUntil(db.$client.end());
-    throw error;
-  }
+/**
+ * Runs one Server Action or Route Handler with one explicitly owned database
+ * client. React.cache only memoizes while rendering Server Components, so action
+ * and route code must pass this context through instead of nesting the cached
+ * RSC helpers above.
+ */
+export async function withPartnerRequest<T>(
+  requestHeaders: Headers,
+  run: (context: PartnerRequestContext) => Promise<T>,
+): Promise<T> {
+  return withOwnedRequestContext(createAuthContext, async (context) => {
+    const session = await retryRead("partner_action_session_read_retry", () =>
+      context.auth.api.getSession({ headers: requestHeaders }),
+    );
+    const partner = session
+      ? ((
+          await retryRead("partner_action_profile_read_retry", () =>
+            context.db
+              .select()
+              .from(schema.partners)
+              .where(eq(schema.partners.userId, session.user.id))
+              .limit(1),
+          )
+        )[0] ?? null)
+      : null;
+    return await run({ ...context, session, partner });
+  });
+}
+
+export async function withPartnerMutation<T>(
+  run: (context: PartnerRequestContext) => Promise<T>,
+): Promise<T> {
+  return withPartnerRequest(await headers(), run);
 }

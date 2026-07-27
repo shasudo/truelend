@@ -1,7 +1,11 @@
 import { headers } from "next/headers";
 import { and, eq, inArray } from "drizzle-orm";
 import { schema } from "@truelend/db";
-import { getAuthContext } from "@/lib/auth";
+import { createAuthContext } from "@/lib/auth";
+import {
+  scheduleAdminBackgroundTask,
+  scheduleAdminRequestContextCleanup,
+} from "@/lib/request-context-cleanup";
 
 const MAX_BYTES = 5 * 1024 * 1024;
 const allowedContentTypes = ["image/jpeg", "image/png", "application/pdf"];
@@ -20,8 +24,9 @@ function signatureMatches(contentType: string, bytes: Uint8Array): boolean {
 // Admin uploads remain in the private KYC bucket. The file is validated before
 // R2 writes and the partner row is locked before a replacement is committed.
 export async function POST(req: Request) {
-  const { auth, db, ctx, env } = getAuthContext();
+  const { auth, db, ctx, env } = createAuthContext();
   let uploadedKey: string | undefined;
+  let databaseOutcomeUnknown = false;
   try {
     const session = await auth.api.getSession({ headers: await headers() });
     if (session?.user.role !== "admin") {
@@ -78,6 +83,7 @@ export async function POST(req: Request) {
     uploadedKey = `kyc/${partnerId}/${docType}-${crypto.randomUUID()}.${extension}`;
     await env.BUCKET.put(uploadedKey, bytes, { httpMetadata: { contentType: file.type } });
 
+    databaseOutcomeUnknown = true;
     const outcome = await db.transaction(async (tx) => {
       const [partner] = await tx
         .select({ userId: schema.partners.userId, status: schema.partners.status })
@@ -140,6 +146,7 @@ export async function POST(req: Request) {
       });
       return { ok: true, superseded: prior.map((document) => document.r2Key) };
     });
+    databaseOutcomeUnknown = false;
     if (!outcome.ok) {
       await env.BUCKET.delete(uploadedKey);
       uploadedKey = undefined;
@@ -147,19 +154,34 @@ export async function POST(req: Request) {
     }
     uploadedKey = undefined;
     if (outcome.superseded.length > 0) {
-      ctx.waitUntil(Promise.all(outcome.superseded.map((key) => env.BUCKET.delete(key))));
+      scheduleAdminBackgroundTask(ctx, "admin_kyc_superseded_delete_failed", () =>
+        Promise.all(outcome.superseded.map((key) => env.BUCKET.delete(key))),
+      );
     }
     return Response.json({ ok: true });
   } catch (error) {
-    if (uploadedKey) await env.BUCKET.delete(uploadedKey).catch(() => undefined);
+    // A rejected transaction promise after COMMIT does not prove rollback.
+    // Preserve the private object when the database outcome is unknown so a
+    // possibly committed row is never left pointing at deleted bytes.
+    if (uploadedKey && !databaseOutcomeUnknown) {
+      await env.BUCKET.delete(uploadedKey).catch(() => undefined);
+    }
     console.error(
       JSON.stringify({
         event: "admin_kyc_upload_failed",
-        error: error instanceof Error ? error.message : "unknown",
+        errorType: error instanceof Error ? error.name : "unknown",
       }),
     );
-    return Response.json({ error: "Upload failed. Please try again." }, { status: 500 });
+    return Response.json(
+      {
+        error: databaseOutcomeUnknown
+          ? "We couldn't confirm this upload. Reload the document list before trying again."
+          : "Upload failed. Please try again.",
+        uncertain: databaseOutcomeUnknown || undefined,
+      },
+      { status: databaseOutcomeUnknown ? 503 : 500 },
+    );
   } finally {
-    ctx.waitUntil(db.$client.end());
+    scheduleAdminRequestContextCleanup({ db, ctx });
   }
 }

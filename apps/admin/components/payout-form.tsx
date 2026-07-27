@@ -1,18 +1,21 @@
 "use client";
 
 import { useActionState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Button, Field, Input, Select } from "@truelend/ui";
 import { recordPayoutAction, type PayoutResult } from "@/lib/partner-actions";
 
 // Client form so the server's balance-guard rejection ("exceeds outstanding")
 // is shown instead of silently swallowed. Resets after a successful entry.
 export function PayoutForm({ partnerId, noun }: { partnerId: string; noun: string }) {
+  const router = useRouter();
   const [state, action, pending] = useActionState<PayoutResult, FormData>(recordPayoutAction, {});
   const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
     if (state.ok) formRef.current?.reset();
-  }, [state]);
+    if (state.ok || state.uncertain) router.refresh();
+  }, [router, state.ok, state.uncertain]);
 
   return (
     <form ref={formRef} action={action} className="mt-5 space-y-3 border-t border-hairline pt-5">

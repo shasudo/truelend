@@ -66,10 +66,12 @@ void test("Referral Partner registration email uses the dedicated sender", async
     assert.equal(typeof html, "string");
     if (typeof html !== "string") throw new TypeError("Expected an HTML email body");
     assert.match(html, /RP000001/);
+    assert.match(html, /remaining details and documents/);
+    assert.doesNotMatch(html, /application has been submitted/);
     assert.deepEqual(requestBody, {
       from: "TrueLend Referral Partners <partner@example.test>",
       to: ["recipient@example.test"],
-      subject: "We received your TrueLend Referral Partner application",
+      subject: "Complete your TrueLend Referral Partner application",
       html,
     });
   } finally {

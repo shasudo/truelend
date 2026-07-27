@@ -1,6 +1,5 @@
 "use server";
 
-import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
@@ -12,7 +11,8 @@ import {
   validationMessages,
   validationPatterns,
 } from "@truelend/reference";
-import { getAuthContext } from "./auth";
+import { reportPartnerActionFailure } from "./action-errors";
+import { withPartnerMutation } from "./auth";
 
 const LOCKED_MSG =
   "Your KYC is locked while it's under review or after verification. Contact us to make changes.";
@@ -20,6 +20,8 @@ const LOCKED_MSG =
 export type KycState = { ok?: boolean; error?: string };
 
 const upper = (s: string) => s.trim().toUpperCase();
+const UNKNOWN_OUTCOME =
+  "We couldn't confirm the result. Refresh this page to check your application before trying again.";
 
 const phoneField = z
   .string()
@@ -55,148 +57,179 @@ const kycSchema = z.object({
 });
 
 export async function savePartnerKyc(_prev: KycState, formData: FormData): Promise<KycState> {
-  const { db, ctx, auth } = getAuthContext();
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
-    if (!session) return { error: "Please sign in again." };
-    const parsed = kycSchema.safeParse(Object.fromEntries(formData));
-    if (!parsed.success)
-      return { error: parsed.error.issues[0]?.message ?? "Please check the fields." };
-    const d = parsed.data;
+    return await withPartnerMutation(async ({ db, session }) => {
+      if (!session) return { error: "Please sign in again." };
+      const parsed = kycSchema.safeParse(Object.fromEntries(formData));
+      if (!parsed.success)
+        return { error: parsed.error.issues[0]?.message ?? "Please check the fields." };
+      const d = parsed.data;
 
-    const saved = await db.transaction(async (tx) => {
-      const [partner] = await tx
-        .select()
-        .from(schema.partners)
-        .where(eq(schema.partners.userId, session.user.id))
-        .limit(1)
-        .for("update");
-      if (!partner) return "missing" as const;
-      if (!isKycEditable(partner)) return "locked" as const;
-      await tx
-        .update(schema.partners)
-        .set({
-          pan: d.pan,
-          address: d.address,
-          bankName: d.bankName,
-          accountHolder: d.accountHolder,
-          accountNumber: d.accountNumber,
-          bankBranch: d.bankBranch,
-          ifsc: d.ifsc,
-          nomineeName: d.nomineeName,
-          nomineePhone: d.nomineePhone,
-          occupation: d.occupation,
-          designation: d.designation,
-          experienceNote: d.experienceNote || null,
-        })
-        .where(eq(schema.partners.userId, session.user.id));
-      await tx.insert(schema.auditLog).values({
-        actorId: session.user.id,
-        actorEmail: session.user.email,
-        action: "partner.kyc_details_update",
-        entityType: "partner",
-        entityId: session.user.id,
-        // Field names only — never copy PAN, bank, Aadhaar or nominee values
-        // into the generic audit trail.
-        after: {
-          fields: [
-            "pan",
-            "address",
-            "bankName",
-            "accountHolder",
-            "accountNumber",
-            "bankBranch",
-            "ifsc",
-            "nomineeName",
-            "nomineePhone",
-            "occupation",
-            "designation",
-            "experienceNote",
-          ],
-        },
+      const saved = await db.transaction(async (tx) => {
+        const [partner] = await tx
+          .select()
+          .from(schema.partners)
+          .where(eq(schema.partners.userId, session.user.id))
+          .limit(1)
+          .for("update");
+        if (!partner) return "missing" as const;
+        if (!isKycEditable(partner)) return "locked" as const;
+        await tx
+          .update(schema.partners)
+          .set({
+            pan: d.pan,
+            address: d.address,
+            bankName: d.bankName,
+            accountHolder: d.accountHolder,
+            accountNumber: d.accountNumber,
+            bankBranch: d.bankBranch,
+            ifsc: d.ifsc,
+            nomineeName: d.nomineeName,
+            nomineePhone: d.nomineePhone,
+            occupation: d.occupation,
+            designation: d.designation,
+            experienceNote: d.experienceNote || null,
+          })
+          .where(eq(schema.partners.userId, session.user.id));
+        await tx.insert(schema.auditLog).values({
+          actorId: session.user.id,
+          actorEmail: session.user.email,
+          action: "partner.kyc_details_update",
+          entityType: "partner",
+          entityId: session.user.id,
+          // Field names only — never copy PAN, bank, Aadhaar or nominee values
+          // into the generic audit trail.
+          after: {
+            fields: [
+              "pan",
+              "address",
+              "bankName",
+              "accountHolder",
+              "accountNumber",
+              "bankBranch",
+              "ifsc",
+              "nomineeName",
+              "nomineePhone",
+              "occupation",
+              "designation",
+              "experienceNote",
+            ],
+          },
+        });
+        return "saved" as const;
       });
-      return "saved" as const;
+      if (saved === "missing") return { error: "Please sign in again." };
+      if (saved === "locked") return { error: LOCKED_MSG };
+      revalidatePath("/dashboard");
+      revalidatePath("/kyc");
+      return { ok: true };
     });
-    if (saved === "missing") return { error: "Please sign in again." };
-    if (saved === "locked") return { error: LOCKED_MSG };
-    revalidatePath("/dashboard");
-    revalidatePath("/kyc");
-    return { ok: true };
-  } finally {
-    ctx.waitUntil(db.$client.end());
+  } catch (error) {
+    reportPartnerActionFailure("partner_kyc_details_update_failed", error);
+    return { error: UNKNOWN_OUTCOME };
   }
 }
 
-export async function submitForReview() {
-  const { db, ctx, auth } = getAuthContext();
+export async function submitForReview(_prev: KycState, _formData: FormData): Promise<KycState> {
+  void _prev;
+  void _formData;
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
-    if (!session) return;
-    await db.transaction(async (tx) => {
-      const [partner] = await tx
-        .select()
-        .from(schema.partners)
-        .where(eq(schema.partners.userId, session.user.id))
-        .limit(1)
-        .for("update");
-      if (!partner) return;
-      const docs = await tx
-        .select({ docType: schema.partnerDocuments.docType })
-        .from(schema.partnerDocuments)
-        .where(eq(schema.partnerDocuments.partnerId, partner.userId));
-      const uploaded = new Set(docs.map((document) => document.docType));
-      if (!evaluatePartnerApplication(partner, uploaded).canSubmit) return;
-      const submittedAt = new Date();
-      await tx
-        .update(schema.partners)
-        .set({ submittedAt, status: "pending", rejectionReason: null })
-        .where(eq(schema.partners.userId, partner.userId));
-      await tx.insert(schema.auditLog).values({
-        actorId: session.user.id,
-        actorEmail: session.user.email,
-        action: "partner.submit_review",
-        entityType: "partner",
-        entityId: partner.userId,
-        after: { status: "pending", submittedAt: submittedAt.toISOString() },
+    return await withPartnerMutation(async ({ db, session }) => {
+      if (!session) return { error: "Please sign in again." };
+      const outcome = await db.transaction(async (tx) => {
+        const [partner] = await tx
+          .select()
+          .from(schema.partners)
+          .where(eq(schema.partners.userId, session.user.id))
+          .limit(1)
+          .for("update");
+        if (!partner) return "missing" as const;
+        if (partner.status === "pending" && partner.submittedAt != null) {
+          return "already_submitted" as const;
+        }
+        const docs = await tx
+          .select({ docType: schema.partnerDocuments.docType })
+          .from(schema.partnerDocuments)
+          .where(eq(schema.partnerDocuments.partnerId, partner.userId));
+        const uploaded = new Set(docs.map((document) => document.docType));
+        if (!evaluatePartnerApplication(partner, uploaded).canSubmit) return "incomplete" as const;
+        const submittedAt = new Date();
+        await tx
+          .update(schema.partners)
+          .set({ submittedAt, status: "pending", rejectionReason: null })
+          .where(eq(schema.partners.userId, partner.userId));
+        await tx.insert(schema.auditLog).values({
+          actorId: session.user.id,
+          actorEmail: session.user.email,
+          action: "partner.submit_review",
+          entityType: "partner",
+          entityId: partner.userId,
+          after: { status: "pending", submittedAt: submittedAt.toISOString() },
+        });
+        return "submitted" as const;
       });
+      if (outcome === "missing") return { error: "Please sign in again." };
+      if (outcome === "already_submitted") return { ok: true };
+      if (outcome === "incomplete") {
+        return {
+          error:
+            "Your application details or documents changed. Review the checklist and try again.",
+        };
+      }
+      revalidatePath("/dashboard");
+      return { ok: true };
     });
-    revalidatePath("/dashboard");
-  } finally {
-    ctx.waitUntil(db.$client.end());
+  } catch (error) {
+    reportPartnerActionFailure("partner_review_submit_failed", error);
+    return { error: UNKNOWN_OUTCOME };
   }
 }
 
-export async function reopenApplication() {
-  const { db, ctx, auth } = getAuthContext();
+export async function reopenApplication(_prev: KycState, _formData: FormData): Promise<KycState> {
+  void _prev;
+  void _formData;
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
-    if (!session) return;
-    await db.transaction(async (tx) => {
-      const [partner] = await tx
-        .select({ status: schema.partners.status, submittedAt: schema.partners.submittedAt })
-        .from(schema.partners)
-        .where(eq(schema.partners.userId, session.user.id))
-        .limit(1)
-        .for("update");
-      // A verified partner can't reopen to edit — that would bypass the review
-      // they already passed. Reopen only withdraws an undecided submission.
-      if (!partner || partner.status === "verified" || !partner.submittedAt) return;
-      await tx
-        .update(schema.partners)
-        .set({ submittedAt: null })
-        .where(eq(schema.partners.userId, session.user.id));
-      await tx.insert(schema.auditLog).values({
-        actorId: session.user.id,
-        actorEmail: session.user.email,
-        action: "partner.withdraw_review",
-        entityType: "partner",
-        entityId: session.user.id,
-        before: { submittedAt: partner.submittedAt.toISOString() },
-        after: { submittedAt: null },
+    return await withPartnerMutation(async ({ db, session }) => {
+      if (!session) return { error: "Please sign in again." };
+      const outcome = await db.transaction(async (tx) => {
+        const [partner] = await tx
+          .select({ status: schema.partners.status, submittedAt: schema.partners.submittedAt })
+          .from(schema.partners)
+          .where(eq(schema.partners.userId, session.user.id))
+          .limit(1)
+          .for("update");
+        if (!partner) return "missing" as const;
+        if (partner.status === "pending" && partner.submittedAt == null) {
+          return "already_reopened" as const;
+        }
+        // A verified partner can't reopen to edit — that would bypass the review
+        // they already passed. Reopen only withdraws an undecided submission.
+        if (partner.status === "verified" || !partner.submittedAt) return "not_allowed" as const;
+        await tx
+          .update(schema.partners)
+          .set({ submittedAt: null })
+          .where(eq(schema.partners.userId, session.user.id));
+        await tx.insert(schema.auditLog).values({
+          actorId: session.user.id,
+          actorEmail: session.user.email,
+          action: "partner.withdraw_review",
+          entityType: "partner",
+          entityId: session.user.id,
+          before: { submittedAt: partner.submittedAt.toISOString() },
+          after: { submittedAt: null },
+        });
+        return "reopened" as const;
       });
+      if (outcome === "missing") return { error: "Please sign in again." };
+      if (outcome === "already_reopened") return { ok: true };
+      if (outcome === "not_allowed") {
+        return { error: "This application can no longer be reopened for editing." };
+      }
+      revalidatePath("/dashboard");
+      return { ok: true };
     });
-    revalidatePath("/dashboard");
-  } finally {
-    ctx.waitUntil(db.$client.end());
+  } catch (error) {
+    reportPartnerActionFailure("partner_review_reopen_failed", error);
+    return { error: UNKNOWN_OUTCOME };
   }
 }

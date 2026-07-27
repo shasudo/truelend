@@ -1,6 +1,7 @@
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { createDb, ping } from "@truelend/db";
 import { healthHeaders, isReadinessAuthorized, type HealthResponse } from "@truelend/health";
+import { scheduleWebsiteBackgroundTask } from "@/lib/background-task";
 
 export const dynamic = "force-dynamic";
 
@@ -21,7 +22,9 @@ export async function GET(request: Request) {
   } catch {
     db = "error";
   } finally {
-    ctx.waitUntil(connection.$client.end());
+    scheduleWebsiteBackgroundTask(ctx, "website_readiness_context_cleanup_failed", () =>
+      connection.$client.end(),
+    );
   }
   const turnstile =
     env.TURNSTILE_SECRET_KEY && process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ? "ok" : "error";

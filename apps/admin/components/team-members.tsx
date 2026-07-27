@@ -6,7 +6,7 @@ import { Ban, Undo2, Trash2, KeyRound } from "lucide-react";
 import { Button, Select, cx } from "@truelend/ui";
 import {
   setRoleAction,
-  toggleBanAction,
+  setBanAction,
   removeUserAction,
   sendPasswordResetAction,
   type ActionResult,
@@ -66,15 +66,24 @@ function TeamRow({ m, isSelf }: { m: Member; isSelf: boolean }) {
     for (const [k, v] of Object.entries(fields)) fd.set(k, v);
     setMsg(null);
     start(async () => {
-      const res = await action(fd);
-      if (res.error) {
-        setMsg({ ok: false, text: res.error });
-        return;
+      try {
+        const res = await action(fd);
+        if (res.uncertain) router.refresh();
+        if (res.error) {
+          setMsg({ ok: false, text: res.error });
+          return;
+        }
+        setMsg({ ok: true, text: opts.success });
+        // Imperative server-action calls don't auto-apply the action's
+        // revalidatePath to the client, so pull the fresh row state ourselves.
+        router.refresh();
+      } catch {
+        router.refresh();
+        setMsg({
+          ok: false,
+          text: "We couldn't confirm this action. Check the refreshed team list before trying again.",
+        });
       }
-      setMsg({ ok: true, text: opts.success });
-      // Imperative server-action calls don't auto-apply the action's
-      // revalidatePath to the client, so pull the fresh row state ourselves.
-      router.refresh();
     });
   }
 
@@ -84,12 +93,54 @@ function TeamRow({ m, isSelf }: { m: Member; isSelf: boolean }) {
     fd.set("userId", m.id);
     setMsg(null);
     start(async () => {
-      const res = await sendPasswordResetAction(fd);
-      setMsg(
-        res.error
-          ? { ok: false, text: res.error }
-          : { ok: true, text: "Sessions revoked and reset link sent" },
-      );
+      try {
+        const res = await sendPasswordResetAction(fd);
+        if (res.uncertain) router.refresh();
+        setMsg(
+          res.error
+            ? { ok: false, text: res.error }
+            : { ok: true, text: "Sessions revoked and reset link sent" },
+        );
+      } catch {
+        router.refresh();
+        setMsg({
+          ok: false,
+          text: "We couldn't confirm the reset request. Check with the teammate before trying again.",
+        });
+      }
+    });
+  }
+
+  function setAccessBanned(banned: boolean) {
+    if (
+      banned &&
+      !window.confirm(
+        `Ban ${m.name}? They'll be signed out immediately and blocked from logging in.`,
+      )
+    ) {
+      return;
+    }
+    const fd = new FormData();
+    fd.set("userId", m.id);
+    fd.set("banned", String(banned));
+    setMsg(null);
+    start(async () => {
+      try {
+        const res = await setBanAction(fd);
+        if (res.uncertain) router.refresh();
+        if (res.error || res.banned == null) {
+          setMsg({ ok: false, text: res.error ?? "Couldn't update access." });
+          return;
+        }
+        setMsg({ ok: true, text: res.banned ? "Banned" : "Unbanned" });
+        router.refresh();
+      } catch {
+        router.refresh();
+        setMsg({
+          ok: false,
+          text: "We couldn't confirm the access update. Check the refreshed team list.",
+        });
+      }
     });
   }
 
@@ -138,18 +189,7 @@ function TeamRow({ m, isSelf }: { m: Member; isSelf: boolean }) {
                 variant={m.banned ? "outline" : "ghost"}
                 className={m.banned ? "" : "text-red-700 hover:bg-red-50"}
                 disabled={pending}
-                onClick={() =>
-                  run(
-                    toggleBanAction,
-                    { userId: m.id, currentlyBanned: String(m.banned) },
-                    {
-                      success: m.banned ? "Unbanned" : "Banned",
-                      confirm: m.banned
-                        ? undefined
-                        : `Ban ${m.name}? They'll be signed out immediately and blocked from logging in.`,
-                    },
-                  )
-                }
+                onClick={() => setAccessBanned(!m.banned)}
               >
                 {m.banned ? (
                   <>
