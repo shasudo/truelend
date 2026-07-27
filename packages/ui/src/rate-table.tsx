@@ -21,7 +21,12 @@ interface RateTableProps {
 export function RateTable({ rows, compact, className }: RateTableProps) {
   const showAmount = !compact && rows.some((r) => r.amount);
   return (
-    <div className={cx("overflow-x-auto rounded-xl border border-hairline bg-white", className)}>
+    <div
+      className={cx(
+        "max-w-full min-w-0 overflow-x-auto overscroll-x-contain rounded-xl border border-hairline bg-white",
+        className,
+      )}
+    >
       <table className="w-full min-w-[560px] text-left">
         <thead>
           <tr className="border-b border-hairline text-xs font-semibold uppercase tracking-[0.12em] text-navy-500">

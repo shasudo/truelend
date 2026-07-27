@@ -10,7 +10,6 @@ export interface KycFormValues {
   bankBranch: string | null;
   ifsc: string | null;
   nomineeName: string | null;
-  nomineeAadhaar: string | null;
   nomineePhone: string | null;
 }
 
@@ -32,7 +31,6 @@ export function toKycFormValues(source: KycFormValues): KycFormValues {
     bankBranch: source.bankBranch,
     ifsc: source.ifsc,
     nomineeName: source.nomineeName,
-    nomineeAadhaar: source.nomineeAadhaar,
     nomineePhone: source.nomineePhone,
   };
 }

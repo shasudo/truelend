@@ -9,7 +9,7 @@ import { ChevronDown } from "lucide-react";
 import { cx } from "./cx";
 
 const fieldBase =
-  "w-full rounded-lg border border-navy-800/20 bg-white text-[0.95rem] text-navy-950 " +
+  "min-w-0 w-full rounded-lg border border-navy-800/20 bg-white text-[0.95rem] text-navy-950 " +
   "placeholder:text-muted transition-colors focus:border-navy-800 focus:outline-none " +
   "focus:ring-2 focus:ring-navy-800/10 aria-invalid:border-red-600 aria-invalid:ring-red-600/10 " +
   "disabled:cursor-not-allowed disabled:opacity-50";

@@ -43,15 +43,15 @@ const nextSteps = [
     icon: ShieldCheck,
     title: "Welcome & Onboarding",
     description: "Once approved, you’ll receive access to your dashboard.",
-    tone: "bg-emerald-50 text-emerald-700",
-    badge: "bg-emerald-700",
+    tone: "bg-navy-50 text-navy-700",
+    badge: "bg-navy-700",
   },
   {
     icon: Gift,
     title: "Start Referring & Earning",
     description: "Refer borrowers and earn eligible incentives.",
-    tone: "bg-blue-50 text-blue-700",
-    badge: "bg-blue-800",
+    tone: "bg-sun-100 text-sun-600",
+    badge: "bg-navy-800",
   },
 ] as const;
 
@@ -73,7 +73,7 @@ export function UnderReviewScreen({
   return (
     <div className="min-h-screen bg-red-50/20">
       <header className="border-b border-hairline bg-white/95 backdrop-blur">
-        <Container className="flex h-[78px] max-w-[1240px] items-center justify-between gap-6">
+        <Container className="flex h-[78px] max-w-[1240px] items-center justify-between gap-3 sm:gap-6">
           <span className="text-navy-800">
             <Logo />
           </span>
@@ -95,9 +95,10 @@ export function UnderReviewScreen({
             </Link>
           </nav>
           <div className="flex items-center gap-4">
-            <Button variant="outline" size="sm" asChild>
+            <Button variant="outline" size="sm" className="px-3 sm:px-4" asChild>
               <Link href="/dashboard">
-                <Grid2X2 className="h-4 w-4" aria-hidden /> Dashboard
+                <Grid2X2 className="h-4 w-4" aria-hidden />
+                <span className="hidden min-[380px]:inline">Dashboard</span>
               </Link>
             </Button>
             <SignOutButton className="hidden xl:inline-flex" />
@@ -133,7 +134,9 @@ export function UnderReviewScreen({
                     </span>
                     <div>
                       <dt className="text-xs text-navy-500">{item.label}</dt>
-                      <dd className="text-sm font-semibold text-navy-950">{item.value}</dd>
+                      <dd className="break-words text-sm font-semibold text-navy-950">
+                        {item.value}
+                      </dd>
                     </div>
                   </div>
                 ))}
@@ -141,21 +144,21 @@ export function UnderReviewScreen({
             </Card>
 
             <div className="px-3 text-center">
-              <span className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-emerald-50 text-emerald-700">
+              <span className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-navy-50 text-navy-700">
                 <CheckCircle2 className="h-11 w-11" aria-hidden />
               </span>
-              <h1 className="mt-5 text-balance font-display text-4xl font-extrabold tracking-tight text-navy-950">
+              <h1 className="mt-5 text-balance font-display text-3xl font-extrabold tracking-tight text-navy-950 min-[420px]:text-4xl">
                 Your Application is Submitted!
               </h1>
               <p className="mt-3 text-lg font-semibold text-navy-800">
                 Thank you for joining the TrueLend Network.
               </p>
               <p className="mt-1 text-base text-navy-700">We’re excited to have you on board.</p>
-              <div className="mx-auto mt-7 flex max-w-[380px] items-center gap-4 rounded-2xl border border-emerald-100 bg-emerald-50/50 px-5 py-4 text-left">
-                <Mail className="h-7 w-7 shrink-0 text-emerald-700" aria-hidden />
+              <div className="mx-auto mt-7 flex max-w-[380px] items-center gap-4 rounded-2xl border border-navy-100 bg-navy-50/60 px-4 py-4 text-left sm:px-5">
+                <Mail className="h-7 w-7 shrink-0 text-navy-700" aria-hidden />
                 <p className="text-sm leading-relaxed text-navy-700">
                   We’ve sent a confirmation email to{" "}
-                  <strong className="text-emerald-700">{email}</strong> with your application
+                  <strong className="break-all text-navy-800">{email}</strong> with your application
                   details.
                 </p>
               </div>
@@ -172,14 +175,14 @@ export function UnderReviewScreen({
               <p className="mt-4 text-sm leading-relaxed text-navy-600">
                 Use this ID to track your application status or when you contact support.
               </p>
-              <p className="mt-5 flex gap-2 rounded-xl bg-blue-50 px-4 py-3 text-xs text-navy-700">
-                <Check className="h-4 w-4 shrink-0 text-blue-700" aria-hidden />
+              <p className="mt-5 flex gap-2 rounded-xl bg-navy-50 px-4 py-3 text-xs text-navy-700">
+                <Check className="h-4 w-4 shrink-0 text-navy-700" aria-hidden />
                 Save this ID. You’ll need it for future reference.
               </p>
             </Card>
           </div>
 
-          <Card className="mt-6 px-6 py-5">
+          <Card className="mt-6 px-5 py-5 sm:px-6">
             <h2 className="text-center font-display text-2xl font-extrabold text-navy-950">
               What Happens Next?
             </h2>
@@ -226,12 +229,13 @@ export function UnderReviewScreen({
                 .
               </p>
             </div>
-            <div className="flex flex-wrap gap-3">
-              <Button variant="outline" asChild>
+            <div className="grid w-full gap-3 min-[480px]:flex min-[480px]:w-auto min-[480px]:flex-wrap">
+              <Button variant="outline" asChild className="w-full min-[480px]:w-auto">
                 <Link href="/resources">Open Referral Partner Guide</Link>
               </Button>
               <form action={reopenApplication}>
                 <SubmitButton
+                  className="w-full min-[480px]:w-auto"
                   pendingText="Reopening…"
                   confirm="Reopen your application for editing? You'll need to submit it again for review."
                 >

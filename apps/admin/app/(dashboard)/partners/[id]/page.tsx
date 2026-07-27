@@ -37,9 +37,9 @@ const statusStyles: Record<string, string> = {
 
 function Detail({ label, value }: { label: string; value: string | null | undefined }) {
   return (
-    <div>
+    <div className="min-w-0">
       <dt className="text-xs font-semibold uppercase tracking-[0.1em] text-muted">{label}</dt>
-      <dd className="mt-0.5 text-navy-900">{value || "—"}</dd>
+      <dd className="mt-0.5 break-words text-navy-900">{value || "—"}</dd>
     </div>
   );
 }
@@ -105,11 +105,11 @@ export default async function PartnerDetailPage({ params }: { params: Promise<{ 
         }
       />
 
-      <div className="grid gap-6 lg:grid-cols-[1.5fr_1fr]">
-        <div className="space-y-6">
-          <Card className="p-6">
+      <div className="grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
+        <div className="min-w-0 space-y-6">
+          <Card className="p-5 sm:p-6">
             <h2 className="font-display text-lg font-bold text-navy-950">Profile</h2>
-            <dl className="mt-5 grid grid-cols-2 gap-5">
+            <dl className="mt-5 grid grid-cols-1 gap-5 min-[480px]:grid-cols-2">
               <Detail label="Contact name" value={name} />
               <Detail label="Email" value={email} />
               <Detail label="Phone" value={partner.phone} />
@@ -134,18 +134,18 @@ export default async function PartnerDetailPage({ params }: { params: Promise<{ 
             </dl>
           </Card>
 
-          <Card className="p-6">
+          <Card className="p-5 sm:p-6">
             <h2 className="font-display text-lg font-bold text-navy-950">Referral profile</h2>
-            <dl className="mt-5 grid grid-cols-2 gap-5">
+            <dl className="mt-5 grid grid-cols-1 gap-5 min-[480px]:grid-cols-2">
               <Detail label="Occupation" value={partner.occupation} />
               <Detail label="Designation" value={partner.designation} />
               <Detail label="Experience" value={partner.experienceNote} />
             </dl>
           </Card>
 
-          <Card className="p-6">
+          <Card className="p-5 sm:p-6">
             <h2 className="font-display text-lg font-bold text-navy-950">KYC details</h2>
-            <dl className="mt-5 grid grid-cols-2 gap-5">
+            <dl className="mt-5 grid grid-cols-1 gap-5 min-[480px]:grid-cols-2">
               <Detail label="PAN" value={partner.pan} />
               <Detail label="Current address" value={partner.address} />
               <Detail label="Bank name" value={partner.bankName} />
@@ -157,14 +157,14 @@ export default async function PartnerDetailPage({ params }: { params: Promise<{ 
             <h3 className="mt-6 text-xs font-semibold uppercase tracking-[0.1em] text-muted">
               Nominee
             </h3>
-            <dl className="mt-3 grid grid-cols-2 gap-5">
+            <dl className="mt-3 grid grid-cols-1 gap-5 min-[480px]:grid-cols-2">
               <Detail label="Name" value={partner.nomineeName} />
               <Detail label="Aadhaar" value={partner.nomineeAadhaar} />
               <Detail label="Mobile" value={partner.nomineePhone} />
             </dl>
           </Card>
 
-          <Card className="p-6">
+          <Card className="p-5 sm:p-6">
             <h2 className="font-display text-lg font-bold text-navy-950">KYC documents</h2>
             <ul className="mt-4 space-y-2">
               {documents.length === 0 && (
@@ -176,15 +176,17 @@ export default async function PartnerDetailPage({ params }: { params: Promise<{ 
                     href={`/api/kyc/${doc.r2Key}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center justify-between gap-3 rounded-lg border border-hairline p-3 transition-colors hover:border-navy-800/30 hover:bg-paper"
+                    className="flex flex-col items-start justify-between gap-2 rounded-lg border border-hairline p-3 transition-colors hover:border-navy-800/30 hover:bg-paper min-[480px]:flex-row min-[480px]:items-center min-[480px]:gap-3"
                   >
-                    <span className="flex items-center gap-3">
-                      <FileText className="h-5 w-5 text-navy-500" aria-hidden />
-                      <span className="font-medium text-navy-950">
+                    <span className="flex min-w-0 items-center gap-3">
+                      <FileText className="h-5 w-5 shrink-0 text-navy-500" aria-hidden />
+                      <span className="break-words font-medium text-navy-950">
                         {partnerDocTypeLabels[doc.docType]}
                       </span>
                     </span>
-                    <span className="text-xs text-muted">{formatDateTime(doc.uploadedAt)}</span>
+                    <span className="break-words text-xs text-muted">
+                      {formatDateTime(doc.uploadedAt)}
+                    </span>
                   </a>
                 </li>
               ))}
@@ -203,27 +205,32 @@ export default async function PartnerDetailPage({ params }: { params: Promise<{ 
             </div>
           </Card>
 
-          <Card className="p-6">
+          <Card className="p-5 sm:p-6">
             <h2 className="font-display text-lg font-bold text-navy-950">Recent leads</h2>
             <ul className="mt-4 divide-y divide-hairline">
               {leads.length === 0 && <li className="py-3 text-sm text-muted">No leads yet.</li>}
               {leads.map((lead) => (
-                <li key={lead.id} className="flex items-center justify-between gap-4 py-2.5">
+                <li
+                  key={lead.id}
+                  className="flex flex-col items-start justify-between gap-1 py-2.5 min-[420px]:flex-row min-[420px]:items-center min-[420px]:gap-4"
+                >
                   <Link
                     href={`/leads/${lead.id}`}
                     className="font-medium text-navy-900 hover:text-red-600"
                   >
                     {lead.name ?? "—"}
                   </Link>
-                  <span className="text-xs text-muted">{productName(lead.productSlug)}</span>
+                  <span className="break-words text-xs text-muted">
+                    {productName(lead.productSlug)}
+                  </span>
                 </li>
               ))}
             </ul>
           </Card>
         </div>
 
-        <div className="space-y-6">
-          <Card className="p-6">
+        <div className="min-w-0 space-y-6">
+          <Card className="p-5 sm:p-6">
             <h2 className="font-display text-lg font-bold text-navy-950">Edit partner details</h2>
             <p className="mt-2 text-sm text-muted">
               Update the Referral Partner’s profile, KYC, and payout information.
@@ -234,7 +241,7 @@ export default async function PartnerDetailPage({ params }: { params: Promise<{ 
           </Card>
 
           {partner.status !== "verified" && (
-            <Card className="p-6">
+            <Card className="p-5 sm:p-6">
               <h2 className="font-display text-lg font-bold text-navy-950">Verification</h2>
               <form action={approvePartnerAction} className="mt-4">
                 <input type="hidden" name="partnerId" value={partner.userId} />
@@ -275,7 +282,7 @@ export default async function PartnerDetailPage({ params }: { params: Promise<{ 
           )}
 
           {partner.status === "verified" && (
-            <Card className="p-6">
+            <Card className="p-5 sm:p-6">
               <h2 className="font-display text-lg font-bold text-navy-950">Verification</h2>
               <p className="mt-2 text-sm text-navy-500">
                 Verified — this Referral Partner has portal access.
@@ -294,9 +301,9 @@ export default async function PartnerDetailPage({ params }: { params: Promise<{ 
             </Card>
           )}
 
-          <Card className="p-6">
+          <Card className="p-5 sm:p-6">
             <h2 className="font-display text-lg font-bold text-navy-950">{noun}s</h2>
-            <div className="mt-4 grid grid-cols-3 gap-3">
+            <div className="mt-4 grid grid-cols-1 gap-3 min-[480px]:grid-cols-3">
               <Stat value={formatPaise(earnedPaise)} label="Earned" />
               <Stat value={formatPaise(paidPaise)} label="Paid" />
               <Stat value={formatPaise(balance)} label="Balance" accent />
@@ -311,8 +318,11 @@ export default async function PartnerDetailPage({ params }: { params: Promise<{ 
             ) : (
               <ul className="mt-5 space-y-2 border-t border-hairline pt-4">
                 {payouts.map((p) => (
-                  <li key={p.id} className="flex items-center justify-between gap-3 text-sm">
-                    <span className="text-navy-600">
+                  <li
+                    key={p.id}
+                    className="flex flex-col items-start justify-between gap-1.5 text-sm min-[420px]:flex-row min-[420px]:items-center min-[420px]:gap-3"
+                  >
+                    <span className="min-w-0 break-words text-navy-600">
                       <span
                         className={cx(
                           "mr-2 inline-block rounded px-1.5 py-0.5 text-xs font-semibold",

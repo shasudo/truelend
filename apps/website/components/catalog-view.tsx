@@ -145,10 +145,10 @@ function buildComparison(
 
 function FactGrid({ facts }: { facts: { label: string; value: string }[] }) {
   return (
-    <div className="grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-hairline bg-hairline sm:grid-cols-4">
+    <div className="grid grid-cols-1 gap-px overflow-hidden rounded-xl border border-hairline bg-hairline min-[420px]:grid-cols-2 lg:grid-cols-4">
       {facts.map((f) => (
-        <div key={f.label} className="bg-white p-5">
-          <div className="font-display text-xl font-extrabold tabular-nums text-navy-950">
+        <div key={f.label} className="min-w-0 bg-white p-4 sm:p-5">
+          <div className="break-words font-display text-lg font-extrabold tabular-nums text-navy-950 sm:text-xl">
             {f.value}
             <Star />
           </div>
@@ -169,7 +169,7 @@ function BulletCard({
   items: string[];
 }) {
   return (
-    <Card className="h-full p-7">
+    <Card className="h-full p-5 sm:p-7">
       <Icon className="h-6 w-6 text-red-600" aria-hidden />
       <h2 className="mt-4 font-display text-xl font-bold text-navy-950">{title}</h2>
       <ul className="mt-5 space-y-3">
@@ -187,7 +187,7 @@ function BulletCard({
 function KVTable({ title, rows }: { title: string; rows: { label: string; value: string }[] }) {
   return (
     <Card className="overflow-hidden p-0">
-      <h2 className="border-b border-hairline px-6 py-4 font-display text-lg font-bold text-navy-950">
+      <h2 className="border-b border-hairline px-4 py-4 font-display text-lg font-bold text-navy-950 sm:px-6">
         {title}
       </h2>
       <table className="w-full text-sm">
@@ -196,11 +196,11 @@ function KVTable({ title, rows }: { title: string; rows: { label: string; value:
             <tr key={r.label} className={idx % 2 ? "bg-paper-deep/40" : undefined}>
               <th
                 scope="row"
-                className="w-2/5 px-6 py-3 text-left font-semibold text-navy-700 align-top"
+                className="w-2/5 px-4 py-3 text-left align-top font-semibold text-navy-700 sm:px-6"
               >
                 {r.label}
               </th>
-              <td className="px-6 py-3 text-navy-900">
+              <td className="break-words px-4 py-3 text-navy-900 sm:px-6">
                 {r.value}
                 <Star />
               </td>

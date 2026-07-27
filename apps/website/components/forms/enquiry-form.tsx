@@ -42,6 +42,9 @@ function Section({ n, title, children }: { n: string; title: string; children: R
 export function EnquiryForm({ defaultProduct = "" }: { defaultProduct?: ProductSlug | "" }) {
   const {
     form,
+    draftFormRef,
+    draftOnInput,
+    draftOnChange,
     onSubmit,
     succeeded,
     rootError,
@@ -51,29 +54,33 @@ export function EnquiryForm({ defaultProduct = "" }: { defaultProduct?: ProductS
     setToken,
     resetToken,
     failTurnstile,
-  } = useLeadForm(zodResolver(enquiryFormSchema), {
-    kind: "enquiry",
-    productSlug: defaultProduct,
-    loanAmount: "",
-    loanPurpose: "",
-    tenureMonths: "",
-    preferredEmi: "",
-    name: "",
-    phone: "",
-    email: "",
-    city: "",
-    pincode: "",
-    employmentType: "",
-    employerName: "",
-    monthlyIncome: "",
-    experienceYears: "",
-    existingWithEmployer: "",
-    existingEmi: "",
-    outstandingLoanAmount: "",
-    creditCardOutstanding: "",
-    message: "",
-    consent: false,
-  });
+  } = useLeadForm(
+    zodResolver(enquiryFormSchema),
+    {
+      kind: "enquiry",
+      productSlug: defaultProduct,
+      loanAmount: "",
+      loanPurpose: "",
+      tenureMonths: "",
+      preferredEmi: "",
+      name: "",
+      phone: "",
+      email: "",
+      city: "",
+      pincode: "",
+      employmentType: "",
+      employerName: "",
+      monthlyIncome: "",
+      experienceYears: "",
+      existingWithEmployer: "",
+      existingEmi: "",
+      outstandingLoanAmount: "",
+      creditCardOutstanding: "",
+      message: "",
+      consent: false,
+    },
+    "enquiry",
+  );
   const { register, formState, watch } = form;
   const err = formState.errors;
   const product = watch("productSlug");
@@ -90,7 +97,14 @@ export function EnquiryForm({ defaultProduct = "" }: { defaultProduct?: ProductS
   }
 
   return (
-    <form onSubmit={onSubmit} noValidate className="space-y-9">
+    <form
+      ref={draftFormRef}
+      onSubmit={onSubmit}
+      onInput={draftOnInput}
+      onChange={draftOnChange}
+      noValidate
+      className="space-y-9"
+    >
       <NoScriptFallback />
 
       <Section n="01" title="Your Loan Requirement">

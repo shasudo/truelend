@@ -146,19 +146,21 @@ export default function Home() {
         </Container>
       </section>
 
-      <section className="bg-paper-deep/60">
-        <Container className="py-20 sm:py-24">
-          <Reveal>
+      <section className="bg-paper-deep">
+        <div className="relative z-10 bg-paper-deep lg:sticky lg:top-20">
+          <Container className="py-8 sm:py-10">
             <SectionHeading
+              className="mx-auto max-w-[44rem]"
               eyebrow="Borrowing Solutions"
               title="Borrowing Solutions for Every Need"
               lede="Whether you’re buying a home, expanding your business, managing personal finances or funding higher education, we help you choose the right borrowing solution from the right lender."
               center
-              className="max-w-[44rem]"
               titleClassName="text-navy-950 sm:text-5xl"
               ledeClassName="mx-auto max-w-[44rem] text-lg leading-8"
             />
-          </Reveal>
+          </Container>
+        </div>
+        <Container className="pb-20 sm:pb-24">
           <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {homeProductCards.map((product, i) => {
               const copy = homeProductCopy[product.slug];

@@ -82,7 +82,7 @@ export function DedicatedRegister({
             >
               <ArrowLeft className="h-4 w-4" aria-hidden /> Back to home
             </Link>
-            <h1 className="mt-5 max-w-xl text-balance font-display text-4xl font-extrabold leading-[1.08] tracking-tight text-navy-950">
+            <h1 className="mt-5 max-w-xl text-balance font-display text-3xl font-extrabold leading-[1.08] tracking-tight text-navy-950 min-[380px]:text-4xl">
               {account ? (
                 <>
                   Complete your <span className="text-red-600">TrueLend</span>
@@ -145,7 +145,7 @@ export function DedicatedRegister({
                   ★★★★★
                 </p>
               </Card>
-              <div className="relative z-10 mt-4 w-full rounded-2xl bg-blue-50 px-4 py-3 text-sm text-navy-700 lg:absolute lg:bottom-0 lg:left-0 lg:mt-0 lg:w-[280px] lg:text-xs">
+              <div className="relative z-10 mt-4 w-full rounded-2xl bg-navy-50 px-4 py-3 text-sm text-navy-700 lg:absolute lg:bottom-0 lg:left-0 lg:mt-0 lg:w-[280px] lg:text-xs">
                 <p className="font-bold text-navy-950">Need help?</p>
                 <p className="mt-1">
                   Call or WhatsApp us at{" "}
@@ -157,7 +157,7 @@ export function DedicatedRegister({
               </div>
             </div>
 
-            <div className="mt-4 grid grid-cols-1 gap-3 rounded-2xl bg-blue-50/70 p-3 min-[380px]:grid-cols-2 sm:grid-cols-4">
+            <div className="mt-4 grid grid-cols-1 gap-3 rounded-2xl bg-navy-50/70 p-3 min-[380px]:grid-cols-2 xl:grid-cols-4">
               {communityBenefits.map((benefit) => (
                 <div key={benefit.title} className="flex gap-2">
                   <benefit.icon className="mt-0.5 h-4 w-4 shrink-0 text-red-600" aria-hidden />
@@ -172,7 +172,7 @@ export function DedicatedRegister({
             </div>
           </section>
 
-          <Card className="h-fit w-full p-6 shadow-[0_28px_70px_-42px_rgba(7,13,36,0.55)] lg:sticky lg:top-24">
+          <Card className="h-fit w-full p-5 shadow-[0_28px_70px_-42px_rgba(7,13,36,0.55)] sm:p-6 lg:sticky lg:top-24">
             <RegisterForm siteKey={siteKey} account={account} />
 
             {account ? (

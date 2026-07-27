@@ -47,7 +47,7 @@ export function SectionHeading({
       )}
       <Heading
         className={cx(
-          "mt-3 text-balance font-display text-3xl font-extrabold tracking-tight sm:text-4xl",
+          "mt-3 break-words text-balance font-display text-3xl font-extrabold tracking-tight sm:text-4xl",
           titleClassName ?? (inverse ? "text-white" : "text-navy-950"),
         )}
       >

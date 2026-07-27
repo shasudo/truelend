@@ -11,11 +11,11 @@ interface StatTileProps {
 
 export function StatTile({ label, value, sub, accent }: StatTileProps) {
   return (
-    <div className="rounded-xl border border-hairline bg-white p-5">
+    <div className="min-w-0 rounded-xl border border-hairline bg-white p-4 sm:p-5">
       <p className="text-xs font-semibold uppercase tracking-[0.1em] text-muted">{label}</p>
       <p
         className={cx(
-          "mt-2 font-display text-3xl font-extrabold tracking-tight tabular-nums",
+          "mt-2 break-words font-display text-2xl font-extrabold tracking-tight tabular-nums min-[380px]:text-3xl",
           accent ? "text-red-600" : "text-navy-950",
         )}
       >

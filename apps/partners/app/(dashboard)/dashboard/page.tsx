@@ -198,7 +198,7 @@ export default async function DashboardPage() {
       </section>
 
       <section className="mt-7" aria-labelledby="catalog-title">
-        <div className="mb-3 flex items-end justify-between gap-4">
+        <div className="mb-3 flex flex-wrap items-end justify-between gap-4">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.14em] text-red-600">
               Loans we place
@@ -261,7 +261,10 @@ export default async function DashboardPage() {
               </li>
             )}
             {leads.map((lead) => (
-              <li key={lead.id} className="flex items-center justify-between gap-4 py-3.5">
+              <li
+                key={lead.id}
+                className="flex flex-col items-start justify-between gap-2 py-3.5 min-[420px]:flex-row min-[420px]:items-center min-[420px]:gap-4"
+              >
                 <div className="min-w-0">
                   <p className="truncate font-semibold text-navy-950">{lead.name ?? "—"}</p>
                   <p className="truncate text-xs text-navy-500">

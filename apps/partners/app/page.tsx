@@ -33,7 +33,7 @@ const journey = [
     icon: UserRoundPlus,
     title: "You Refer",
     description: "Share borrower details in less than 30 seconds.",
-    tone: "bg-blue-50 text-blue-700",
+    tone: "bg-navy-50 text-navy-700",
   },
   {
     icon: Headset,
@@ -51,13 +51,13 @@ const journey = [
     icon: CircleCheckBig,
     title: "Loan Disbursed",
     description: "The borrower receives the loan with complete support.",
-    tone: "bg-emerald-50 text-emerald-700",
+    tone: "bg-navy-800 text-white",
   },
   {
     icon: Gift,
     title: "You Earn",
     description: "Receive a referral reward after successful disbursal.",
-    tone: "bg-purple-50 text-purple-700",
+    tone: "bg-sun-100 text-sun-600",
   },
 ] as const;
 
@@ -197,7 +197,7 @@ export default function Home() {
                 <Rocket className="h-3.5 w-3.5" aria-hidden />
                 Now onboarding our first 1,000 Referral Partners
               </p>
-              <h1 className="mt-4 font-display text-[2.4rem] font-extrabold leading-[1.08] tracking-tight text-navy-950 min-[360px]:text-[2.65rem]">
+              <h1 className="mt-4 break-words font-display text-[2.15rem] font-extrabold leading-[1.08] tracking-tight text-navy-950 min-[360px]:text-[2.4rem] sm:text-[2.65rem]">
                 <span className="block">Help People</span>
                 <span className="block xl:whitespace-nowrap">Get the Right Loan.</span>
                 <span className="block text-red-600 xl:whitespace-nowrap">
@@ -209,13 +209,13 @@ export default function Home() {
                 who need a loan. Our experienced advisors handle the entire borrowing journey—from
                 lender selection to disbursal.
               </p>
-              <div className="mt-5 flex flex-wrap gap-3">
-                <Button asChild>
+              <div className="mt-5 grid gap-3 min-[480px]:flex min-[480px]:flex-wrap">
+                <Button asChild className="w-full min-[480px]:w-auto">
                   <Link href="/register/referral">
                     Become a Referral Partner <ArrowRight className="h-4 w-4" aria-hidden />
                   </Link>
                 </Button>
-                <Button variant="outline" asChild>
+                <Button variant="outline" asChild className="w-full min-[480px]:w-auto">
                   <a href="#how-it-works">Learn How It Works</a>
                 </Button>
               </div>
@@ -268,7 +268,7 @@ export default function Home() {
                 <ul className="mt-2 space-y-1 text-xs text-navy-700">
                   {trustPoints.map((point) => (
                     <li key={point} className="flex gap-2">
-                      <Check className="h-3.5 w-3.5 shrink-0 text-emerald-700" aria-hidden />
+                      <Check className="h-3.5 w-3.5 shrink-0 text-navy-700" aria-hidden />
                       {point}
                     </li>
                   ))}
@@ -283,42 +283,49 @@ export default function Home() {
         <section id="how-it-works" className="scroll-mt-20 border-b border-hairline bg-red-50/30">
           <Container className="max-w-[1240px] py-12 sm:py-14">
             <div className="text-center">
-              <h2 className="font-display text-2xl font-extrabold text-navy-950">How It Works</h2>
-              <p className="mt-1 text-xs text-navy-600">Simple steps. Maximum impact.</p>
+              <h2 className="font-display text-3xl font-extrabold text-navy-950 sm:text-4xl">
+                How It Works
+              </h2>
+              <p className="mt-2 text-base text-navy-600">Simple steps. Maximum impact.</p>
             </div>
-            <ol className="mt-6 grid gap-5 md:grid-cols-3 xl:grid-cols-5">
+            <ol className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
               {steps.map((step, index) => (
-                <li key={step.title} className="relative grid grid-cols-[48px_1fr] gap-3 p-2">
-                  <span className="absolute -top-2 left-0 flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-[0.6rem] font-bold text-white">
+                <li
+                  key={step.title}
+                  className={`relative grid min-h-[168px] grid-cols-[52px_minmax(0,1fr)] gap-4 rounded-2xl border border-hairline bg-white p-5 shadow-sm xl:col-span-2 ${
+                    index === 3 ? "xl:col-start-2" : ""
+                  }`}
+                >
+                  <span className="absolute -top-3 left-4 flex h-7 w-7 items-center justify-center rounded-full bg-red-600 text-xs font-bold text-white">
                     {index + 1}
                   </span>
-                  <span className="flex h-12 w-12 items-center justify-center rounded-full bg-red-50 text-red-600">
-                    <step.icon className="h-5 w-5" aria-hidden />
+                  <span className="flex h-13 w-13 items-center justify-center rounded-full bg-red-50 text-red-600">
+                    <step.icon className="h-6 w-6" aria-hidden />
                   </span>
-                  <div>
-                    <h3 className="font-display text-sm font-bold leading-5 text-navy-950">
+                  <div className="min-w-0">
+                    <h3 className="break-words font-display text-lg font-bold leading-6 text-navy-950">
                       {step.title}
                     </h3>
-                    <p className="mt-1 text-xs leading-5 text-navy-600">{step.description}</p>
+                    <p className="mt-1 text-sm leading-6 text-navy-600">{step.description}</p>
                   </div>
                 </li>
               ))}
             </ol>
 
-            <div className="mt-6 grid gap-3 rounded-2xl border border-hairline bg-white p-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+            <div className="mt-8 grid gap-4 rounded-2xl border border-hairline bg-white p-5 sm:grid-cols-2 lg:grid-cols-3">
               {advantages.map((advantage) => (
                 <div
                   key={advantage.title}
-                  className="grid grid-cols-[36px_1fr] gap-3 rounded-xl p-2"
+                  className="grid min-h-[124px] grid-cols-[44px_1fr] gap-4 rounded-xl bg-red-50/50 p-4"
                 >
-                  <span className="flex h-9 w-9 items-center justify-center rounded-full bg-red-50">
-                    <advantage.icon className="h-4 w-4 text-red-600" aria-hidden />
+                  <span className="flex h-11 w-11 items-center justify-center rounded-full bg-red-50">
+                    <advantage.icon className="h-5 w-5 text-red-600" aria-hidden />
                   </span>
-                  <div>
-                    <h3 className="font-display text-xs font-bold text-navy-950">
+                  <div className="min-w-0">
+                    <h3 className="break-words font-display text-base font-bold text-navy-950">
                       {advantage.title}
                     </h3>
-                    <p className="mt-1 text-xs leading-5 text-navy-600">{advantage.description}</p>
+                    <p className="mt-1 text-sm leading-6 text-navy-600">{advantage.description}</p>
                   </div>
                 </div>
               ))}
@@ -332,7 +339,7 @@ export default function Home() {
               <p className="text-xs font-bold uppercase tracking-[0.16em] text-sun-400">
                 Why TrueLend
               </p>
-              <h2 className="mt-3 font-display text-3xl font-extrabold tracking-tight sm:text-4xl">
+              <h2 className="mt-3 font-display text-2xl font-extrabold tracking-tight min-[400px]:text-3xl sm:text-4xl">
                 <strong className="font-extrabold">WHY BORROWERS CHOOSE TRUELEND</strong>
               </h2>
               <p className="mt-4 max-w-xl leading-relaxed text-on-dark-muted">

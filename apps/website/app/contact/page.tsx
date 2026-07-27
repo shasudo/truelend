@@ -135,7 +135,7 @@ export default function ContactPage() {
             <p className="text-sm font-bold uppercase tracking-[0.12em] text-red-600">
               Contact TrueLend
             </p>
-            <h1 className="mt-3 text-balance font-display text-5xl font-extrabold tracking-tight text-navy-950 sm:text-6xl">
+            <h1 className="mt-3 text-balance font-display text-4xl font-extrabold tracking-tight text-navy-950 min-[400px]:text-5xl sm:text-6xl">
               Contact TrueLend
             </h1>
             <p className="mt-5 max-w-lg text-lg leading-8 text-navy-700">
@@ -168,8 +168,8 @@ export default function ContactPage() {
       </section>
 
       <Container className="py-12 sm:py-16">
-        <div className="grid gap-6 lg:grid-cols-[0.78fr_1.22fr]">
-          <Reveal>
+        <div className="grid min-w-0 gap-6 lg:grid-cols-[minmax(0,0.78fr)_minmax(0,1.22fr)]">
+          <Reveal className="min-w-0">
             <Card className="h-full p-6 sm:p-7">
               <h2 className="font-display text-2xl font-bold text-navy-950">Reach Us Directly</h2>
               <span className="mt-3 block h-0.5 w-12 bg-red-600" aria-hidden />
@@ -237,7 +237,7 @@ export default function ContactPage() {
             </Card>
           </Reveal>
 
-          <Reveal delay={0.08}>
+          <Reveal delay={0.08} className="min-w-0">
             <Card className="h-full p-6 sm:p-8">
               <h2 className="font-display text-2xl font-bold text-navy-950">Send us a Message</h2>
               <span className="mt-3 block h-0.5 w-12 bg-red-600" aria-hidden />
@@ -326,20 +326,20 @@ export default function ContactPage() {
               </p>
             </div>
           </div>
-          <div className="flex w-full flex-wrap gap-3 lg:w-auto">
-            <Button asChild>
+          <div className="grid w-full gap-3 min-[480px]:flex min-[480px]:flex-wrap lg:w-auto">
+            <Button asChild className="w-full min-[480px]:w-auto">
               <Link href="/enquiry">
                 <Phone className="h-4 w-4" aria-hidden />
                 Talk to a Borrowing Advisor
               </Link>
             </Button>
-            <Button variant="outline" asChild className="bg-white">
+            <Button variant="outline" asChild className="w-full bg-white min-[480px]:w-auto">
               <a href={site.whatsappHref} target="_blank" rel="noopener noreferrer">
                 <MessageCircle className="h-4 w-4" aria-hidden />
                 WhatsApp Us
               </a>
             </Button>
-            <Button variant="outline" asChild className="bg-white">
+            <Button variant="outline" asChild className="w-full bg-white min-[480px]:w-auto">
               <a href={site.phoneHref}>
                 <Phone className="h-4 w-4" aria-hidden />
                 Call Us

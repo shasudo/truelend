@@ -20,7 +20,6 @@ const commonApplication = {
   bankBranch: "MG Road",
   ifsc: "HDFC0001234",
   nomineeName: "Nominee One",
-  nomineeAadhaar: "123412341234",
   nomineePhone: "9876543210",
 };
 
@@ -53,7 +52,6 @@ void test("application completeness requires every common field and mandatory do
     "bankBranch",
     "ifsc",
     "nomineeName",
-    "nomineeAadhaar",
     "nomineePhone",
   ];
 

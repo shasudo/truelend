@@ -1,21 +1,53 @@
 "use client";
 
 import { useActionState } from "react";
-import { Button, Field, Input, Textarea } from "@truelend/ui";
+import { Button, Field, Input, Textarea, useFormDraft } from "@truelend/ui";
 import { savePartnerKyc, type KycState } from "@/lib/kyc-actions";
 import type { KycFormValues } from "@/lib/kyc-form-values";
+
+const kycFieldNames = [
+  "pan",
+  "occupation",
+  "designation",
+  "experienceNote",
+  "address",
+  "bankName",
+  "accountHolder",
+  "accountNumber",
+  "bankBranch",
+  "ifsc",
+  "nomineeName",
+  "nomineePhone",
+] as const satisfies readonly (keyof KycFormValues)[];
 
 export function KycDetailsForm({
   values,
   editable = true,
+  storageKey,
 }: {
   values: KycFormValues;
   editable?: boolean;
+  storageKey: string;
 }) {
   const [state, action, pending] = useActionState<KycState, FormData>(savePartnerKyc, {});
+  const draft = useFormDraft({
+    storageKey,
+    fields: kycFieldNames,
+    enabled: editable,
+    error: state.error,
+    success: state.ok,
+    resultKey: state,
+  });
 
   return (
-    <form action={action} className="space-y-5">
+    <form
+      ref={draft.formRef}
+      action={action}
+      onInput={draft.onInput}
+      onChange={draft.onChange}
+      onSubmit={draft.onSubmit}
+      className="space-y-5"
+    >
       {/* Native fieldset[disabled] freezes every control inside, incl. submit,
           when KYC is locked (under review / verified). */}
       <fieldset disabled={!editable} className="space-y-8">
@@ -150,17 +182,6 @@ export function KycDetailsForm({
                 name="nomineeName"
                 defaultValue={values.nomineeName ?? ""}
                 maxLength={160}
-                required
-              />
-            </Field>
-            <Field label="Nominee Aadhaar" htmlFor="nomineeAadhaar" required>
-              <Input
-                id="nomineeAadhaar"
-                name="nomineeAadhaar"
-                inputMode="numeric"
-                placeholder="12-digit Aadhaar"
-                maxLength={12}
-                defaultValue={values.nomineeAadhaar ?? ""}
                 required
               />
             </Field>

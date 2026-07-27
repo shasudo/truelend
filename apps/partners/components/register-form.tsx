@@ -4,7 +4,7 @@ import { useActionState, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, Info, LockKeyhole, ShieldCheck } from "lucide-react";
 import { Turnstile } from "@marsidev/react-turnstile";
-import { Button, Field, Input, Select } from "@truelend/ui";
+import { Button, Field, Input, Select, useFormDraft } from "@truelend/ui";
 import { appUrls, referralPartnerEmail, referralTypeOptions } from "@truelend/reference";
 import { registerPartner, type RegisterState } from "@/lib/signup-actions";
 import {
@@ -13,7 +13,12 @@ import {
   type RegistrationStep,
 } from "@/lib/registration-flow";
 
-const steps = ["Basic Details", "Contact Details", "Verification", "Complete"] as const;
+const steps = [
+  { label: "Basic Details", shortLabel: "Basic" },
+  { label: "Contact Details", shortLabel: "Contact" },
+  { label: "Verification", shortLabel: "Verify" },
+  { label: "Complete", shortLabel: "Done" },
+] as const;
 
 const cities = [
   "Hyderabad",
@@ -36,7 +41,19 @@ const experienceOptions = [
   "More than 10 years",
 ] as const;
 
+const registrationDraftFields = [
+  "name",
+  "dateOfBirth",
+  "referralType",
+  "city",
+  "pan",
+  "experienceNote",
+  "phone",
+  "email",
+] as const;
+
 export interface RegistrationAccountSummary {
+  id: string;
   email: string;
   name: string;
 }
@@ -48,13 +65,18 @@ export function RegisterForm({
   siteKey?: string;
   account?: RegistrationAccountSummary;
 }) {
-  const formRef = useRef<HTMLFormElement>(null);
   const errorRef = useRef<HTMLDivElement>(null);
   const [step, setStep] = useState<RegistrationStep>(1);
   const [turnstileToken, setTurnstileToken] = useState<string>();
   const [turnstileKey, setTurnstileKey] = useState(0);
   const [turnstileError, setTurnstileError] = useState<string>();
   const [state, action, pending] = useActionState<RegisterState, FormData>(registerPartner, {});
+  const draft = useFormDraft({
+    storageKey: `truelend:partner:registration:${account?.id ?? "new"}`,
+    fields: registrationDraftFields,
+    error: state.error,
+    resultKey: state,
+  });
 
   useEffect(() => {
     if (!state.error) return;
@@ -64,17 +86,17 @@ export function RegisterForm({
       setTurnstileKey((key) => key + 1);
     }
     for (const [name, value] of Object.entries(state.values ?? {})) {
-      const control = formRef.current?.elements.namedItem(name);
+      const control = draft.formRef.current?.elements.namedItem(name);
       if (control instanceof HTMLInputElement || control instanceof HTMLSelectElement) {
         control.value = value;
       }
     }
     const frame = window.requestAnimationFrame(() => errorRef.current?.focus());
     return () => window.cancelAnimationFrame(frame);
-  }, [state.code, state.error, state.step, state.values]);
+  }, [draft.formRef, state.code, state.error, state.step, state.values]);
 
   function advance(from: RegistrationStep, to: RegistrationStep) {
-    const section = formRef.current?.querySelector<HTMLElement>(`[data-step="${from}"]`);
+    const section = draft.formRef.current?.querySelector<HTMLElement>(`[data-step="${from}"]`);
     if (!section) return;
     const controls = section.querySelectorAll<HTMLInputElement | HTMLSelectElement>(
       "input, select",
@@ -83,9 +105,16 @@ export function RegisterForm({
   }
 
   return (
-    <form ref={formRef} action={action} aria-busy={pending}>
+    <form
+      ref={draft.formRef}
+      action={action}
+      onInput={draft.onInput}
+      onChange={draft.onChange}
+      onSubmit={draft.onSubmit}
+      aria-busy={pending}
+    >
       <ol className="grid grid-cols-4" aria-label="Registration progress">
-        {steps.map((label, index) => {
+        {steps.map(({ label, shortLabel }, index) => {
           const number = index + 1;
           const active = number === step;
           const complete = number < step;
@@ -113,7 +142,8 @@ export function RegisterForm({
                   active ? "text-red-600" : "text-navy-600"
                 }`}
               >
-                {label}
+                <span className="sm:hidden">{shortLabel}</span>
+                <span className="hidden sm:inline">{label}</span>
               </span>
             </li>
           );
@@ -121,7 +151,7 @@ export function RegisterForm({
       </ol>
 
       {account && (
-        <div className="mt-6 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-navy-700">
+        <div className="mt-6 rounded-xl border border-navy-200 bg-navy-50 px-4 py-3 text-sm text-navy-700">
           <p className="font-semibold text-navy-950">Continue your signed-in registration</p>
           <p className="mt-1 break-words">
             Finish the Referral Partner profile for <strong>{account.email}</strong>.
@@ -176,7 +206,7 @@ export function RegisterForm({
         </h2>
         <p className="mt-1 text-sm text-navy-600">Please tell us a little about yourself.</p>
 
-        <div className="mt-6 grid gap-x-4 gap-y-5 xl:grid-cols-2">
+        <div className="mt-6 grid gap-x-4 gap-y-5 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
           <Field label="Full Name" htmlFor="name" required>
             <Input
               id="name"
@@ -236,9 +266,9 @@ export function RegisterForm({
           </Field>
         </div>
 
-        <div className="mt-5 rounded-xl bg-blue-50 px-4 py-3">
+        <div className="mt-5 rounded-xl bg-navy-50 px-4 py-3">
           <p className="flex gap-3 text-xs leading-relaxed text-navy-700">
-            <Info className="mt-0.5 h-4 w-4 shrink-0 text-blue-700" aria-hidden />
+            <Info className="mt-0.5 h-4 w-4 shrink-0 text-navy-700" aria-hidden />
             <span>
               <strong className="block text-navy-950">Why PAN is optional</strong>
               PAN helps us process incentives faster. You can add it later during verification.
@@ -266,7 +296,7 @@ export function RegisterForm({
             : "Add the secure account details you’ll use to access your dashboard."}
         </p>
 
-        <div className="mt-6 grid gap-x-4 gap-y-5 xl:grid-cols-2">
+        <div className="mt-6 grid gap-x-4 gap-y-5 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
           <Field label="Mobile Number" htmlFor="phone" required>
             <Input
               id="phone"
@@ -322,7 +352,7 @@ export function RegisterForm({
       </section>
 
       <section data-step="3" className={step === 3 ? "mt-8" : "hidden"}>
-        <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50 text-emerald-700">
+        <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-navy-50 text-navy-700">
           <ShieldCheck className="h-7 w-7" aria-hidden />
         </span>
         <h2 className="mt-4 text-center font-display text-xl font-extrabold tracking-tight text-navy-950">
@@ -334,7 +364,7 @@ export function RegisterForm({
 
         <input type="hidden" name="turnstileToken" value={turnstileToken ?? ""} />
         <div className="relative mt-6 h-[65px] w-full">
-          <div className="absolute left-1/2 top-0 w-[300px] -translate-x-1/2 min-[380px]:static min-[380px]:w-full min-[380px]:translate-x-0">
+          <div className="absolute left-1/2 top-0 w-[min(300px,calc(100vw-1.25rem))] -translate-x-1/2 min-[380px]:static min-[380px]:w-full min-[380px]:translate-x-0">
             {siteKey ? (
               <Turnstile
                 key={turnstileKey}
@@ -401,9 +431,9 @@ export function RegisterForm({
         </p>
       </section>
 
-      <div className="mt-6 rounded-xl bg-blue-50 px-4 py-3">
+      <div className="mt-6 rounded-xl bg-navy-50 px-4 py-3">
         <p className="flex gap-2 text-xs leading-relaxed text-navy-700">
-          <LockKeyhole className="mt-0.5 h-4 w-4 shrink-0 text-blue-700" aria-hidden />
+          <LockKeyhole className="mt-0.5 h-4 w-4 shrink-0 text-navy-700" aria-hidden />
           Your information is used only for account verification, referral servicing and incentive
           payments.
         </p>

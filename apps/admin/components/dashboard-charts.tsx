@@ -111,18 +111,20 @@ export function CategoryBars({ data }: { data: NamedCount[] }) {
       {data.map((item) => (
         <li
           key={item.name}
-          className="grid grid-cols-[minmax(7rem,1fr)_minmax(8rem,2fr)_3rem] items-center gap-3 text-sm"
+          className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-1.5 text-sm sm:grid-cols-[minmax(7rem,1fr)_minmax(8rem,2fr)_3rem] sm:items-center sm:gap-3"
         >
-          <span className="truncate text-navy-600" title={item.name}>
+          <span className="min-w-0 truncate text-navy-600" title={item.name}>
             {item.name}
           </span>
-          <span className="h-4 overflow-hidden rounded-r bg-navy-800/[0.06]">
+          <span className="col-span-2 row-start-2 h-4 overflow-hidden rounded-r bg-navy-800/[0.06] sm:col-span-1 sm:col-start-2 sm:row-start-1">
             <span
               className="block h-full min-w-0.5 rounded-r bg-navy-800"
               style={{ width: `${(item.count / max) * 100}%` }}
             />
           </span>
-          <span className="text-right tabular-nums font-medium text-navy-800">{item.count}</span>
+          <span className="col-start-2 row-start-1 text-right tabular-nums font-medium text-navy-800 sm:col-start-3">
+            {item.count}
+          </span>
         </li>
       ))}
     </ul>

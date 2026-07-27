@@ -34,7 +34,7 @@ function MisTable({ dimension, rows }: { dimension: string; rows: MisRow[] }) {
   );
 
   return (
-    <Card className="overflow-x-auto">
+    <Card className="max-w-full overscroll-x-contain overflow-x-auto">
       <table className="w-full min-w-[900px] text-left text-sm">
         <thead>
           <tr className="border-b border-hairline text-xs font-semibold uppercase tracking-[0.1em] text-navy-500">
@@ -135,7 +135,7 @@ export default async function MisPage() {
 
       <section>
         <h2 className="mb-3 font-display text-lg font-bold text-navy-950">By Referral Partner</h2>
-        <Card className="overflow-x-auto">
+        <Card className="max-w-full overscroll-x-contain overflow-x-auto">
           <table className="w-full min-w-[720px] text-left text-sm">
             <thead>
               <tr className="border-b border-hairline text-xs font-semibold uppercase tracking-[0.1em] text-navy-500">

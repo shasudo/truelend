@@ -13,9 +13,9 @@ const variants = {
 } as const;
 
 const sizes = {
-  sm: "h-9 gap-1.5 px-4 text-sm",
-  md: "h-11 gap-2 px-6 text-[0.95rem]",
-  lg: "h-13 gap-2 px-7 text-base",
+  sm: "min-h-9 gap-1.5 px-4 py-2 text-sm",
+  md: "min-h-11 gap-2 px-6 py-2.5 text-[0.95rem]",
+  lg: "min-h-13 gap-2 px-7 py-3 text-base",
 } as const;
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -36,7 +36,7 @@ export function Button({
   return (
     <Comp
       className={cx(
-        "inline-flex select-none items-center justify-center rounded-lg font-semibold transition-colors duration-150",
+        "inline-flex max-w-full select-none items-center justify-center rounded-lg text-center font-semibold leading-snug transition-colors duration-150",
         "outline-offset-2 outline-red-600 focus-visible:outline-2",
         "disabled:pointer-events-none disabled:opacity-50",
         variants[variant],

@@ -382,10 +382,10 @@ export function HomeHero() {
         className="absolute -right-24 bottom-4 h-48 w-[44rem] rounded-[100%] border border-navy-100/60"
         aria-hidden
       />
-      <div className="relative mx-auto grid w-full max-w-[95rem] items-start gap-12 px-5 pb-12 pt-6 sm:px-8 sm:pb-16 sm:pt-8 xl:grid-cols-[0.82fr_1.18fr] xl:gap-8 xl:pb-14 xl:pt-6">
+      <div className="relative mx-auto grid w-full max-w-[95rem] items-start gap-12 px-5 pb-12 pt-6 sm:px-8 sm:pb-16 sm:pt-8 xl:grid-cols-[0.9fr_1.1fr] xl:gap-8 xl:pb-14 xl:pt-6">
         <div className="max-w-[42rem]">
           <Reveal immediate>
-            <h1 className="text-balance font-display text-5xl font-extrabold uppercase leading-[0.97] tracking-[-0.045em] text-navy-950 sm:text-6xl xl:text-[4rem]">
+            <h1 className="break-words text-balance font-display text-[clamp(2.2rem,11vw,4rem)] font-extrabold uppercase leading-[0.99] tracking-[-0.035em] text-navy-950 sm:tracking-[-0.045em]">
               Before you apply
               <br />
               for a loan,
@@ -393,7 +393,7 @@ export function HomeHero() {
               <span className="relative inline-block text-red-600">
                 talk to TrueLend first.
                 <span
-                  className="absolute -bottom-2 left-[62%] h-1 w-28 -rotate-2 rounded-full bg-red-600"
+                  className="absolute -bottom-2 left-[55%] h-1 w-20 -rotate-2 rounded-full bg-red-600 min-[400px]:left-[62%] min-[400px]:w-28"
                   aria-hidden
                 />
               </span>
@@ -413,14 +413,23 @@ export function HomeHero() {
             </p>
           </Reveal>
           <Reveal immediate delay={0.2}>
-            <div className="mt-7 flex flex-wrap gap-3">
-              <Button size="lg" asChild className="shadow-[0_14px_30px_-18px_rgba(206,14,23,0.75)]">
+            <div className="mt-7 flex flex-col items-stretch gap-3 min-[480px]:flex-row min-[480px]:flex-wrap">
+              <Button
+                size="lg"
+                asChild
+                className="w-full shadow-[0_14px_30px_-18px_rgba(206,14,23,0.75)] min-[480px]:w-auto"
+              >
                 <Link href="/enquiry">
                   <Headset className="h-4 w-4" aria-hidden />
                   Talk to a Borrowing Advisor
                 </Link>
               </Button>
-              <Button size="lg" variant="outline" asChild className="bg-white/70">
+              <Button
+                size="lg"
+                variant="outline"
+                asChild
+                className="w-full bg-white/70 min-[480px]:w-auto"
+              >
                 <Link href="/contact">
                   <CalendarDays className="h-4 w-4" aria-hidden />
                   Request a Callback

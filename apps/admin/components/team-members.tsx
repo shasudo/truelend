@@ -29,7 +29,7 @@ export function TeamMembers({
   currentUserId: string;
 }) {
   return (
-    <div className="overflow-x-auto">
+    <div className="max-w-full overscroll-x-contain overflow-x-auto">
       <table className="w-full min-w-[820px] text-left text-sm">
         <thead>
           <tr className="border-b border-hairline text-xs font-semibold uppercase tracking-[0.1em] text-navy-500">
@@ -132,7 +132,7 @@ function TeamRow({ m, isSelf }: { m: Member; isSelf: boolean }) {
           <span className="text-xs text-muted">—</span>
         ) : (
           <div className="flex flex-col gap-1.5">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Button
                 size="sm"
                 variant={m.banned ? "outline" : "ghost"}

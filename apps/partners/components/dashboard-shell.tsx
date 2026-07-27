@@ -173,7 +173,7 @@ export function DashboardShell({
       >
         Skip to content
       </a>
-      <aside className="sticky top-0 hidden h-screen w-72 shrink-0 flex-col border-r border-hairline bg-white lg:flex">
+      <aside className="sticky top-0 hidden h-dvh w-72 shrink-0 flex-col border-r border-hairline bg-white lg:flex">
         <div className="flex h-16 items-center border-b border-hairline px-5 text-navy-800">
           <Logo />
         </div>
@@ -183,7 +183,7 @@ export function DashboardShell({
         <UserCard name={name} referenceId={referenceId} />
       </aside>
 
-      <div className="flex min-h-screen flex-1 flex-col">
+      <div className="flex min-h-screen min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-40 flex h-14 items-center justify-between border-b border-hairline bg-white/90 px-4 backdrop-blur-md lg:hidden">
           <span className="text-navy-800">
             <Logo />
@@ -229,7 +229,7 @@ export function DashboardShell({
         <main
           id="main-content"
           tabIndex={-1}
-          className="flex-1 bg-[radial-gradient(circle_at_top_right,var(--color-sun-50),transparent_32rem)] px-4 py-6 sm:px-8 sm:py-8 xl:px-10"
+          className="min-w-0 flex-1 bg-[radial-gradient(circle_at_top_right,var(--color-sun-50),transparent_32rem)] px-4 py-6 sm:px-8 sm:py-8 xl:px-10"
         >
           {children}
         </main>

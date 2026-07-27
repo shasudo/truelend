@@ -50,7 +50,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   };
   return (
     <html lang="en" className={`${jakarta.variable} ${inter.variable}`}>
-      <body className="flex min-h-screen flex-col bg-paper font-sans text-navy-900 antialiased">
+      <body className="flex min-h-screen min-w-0 flex-col overflow-x-clip bg-paper font-sans text-navy-900 antialiased">
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: jsonLd(organization) }}

@@ -59,7 +59,7 @@ export default async function EarningsPage() {
             {payouts.map((entry) => (
               <li
                 key={entry.id}
-                className="flex items-center justify-between gap-4 px-5 py-4 sm:px-6"
+                className="flex flex-col items-stretch justify-between gap-3 px-5 py-4 min-[420px]:flex-row min-[420px]:items-center min-[420px]:gap-4 sm:px-6"
               >
                 <div className="flex min-w-0 items-center gap-3">
                   <span
@@ -82,7 +82,7 @@ export default async function EarningsPage() {
                     </p>
                   </div>
                 </div>
-                <div className="shrink-0 text-right">
+                <div className="shrink-0 pl-12 text-left min-[420px]:pl-0 min-[420px]:text-right">
                   <p className="font-display font-bold tabular-nums text-navy-950">
                     {entry.kind === "paid" ? "−" : "+"}
                     {formatPaise(entry.amountPaise)}

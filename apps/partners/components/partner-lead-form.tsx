@@ -1,7 +1,7 @@
 "use client";
 
-import { useActionState, useRef, useEffect, useState } from "react";
-import { Button, Field, Input, Select, Textarea } from "@truelend/ui";
+import { useActionState, useCallback, useEffect, useState } from "react";
+import { Button, Field, Input, Select, Textarea, useFormDraft } from "@truelend/ui";
 import {
   products,
   employmentTypes,
@@ -12,27 +12,69 @@ import {
 } from "@truelend/reference";
 import { submitLead, type LeadState } from "@/lib/lead-actions";
 
+const partnerLeadFieldNames = [
+  "productSlug",
+  "loanAmount",
+  "tenureMonths",
+  "loanPurpose",
+  "name",
+  "phone",
+  "email",
+  "pincode",
+  "city",
+  "residenceType",
+  "employmentType",
+  "monthlyIncome",
+  "employerName",
+  "experienceYears",
+  "existingEmi",
+  "assetValue",
+  "annualTurnover",
+  "message",
+  "consent",
+] as const;
+
 export function PartnerLeadForm({
   initialProduct = "",
+  storageKey,
 }: {
   /** Preselected product slug — callers must validate it against `products`. */
   initialProduct?: string;
+  storageKey: string;
 }) {
   const [state, action, pending] = useActionState<LeadState, FormData>(submitLead, {});
-  const formRef = useRef<HTMLFormElement>(null);
   const [product, setProduct] = useState(initialProduct);
+  const restoreProduct = useCallback((draft: Record<string, boolean | string>) => {
+    if (typeof draft.productSlug === "string") setProduct(draft.productSlug);
+  }, []);
+  const draft = useFormDraft({
+    storageKey,
+    fields: partnerLeadFieldNames,
+    error: state.error,
+    success: state.ok,
+    resultKey: state,
+    restoreKey: product,
+    onRestore: restoreProduct,
+  });
   const showAsset = securedProducts.has(product);
   const showTurnover = businessProducts.has(product);
 
   useEffect(() => {
     if (state.ok) {
-      formRef.current?.reset();
+      draft.formRef.current?.reset();
       setProduct(initialProduct);
     }
-  }, [state.ok, initialProduct]);
+  }, [draft.formRef, initialProduct, state.ok]);
 
   return (
-    <form ref={formRef} action={action} className="space-y-6">
+    <form
+      ref={draft.formRef}
+      action={action}
+      onInput={draft.onInput}
+      onChange={draft.onChange}
+      onSubmit={draft.onSubmit}
+      className="space-y-6"
+    >
       <fieldset className="space-y-5">
         <legend className="font-display text-sm font-bold uppercase tracking-[0.14em] text-navy-500">
           Loan requirement

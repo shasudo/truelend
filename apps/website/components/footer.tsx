@@ -121,7 +121,7 @@ export function Footer() {
             <p className="text-sm text-on-dark-muted">
               © {new Date().getFullYear()} TrueLend. All rights reserved.
             </p>
-            <div className="flex gap-6 text-sm text-on-dark-muted">
+            <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-on-dark-muted">
               <Link href="/privacy" className="hover:text-white">
                 Privacy Policy
               </Link>

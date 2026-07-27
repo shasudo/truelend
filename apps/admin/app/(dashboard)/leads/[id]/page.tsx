@@ -26,9 +26,9 @@ export const metadata = { title: "Lead details" };
 
 function Detail({ label, value }: { label: string; value: string | null | undefined }) {
   return (
-    <div>
+    <div className="min-w-0">
       <dt className="text-xs font-semibold uppercase tracking-[0.1em] text-muted">{label}</dt>
-      <dd className="mt-0.5 text-navy-900">{value || "—"}</dd>
+      <dd className="mt-0.5 break-words text-navy-900">{value || "—"}</dd>
     </div>
   );
 }
@@ -55,11 +55,11 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
         actions={<StatusBadge status={lead.status} />}
       />
 
-      <div className="grid gap-6 lg:grid-cols-[1.6fr_1fr]">
-        <div className="space-y-6">
-          <Card className="p-6">
+      <div className="grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+        <div className="min-w-0 space-y-6">
+          <Card className="p-5 sm:p-6">
             <h2 className="font-display text-lg font-bold text-navy-950">Contact & enquiry</h2>
-            <dl className="mt-5 grid grid-cols-2 gap-5">
+            <dl className="mt-5 grid grid-cols-1 gap-5 min-[480px]:grid-cols-2">
               <Detail label="Phone" value={lead.phone} />
               <Detail label="Email" value={lead.email} />
               <Detail label="City" value={lead.city} />
@@ -72,7 +72,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
                 <p className="text-xs font-semibold uppercase tracking-[0.1em] text-muted">
                   Message
                 </p>
-                <p className="mt-1 leading-relaxed text-navy-700">{lead.message}</p>
+                <p className="mt-1 break-words leading-relaxed text-navy-700">{lead.message}</p>
               </div>
             )}
             <div className="mt-5 flex flex-wrap gap-2 border-t border-hairline pt-4">
@@ -97,7 +97,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
               )}
             </div>
             {(lead.utmSource || lead.utmMedium || lead.utmCampaign) && (
-              <p className="mt-4 text-xs text-muted">
+              <p className="mt-4 break-words text-xs text-muted">
                 Attribution:{" "}
                 {[lead.utmSource, lead.utmMedium, lead.utmCampaign].filter(Boolean).join(" / ")}
               </p>
@@ -108,9 +108,9 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
             lead.monthlyIncomePaise != null ||
             lead.employmentType ||
             lead.pincode) && (
-            <Card className="p-6">
+            <Card className="p-5 sm:p-6">
               <h2 className="font-display text-lg font-bold text-navy-950">Loan application</h2>
-              <dl className="mt-5 grid grid-cols-2 gap-5">
+              <dl className="mt-5 grid grid-cols-1 gap-5 min-[480px]:grid-cols-2">
                 <Detail
                   label="Loan amount"
                   value={lead.loanAmountPaise != null ? formatPaise(lead.loanAmountPaise) : null}
@@ -181,7 +181,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
             </Card>
           )}
 
-          <Card className="p-6">
+          <Card className="p-5 sm:p-6">
             <h2 className="font-display text-lg font-bold text-navy-950">Notes</h2>
             <form action={addLeadNoteAction} className="mt-4 space-y-3">
               <input type="hidden" name="leadId" value={lead.id} />
@@ -203,7 +203,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
               {notes.length === 0 && <li className="text-sm text-muted">No notes yet.</li>}
               {notes.map(({ note, authorName }) => (
                 <li key={note.id} className="border-l-2 border-hairline pl-4">
-                  <p className="leading-relaxed text-navy-800">{note.body}</p>
+                  <p className="break-words leading-relaxed text-navy-800">{note.body}</p>
                   <p className="mt-1 text-xs text-muted">
                     {authorName ?? "Unknown"} · {formatDateTime(note.createdAt)}
                   </p>
@@ -213,8 +213,8 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
           </Card>
         </div>
 
-        <div className="space-y-6">
-          <Card className="p-6">
+        <div className="min-w-0 space-y-6">
+          <Card className="p-5 sm:p-6">
             <h2 className="font-display text-lg font-bold text-navy-950">Pipeline</h2>
 
             <form action={updateLeadPipelineAction} className="mt-4 space-y-4">
@@ -248,7 +248,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
             </p>
           </Card>
 
-          <Card className="p-6">
+          <Card className="p-5 sm:p-6">
             <div className="flex items-center justify-between">
               <h2 className="font-display text-lg font-bold text-navy-950">Loan cases</h2>
               <Button size="sm" asChild>
@@ -263,7 +263,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
                 <li key={c.id}>
                   <Link
                     href={`/loan-cases/${c.id}`}
-                    className="flex items-center justify-between gap-3 rounded-lg border border-hairline p-3 transition-colors hover:border-navy-800/30 hover:bg-paper"
+                    className="flex flex-col items-start justify-between gap-3 rounded-lg border border-hairline p-3 transition-colors hover:border-navy-800/30 hover:bg-paper min-[420px]:flex-row min-[420px]:items-center"
                   >
                     <div className="min-w-0">
                       <p className="truncate font-semibold text-navy-950">
@@ -271,7 +271,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
                       </p>
                       <p className="truncate text-xs text-navy-500">{productName(c.productSlug)}</p>
                     </div>
-                    <div className="flex shrink-0 flex-col items-end gap-1">
+                    <div className="flex w-full flex-row flex-wrap items-center justify-between gap-2 min-[420px]:w-auto min-[420px]:shrink-0 min-[420px]:flex-col min-[420px]:items-end min-[420px]:gap-1">
                       <StatusBadge status={c.status} kind="case" />
                       <span className="text-xs tabular-nums text-navy-500">
                         {formatPaise(c.disbursedAmountPaise ?? c.sanctionedAmountPaise)}

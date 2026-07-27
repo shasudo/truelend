@@ -88,7 +88,7 @@ export default async function LoanCasesPage({ searchParams }: { searchParams: Pr
         </form>
       </Card>
 
-      <Card className="overflow-x-auto">
+      <Card className="max-w-full overscroll-x-contain overflow-x-auto">
         <table className="w-full min-w-[840px] text-left text-sm">
           <thead>
             <tr className="border-b border-hairline text-xs font-semibold uppercase tracking-[0.1em] text-navy-500">

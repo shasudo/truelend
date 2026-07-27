@@ -46,8 +46,8 @@ export default async function LoanCaseDetailPage({ params }: { params: Promise<{
         actions={<StatusBadge status={c.status} kind="case" />}
       />
 
-      <div className="grid gap-6 lg:grid-cols-[1.6fr_1fr]">
-        <Card className="p-6 sm:p-8">
+      <div className="grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+        <Card className="p-5 sm:p-8">
           <h2 className="mb-6 font-display text-lg font-bold text-navy-950">Edit case</h2>
           <form action={updateLoanCaseAction} className="space-y-6">
             <input type="hidden" name="caseId" value={c.id} />
@@ -58,12 +58,12 @@ export default async function LoanCaseDetailPage({ params }: { params: Promise<{
           </form>
         </Card>
 
-        <div className="space-y-6">
-          <Card className="p-6">
+        <div className="min-w-0 space-y-6">
+          <Card className="p-5 sm:p-6">
             <h2 className="font-display text-lg font-bold text-navy-950">Commercials</h2>
             <div className="mt-5 space-y-5">
               <Stat value={formatPaise(c.disbursedAmountPaise)} label="Disbursed" />
-              <div className="grid grid-cols-2 gap-5 border-t border-hairline pt-5">
+              <div className="grid grid-cols-1 gap-5 border-t border-hairline pt-5 min-[420px]:grid-cols-2">
                 <Stat value={formatPaise(c.revenuePaise)} label="Revenue" />
                 <Stat value={formatPaise(c.payoutPaise)} label="Payout" />
               </div>
@@ -74,13 +74,18 @@ export default async function LoanCaseDetailPage({ params }: { params: Promise<{
           </Card>
 
           {timeline.length > 0 && (
-            <Card className="p-6">
+            <Card className="p-5 sm:p-6">
               <h2 className="font-display text-lg font-bold text-navy-950">Timeline</h2>
               <ul className="mt-4 space-y-3">
                 {timeline.map((t) => (
-                  <li key={t.label} className="flex justify-between text-sm">
+                  <li
+                    key={t.label}
+                    className="flex flex-col justify-between gap-0.5 text-sm min-[420px]:flex-row min-[420px]:gap-3"
+                  >
                     <span className="text-navy-600">{t.label}</span>
-                    <span className="tabular-nums text-navy-500">{formatDateTime(t.at!)}</span>
+                    <span className="break-words tabular-nums text-navy-500">
+                      {formatDateTime(t.at!)}
+                    </span>
                   </li>
                 ))}
               </ul>

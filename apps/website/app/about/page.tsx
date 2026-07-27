@@ -34,7 +34,7 @@ const values = [
 export default function AboutPage() {
   return (
     <>
-      <section className="relative min-h-[38rem] overflow-hidden bg-white">
+      <section className="relative min-h-[34rem] overflow-hidden bg-white sm:min-h-[38rem]">
         <Image
           src="/images/pages/about-guidance-hero.webp"
           alt="Abstract white folded paper with a red line guiding through the layers"
@@ -47,12 +47,12 @@ export default function AboutPage() {
           className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,1)_0%,rgba(255,255,255,.98)_42%,rgba(255,255,255,.4)_67%,rgba(255,255,255,0)_100%)]"
           aria-hidden
         />
-        <Container className="relative flex min-h-[38rem] items-center py-16">
+        <Container className="relative flex min-h-[34rem] items-center py-14 sm:min-h-[38rem] sm:py-16">
           <Reveal immediate className="max-w-[43rem]">
             <p className="text-sm font-bold uppercase tracking-[0.14em] text-red-600">
               About TrueLend
             </p>
-            <h1 className="mt-5 text-balance font-display text-5xl font-extrabold leading-[1.08] tracking-[-0.04em] text-navy-950 sm:text-6xl lg:text-7xl">
+            <h1 className="mt-5 break-words text-balance font-display text-[2.5rem] font-extrabold leading-[1.08] tracking-[-0.035em] text-navy-950 min-[400px]:text-5xl sm:text-6xl sm:tracking-[-0.04em] lg:text-7xl">
               We believe borrowing decisions deserve{" "}
               <span className="text-red-600">better guidance.</span>
             </h1>
@@ -116,8 +116,8 @@ export default function AboutPage() {
       <section className="bg-paper">
         <Container className="py-16 sm:py-20">
           <Reveal>
-            <div className="border-l-2 border-red-600 pl-6 sm:pl-10">
-              <h2 className="max-w-4xl text-balance font-display text-3xl font-extrabold leading-tight tracking-tight text-navy-950 sm:text-4xl">
+            <div className="border-l-2 border-red-600 pl-5 sm:pl-10">
+              <h2 className="max-w-4xl text-balance font-display text-2xl font-extrabold leading-tight tracking-tight text-navy-950 min-[400px]:text-3xl sm:text-4xl">
                 Built on Experience.
                 <br />
                 Driven by Better Borrowing Decisions.
@@ -173,14 +173,19 @@ export default function AboutPage() {
                   Explore borrowing solutions that are tailored to your needs.
                 </p>
               </div>
-              <div className="relative mt-6 flex flex-wrap gap-3 lg:mt-0">
-                <Button size="lg" asChild>
+              <div className="relative mt-6 grid gap-3 min-[480px]:flex min-[480px]:flex-wrap lg:mt-0">
+                <Button size="lg" asChild className="w-full min-[480px]:w-auto">
                   <Link href="/enquiry">
                     <Headset className="h-4 w-4" aria-hidden />
                     Talk to a Borrowing Advisor
                   </Link>
                 </Button>
-                <Button size="lg" variant="outline-inverse" asChild>
+                <Button
+                  size="lg"
+                  variant="outline-inverse"
+                  asChild
+                  className="w-full min-[480px]:w-auto"
+                >
                   <a href={site.whatsappHref} target="_blank" rel="noopener noreferrer">
                     <MessageCircle className="h-4 w-4" aria-hidden />
                     WhatsApp Us

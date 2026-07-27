@@ -38,7 +38,7 @@ export default async function TeamPage() {
     <>
       <PageTitle title="Team" subtitle="Employees and access" />
 
-      <Card className="mb-6 p-6">
+      <Card className="mb-6 p-5 sm:p-6">
         <h2 className="mb-5 font-display text-lg font-bold text-navy-950">Add a user</h2>
         <CreateUserForm />
       </Card>

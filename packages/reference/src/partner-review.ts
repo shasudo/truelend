@@ -36,7 +36,6 @@ export interface PartnerApplicationData {
   bankBranch: string | null;
   ifsc: string | null;
   nomineeName: string | null;
-  nomineeAadhaar: string | null;
   nomineePhone: string | null;
   occupation: string | null;
   designation: string | null;
@@ -67,7 +66,6 @@ const commonRequiredFields = [
   "bankBranch",
   "ifsc",
   "nomineeName",
-  "nomineeAadhaar",
   "nomineePhone",
 ] as const satisfies readonly PartnerApplicationField[];
 

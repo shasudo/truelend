@@ -1,20 +1,36 @@
 "use client";
 
 import { useActionState } from "react";
-import { Field, Input, SubmitButton } from "@truelend/ui";
+import { Field, Input, SubmitButton, useFormDraft } from "@truelend/ui";
 import { updateProfileAction, type ProfileState } from "@/lib/profile-actions";
 
 export function ProfileForm({
   defaultName,
   defaultPhone,
+  storageKey,
 }: {
   defaultName: string;
   defaultPhone: string;
+  storageKey: string;
 }) {
   const [state, action] = useActionState<ProfileState, FormData>(updateProfileAction, {});
+  const draft = useFormDraft({
+    storageKey,
+    fields: ["name", "phone"],
+    error: state.error,
+    success: state.ok,
+    resultKey: state,
+  });
 
   return (
-    <form action={action} className="space-y-5">
+    <form
+      ref={draft.formRef}
+      action={action}
+      onInput={draft.onInput}
+      onChange={draft.onChange}
+      onSubmit={draft.onSubmit}
+      className="space-y-5"
+    >
       <Field label="Name" htmlFor="name" required>
         <Input
           id="name"

@@ -50,7 +50,7 @@ export function Reveal({ children, delay = 0, immediate, className }: RevealProp
     <div
       ref={ref}
       data-visible={immediate ? "true" : undefined}
-      className={cx("tl-reveal", className)}
+      className={cx("min-w-0 tl-reveal", className)}
       style={{ "--reveal-delay": `${delay}s` } as CSSProperties}
     >
       {children}

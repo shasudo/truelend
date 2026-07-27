@@ -33,11 +33,11 @@ export default async function NewLoanCasePage({
       </Link>
       <PageTitle title="New loan case" subtitle={`For ${lead.name ?? "this lead"}`} />
 
-      <Card className="max-w-3xl p-6 sm:p-8">
+      <Card className="max-w-3xl p-5 sm:p-8">
         <form action={createLoanCaseAction} className="space-y-6">
           <input type="hidden" name="leadId" value={lead.id} />
           <LoanCaseFields defaults={{ productSlug: lead.productSlug ?? undefined }} />
-          <div className="flex gap-2 border-t border-hairline pt-6">
+          <div className="flex flex-col gap-2 border-t border-hairline pt-6 min-[420px]:flex-row">
             <SubmitButton pendingText="Creating…">Create loan case</SubmitButton>
             <Button type="button" variant="ghost" asChild>
               <Link href={`/leads/${lead.id}`}>Cancel</Link>

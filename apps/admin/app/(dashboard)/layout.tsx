@@ -20,11 +20,15 @@ export default async function DashboardLayout({ children }: { children: ReactNod
       >
         Skip to content
       </a>
-      <div className="lg:flex">
+      <div className="min-w-0 lg:flex">
         <Sidebar user={user} />
-        <div className="flex min-h-screen flex-1 flex-col">
+        <div className="flex min-h-screen min-w-0 flex-1 flex-col">
           <MobileNav user={user} />
-          <main id="main-content" tabIndex={-1} className="flex-1 px-6 py-8 sm:px-10">
+          <main
+            id="main-content"
+            tabIndex={-1}
+            className="min-w-0 flex-1 px-4 py-6 min-[400px]:px-5 sm:px-8 sm:py-8 xl:px-10"
+          >
             {children}
           </main>
         </div>

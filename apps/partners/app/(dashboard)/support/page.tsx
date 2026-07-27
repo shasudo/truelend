@@ -42,7 +42,7 @@ export default async function SupportPage() {
 
       <div className="mt-6 grid gap-4 lg:grid-cols-3">
         {topics.map((topic) => (
-          <Card key={topic.title} className="p-6">
+          <Card key={topic.title} className="p-5 sm:p-6">
             <topic.icon className="h-6 w-6 text-red-600" aria-hidden />
             <h2 className="mt-4 font-display text-lg font-bold text-navy-950">{topic.title}</h2>
             <p className="mt-2 text-sm leading-relaxed text-navy-600">{topic.description}</p>
@@ -68,18 +68,18 @@ export default async function SupportPage() {
               Partner account.
             </p>
           </div>
-          <div className="flex flex-col items-start justify-center p-6 sm:p-8">
-            <div className="flex items-center gap-3">
+          <div className="flex min-w-0 flex-col items-start justify-center p-5 sm:p-8">
+            <div className="flex min-w-0 items-center gap-3">
               <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-navy-800 text-sun-400">
                 <Mail className="h-5 w-5" aria-hidden />
               </span>
-              <div>
+              <div className="min-w-0">
                 <p className="text-xs font-bold uppercase tracking-[0.12em] text-muted">
                   Email support
                 </p>
                 <a
                   href={`mailto:${referralPartnerEmail}`}
-                  className="font-display text-lg font-bold text-navy-950 hover:text-red-600"
+                  className="break-all font-display text-base font-bold text-navy-950 hover:text-red-600 min-[420px]:text-lg"
                 >
                   {referralPartnerEmail}
                 </a>
@@ -89,7 +89,10 @@ export default async function SupportPage() {
               Include only the minimum details needed. Never email passwords, bank credentials or
               KYC files.
             </p>
-            <Button asChild className="mt-5">
+            <Button
+              asChild
+              className="mt-5 h-auto min-h-11 w-full whitespace-normal py-3 sm:w-auto"
+            >
               <a
                 href={`mailto:${referralPartnerEmail}?subject=TrueLend%20Referral%20Partner%20Support`}
               >

@@ -33,8 +33,12 @@ export default async function KycPage() {
 
       <section className="mt-6">
         <h2 className="mb-4 font-display text-lg font-bold text-navy-950">Details</h2>
-        <Card className="p-6">
-          <KycDetailsForm values={toKycFormValues(partner)} editable={editable} />
+        <Card className="p-5 sm:p-6">
+          <KycDetailsForm
+            values={toKycFormValues(partner)}
+            editable={editable}
+            storageKey={`truelend:partner:kyc-details:${partner.userId}`}
+          />
         </Card>
       </section>
 

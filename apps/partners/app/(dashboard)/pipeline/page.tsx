@@ -53,7 +53,10 @@ export default async function PipelinePage() {
                   label={leadStatusLabels[lead.status] ?? lead.status}
                 />
               </div>
-              <div className="mt-5 grid grid-cols-3 gap-2" aria-label="Referral progress">
+              <div
+                className="mt-5 grid grid-cols-1 gap-3 min-[420px]:grid-cols-3 min-[420px]:gap-2"
+                aria-label="Referral progress"
+              >
                 {[
                   { label: "Referred", complete: true },
                   {
@@ -66,7 +69,7 @@ export default async function PipelinePage() {
                     <div
                       className={`h-1.5 rounded-full ${step.complete ? "bg-red-600" : "bg-navy-100"}`}
                     />
-                    <p className="mt-2 text-xs font-semibold text-navy-600">
+                    <p className="mt-1.5 text-xs font-semibold text-navy-600 min-[420px]:mt-2">
                       {index + 1}. {step.label}
                     </p>
                   </div>

@@ -17,7 +17,7 @@ export function PayoutForm({ partnerId, noun }: { partnerId: string; noun: strin
   return (
     <form ref={formRef} action={action} className="mt-5 space-y-3 border-t border-hairline pt-5">
       <input type="hidden" name="partnerId" value={partnerId} />
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2">
         <Field label="Entry" htmlFor="kind">
           <Select id="kind" name="kind" defaultValue="earned">
             <option value="earned">Earned</option>

@@ -20,7 +20,7 @@ export function PartnerStatusScreen({
   const rejected = partner.status === "rejected";
   const complete = evaluatePartnerApplication(partner, new Set(documentTypes)).isComplete;
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen min-w-0">
       <header className="border-b border-hairline bg-white">
         <Container className="flex h-16 items-center justify-between">
           <span className="text-navy-800">
@@ -31,7 +31,7 @@ export function PartnerStatusScreen({
       </header>
 
       <Container className="max-w-2xl py-12">
-        <Card className={rejected ? "border-red-200 bg-red-50/50 p-6" : "p-6"}>
+        <Card className={rejected ? "border-red-200 bg-red-50/50 p-5 sm:p-6" : "p-5 sm:p-6"}>
           <div className="flex items-start gap-4">
             {rejected ? (
               <XCircle className="mt-0.5 h-6 w-6 shrink-0 text-red-600" aria-hidden />
@@ -64,8 +64,11 @@ export function PartnerStatusScreen({
           <p className="mb-4 mt-1 text-sm text-navy-500">
             PAN, address and bank details — so we can verify you and pay you.
           </p>
-          <Card className="p-6">
-            <KycDetailsForm values={toKycFormValues(partner)} />
+          <Card className="p-5 sm:p-6">
+            <KycDetailsForm
+              values={toKycFormValues(partner)}
+              storageKey={`truelend:partner:kyc-details:${partner.userId}`}
+            />
           </Card>
         </div>
 
@@ -81,7 +84,7 @@ export function PartnerStatusScreen({
           <h2 className="font-display text-lg font-bold text-navy-950">
             <span className="mr-2 text-red-600">3.</span>Submit for review
           </h2>
-          <Card className="mt-4 p-6">
+          <Card className="mt-4 p-5 sm:p-6">
             {complete ? (
               <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <p className="flex items-center gap-2 text-sm text-navy-700">

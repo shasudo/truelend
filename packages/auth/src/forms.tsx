@@ -3,16 +3,22 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Button, Field, Input } from "@truelend/ui";
+import { Button, Field, Input, useFormDraft } from "@truelend/ui";
 import { authClient } from "./client";
 
 export function LoginForm({ redirectTo, children }: { redirectTo: string; children?: ReactNode }) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string>();
+  const draft = useFormDraft({
+    storageKey: "truelend:auth:login",
+    fields: ["email"],
+    error,
+  });
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    draft.onSubmit(e);
     setError(undefined);
     setPending(true);
     try {
@@ -35,7 +41,14 @@ export function LoginForm({ redirectTo, children }: { redirectTo: string; childr
   }
 
   return (
-    <form onSubmit={onSubmit} aria-busy={pending} className="mt-6 space-y-4">
+    <form
+      ref={draft.formRef}
+      onSubmit={onSubmit}
+      onInput={draft.onInput}
+      onChange={draft.onChange}
+      aria-busy={pending}
+      className="mt-6 space-y-4"
+    >
       <Field label="Email" htmlFor="email" required>
         <Input id="email" name="email" type="email" autoComplete="email" maxLength={254} required />
       </Field>
@@ -74,9 +87,16 @@ export function ForgotPasswordForm() {
   const [pending, setPending] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState<string>();
+  const draft = useFormDraft({
+    storageKey: "truelend:auth:forgot-password",
+    fields: ["email"],
+    error,
+    success: sent,
+  });
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    draft.onSubmit(e);
     setError(undefined);
     setPending(true);
     try {
@@ -109,7 +129,14 @@ export function ForgotPasswordForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} aria-busy={pending} className="mt-6 space-y-4">
+    <form
+      ref={draft.formRef}
+      onSubmit={onSubmit}
+      onInput={draft.onInput}
+      onChange={draft.onChange}
+      aria-busy={pending}
+      className="mt-6 space-y-4"
+    >
       <Field label="Email" htmlFor="email" required>
         <Input id="email" name="email" type="email" autoComplete="email" maxLength={254} required />
       </Field>

@@ -37,7 +37,7 @@ export default async function MarketingPage() {
           <p className="text-xs font-extrabold uppercase tracking-[0.16em]">
             TrueLend Referral Partner Network
           </p>
-          <h2 className="mt-3 text-balance font-display text-4xl font-extrabold leading-none sm:text-5xl">
+          <h2 className="mt-3 text-balance font-display text-3xl font-extrabold leading-tight min-[420px]:text-4xl sm:text-5xl sm:leading-none">
             Refer loans. Earn extra income.
           </h2>
           <p className="mt-4 max-w-lg font-medium leading-relaxed text-navy-800">

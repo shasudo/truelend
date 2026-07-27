@@ -66,9 +66,9 @@ export default async function CustomersPage({
           <>
             <div className="divide-y divide-hairline md:hidden">
               {result.rows.map((lead) => (
-                <article key={lead.id} className="p-5">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
+                <article key={lead.id} className="p-4 min-[400px]:p-5">
+                  <div className="flex flex-col items-start justify-between gap-2 min-[420px]:flex-row min-[420px]:gap-3">
+                    <div className="min-w-0">
                       <h3 className="font-semibold text-navy-950">{lead.name ?? "—"}</h3>
                       <p className="mt-0.5 text-xs text-navy-500">
                         {productName(lead.productSlug)}

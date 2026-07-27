@@ -17,12 +17,15 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-50 border-b border-hairline bg-paper/85 backdrop-blur-md">
-      <Container className="flex h-20 items-center justify-between gap-6">
-        <Link href="/" aria-label="TrueLend home" className="text-navy-800">
+      <Container className="flex h-20 max-w-[1600px] items-center justify-between gap-3 px-5 sm:gap-5 sm:px-8 xl:gap-6 xl:px-10">
+        <Link href="/" aria-label="TrueLend home" className="shrink-0 text-navy-800">
           <Logo />
         </Link>
 
-        <nav className="hidden items-center gap-7 lg:flex" aria-label="Main">
+        <nav
+          className="hidden min-w-0 flex-1 items-center justify-center gap-6 xl:flex 2xl:gap-8"
+          aria-label="Main"
+        >
           {site.nav.map((item) =>
             item.href === "/products" ? (
               <ProductsMenu key={item.href} active={isActive(item.href)} />
@@ -32,7 +35,7 @@ export function Header() {
                 href={item.href}
                 aria-current={isActive(item.href) ? "page" : undefined}
                 className={cx(
-                  "text-base font-medium text-navy-600 transition-colors hover:text-navy-950",
+                  "shrink-0 whitespace-nowrap text-base font-medium text-navy-600 transition-colors hover:text-navy-950",
                   isActive(item.href) &&
                     "text-navy-950 underline decoration-red-600 decoration-2 underline-offset-8",
                 )}
@@ -43,10 +46,10 @@ export function Header() {
           )}
         </nav>
 
-        <div className="flex items-center gap-3">
+        <div className="flex shrink-0 items-center gap-3">
           <div className="hidden sm:block">
             <Button size="sm" asChild>
-              <Link href="/enquiry">
+              <Link href="/enquiry" className="whitespace-nowrap">
                 <Headset className="h-4 w-4" aria-hidden />
                 Talk to a Borrowing Advisor
               </Link>
@@ -54,7 +57,7 @@ export function Header() {
           </div>
 
           <button
-            className="rounded-md p-2 text-navy-800 hover:bg-navy-800/5 lg:hidden"
+            className="rounded-md p-2 text-navy-800 hover:bg-navy-800/5 xl:hidden"
             aria-label="Open menu"
             onClick={() => menuRef.current?.showModal()}
           >

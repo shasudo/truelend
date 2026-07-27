@@ -8,12 +8,12 @@ import { CATEGORIES, itemsFor } from "@truelend/reference";
 // without client state. Each category and every item links to a real page.
 export function ProductsMenu({ active }: { active: boolean }) {
   return (
-    <div className="group relative">
+    <div className="group relative shrink-0">
       <Link
         href="/products"
         aria-current={active ? "page" : undefined}
         className={cx(
-          "flex items-center gap-1 text-base font-medium text-navy-600 transition-colors hover:text-navy-950 group-focus-within:text-navy-950",
+          "flex items-center gap-1 whitespace-nowrap text-base font-medium text-navy-600 transition-colors hover:text-navy-950 group-focus-within:text-navy-950",
           active && "text-navy-950 underline decoration-red-600 decoration-2 underline-offset-8",
         )}
       >

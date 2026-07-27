@@ -34,7 +34,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       className={`${jakarta.variable} ${inter.variable}`}
       data-scroll-behavior="smooth"
     >
-      <body className="min-h-screen bg-paper font-sans text-navy-900 antialiased">{children}</body>
+      <body className="min-h-screen min-w-0 overflow-x-clip bg-paper font-sans text-navy-900 antialiased">
+        {children}
+      </body>
     </html>
   );
 }

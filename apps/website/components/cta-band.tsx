@@ -24,14 +24,14 @@ export function CtaBand({
           </h2>
           <p className="mt-3 text-white/65">{sub}</p>
         </div>
-        <div className="flex flex-wrap gap-3">
-          <Button size="lg" asChild>
+        <div className="grid w-full gap-3 min-[480px]:flex min-[480px]:w-auto min-[480px]:flex-wrap">
+          <Button size="lg" asChild className="w-full min-[480px]:w-auto">
             <Link href={href}>
               <Headset className="h-4 w-4" aria-hidden />
               Talk to a Borrowing Advisor
             </Link>
           </Button>
-          <Button size="lg" variant="outline-inverse" asChild>
+          <Button size="lg" variant="outline-inverse" asChild className="w-full min-[480px]:w-auto">
             <a href={site.whatsappHref} target="_blank" rel="noopener noreferrer">
               <MessageCircle className="h-4 w-4" aria-hidden />
               WhatsApp Us

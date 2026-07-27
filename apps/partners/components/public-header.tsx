@@ -13,46 +13,56 @@ export function PublicHeader() {
       >
         Skip to content
       </a>
-      <Container className="flex h-[78px] max-w-[1240px] items-center justify-between gap-5">
-        <Link href="/" aria-label="TrueLend Referral Partners home" className="text-navy-800">
+      <Container className="flex h-20 max-w-[1600px] items-center justify-between gap-3 px-5 sm:gap-5 sm:px-8 xl:gap-6 xl:px-10">
+        <Link
+          href="/"
+          aria-label="TrueLend Referral Partners home"
+          className="shrink-0 text-navy-800"
+        >
           <Logo />
         </Link>
         <nav
-          className="hidden flex-1 items-center justify-center gap-7 whitespace-nowrap xl:flex"
+          className="hidden min-w-0 flex-1 items-center justify-center gap-6 xl:flex 2xl:gap-8"
           aria-label="Public"
         >
           <Link
             href="/#how-it-works"
-            className="border-b-2 border-transparent py-7 text-sm font-semibold text-navy-950 hover:border-red-600"
+            className="shrink-0 whitespace-nowrap border-b-2 border-transparent py-7 text-sm font-semibold text-navy-950 hover:border-red-600"
           >
             How It Works
           </Link>
           <Link
             href="/#why-truelend"
-            className="text-sm font-medium text-navy-700 hover:text-red-600"
+            className="shrink-0 whitespace-nowrap text-sm font-medium text-navy-700 hover:text-red-600"
           >
             Why TrueLend
           </Link>
           <Link
             href="/#who-can-join"
-            className="text-sm font-medium text-navy-700 hover:text-red-600"
+            className="shrink-0 whitespace-nowrap text-sm font-medium text-navy-700 hover:text-red-600"
           >
             Who Can Join
           </Link>
-          <Link href="/#benefits" className="text-sm font-medium text-navy-700 hover:text-red-600">
+          <Link
+            href="/#benefits"
+            className="shrink-0 whitespace-nowrap text-sm font-medium text-navy-700 hover:text-red-600"
+          >
             Referral Benefits
           </Link>
-          <Link href="/#faqs" className="text-sm font-medium text-navy-700 hover:text-red-600">
+          <Link
+            href="/#faqs"
+            className="shrink-0 whitespace-nowrap text-sm font-medium text-navy-700 hover:text-red-600"
+          >
             FAQs
           </Link>
           <a
             href={`${appUrls.website}/contact`}
-            className="text-sm font-medium text-navy-700 hover:text-red-600"
+            className="shrink-0 whitespace-nowrap text-sm font-medium text-navy-700 hover:text-red-600"
           >
             Contact Us
           </a>
         </nav>
-        <div className="flex items-center gap-2 sm:gap-3">
+        <div className="flex shrink-0 items-center gap-2 sm:gap-3">
           <span className="hidden min-[480px]:inline-flex">
             <Button variant="outline" size="sm" className="h-10 whitespace-nowrap px-5" asChild>
               <Link href="/login">

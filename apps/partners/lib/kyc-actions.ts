@@ -47,10 +47,6 @@ const kycSchema = z.object({
     .pipe(z.string().regex(/^[A-Z]{4}0[A-Z0-9]{6}$/, "Enter a valid IFSC (e.g. HDFC0001234)")),
 
   nomineeName: z.string().trim().min(2, "Enter the nominee name").max(160),
-  nomineeAadhaar: z
-    .string()
-    .transform((s) => s.replace(/\s/g, ""))
-    .pipe(z.string().regex(/^\d{12}$/, "Enter a valid 12-digit Aadhaar")),
   nomineePhone: phoneField,
 
   occupation: z.string().trim().min(1, "Enter your occupation").max(120),
@@ -88,7 +84,6 @@ export async function savePartnerKyc(_prev: KycState, formData: FormData): Promi
           bankBranch: d.bankBranch,
           ifsc: d.ifsc,
           nomineeName: d.nomineeName,
-          nomineeAadhaar: d.nomineeAadhaar,
           nomineePhone: d.nomineePhone,
           occupation: d.occupation,
           designation: d.designation,
@@ -113,7 +108,6 @@ export async function savePartnerKyc(_prev: KycState, formData: FormData): Promi
             "bankBranch",
             "ifsc",
             "nomineeName",
-            "nomineeAadhaar",
             "nomineePhone",
             "occupation",
             "designation",

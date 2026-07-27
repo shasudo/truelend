@@ -16,6 +16,9 @@ import {
 export function ReferralForm() {
   const {
     form,
+    draftFormRef,
+    draftOnInput,
+    draftOnChange,
     onSubmit,
     succeeded,
     rootError,
@@ -25,27 +28,31 @@ export function ReferralForm() {
     setToken,
     resetToken,
     failTurnstile,
-  } = useLeadForm(zodResolver(referralSchema), {
-    kind: "referral",
-    referrerName: "",
-    referrerPhone: "",
-    name: "",
-    phone: "",
-    productSlug: "",
-    loanAmount: "",
-    tenureMonths: "",
-    loanPurpose: "",
-    pincode: "",
-    residenceType: "",
-    employmentType: "",
-    monthlyIncome: "",
-    employerName: "",
-    experienceYears: "",
-    existingEmi: "",
-    assetValue: "",
-    annualTurnover: "",
-    consent: false,
-  });
+  } = useLeadForm(
+    zodResolver(referralSchema),
+    {
+      kind: "referral",
+      referrerName: "",
+      referrerPhone: "",
+      name: "",
+      phone: "",
+      productSlug: "",
+      loanAmount: "",
+      tenureMonths: "",
+      loanPurpose: "",
+      pincode: "",
+      residenceType: "",
+      employmentType: "",
+      monthlyIncome: "",
+      employerName: "",
+      experienceYears: "",
+      existingEmi: "",
+      assetValue: "",
+      annualTurnover: "",
+      consent: false,
+    },
+    "referral",
+  );
   const { register, formState } = form;
   const err = formState.errors;
 
@@ -59,7 +66,14 @@ export function ReferralForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} noValidate className="space-y-6">
+    <form
+      ref={draftFormRef}
+      onSubmit={onSubmit}
+      onInput={draftOnInput}
+      onChange={draftOnChange}
+      noValidate
+      className="space-y-6"
+    >
       <NoScriptFallback />
       <fieldset className="space-y-5">
         <legend className="font-display text-sm font-bold uppercase tracking-[0.14em] text-navy-500">

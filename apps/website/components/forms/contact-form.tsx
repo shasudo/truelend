@@ -24,6 +24,9 @@ const contactReasonLabels: Record<(typeof contactReasonValues)[number], string> 
 export function ContactForm() {
   const {
     form,
+    draftFormRef,
+    draftOnInput,
+    draftOnChange,
     onSubmit,
     succeeded,
     rootError,
@@ -33,16 +36,20 @@ export function ContactForm() {
     setToken,
     resetToken,
     failTurnstile,
-  } = useLeadForm(zodResolver(contactSchema), {
-    kind: "contact",
-    reason: "",
-    name: "",
-    phone: "",
-    email: "",
-    subject: "",
-    message: "",
-    consent: false,
-  });
+  } = useLeadForm(
+    zodResolver(contactSchema),
+    {
+      kind: "contact",
+      reason: "",
+      name: "",
+      phone: "",
+      email: "",
+      subject: "",
+      message: "",
+      consent: false,
+    },
+    "contact",
+  );
   const { register, formState, watch } = form;
   const err = formState.errors;
   const messageLength = watch("message").length;
@@ -57,7 +64,14 @@ export function ContactForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} noValidate className="space-y-5">
+    <form
+      ref={draftFormRef}
+      onSubmit={onSubmit}
+      onInput={draftOnInput}
+      onChange={draftOnChange}
+      noValidate
+      className="space-y-5"
+    >
       <NoScriptFallback />
       <Field label="How can we help you?" htmlFor="con-reason" required error={err.reason?.message}>
         <Select id="con-reason" aria-invalid={!!err.reason} {...register("reason")}>

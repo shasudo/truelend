@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useForm, type DefaultValues, type FieldValues, type Resolver } from "react-hook-form";
 import { Turnstile } from "@marsidev/react-turnstile";
 import { CheckCircle2, MessageCircle } from "lucide-react";
-import { Button } from "@truelend/ui";
+import { Button, useFormDraft } from "@truelend/ui";
 import type { TurnstileAction } from "@truelend/turnstile/actions";
 import { submitLead } from "@/lib/lead-actions";
 import {
@@ -51,6 +51,7 @@ function useAttribution() {
 export function useLeadForm<T extends FieldValues>(
   resolver: Resolver<T>,
   defaultValues: DefaultValues<T>,
+  draftName: string,
 ) {
   const form = useForm<T>({ resolver, defaultValues });
   const getAttribution = useAttribution();
@@ -59,6 +60,16 @@ export function useLeadForm<T extends FieldValues>(
   const [turnstileKey, setTurnstileKey] = useState(0);
   const [turnstileToken, setTurnstileToken] = useState<string>();
   const [turnstileError, setTurnstileError] = useState<string>();
+  const draft = useFormDraft({
+    storageKey: `truelend:website:lead:${draftName}`,
+    fields: Object.keys(defaultValues),
+    error: rootError,
+    success: succeeded,
+    resultKey: rootError ?? succeeded,
+    onRestore: (values) => {
+      form.reset({ ...defaultValues, ...values } as T);
+    },
+  });
   // No widget configured → always ready; otherwise wait for a solved token so
   // the user can't submit into a guaranteed "verification failed".
   const turnstileReady = !TURNSTILE_SITE_KEY || turnstileToken !== undefined;
@@ -86,6 +97,9 @@ export function useLeadForm<T extends FieldValues>(
 
   return {
     form,
+    draftFormRef: draft.formRef,
+    draftOnInput: draft.onInput,
+    draftOnChange: draft.onChange,
     onSubmit,
     succeeded,
     rootError,

@@ -15,6 +15,9 @@ import {
 export function NotifyForm() {
   const {
     form,
+    draftFormRef,
+    draftOnInput,
+    draftOnChange,
     onSubmit,
     succeeded,
     rootError,
@@ -24,11 +27,15 @@ export function NotifyForm() {
     setToken,
     resetToken,
     failTurnstile,
-  } = useLeadForm(zodResolver(cibilNotifySchema), {
-    kind: "cibil_notify",
-    email: "",
-    consent: false,
-  });
+  } = useLeadForm(
+    zodResolver(cibilNotifySchema),
+    {
+      kind: "cibil_notify",
+      email: "",
+      consent: false,
+    },
+    "cibil-notify",
+  );
   const { register, formState } = form;
   const err = formState.errors;
 
@@ -43,7 +50,14 @@ export function NotifyForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} noValidate className="space-y-4">
+    <form
+      ref={draftFormRef}
+      onSubmit={onSubmit}
+      onInput={draftOnInput}
+      onChange={draftOnChange}
+      noValidate
+      className="space-y-4"
+    >
       <NoScriptFallback />
       <div className="flex flex-col gap-3 sm:flex-row">
         <Field

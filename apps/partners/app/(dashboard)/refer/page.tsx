@@ -27,8 +27,11 @@ export default async function ReferPage({
         <ReferralLinkCard referenceId={partner.referenceId} />
       </div>
 
-      <Card className="mt-4 p-6 sm:p-8">
-        <PartnerLeadForm initialProduct={initialProduct} />
+      <Card className="mt-4 p-5 sm:p-8">
+        <PartnerLeadForm
+          initialProduct={initialProduct}
+          storageKey={`truelend:partner:refer:${partner.userId}`}
+        />
       </Card>
     </div>
   );

@@ -72,11 +72,14 @@ function DocumentRow({
   }
 
   return (
-    <Card aria-busy={busy} className="flex items-center justify-between gap-4 p-4">
-      <div className="flex items-center gap-3">
+    <Card
+      aria-busy={busy}
+      className="flex flex-col items-stretch justify-between gap-4 p-4 min-[420px]:flex-row min-[420px]:items-center"
+    >
+      <div className="flex min-w-0 items-center gap-3">
         <span
           className={cx(
-            "flex h-9 w-9 items-center justify-center rounded-lg",
+            "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg",
             done ? "bg-navy-800 text-white" : "bg-navy-800/[0.06] text-navy-500",
           )}
         >
@@ -86,8 +89,8 @@ function DocumentRow({
             <FileText className="h-5 w-5" aria-hidden />
           )}
         </span>
-        <div>
-          <p className="font-medium text-navy-950">{document.label}</p>
+        <div className="min-w-0">
+          <p className="break-words font-medium text-navy-950">{document.label}</p>
           {error ? (
             <p role="alert" className="text-xs text-red-700">
               {error}
@@ -101,7 +104,7 @@ function DocumentRow({
       </div>
       <label
         className={cx(
-          "inline-flex cursor-pointer items-center gap-2 rounded-lg border border-navy-800/20 px-3.5 py-2 text-sm font-medium text-navy-800 transition-colors hover:border-navy-800/50",
+          "inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-navy-800/20 px-3.5 py-2 text-sm font-medium text-navy-800 transition-colors hover:border-navy-800/50 min-[420px]:w-auto",
           "focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-red-600",
           busy && "pointer-events-none opacity-60",
         )}

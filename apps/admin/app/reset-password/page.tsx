@@ -19,7 +19,7 @@ export default async function ResetPasswordPage({
       <div className="text-navy-800">
         <Logo />
       </div>
-      <Card className="w-full max-w-sm p-8">
+      <Card className="w-full max-w-sm p-6 sm:p-8">
         <h1 className="font-display text-xl font-extrabold tracking-tight text-navy-950">
           Set a new password
         </h1>

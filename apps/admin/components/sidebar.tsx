@@ -123,7 +123,7 @@ function UserCard({ user }: { user: SidebarUser }) {
 export function Sidebar({ user }: { user: SidebarUser }) {
   const isAdmin = user.role === "admin";
   return (
-    <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-hairline bg-white lg:flex">
+    <aside className="sticky top-0 hidden h-dvh w-64 shrink-0 flex-col border-r border-hairline bg-white lg:flex">
       <div className="flex h-16 items-center border-b border-hairline px-5 text-navy-800">
         <Logo />
       </div>

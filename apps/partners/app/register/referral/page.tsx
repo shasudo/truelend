@@ -47,7 +47,7 @@ export default async function ReferralRegisterPage() {
   return (
     <DedicatedRegister
       siteKey={env.TURNSTILE_SITE_KEY}
-      account={{ email: session.user.email, name: session.user.name }}
+      account={{ id: session.user.id, email: session.user.email, name: session.user.name }}
     />
   );
 }
