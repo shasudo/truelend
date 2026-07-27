@@ -8,5 +8,6 @@ void test("referral types expose matching form values and readable labels", () =
     referralTypeOptions.map((option) => option.value),
   );
   assert.equal(referralTypeLabel("real_estate_professional"), "Real Estate Professional");
+  assert.equal(referralTypeLabel("builder_developer"), "Builder / Developer");
   assert.equal(referralTypeLabel(null), "—");
 });
