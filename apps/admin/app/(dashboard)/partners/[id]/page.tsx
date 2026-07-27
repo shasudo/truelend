@@ -74,6 +74,9 @@ export default async function PartnerDetailPage({ params }: { params: Promise<{ 
   const balance = earnedPaise - paidPaise;
   const noun = "Incentive";
   const uploadedDocTypes = new Set<string>(documents.map((document) => document.docType));
+  const photoDocument = documents.find(
+    (document) => document.docType === "photo" && document.contentType.startsWith("image/"),
+  );
   const application = evaluatePartnerApplication(partner, uploadedDocTypes);
   const { canApprove } = application;
   const approvalBlockedMessage = getApprovalBlockedMessage(partner, application);
@@ -106,7 +109,24 @@ export default async function PartnerDetailPage({ params }: { params: Promise<{ 
       <div className="grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
         <div className="min-w-0 space-y-6">
           <Card className="p-5 sm:p-6">
-            <h2 className="font-display text-lg font-bold text-navy-950">Profile</h2>
+            <div className="flex items-center gap-4">
+              {photoDocument && (
+                <a
+                  href={`/api/kyc/${photoDocument.r2Key}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="shrink-0"
+                >
+                  {/* Authenticated, dynamic R2-backed route — not eligible for next/image optimization. */}
+                  <img
+                    src={`/api/kyc/${photoDocument.r2Key}`}
+                    alt={`${name}'s profile photo`}
+                    className="h-16 w-16 rounded-full border border-hairline object-cover"
+                  />
+                </a>
+              )}
+              <h2 className="font-display text-lg font-bold text-navy-950">Profile</h2>
+            </div>
             <dl className="mt-5 grid grid-cols-1 gap-5 min-[480px]:grid-cols-2">
               <Detail label="Contact name" value={name} />
               <Detail label="Email" value={email} />
