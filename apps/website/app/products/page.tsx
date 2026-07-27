@@ -5,7 +5,7 @@ import { CategoryCard } from "@/components/category-card";
 import { CtaBand } from "@/components/cta-band";
 import { ProductCatalog } from "@/components/product-catalog";
 import { Reveal } from "@/components/reveal";
-import { loanProductCards } from "@/content/products";
+import { loanProductCards, productCardName } from "@/content/products";
 import { site } from "@/content/site";
 
 export const metadata: Metadata = {
@@ -29,7 +29,7 @@ export default function ProductsPage() {
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {loanProductCards.map((p, i) => (
               <Reveal key={p.slug} delay={(i % 3) * 0.06}>
-                <CategoryCard product={p} />
+                <CategoryCard product={p} name={productCardName[p.slug]} />
               </Reveal>
             ))}
           </div>

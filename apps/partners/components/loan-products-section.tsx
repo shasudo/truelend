@@ -41,37 +41,58 @@ const productPresentation = {
   },
   "education-loan": {
     icon: GraduationCap,
+    name: "Educational Loan",
     blurb: "Invest in a brighter future.",
     image: "/images/products/education-loan.avif",
   },
   "vehicle-loan": {
     icon: Car,
+    name: "Car Loan",
     blurb: "Finance the right car or vehicle.",
     image: "/images/products/vehicle-loan.avif",
   },
   "working-capital": {
     icon: IndianRupee,
+    name: "Working Capital Loan",
     blurb: "Breathing room for the operating cycle.",
     image: "/images/products/working-capital.avif",
   },
   "equipment-finance": {
     icon: Tractor,
-    blurb: "Fund machines that pay for themselves.",
+    name: "Loans for Schools & Colleges",
+    blurb: "Fund campus infrastructure and expansion.",
     image: "/images/products/equipment-finance.avif",
   },
 } satisfies Record<
   ProductSlug,
   {
     icon: typeof User;
+    /** Overrides the catalog name where the borrower-facing label differs. */
+    name?: string;
     blurb: string;
     image: string;
   }
 >;
 
-const loanProducts = products.map((product) => ({
-  ...product,
-  ...productPresentation[product.slug],
-}));
+// The order prospects see this section in; slugs left out stay off the landing page.
+const displayOrder: ProductSlug[] = [
+  "credit-cards",
+  "personal-loan",
+  "business-loan",
+  "home-loan",
+  "education-loan",
+  "vehicle-loan",
+  "working-capital",
+  "equipment-finance",
+];
+
+const loanProducts = displayOrder
+  .map((slug) => products.find((product) => product.slug === slug))
+  .filter((product): product is (typeof products)[number] => Boolean(product))
+  .map((product) => ({
+    ...product,
+    ...productPresentation[product.slug],
+  }));
 
 export function LoanProductsSection() {
   return (

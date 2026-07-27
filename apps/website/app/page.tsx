@@ -7,7 +7,7 @@ import { CategoryCard } from "@/components/category-card";
 import { PartnerStrip } from "@/components/partner-strip";
 import { PostCard } from "@/components/post-card";
 import { CtaBand } from "@/components/cta-band";
-import { loanProductCards } from "@/content/products";
+import { loanProductCards, productCardName } from "@/content/products";
 import { getAllPosts } from "@/lib/blog";
 
 const steps = [
@@ -68,39 +68,17 @@ const whyItems = [
   },
 ];
 
-const homeProductCopy: Record<string, { name?: string; tagline: string }> = {
-  "personal-loan": { tagline: "Quick funds when needed." },
-  "business-loan": { tagline: "Funding to grow your business." },
-  "home-loan": { tagline: "Finance your dream home." },
-  "loan-against-property": { tagline: "Unlock the value of your property." },
-  "vehicle-loan": { name: "Car Loan", tagline: "Finance your new or used vehicle." },
-  "education-loan": {
-    name: "Educational Loan",
-    tagline: "Support higher educational goals.",
-  },
-  "working-capital": { name: "Working Capital Loan", tagline: "Manage your business cash flow." },
-  "equipment-finance": {
-    name: "Medical Equipment Loan",
-    tagline: "Empower your medical infrastructure.",
-  },
-  "credit-cards": { tagline: "Cards matched to your spending needs." },
+// Home leans shorter than the catalog taglines; names come from productCardName.
+const homeProductTagline: Record<string, string> = {
+  "credit-cards": "Cards matched to your spending needs.",
+  "personal-loan": "Quick funds when needed.",
+  "business-loan": "Funding to grow your business.",
+  "home-loan": "Finance your dream home.",
+  "education-loan": "Support higher educational goals.",
+  "vehicle-loan": "Finance your new or used vehicle.",
+  "working-capital": "Manage your business cash flow.",
+  "equipment-finance": "Fund campus infrastructure and expansion.",
 };
-
-const homeProductOrder = [
-  "personal-loan",
-  "business-loan",
-  "home-loan",
-  "loan-against-property",
-  "vehicle-loan",
-  "education-loan",
-  "working-capital",
-  "equipment-finance",
-  "credit-cards",
-];
-
-const homeProductCards = homeProductOrder
-  .map((slug) => loanProductCards.find((product) => product.slug === slug))
-  .filter((product): product is (typeof loanProductCards)[number] => Boolean(product));
 
 export default function Home() {
   const posts = getAllPosts().slice(0, 3);
@@ -162,20 +140,17 @@ export default function Home() {
         </div>
         <Container className="pb-20 sm:pb-24">
           <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {homeProductCards.map((product, i) => {
-              const copy = homeProductCopy[product.slug];
-              return (
-                <Reveal key={product.slug} delay={(i % 3) * 0.06}>
-                  <CategoryCard
-                    product={product}
-                    name={copy?.name}
-                    tagline={copy?.tagline}
-                    showRate={false}
-                    centered
-                  />
-                </Reveal>
-              );
-            })}
+            {loanProductCards.map((product, i) => (
+              <Reveal key={product.slug} delay={(i % 3) * 0.06}>
+                <CategoryCard
+                  product={product}
+                  name={productCardName[product.slug]}
+                  tagline={homeProductTagline[product.slug]}
+                  showRate={false}
+                  centered
+                />
+              </Reveal>
+            ))}
           </div>
           <Reveal>
             <div className="mt-10 flex flex-col items-center justify-between gap-5 rounded-2xl border border-hairline bg-white px-6 py-5 text-center sm:flex-row sm:text-left">

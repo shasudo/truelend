@@ -205,9 +205,9 @@ export default function Home() {
                 </span>
               </h1>
               <p className="mt-4 max-w-[455px] text-sm leading-6 text-navy-600">
-                Join the TrueLend Referral Network. Refer friends, family, colleagues or customers
-                who need a loan. Our experienced advisors handle the entire borrowing journey—from
-                lender selection to disbursal.
+                Refer friends, family, colleagues or customers who need a loan. Our advisors compare
+                lenders, guide borrowers and manage the process until disbursal. You earn when the
+                loan is successfully completed.
               </p>
               <div className="mt-5 grid gap-3 min-[480px]:flex min-[480px]:flex-wrap">
                 <Button asChild className="w-full min-[480px]:w-auto">

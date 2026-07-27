@@ -707,16 +707,27 @@ export const products: ProductCategory[] = [
 ];
 
 const loanProductDisplayOrder = [
-  "personal-loan",
-  "home-loan",
-  "business-loan",
-  "loan-against-property",
   "credit-cards",
+  "personal-loan",
+  "business-loan",
+  "home-loan",
   "education-loan",
   "vehicle-loan",
   "working-capital",
   "equipment-finance",
 ];
+
+/*
+ * Card labels for the marketing grids, where a product is named the way a
+ * borrower would ask for it. The catalog `name` stays the industry term and
+ * remains what the detail pages, forms and admin read.
+ */
+export const productCardName: Record<string, string> = {
+  "vehicle-loan": "Car Loan",
+  "education-loan": "Educational Loan",
+  "working-capital": "Working Capital Loan",
+  "equipment-finance": "Loans for Schools & Colleges",
+};
 
 export const loanProductCards = loanProductDisplayOrder
   .map((slug) => products.find((product) => product.slug === slug))

@@ -148,12 +148,14 @@ export function UnderReviewScreen({
                 <CheckCircle2 className="h-11 w-11" aria-hidden />
               </span>
               <h1 className="mt-5 text-balance font-display text-3xl font-extrabold tracking-tight text-navy-950 min-[420px]:text-4xl">
-                Your Application is Submitted!
+                🎉 Welcome to the TrueLend Network!
               </h1>
               <p className="mt-3 text-lg font-semibold text-navy-800">
-                Thank you for joining the TrueLend Network.
+                Your application has been received successfully.
               </p>
-              <p className="mt-1 text-base text-navy-700">We’re excited to have you on board.</p>
+              <p className="mt-1 text-base text-navy-700">
+                We’re excited to have you as one of our early Referral Partners.
+              </p>
               <div className="mx-auto mt-7 flex max-w-[380px] items-center gap-4 rounded-2xl border border-navy-100 bg-navy-50/60 px-4 py-4 text-left sm:px-5">
                 <Mail className="h-7 w-7 shrink-0 text-navy-700" aria-hidden />
                 <p className="text-sm leading-relaxed text-navy-700">
