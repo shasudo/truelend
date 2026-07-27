@@ -219,7 +219,7 @@ export function RegisterForm({
             />
           </Field>
           <Field label="Date of Birth" htmlFor="dateOfBirth" required>
-            <Input id="dateOfBirth" name="dateOfBirth" type="date" required />
+            <Input id="dateOfBirth" name="dateOfBirth" type="date" className="pr-12" required />
           </Field>
           <Field label="Referral Type" htmlFor="referralType" required>
             <Select id="referralType" name="referralType" defaultValue="" required>
