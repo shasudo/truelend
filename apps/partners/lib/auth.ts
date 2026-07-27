@@ -12,6 +12,7 @@ import {
   type PartnerSession,
 } from "@truelend/auth/server";
 import { sendPasswordReset } from "@truelend/email";
+import { retryRead } from "./retry-read";
 
 export function authOptions(env: CloudflareEnv): CreateAuthOptions {
   return {
@@ -53,7 +54,9 @@ export const getAuthContext = cache((): AuthContext => {
 
 export const getOptionalPartnerSession = cache(async (): Promise<PartnerSession | null> => {
   const { auth } = getAuthContext();
-  return auth.api.getSession({ headers: await headers() });
+  return retryRead("partner_session_read_retry", async () =>
+    auth.api.getSession({ headers: await headers() }),
+  );
 });
 
 interface PartnerSessionContext {
@@ -65,11 +68,9 @@ export const requirePartnerSession = cache(async (): Promise<PartnerSessionConte
   const { db } = getAuthContext();
   const session = await getOptionalPartnerSession();
   if (!session) redirect("/login");
-  const rows = await db
-    .select()
-    .from(schema.partners)
-    .where(eq(schema.partners.userId, session.user.id))
-    .limit(1);
+  const rows = await retryRead("partner_profile_read_retry", () =>
+    db.select().from(schema.partners).where(eq(schema.partners.userId, session.user.id)).limit(1),
+  );
   return { session, partner: rows[0] ?? null };
 });
 
