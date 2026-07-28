@@ -6,6 +6,10 @@ Organized by app, then file. Severity is my read, not a formal rating.
 
 ## apps/admin
 
+### `middleware.ts`
+
+- **CONFIRMED AND FIXED (predates this work):** the matcher's deny-list never excluded `api/health`, so an anonymous request to `/api/health` or `/api/health/ready` was redirected (307 → `/login`) before the route handler ever ran — unlike `partners` (allow-list scoped to dashboard paths, never catches it) and `website` (deny-list already excludes `api/health`). Live-checked on production: both endpoints returned 307 before the fix. Practical impact was limited to anonymous/automated health checks, not real logged-in admin users, but it meant the CI deploy pipeline's own post-deploy "verify or roll back" step could never actually observe admin's health — a 307 isn't a `curl --fail` failure, so that check silently passed either way, regardless of whether admin was actually healthy. Fixed by adding `api/health` to the matcher's exclusion list, matching `website`'s pattern. Verified: existing `middleware.ts`/`health-ready-route.ts` characterization tests (which call the functions directly, bypassing Next's matcher-driven dispatch entirely) were unaffected — the matcher change is only observable through Next's real request routing, so it's confirmed via a live post-deploy check instead, not a unit test.
+
 ### `lib/auth.ts`
 
 - **Two different redirect targets for analogous denials**: `requireStaff` sends any non-staff session to `/login`; `requireAdmin` sends a valid _staff_ (employee) session that lacks admin rights to `/` instead. Easy to regress silently.
