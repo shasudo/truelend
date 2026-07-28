@@ -10,13 +10,12 @@ const styles: Record<StatusBadgeTone, string> = {
   danger: "bg-red-50 text-red-700",
 };
 
-export function StatusBadge({
-  tone = "neutral",
-  label,
-}: {
+export interface StatusBadgeProps {
   tone?: StatusBadgeTone;
   label: string;
-}) {
+}
+
+export function StatusBadge({ tone = "neutral", label }: StatusBadgeProps) {
   return (
     <span
       className={cx(

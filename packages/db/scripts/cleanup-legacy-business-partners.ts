@@ -1,14 +1,9 @@
 import postgres from "postgres";
-import { assertSafeDatabaseTarget } from "./database-target";
 import { requireLegacyBusinessCleanupApproval } from "./legacy-business-cleanup-policy";
-import { loadLocalDatabaseEnv } from "./load-local-env";
+import { resolveSafeDatabaseUrl } from "./resolve-database-url";
 
 // CI provides DATABASE_URL directly; local runs may use packages/db/.env.
-loadLocalDatabaseEnv();
-
-const url = process.env.DATABASE_URL;
-if (!url) throw new Error("DATABASE_URL is required for legacy Business Partner cleanup");
-assertSafeDatabaseTarget(url);
+const url = resolveSafeDatabaseUrl("legacy Business Partner cleanup");
 
 requireLegacyBusinessCleanupApproval(process.env.TRUELEND_LEGACY_BUSINESS_CLEANUP_APPROVED);
 
