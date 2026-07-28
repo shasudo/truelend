@@ -4,12 +4,12 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Ban, Undo2, Trash2, KeyRound } from "lucide-react";
 import { Button, Select, cx } from "@truelend/ui";
+import type { ActionResult } from "@/lib/action-result";
 import {
   setRoleAction,
   setBanAction,
   removeUserAction,
   sendPasswordResetAction,
-  type ActionResult,
 } from "@/lib/team-actions";
 
 interface Member {

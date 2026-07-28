@@ -4,11 +4,11 @@ import { useActionState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Check, X } from "lucide-react";
 import { Field, SubmitButton, Textarea } from "@truelend/ui";
+import type { ActionResult } from "@/lib/action-result";
 import {
   approvePartnerAction,
   rejectPartnerAction,
   revokePartnerAction,
-  type ActionResult,
 } from "@/lib/partner-actions";
 
 const initialState: ActionResult = {};
