@@ -30,6 +30,14 @@ interface SendResetPasswordArgs {
   url: string;
 }
 
+export interface NotifyPartnerDecisionArgs {
+  to: string;
+  name: string;
+  decision: string;
+  reason?: string;
+  loginUrl: string;
+}
+
 interface FakeAuthState {
   env: FakeCloudflareEnv;
   waitUntilCalls: Promise<unknown>[];
@@ -38,6 +46,7 @@ interface FakeAuthState {
   getSession: () => Promise<FakeAdminSession | null>;
   headers: Headers;
   sendPasswordReset: (args: SendResetPasswordArgs) => Promise<{ ok: boolean; skipped?: boolean }>;
+  notifyPartnerDecisionCalls: NotifyPartnerDecisionArgs[];
 }
 
 function defaultState(): FakeAuthState {
@@ -53,6 +62,7 @@ function defaultState(): FakeAuthState {
     getSession: async () => null,
     headers: new Headers(),
     sendPasswordReset: async () => ({ ok: true, skipped: false }),
+    notifyPartnerDecisionCalls: [],
   };
 }
 
@@ -61,6 +71,10 @@ const state: FakeAuthState = defaultState();
 /** Overrides only the fields provided; everything else keeps its current value. */
 export function setFakeAuthState(overrides: Partial<FakeAuthState>): void {
   Object.assign(state, overrides);
+}
+
+export function getNotifyPartnerDecisionCalls(): readonly NotifyPartnerDecisionArgs[] {
+  return state.notifyPartnerDecisionCalls;
 }
 
 /** Restores every field to its default — call this at the start of each test so state never leaks across tests. */
@@ -120,6 +134,10 @@ export function installAuthDependencyMocks(): void {
     namedExports: {
       sendPasswordReset: (_env: unknown, args: SendResetPasswordArgs) =>
         state.sendPasswordReset(args),
+      notifyPartnerDecision: async (_env: unknown, args: NotifyPartnerDecisionArgs) => {
+        state.notifyPartnerDecisionCalls.push(args);
+        return { ok: true as const, skipped: false };
+      },
     },
   });
 }
