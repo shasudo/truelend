@@ -14,7 +14,7 @@
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
     "lint": "eslint .",
-    "test": "tsx --test test/**/*.test.ts",
+    "test": "node ../../scripts/run-package-tests.mjs",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
