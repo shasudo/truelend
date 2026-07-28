@@ -12,6 +12,7 @@ You are performing a full restructure of this codebase. Behavior must not change
 - If intent is ambiguous, ASK. Do not guess at what code was meant to do.
 - If a refactor would change observable behavior, stop and flag it instead of doing it.
 - Phase 3 may not commit with a red suite, and may not modify a Tier A test to make it pass — a failing characterization test means the refactor changed behavior, and the refactor gets reverted, not the test.
+- Every branch is cut from origin/main after a fetch — `git fetch && git checkout -b <name> origin/main` — never from local main. Before opening any PR, verify the branch contains only the commits intended for it (`git log --oneline origin/main..HEAD`) and state that commit list in the report.
 
 ## Frozen seams
 
