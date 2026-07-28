@@ -8,6 +8,9 @@ export interface FakeCloudflareEnv {
   BETTER_AUTH_URL: string;
   EMAIL_FROM?: string;
   RESEND_API_KEY?: string;
+  /** Only set by tests exercising a route that reads R2/rate-limiter bindings (e.g. the KYC upload/view routes). */
+  BUCKET?: unknown;
+  AUTH_RATE_LIMITER?: { limit: (args: { key: string }) => Promise<{ success: boolean }> };
 }
 
 export interface FakeAdminSession {
