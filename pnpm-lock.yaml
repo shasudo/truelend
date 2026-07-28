@@ -237,6 +237,9 @@ importers:
       '@truelend/eslint-config':
         specifier: workspace:*
         version: link:../../packages/eslint-config
+      '@truelend/test-support':
+        specifier: workspace:*
+        version: link:../../packages/test-support
       '@truelend/typescript-config':
         specifier: workspace:*
         version: link:../../packages/typescript-config
@@ -328,6 +331,9 @@ importers:
       '@truelend/eslint-config':
         specifier: workspace:*
         version: link:../../packages/eslint-config
+      '@truelend/test-support':
+        specifier: workspace:*
+        version: link:../../packages/test-support
       '@truelend/typescript-config':
         specifier: workspace:*
         version: link:../../packages/typescript-config
@@ -615,6 +621,27 @@ importers:
         version: 5.9.3
 
   packages/reference:
+    devDependencies:
+      '@truelend/eslint-config':
+        specifier: workspace:*
+        version: link:../eslint-config
+      '@truelend/typescript-config':
+        specifier: workspace:*
+        version: link:../typescript-config
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.13.3
+      eslint:
+        specifier: 'catalog:'
+        version: 9.39.5(jiti@2.7.0)
+      tsx:
+        specifier: 'catalog:'
+        version: 4.23.0
+      typescript:
+        specifier: 'catalog:'
+        version: 5.9.3
+
+  packages/test-support:
     devDependencies:
       '@truelend/eslint-config':
         specifier: workspace:*

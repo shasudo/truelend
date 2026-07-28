@@ -42,6 +42,7 @@
     "@opennextjs/cloudflare": "catalog:",
     "@tailwindcss/postcss": "catalog:",
     "@truelend/eslint-config": "workspace:*",
+    "@truelend/test-support": "workspace:*",
     "@truelend/typescript-config": "workspace:*",
     "@types/node": "catalog:",
     "@types/react": "catalog:",

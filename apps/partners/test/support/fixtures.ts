@@ -1,5 +1,5 @@
 import { partnerDocumentTypeValues } from "@truelend/reference";
-import type { FakeRow } from "./fake-drizzle";
+import type { FakeRow } from "@truelend/test-support";
 
 /** A partner row with every field evaluatePartnerApplication/isKycEditable checks filled in. */
 export function buildPartnerRow(overrides: Partial<FakeRow> = {}): FakeRow {

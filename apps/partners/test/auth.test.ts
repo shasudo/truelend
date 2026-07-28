@@ -9,7 +9,7 @@ import {
   setFakeAuthState,
   type FakePartnerSession,
 } from "./support/fake-auth-dependencies";
-import type { FakeRow } from "./support/fake-drizzle";
+import type { FakeRow } from "@truelend/test-support";
 
 installAuthDependencyMocks();
 beforeEach(() => {

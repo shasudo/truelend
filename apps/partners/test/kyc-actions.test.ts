@@ -7,7 +7,7 @@ import {
   installWithPartnerMutationMock,
   setPartnerContext,
 } from "./support/fake-partner-context";
-import { createFakeDb, type FakeRow } from "./support/fake-drizzle";
+import { createFakeDb, type FakeRow } from "@truelend/test-support";
 import { ALL_PARTNER_DOC_TYPES, buildPartnerRow } from "./support/fixtures";
 import type { KycState } from "../lib/kyc-actions";
 

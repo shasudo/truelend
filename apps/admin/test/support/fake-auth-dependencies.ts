@@ -1,6 +1,6 @@
 import { mock } from "node:test";
 import { schema } from "@truelend/db";
-import { createFakeDb, type FakeDbOptions } from "./fake-drizzle";
+import { createFakeDb, type FakeDbOptions } from "@truelend/test-support";
 
 export interface FakeCloudflareEnv {
   HYPERDRIVE: { connectionString: string };
