@@ -47,6 +47,14 @@ interface FakeAuthState {
   headers: Headers;
   sendPasswordReset: (args: SendResetPasswordArgs) => Promise<{ ok: boolean; skipped?: boolean }>;
   notifyPartnerDecisionCalls: NotifyPartnerDecisionArgs[];
+  /** better-auth admin-plugin methods team-actions.ts calls on `auth.api`. */
+  createUser: (args: unknown) => Promise<{ user: { id: string } }>;
+  requestPasswordReset: (args: unknown) => Promise<void>;
+  removeUser: (args: unknown) => Promise<void>;
+  setRole: (args: unknown) => Promise<void>;
+  banUser: (args: unknown) => Promise<{ user: { banned: boolean } }>;
+  unbanUser: (args: unknown) => Promise<{ user: { banned: boolean } }>;
+  revokeUserSessions: (args: unknown) => Promise<void>;
 }
 
 function defaultState(): FakeAuthState {
@@ -63,6 +71,13 @@ function defaultState(): FakeAuthState {
     headers: new Headers(),
     sendPasswordReset: async () => ({ ok: true, skipped: false }),
     notifyPartnerDecisionCalls: [],
+    createUser: async () => ({ user: { id: "new-user-1" } }),
+    requestPasswordReset: async () => undefined,
+    removeUser: async () => undefined,
+    setRole: async () => undefined,
+    banUser: async () => ({ user: { banned: true } }),
+    unbanUser: async () => ({ user: { banned: false } }),
+    revokeUserSessions: async () => undefined,
   };
 }
 
@@ -114,7 +129,18 @@ export function installAuthDependencyMocks(): void {
     namedExports: {
       createAdminAuth: () => {
         if (state.createAdminAuthError !== undefined) throw state.createAdminAuthError;
-        return { api: { getSession: () => state.getSession() } };
+        return {
+          api: {
+            getSession: () => state.getSession(),
+            createUser: (args: unknown) => state.createUser(args),
+            requestPasswordReset: (args: unknown) => state.requestPasswordReset(args),
+            removeUser: (args: unknown) => state.removeUser(args),
+            setRole: (args: unknown) => state.setRole(args),
+            banUser: (args: unknown) => state.banUser(args),
+            unbanUser: (args: unknown) => state.unbanUser(args),
+            revokeUserSessions: (args: unknown) => state.revokeUserSessions(args),
+          },
+        };
       },
     },
   });
