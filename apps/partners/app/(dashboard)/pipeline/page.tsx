@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Handshake } from "lucide-react";
+import { ArrowLeft, ArrowRight, Handshake } from "lucide-react";
 import { Button, Card, StatusBadge } from "@truelend/ui";
 import { formatDate, leadStatusLabels, pipelineStatusTone, productName } from "@truelend/reference";
 import { PartnerPageHeader } from "@/components/partner-page-header";
@@ -8,10 +8,19 @@ import { getPartnerLeadsPage } from "@/lib/dashboard-queries";
 
 export const dynamic = "force-dynamic";
 
-export default async function PipelinePage() {
+export default async function PipelinePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
   const { partner } = await requirePartner();
   const { db } = getAuthContext();
-  const referrals = await getPartnerLeadsPage(db, partner.userId, 1);
+  const requestedPage = Number.parseInt((await searchParams).page ?? "1", 10);
+  const referrals = await getPartnerLeadsPage(
+    db,
+    partner.userId,
+    Number.isFinite(requestedPage) ? requestedPage : 1,
+  );
 
   return (
     <div className="mx-auto max-w-5xl">
@@ -79,6 +88,36 @@ export default async function PipelinePage() {
           ))
         )}
       </div>
+      {referrals.pageCount > 1 && (
+        <nav
+          className="mt-4 flex items-center justify-between border-t border-hairline px-1 py-4 text-sm"
+          aria-label="Referral pages"
+        >
+          {referrals.page > 1 ? (
+            <Link
+              href={`/pipeline?page=${referrals.page - 1}`}
+              className="flex items-center gap-1.5 font-semibold text-navy-700 hover:text-red-600"
+            >
+              <ArrowLeft className="h-4 w-4" aria-hidden /> Previous
+            </Link>
+          ) : (
+            <span />
+          )}
+          <span className="text-navy-500">
+            Page {referrals.page} of {referrals.pageCount}
+          </span>
+          {referrals.page < referrals.pageCount ? (
+            <Link
+              href={`/pipeline?page=${referrals.page + 1}`}
+              className="flex items-center gap-1.5 font-semibold text-navy-700 hover:text-red-600"
+            >
+              Next <ArrowRight className="h-4 w-4" aria-hidden />
+            </Link>
+          ) : (
+            <span />
+          )}
+        </nav>
+      )}
     </div>
   );
 }
