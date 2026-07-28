@@ -1,5 +1,6 @@
 import { mock } from "node:test";
 import { schema } from "@truelend/db";
+import { allowSensitiveAuthRequest, isPartnerAuthEndpointAllowed } from "@truelend/auth/server";
 import { createFakeDb, type FakeDbOptions } from "@truelend/test-support";
 
 export interface FakeCloudflareEnv {
@@ -12,6 +13,10 @@ export interface FakeCloudflareEnv {
   REGISTRATION_RATE_LIMITER?: { limit: (args: { key: string }) => Promise<{ success: boolean }> };
   TURNSTILE_SECRET_KEY?: string;
   TURNSTILE_SITE_KEY?: string;
+  /** Only set by tests exercising the auth catch-all route. */
+  AUTH_RATE_LIMITER?: { limit: (args: { key: string }) => Promise<{ success: boolean }> };
+  /** Only set by tests exercising the health/ready route. */
+  HEALTHCHECK_SECRET?: string;
 }
 
 export interface FakePartnerSession {
@@ -43,6 +48,11 @@ interface FakeAuthState {
   signUpEmail: (args: unknown) => Promise<{ user: { id: string } }>;
   /** Defaults to true (passes) — set false to exercise the "verification failed" branch. */
   turnstileResult: boolean;
+  /** better-auth's catch-all request handler, used only by app/api/auth/[...all]/route.ts. */
+  authHandler: (req: Request) => Promise<Response>;
+  /** When set, @truelend/db's ping()/pingPartnerRegistrationSchema() reject with these — used by the health/ready route. */
+  pingError?: unknown;
+  pingRegistrationError?: unknown;
 }
 
 function defaultState(): FakeAuthState {
@@ -60,6 +70,9 @@ function defaultState(): FakeAuthState {
     sendPasswordReset: async () => ({ ok: true, skipped: false }),
     signUpEmail: async () => ({ user: { id: "new-user-1" } }),
     turnstileResult: true,
+    authHandler: async () => Response.json({ ok: true }),
+    pingError: undefined,
+    pingRegistrationError: undefined,
   };
 }
 
@@ -99,10 +112,21 @@ export function installAuthDependencyMocks(): void {
     namedExports: {
       schema,
       createDb: () => createFakeDb(state.dbOptions),
+      ping: async () => {
+        if (state.pingError !== undefined) throw state.pingError;
+      },
+      pingPartnerRegistrationSchema: async () => {
+        if (state.pingRegistrationError !== undefined) throw state.pingRegistrationError;
+      },
     },
   });
   mock.module("@truelend/auth/server", {
     namedExports: {
+      // Real, pure-enough functions (a Request + optionally a rate-limiter
+      // binding) — used as-is rather than faked, same reasoning as re-exporting
+      // the real `schema`.
+      allowSensitiveAuthRequest,
+      isPartnerAuthEndpointAllowed,
       createPartnerAuth: () => {
         if (state.createPartnerAuthError !== undefined) throw state.createPartnerAuthError;
         return {
@@ -110,6 +134,7 @@ export function installAuthDependencyMocks(): void {
             getSession: () => state.getSession(),
             signUpEmail: (args: unknown) => state.signUpEmail(args),
           },
+          handler: (req: Request) => state.authHandler(req),
         };
       },
     },
