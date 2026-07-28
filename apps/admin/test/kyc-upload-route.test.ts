@@ -191,6 +191,35 @@ void test("admin kyc upload: replacing an existing document schedules the old R2
   assert.deepEqual(deletes, ["kyc/user-1/pan-old.png"]);
 });
 
+void test("admin kyc upload: duplicate prior rows for the same doc type are deduped — the extra database rows are deleted", async () => {
+  const { bucket } = buildBucket();
+  const partner: FakeRow = { userId: "user-1", status: "pending" };
+  const dbDeletes: unknown[] = [];
+  setFakeAuthState({
+    getSession: async () => buildAdminSession(),
+    env: buildEnv(bucket),
+    dbOptions: {
+      rowsByTable: new Map<unknown, FakeRow[]>([
+        [schema.partners, [partner]],
+        [
+          schema.partnerDocuments,
+          [
+            { id: "doc-1", r2Key: "kyc/user-1/pan-old-1.png" },
+            { id: "doc-2", r2Key: "kyc/user-1/pan-old-2.png" },
+          ],
+        ],
+      ]),
+      onDelete: (table) => dbDeletes.push(table),
+    },
+  });
+
+  const response = await POST(buildUploadRequest(buildValidForm()));
+  await Promise.all(getWaitUntilCalls());
+
+  assert.deepEqual(await response.json(), { ok: true });
+  assert.deepEqual(dbDeletes, [schema.partnerDocuments]);
+});
+
 void test("admin kyc upload: the partner disappearing mid-transaction returns 404 and deletes the object", async () => {
   const { bucket, puts, deletes } = buildBucket();
   setFakeAuthState({
