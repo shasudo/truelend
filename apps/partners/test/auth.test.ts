@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
 import test, { beforeEach } from "node:test";
+import { isDeepStrictEqual } from "node:util";
+import { eq } from "drizzle-orm";
 import { schema } from "@truelend/db";
 import {
   getWaitUntilCalls,
@@ -9,7 +11,7 @@ import {
   setFakeAuthState,
   type FakePartnerSession,
 } from "./support/fake-auth-dependencies";
-import type { FakeRow } from "@truelend/test-support";
+import type { FakeRow, FakeRowProvider } from "@truelend/test-support";
 
 installAuthDependencyMocks();
 beforeEach(() => {
@@ -35,6 +37,20 @@ function buildSession(overrides: Partial<FakePartnerSession["user"]> = {}): Fake
 }
 
 const PARTNER_ROW: FakeRow = { userId: "user-1", status: "verified" };
+
+/**
+ * A row-provider that only returns `row` when the captured `.where(...)` call
+ * is structurally the real `eq(schema.partners.userId, expectedUserId)` —
+ * proving the query is actually scoped to that user id, not just "the
+ * partners table regardless of who's asking". A plain array keyed by table
+ * (as used elsewhere in this file) can't tell the difference and would pass
+ * this same assertion even if the source dropped its `.where()` entirely —
+ * exactly the failure mode that would leak one partner's row to another.
+ */
+function scopedPartnerRow(expectedUserId: string, row: FakeRow): FakeRowProvider {
+  const expectedWhere = eq(schema.partners.userId, expectedUserId);
+  return ({ whereArgs }) => (isDeepStrictEqual(whereArgs[0], expectedWhere) ? [row] : []);
+}
 
 void test("requirePartnerSession: no session redirects to /login", async () => {
   setFakeAuthState({ getSession: async () => null, dbOptions: {} });
@@ -122,4 +138,43 @@ void test("withPartnerRequest: no session resolves partner as null without query
 
   assert.equal(result.session, null);
   assert.equal(result.partner, null);
+});
+
+void test("requirePartnerSession: the partner lookup is scoped to the session's own user id", async () => {
+  setFakeAuthState({
+    getSession: async () => buildSession({ id: "user-1" }),
+    dbOptions: {
+      rowsByTable: new Map([[schema.partners, scopedPartnerRow("user-1", PARTNER_ROW)]]),
+    },
+  });
+
+  const result = await requirePartnerSession();
+
+  assert.equal(result.partner?.userId, "user-1");
+});
+
+void test("requirePartnerSession: a different session's user id does not return another partner's row", async () => {
+  setFakeAuthState({
+    getSession: async () => buildSession({ id: "user-2" }),
+    dbOptions: {
+      rowsByTable: new Map([[schema.partners, scopedPartnerRow("user-1", PARTNER_ROW)]]),
+    },
+  });
+
+  const result = await requirePartnerSession();
+
+  assert.equal(result.partner, null);
+});
+
+void test("withPartnerRequest: the partner lookup is scoped to the session's own user id", async () => {
+  setFakeAuthState({
+    getSession: async () => buildSession({ id: "user-1" }),
+    dbOptions: {
+      rowsByTable: new Map([[schema.partners, scopedPartnerRow("user-1", PARTNER_ROW)]]),
+    },
+  });
+
+  const result = await withPartnerRequest(new Headers(), async (context) => context);
+
+  assert.equal(result.partner?.userId, "user-1");
 });
