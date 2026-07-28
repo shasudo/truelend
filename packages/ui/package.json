@@ -9,7 +9,7 @@
   },
   "scripts": {
     "lint": "eslint .",
-    "test": "tsx --test test/**/*.test.tsx",
+    "test": "node ../../scripts/run-package-tests.mjs",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
