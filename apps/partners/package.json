@@ -16,7 +16,7 @@
     "cf-typegen": "node ../../scripts/check-cloudflare-types.mjs partners --write",
     "cf:validate": "node ../../scripts/check-cloudflare-types.mjs partners",
     "lint": "eslint .",
-    "test": "tsx --test test/**/*.test.ts",
+    "test": "tsx --test --experimental-test-module-mocks test/**/*.test.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
