@@ -1,5 +1,6 @@
 import { mock } from "node:test";
 import { schema } from "@truelend/db";
+import { allowSensitiveAuthRequest } from "@truelend/auth/server";
 import { createFakeDb, type FakeDbOptions } from "@truelend/test-support";
 
 export interface FakeCloudflareEnv {
@@ -11,6 +12,8 @@ export interface FakeCloudflareEnv {
   /** Only set by tests exercising a route that reads R2/rate-limiter bindings (e.g. the KYC upload/view routes). */
   BUCKET?: unknown;
   AUTH_RATE_LIMITER?: { limit: (args: { key: string }) => Promise<{ success: boolean }> };
+  /** Only set by tests exercising the health/ready route. */
+  HEALTHCHECK_SECRET?: string;
 }
 
 export interface FakeAdminSession {
@@ -55,6 +58,10 @@ interface FakeAuthState {
   banUser: (args: unknown) => Promise<{ user: { banned: boolean } }>;
   unbanUser: (args: unknown) => Promise<{ user: { banned: boolean } }>;
   revokeUserSessions: (args: unknown) => Promise<void>;
+  /** better-auth's catch-all request handler, used only by app/api/auth/[...all]/route.ts. */
+  authHandler: (req: Request) => Promise<Response>;
+  /** When set, @truelend/db's ping() rejects with this instead of resolving — used by the health/ready routes. */
+  pingError?: unknown;
 }
 
 function defaultState(): FakeAuthState {
@@ -78,6 +85,8 @@ function defaultState(): FakeAuthState {
     banUser: async () => ({ user: { banned: true } }),
     unbanUser: async () => ({ user: { banned: false } }),
     revokeUserSessions: async () => undefined,
+    authHandler: async () => Response.json({ ok: true }),
+    pingError: undefined,
   };
 }
 
@@ -123,10 +132,16 @@ export function installAuthDependencyMocks(): void {
     namedExports: {
       schema,
       createDb: () => createFakeDb(state.dbOptions),
+      ping: async () => {
+        if (state.pingError !== undefined) throw state.pingError;
+      },
     },
   });
   mock.module("@truelend/auth/server", {
     namedExports: {
+      // Real, pure-enough function (a request + a rate-limiter binding) — used
+      // as-is rather than faked, same reasoning as re-exporting the real `schema`.
+      allowSensitiveAuthRequest,
       createAdminAuth: () => {
         if (state.createAdminAuthError !== undefined) throw state.createAdminAuthError;
         return {
@@ -140,6 +155,7 @@ export function installAuthDependencyMocks(): void {
             unbanUser: (args: unknown) => state.unbanUser(args),
             revokeUserSessions: (args: unknown) => state.revokeUserSessions(args),
           },
+          handler: (req: Request) => state.authHandler(req),
         };
       },
     },
