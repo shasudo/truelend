@@ -7,12 +7,14 @@
     "base.js",
     "react.js",
     "next.js",
-    "typescript-rules.js"
+    "typescript-rules.js",
+    "test-guardrails.js"
   ],
   "exports": {
     "./base": "./base.js",
     "./react": "./react.js",
-    "./next": "./next.js"
+    "./next": "./next.js",
+    "./test-guardrails": "./test-guardrails.js"
   },
   "dependencies": {
     "@eslint/eslintrc": "catalog:",
