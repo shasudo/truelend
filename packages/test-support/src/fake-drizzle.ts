@@ -35,11 +35,16 @@ interface FakeInsertChain {
   values(values: FakeRow): FakeInsertResult;
 }
 
+interface FakeDeleteChain {
+  where(...args: unknown[]): Promise<void>;
+}
+
 /** The chainable query surface real drizzle exposes both on `db` directly and on a `tx` inside `db.transaction(...)`. */
 export interface FakeQueryClient {
   select(columns?: unknown): FakeSelectChain;
   update(table: unknown): FakeUpdateChain;
   insert(table: unknown): FakeInsertChain;
+  delete(table: unknown): FakeDeleteChain;
 }
 
 export interface FakeDbOptions {
@@ -62,6 +67,7 @@ export interface FakeDbOptions {
   rowsByTable?: Map<unknown, FakeRow[] | FakeRowProvider>;
   onUpdate?: (table: unknown, values: FakeRow) => void;
   onInsert?: (table: unknown, values: FakeRow) => void;
+  onDelete?: (table: unknown) => void;
   /** Rows resolved by `.insert(table).values(values).returning(...)`. Defaults to `[]`. */
   returningRows?: (table: unknown, insertedValues: FakeRow) => FakeRow[];
   /** When set, `db.transaction(...)` rejects with this instead of running the callback. */
@@ -148,6 +154,15 @@ function createFakeQueryClient(options: FakeDbOptions): FakeQueryClient {
             },
           };
           return result;
+        },
+      };
+    },
+    delete(table) {
+      return {
+        where(...args: unknown[]) {
+          void args;
+          options.onDelete?.(table);
+          return Promise.resolve();
         },
       };
     },

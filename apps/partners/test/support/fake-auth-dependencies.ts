@@ -8,6 +8,10 @@ export interface FakeCloudflareEnv {
   BETTER_AUTH_URL: string;
   EMAIL_FROM?: string;
   RESEND_API_KEY?: string;
+  /** Only set by tests exercising registration (signup-actions.ts). */
+  REGISTRATION_RATE_LIMITER?: { limit: (args: { key: string }) => Promise<{ success: boolean }> };
+  TURNSTILE_SECRET_KEY?: string;
+  TURNSTILE_SITE_KEY?: string;
 }
 
 export interface FakePartnerSession {
@@ -35,6 +39,10 @@ interface FakeAuthState {
   getSession: () => Promise<FakePartnerSession | null>;
   headers: Headers;
   sendPasswordReset: (args: SendResetPasswordArgs) => Promise<{ ok: boolean; skipped?: boolean }>;
+  /** better-auth call signup-actions.ts makes for an anonymous registration. */
+  signUpEmail: (args: unknown) => Promise<{ user: { id: string } }>;
+  /** Defaults to true (passes) — set false to exercise the "verification failed" branch. */
+  turnstileResult: boolean;
 }
 
 function defaultState(): FakeAuthState {
@@ -50,6 +58,8 @@ function defaultState(): FakeAuthState {
     getSession: async () => null,
     headers: new Headers(),
     sendPasswordReset: async () => ({ ok: true, skipped: false }),
+    signUpEmail: async () => ({ user: { id: "new-user-1" } }),
+    turnstileResult: true,
   };
 }
 
@@ -95,7 +105,12 @@ export function installAuthDependencyMocks(): void {
     namedExports: {
       createPartnerAuth: () => {
         if (state.createPartnerAuthError !== undefined) throw state.createPartnerAuthError;
-        return { api: { getSession: () => state.getSession() } };
+        return {
+          api: {
+            getSession: () => state.getSession(),
+            signUpEmail: (args: unknown) => state.signUpEmail(args),
+          },
+        };
       },
     },
   });
@@ -115,6 +130,12 @@ export function installAuthDependencyMocks(): void {
     namedExports: {
       sendPasswordReset: (_env: unknown, args: SendResetPasswordArgs) =>
         state.sendPasswordReset(args),
+      notifyPartnerRegistration: async () => ({ ok: true as const, skipped: false }),
+    },
+  });
+  mock.module("@truelend/turnstile/server", {
+    namedExports: {
+      verifyTurnstile: async () => state.turnstileResult,
     },
   });
 }
