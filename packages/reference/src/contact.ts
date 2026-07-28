@@ -5,4 +5,4 @@ export const contactPhone = {
   whatsappHref: "https://wa.me/916304367597",
 } as const;
 
-export const referralPartnerEmail = "partner@trulend.in";
+export const referralPartnerEmail = "partner@truelend.in";
