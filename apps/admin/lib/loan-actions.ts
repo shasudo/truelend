@@ -6,10 +6,11 @@ import { and, eq, ne } from "drizzle-orm";
 import { z } from "zod";
 import { schema, type Database, type NewLoanCase } from "@truelend/db";
 import { getMutationContext } from "./auth";
+import { errorType } from "./error-type";
 import { scheduleAdminRequestContextCleanup } from "./request-context-cleanup";
 import { banks, bestLoanCaseOutcome, productSlugs, rupeesToPaise } from "@truelend/reference";
 
-export type LoanActionState = { ok?: boolean; error?: string };
+export type LoanActionResult = { ok?: boolean; error?: string };
 
 type CaseStatus = (typeof schema.loanCaseStatus.enumValues)[number];
 
@@ -19,12 +20,7 @@ const UNKNOWN_UPDATE_OUTCOME =
   "We couldn't confirm the case update. Reload this page before trying again.";
 
 function reportLoanActionFailure(event: string, error: unknown): void {
-  console.error(
-    JSON.stringify({
-      event,
-      errorType: error instanceof Error ? error.name : "unknown",
-    }),
-  );
+  console.error(JSON.stringify({ event, errorType: errorType(error) }));
 }
 
 // A loan case's status drives the parent lead's pipeline position.
@@ -102,9 +98,9 @@ const createSchema = z.object({
 });
 
 export async function createLoanCaseAction(
-  _prev: LoanActionState,
+  _prev: LoanActionResult,
   formData: FormData,
-): Promise<LoanActionState> {
+): Promise<LoanActionResult> {
   let context: Awaited<ReturnType<typeof getMutationContext>>;
   try {
     context = await getMutationContext();
@@ -187,9 +183,9 @@ const updateSchema = z.object({
 });
 
 export async function updateLoanCaseAction(
-  _prev: LoanActionState,
+  _prev: LoanActionResult,
   formData: FormData,
-): Promise<LoanActionState> {
+): Promise<LoanActionResult> {
   let context: Awaited<ReturnType<typeof getMutationContext>>;
   try {
     context = await getMutationContext();

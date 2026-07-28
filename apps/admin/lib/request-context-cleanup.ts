@@ -1,3 +1,5 @@
+import { errorType } from "./error-type";
+
 interface AdminRequestContext {
   db: { $client: { end(): Promise<unknown> } };
   ctx: { waitUntil(promise: Promise<unknown>): void };
@@ -5,10 +7,6 @@ interface AdminRequestContext {
 
 interface AdminExecutionContext {
   waitUntil(promise: Promise<unknown>): void;
-}
-
-function errorType(error: unknown): string {
-  return error instanceof Error ? error.name : "unknown";
 }
 
 /**

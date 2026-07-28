@@ -5,7 +5,9 @@ import { eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { schema, type Database } from "@truelend/db";
 import { notifyPartnerDecision } from "@truelend/email";
+import { type ActionResult } from "./action-result";
 import { getMutationContext } from "./auth";
+import { errorType } from "./error-type";
 import { normalizePartnerLedger } from "./partner-ledger";
 import { changedPartnerReviewFields, partnerRejectionRefusal } from "./partner-review-policy";
 import {
@@ -21,15 +23,7 @@ import {
   validationPatterns,
 } from "@truelend/reference";
 
-interface AdminActionResult {
-  ok?: boolean;
-  error?: string;
-  uncertain?: boolean;
-}
-
-export type PayoutResult = AdminActionResult;
-export type PartnerDetailsResult = AdminActionResult;
-export type PartnerReviewResult = AdminActionResult;
+export type { ActionResult };
 
 const UNKNOWN_DETAILS_OUTCOME =
   "We couldn't confirm the details update. Reload this partner before trying again.";
@@ -43,12 +37,7 @@ const UNKNOWN_REVOCATION_OUTCOME =
   "We couldn't confirm the verification change. Reload this partner before trying again.";
 
 function reportPartnerAdminActionFailure(event: string, error: unknown): void {
-  console.error(
-    JSON.stringify({
-      event,
-      errorType: error instanceof Error ? error.name : "unknown",
-    }),
-  );
+  console.error(JSON.stringify({ event, errorType: errorType(error) }));
 }
 
 async function admin() {
@@ -174,10 +163,10 @@ const partnerDetailsSchema = z.object({
 });
 
 export async function updatePartnerDetailsAction(
-  _prev: PartnerDetailsResult,
+  _prev: ActionResult,
   formData: FormData,
-): Promise<PartnerDetailsResult> {
-  return withPartnerAdminAction<PartnerDetailsResult>(
+): Promise<ActionResult> {
+  return withPartnerAdminAction<ActionResult>(
     "partner_admin_details_update_failed",
     { error: UNKNOWN_DETAILS_OUTCOME, uncertain: true },
     async ({ db, isAdmin, adminId, adminEmail }) => {
@@ -248,10 +237,10 @@ export async function updatePartnerDetailsAction(
 }
 
 export async function approvePartnerAction(
-  _prev: PartnerReviewResult,
+  _prev: ActionResult,
   formData: FormData,
-): Promise<PartnerReviewResult> {
-  return withPartnerAdminAction<PartnerReviewResult>(
+): Promise<ActionResult> {
+  return withPartnerAdminAction<ActionResult>(
     "partner_approval_failed",
     { error: UNKNOWN_APPROVAL_OUTCOME, uncertain: true },
     async ({ db, ctx, env, isAdmin, adminId, adminEmail }) => {
@@ -321,10 +310,10 @@ export async function approvePartnerAction(
 }
 
 export async function revokePartnerAction(
-  _prev: PartnerReviewResult,
+  _prev: ActionResult,
   formData: FormData,
-): Promise<PartnerReviewResult> {
-  return withPartnerAdminAction<PartnerReviewResult>(
+): Promise<ActionResult> {
+  return withPartnerAdminAction<ActionResult>(
     "partner_verification_revoke_failed",
     { error: UNKNOWN_REVOCATION_OUTCOME, uncertain: true },
     async ({ db, isAdmin, adminId, adminEmail }) => {
@@ -376,10 +365,10 @@ const rejectSchema = z.object({
 });
 
 export async function rejectPartnerAction(
-  _prev: PartnerReviewResult,
+  _prev: ActionResult,
   formData: FormData,
-): Promise<PartnerReviewResult> {
-  return withPartnerAdminAction<PartnerReviewResult>(
+): Promise<ActionResult> {
+  return withPartnerAdminAction<ActionResult>(
     "partner_rejection_failed",
     { error: UNKNOWN_REJECTION_OUTCOME, uncertain: true },
     async ({ db, ctx, env, isAdmin, adminId, adminEmail }) => {
@@ -452,10 +441,10 @@ const payoutSchema = z.object({
 });
 
 export async function recordPayoutAction(
-  _prev: PayoutResult,
+  _prev: ActionResult,
   formData: FormData,
-): Promise<PayoutResult> {
-  return withPartnerAdminAction<PayoutResult>(
+): Promise<ActionResult> {
+  return withPartnerAdminAction<ActionResult>(
     "partner_payout_record_failed",
     { error: UNKNOWN_PAYOUT_OUTCOME, uncertain: true },
     async ({ db, isAdmin, adminId, adminEmail }) => {

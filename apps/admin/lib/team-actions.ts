@@ -5,17 +5,23 @@ import { headers } from "next/headers";
 import { and, eq, inArray } from "drizzle-orm";
 import { z } from "zod";
 import { schema, type Database } from "@truelend/db";
+import { type ActionResult } from "./action-result";
 import { createAuthContext } from "./auth";
+import { errorType } from "./error-type";
 import { scheduleAdminRequestContextCleanup } from "./request-context-cleanup";
 import { planBanMutation, staffDeletionRefusal } from "./team-mutation-policy";
 
+export type { ActionResult };
+
 const ROLES = ["admin", "employee"] as const;
 
-// better-auth's admin plugin types roles as "user" | "admin"; TrueLend stores
-// employee and partner roles as plain text.
-// Cast at the API boundary — the value is stored verbatim at runtime.
-const asRole = (r: string): "admin" => r as "admin";
-const errorType = (error: unknown) => (error instanceof Error ? error.name : "unknown");
+// better-auth's admin plugin types `role` as "admin" | "user" | (...)[] |
+// undefined; it has no concept of TrueLend's "employee" role, but the runtime
+// stores whatever string is passed, verbatim, regardless of that narrower
+// type. The input here is honestly typed to our real two roles; the cast on
+// the way out is a deliberate, unavoidable boundary bridge into better-auth's
+// own type, not a claim that the value is actually "admin".
+const asRole = (r: (typeof ROLES)[number]) => r as "admin";
 
 async function adminContext() {
   const { auth, db, ctx } = createAuthContext();
@@ -62,11 +68,9 @@ async function staffTarget(db: Database, userId: string) {
   return target ?? null;
 }
 
-export type ActionResult = { ok?: boolean; error?: string; uncertain?: boolean };
-
 export type BanActionResult = ActionResult & { banned?: boolean };
 
-export type CreateUserState = ActionResult & {
+export type CreateUserResult = ActionResult & {
   createdEmail?: string;
 };
 
@@ -77,10 +81,10 @@ const createSchema = z.object({
 });
 
 export async function createUserAction(
-  _prev: CreateUserState,
+  _prev: CreateUserResult,
   formData: FormData,
-): Promise<CreateUserState> {
-  return withTeamAdminContext<CreateUserState>(
+): Promise<CreateUserResult> {
+  return withTeamAdminContext<CreateUserResult>(
     "team_create_context_failed",
     () => ({
       error: "We couldn't confirm teammate creation. Refresh the team list before trying again.",

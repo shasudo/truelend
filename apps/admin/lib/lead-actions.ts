@@ -7,9 +7,10 @@ import { z } from "zod";
 import { schema } from "@truelend/db";
 import { bestLoanCaseOutcome } from "@truelend/reference";
 import { getMutationContext } from "./auth";
+import { errorType } from "./error-type";
 import { scheduleAdminRequestContextCleanup } from "./request-context-cleanup";
 
-export type LeadActionState = { ok?: boolean; error?: string };
+export type LeadActionResult = { ok?: boolean; error?: string };
 
 const UNKNOWN_PIPELINE_OUTCOME =
   "We couldn't confirm the pipeline update. Reload this lead before trying again.";
@@ -17,12 +18,7 @@ const UNKNOWN_NOTE_OUTCOME =
   "We couldn't confirm the note. Reload this lead before adding it again.";
 
 function reportLeadActionFailure(event: string, error: unknown): void {
-  console.error(
-    JSON.stringify({
-      event,
-      errorType: error instanceof Error ? error.name : "unknown",
-    }),
-  );
+  console.error(JSON.stringify({ event, errorType: errorType(error) }));
 }
 
 /*
@@ -41,9 +37,9 @@ const pipelineSchema = z.object({
 // Status + assignee update in one write — the Pipeline card is a single form,
 // so saving one control must not discard an unsaved change to the other.
 export async function updateLeadPipelineAction(
-  _prev: LeadActionState,
+  _prev: LeadActionResult,
   formData: FormData,
-): Promise<LeadActionState> {
+): Promise<LeadActionResult> {
   let context: Awaited<ReturnType<typeof getMutationContext>>;
   try {
     context = await getMutationContext();
@@ -138,9 +134,9 @@ const noteSchema = z.object({
 });
 
 export async function addLeadNoteAction(
-  _prev: LeadActionState,
+  _prev: LeadActionResult,
   formData: FormData,
-): Promise<LeadActionState> {
+): Promise<LeadActionResult> {
   let context: Awaited<ReturnType<typeof getMutationContext>>;
   try {
     context = await getMutationContext();

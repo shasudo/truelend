@@ -12,10 +12,10 @@ import {
 import {
   addLeadNoteAction,
   updateLeadPipelineAction,
-  type LeadActionState,
+  type LeadActionResult,
 } from "@/lib/lead-actions";
 
-function ActionFeedback({ state, success }: { state: LeadActionState; success: string }) {
+function ActionFeedback({ state, success }: { state: LeadActionResult; success: string }) {
   return (
     <>
       {state.error && (
@@ -36,7 +36,10 @@ function ActionFeedback({ state, success }: { state: LeadActionState; success: s
 }
 
 export function LeadNoteForm({ leadId }: { leadId: string }) {
-  const [state, action, pending] = useActionState<LeadActionState, FormData>(addLeadNoteAction, {});
+  const [state, action, pending] = useActionState<LeadActionResult, FormData>(
+    addLeadNoteAction,
+    {},
+  );
   const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
@@ -77,7 +80,7 @@ export function LeadPipelineForm({
   employees: Array<{ id: string; name: string }>;
   caseStatuses: LoanCaseStatus[];
 }) {
-  const [state, action, pending] = useActionState<LeadActionState, FormData>(
+  const [state, action, pending] = useActionState<LeadActionResult, FormData>(
     updateLeadPipelineAction,
     {},
   );

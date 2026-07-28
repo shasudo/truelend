@@ -3,7 +3,7 @@
 import { useActionState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button, Field, Input, Textarea } from "@truelend/ui";
-import { updatePartnerDetailsAction, type PartnerDetailsResult } from "@/lib/partner-actions";
+import { updatePartnerDetailsAction, type ActionResult } from "@/lib/partner-actions";
 
 type PartnerDetails = {
   userId: string;
@@ -28,7 +28,7 @@ type PartnerDetails = {
 
 export function PartnerDetailsForm({ partner }: { partner: PartnerDetails }) {
   const router = useRouter();
-  const [state, action, pending] = useActionState<PartnerDetailsResult, FormData>(
+  const [state, action, pending] = useActionState<ActionResult, FormData>(
     updatePartnerDetailsAction,
     {},
   );
