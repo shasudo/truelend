@@ -434,6 +434,9 @@ importers:
       '@truelend/eslint-config':
         specifier: workspace:*
         version: link:../../packages/eslint-config
+      '@truelend/test-support':
+        specifier: workspace:*
+        version: link:../../packages/test-support
       '@truelend/typescript-config':
         specifier: workspace:*
         version: link:../../packages/typescript-config
