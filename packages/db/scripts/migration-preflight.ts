@@ -1,13 +1,8 @@
 import postgres from "postgres";
-import { assertSafeDatabaseTarget } from "./database-target";
-import { loadLocalDatabaseEnv } from "./load-local-env";
+import { resolveSafeDatabaseUrl } from "./resolve-database-url";
 
 // CI provides DATABASE_URL directly; local runs may use packages/db/.env.
-loadLocalDatabaseEnv();
-
-const url = process.env.DATABASE_URL;
-if (!url) throw new Error("DATABASE_URL is required for the migration preflight");
-assertSafeDatabaseTarget(url);
+const url = resolveSafeDatabaseUrl("the migration preflight");
 
 const sql = postgres(url, { max: 1, prepare: false });
 

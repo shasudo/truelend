@@ -3,6 +3,7 @@ export const validationPatterns = {
   pincode: /^\d{6}$/,
   rupeeAmount: /^\d{1,10}$/,
   smallInteger: /^\d{1,3}$/,
+  pan: /^[A-Z]{5}[0-9]{4}[A-Z]$/,
 } as const;
 
 export const validationMessages = {
@@ -10,6 +11,7 @@ export const validationMessages = {
   pincode: "Enter a 6-digit PIN code",
   rupeeAmount: "Enter the amount in rupees (digits only)",
   smallInteger: "Numbers only",
+  pan: "Enter a valid PAN (e.g. ABCDE1234F)",
 } as const;
 
 export function normalizeIndianMobile(value: string): string {
