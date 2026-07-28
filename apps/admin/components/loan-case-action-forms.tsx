@@ -7,10 +7,10 @@ import { Button, SubmitButton } from "@truelend/ui";
 import {
   createLoanCaseAction,
   updateLoanCaseAction,
-  type LoanActionState,
+  type LoanActionResult,
 } from "@/lib/loan-actions";
 
-function ActionFeedback({ state, success }: { state: LoanActionState; success?: string }) {
+function ActionFeedback({ state, success }: { state: LoanActionResult; success?: string }) {
   return (
     <>
       {state.error && (
@@ -39,7 +39,7 @@ export function CreateLoanCaseForm({
   cancelHref: string;
   children: ReactNode;
 }) {
-  const [state, action] = useActionState<LoanActionState, FormData>(createLoanCaseAction, {});
+  const [state, action] = useActionState<LoanActionResult, FormData>(createLoanCaseAction, {});
 
   return (
     <form action={action} className="space-y-6">
@@ -57,7 +57,7 @@ export function CreateLoanCaseForm({
 }
 
 export function UpdateLoanCaseForm({ caseId, children }: { caseId: string; children: ReactNode }) {
-  const [state, action] = useActionState<LoanActionState, FormData>(updateLoanCaseAction, {});
+  const [state, action] = useActionState<LoanActionResult, FormData>(updateLoanCaseAction, {});
 
   return (
     <form action={action} className="space-y-6">

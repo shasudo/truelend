@@ -2,6 +2,7 @@ import { headers } from "next/headers";
 import { and, eq, inArray } from "drizzle-orm";
 import { schema } from "@truelend/db";
 import { createAuthContext } from "@/lib/auth";
+import { errorType } from "@/lib/error-type";
 import {
   scheduleAdminBackgroundTask,
   scheduleAdminRequestContextCleanup,
@@ -169,7 +170,7 @@ export async function POST(req: Request) {
     console.error(
       JSON.stringify({
         event: "admin_kyc_upload_failed",
-        errorType: error instanceof Error ? error.name : "unknown",
+        errorType: errorType(error),
       }),
     );
     return Response.json(

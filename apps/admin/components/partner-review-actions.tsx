@@ -8,12 +8,12 @@ import {
   approvePartnerAction,
   rejectPartnerAction,
   revokePartnerAction,
-  type PartnerReviewResult,
+  type ActionResult,
 } from "@/lib/partner-actions";
 
-const initialState: PartnerReviewResult = {};
+const initialState: ActionResult = {};
 
-function ActionFeedback({ state, success }: { state: PartnerReviewResult; success: string }) {
+function ActionFeedback({ state, success }: { state: ActionResult; success: string }) {
   if (state.error) {
     return (
       <p
@@ -52,15 +52,15 @@ export function PartnerReviewActions({
   rejectionBlockedMessage: string | null;
 }) {
   const router = useRouter();
-  const [approvalState, approveAction] = useActionState<PartnerReviewResult, FormData>(
+  const [approvalState, approveAction] = useActionState<ActionResult, FormData>(
     approvePartnerAction,
     initialState,
   );
-  const [rejectionState, rejectAction] = useActionState<PartnerReviewResult, FormData>(
+  const [rejectionState, rejectAction] = useActionState<ActionResult, FormData>(
     rejectPartnerAction,
     initialState,
   );
-  const [revocationState, revokeAction] = useActionState<PartnerReviewResult, FormData>(
+  const [revocationState, revokeAction] = useActionState<ActionResult, FormData>(
     revokePartnerAction,
     initialState,
   );
