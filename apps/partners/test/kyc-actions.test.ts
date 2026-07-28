@@ -4,7 +4,7 @@ import { schema } from "@truelend/db";
 import { installNextCacheMock } from "./support/fake-next-cache";
 import {
   buildSession,
-  installWithPartnerMutationMock,
+  installPartnerAuthMock,
   setPartnerContext,
 } from "./support/fake-partner-context";
 import { createFakeDb, type FakeRow } from "@truelend/test-support";
@@ -16,7 +16,7 @@ import type { KycState } from "../lib/kyc-actions";
 // top-level import would evaluate (and bind kyc-actions.ts's real "./auth"
 // import) before any of this file's own code runs.
 installNextCacheMock();
-installWithPartnerMutationMock();
+installPartnerAuthMock();
 const { savePartnerKyc, submitForReview, reopenApplication } = await import("../lib/kyc-actions");
 
 const EMPTY_STATE: KycState = {};
