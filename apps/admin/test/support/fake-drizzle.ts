@@ -95,7 +95,7 @@ function createFakeQueryClient(options: FakeDbOptions): FakeQueryClient {
 /**
  * A minimal stand-in for @truelend/db's Database, covering only the
  * `.transaction(tx => ...)` plus chainable select/update/insert shape that
- * apps/partners' Server Actions actually call. Rows are looked up by the real
+ * apps/admin's Server Actions actually call. Rows are looked up by the real
  * schema table object passed to `.from()` — import `schema` for real in
  * tests so `schema.partners` etc. are the same object identities the source
  * under test compares against.
