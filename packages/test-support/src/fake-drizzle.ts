@@ -75,11 +75,27 @@ export interface FakeDbOptions {
   /** When set, `db.$client.end()` rejects/throws with this instead of resolving. */
   clientEndError?: unknown;
   onClientEnd?: () => void;
+  /**
+   * Rows resolved when `db.$client` is invoked as a callable tagged-template
+   * raw query (e.g. `` db.$client<Row[]>`select ... from partners` `` — the
+   * real postgres.js client, which drizzle exposes as `$client`, is callable
+   * this way; `ping()` and a couple of Server Actions use it directly instead
+   * of the query builder). Defaults to `[]`.
+   */
+  rawQueryRows?: FakeRow[];
 }
+
+/** postgres.js's client is a callable tagged-template function with `.end()` attached — not a plain object. */
+export type FakeClient = ((
+  strings: TemplateStringsArray,
+  ...values: unknown[]
+) => Promise<FakeRow[]>) & {
+  end(): Promise<void>;
+};
 
 export interface FakeDb extends FakeQueryClient {
   transaction<T>(run: (tx: FakeQueryClient) => Promise<T>): Promise<T>;
-  $client: { end(): Promise<void> };
+  $client: FakeClient;
 }
 
 function resolveRows(
@@ -177,6 +193,18 @@ function createFakeQueryClient(options: FakeDbOptions): FakeQueryClient {
  * import `schema` for real in tests so `schema.partners` etc. are the same
  * object identities the source under test compares against.
  */
+function createFakeClient(options: FakeDbOptions): FakeClient {
+  const client = (async (..._args: unknown[]) => {
+    void _args;
+    return options.rawQueryRows ?? [];
+  }) as FakeClient;
+  client.end = async () => {
+    options.onClientEnd?.();
+    if (options.clientEndError !== undefined) throw options.clientEndError;
+  };
+  return client;
+}
+
 export function createFakeDb(options: FakeDbOptions = {}): FakeDb {
   return {
     ...createFakeQueryClient(options),
@@ -184,11 +212,6 @@ export function createFakeDb(options: FakeDbOptions = {}): FakeDb {
       if (options.transactionError !== undefined) throw options.transactionError;
       return run(createFakeQueryClient(options));
     },
-    $client: {
-      async end(): Promise<void> {
-        options.onClientEnd?.();
-        if (options.clientEndError !== undefined) throw options.clientEndError;
-      },
-    },
+    $client: createFakeClient(options),
   };
 }
