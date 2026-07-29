@@ -33,7 +33,7 @@ const kycSchema = z.object({
   pan: z
     .string()
     .transform(upper)
-    .pipe(z.string().regex(/^[A-Z]{5}[0-9]{4}[A-Z]$/, "Enter a valid PAN (e.g. ABCDE1234F)")),
+    .pipe(z.string().regex(validationPatterns.pan, validationMessages.pan)),
   address: z.string().trim().min(10, "Enter your full address").max(500),
 
   bankName: z.string().trim().min(2, "Enter the bank name").max(120),

@@ -94,42 +94,6 @@ export async function getPartnerLeadsPage(
   return { rows, total, page, pageCount };
 }
 
-interface PartnerCaseRow {
-  id: string;
-  leadName: string;
-  productSlug: string | null;
-  lenderSlug: string;
-  status: string;
-  requestedAmountPaise: number;
-  disbursedAmountPaise: number;
-  updatedAt: Date;
-}
-
-export async function getPartnerCases(db: Database, partnerId: string): Promise<PartnerCaseRow[]> {
-  const rows = (await db.$client`
-    select lc.id, coalesce(l.name, 'Customer') as lead_name,
-      lc.product_slug, lc.lender_slug, lc.status,
-      coalesce(lc.requested_amount_paise, 0) as requested_amount_paise,
-      coalesce(lc.disbursed_amount_paise, 0) as disbursed_amount_paise,
-      lc.updated_at
-    from loan_cases lc
-    join leads l on l.id = lc.lead_id
-    where l.partner_id = ${partnerId}
-    order by lc.updated_at desc
-    limit 50
-  `) as Row[];
-  return rows.map((row) => ({
-    id: String(row.id),
-    leadName: String(row.lead_name),
-    productSlug: row.product_slug ? String(row.product_slug) : null,
-    lenderSlug: String(row.lender_slug),
-    status: String(row.status),
-    requestedAmountPaise: num(row.requested_amount_paise),
-    disbursedAmountPaise: num(row.disbursed_amount_paise),
-    updatedAt: new Date(String(row.updated_at)),
-  }));
-}
-
 export async function getPartnerPayouts(db: Database, partnerId: string): Promise<PartnerPayout[]> {
   return db
     .select()
@@ -137,36 +101,6 @@ export async function getPartnerPayouts(db: Database, partnerId: string): Promis
     .where(eq(schema.partnerPayouts.partnerId, partnerId))
     .orderBy(desc(schema.partnerPayouts.createdAt))
     .limit(50);
-}
-
-interface ProductPerformance {
-  productSlug: string | null;
-  leads: number;
-  disbursed: number;
-  volumePaise: number;
-}
-
-export async function getProductPerformance(
-  db: Database,
-  partnerId: string,
-): Promise<ProductPerformance[]> {
-  const rows = (await db.$client`
-    select l.product_slug,
-      count(distinct l.id)::int as leads,
-      count(distinct l.id) filter (where lc.status = 'disbursed')::int as disbursed,
-      coalesce(sum(lc.disbursed_amount_paise) filter (where lc.status = 'disbursed'), 0) as volume
-    from leads l
-    left join loan_cases lc on lc.lead_id = l.id
-    where l.partner_id = ${partnerId}
-    group by l.product_slug
-    order by leads desc, l.product_slug asc nulls last
-  `) as Row[];
-  return rows.map((row) => ({
-    productSlug: row.product_slug ? String(row.product_slug) : null,
-    leads: num(row.leads),
-    disbursed: num(row.disbursed),
-    volumePaise: num(row.volume),
-  }));
 }
 
 export async function getPartnerLeads(db: Database, partnerId: string): Promise<Lead[]> {
