@@ -4,15 +4,13 @@ import { useActionState } from "react";
 import { Field, Input, SubmitButton, useFormDraft } from "@truelend/ui";
 import { updateProfileAction, type ProfileState } from "@/lib/profile-actions";
 
-export function ProfileForm({
-  defaultName,
-  defaultPhone,
-  storageKey,
-}: {
+interface ProfileFormProps {
   defaultName: string;
   defaultPhone: string;
   storageKey: string;
-}) {
+}
+
+export function ProfileForm({ defaultName, defaultPhone, storageKey }: ProfileFormProps) {
   const [state, action] = useActionState<ProfileState, FormData>(updateProfileAction, {});
   const draft = useFormDraft({
     storageKey,

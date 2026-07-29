@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { Card } from "@truelend/ui";
 import { isKycEditable } from "@truelend/reference";
 import { requirePartner, getAuthContext } from "@/lib/auth";
@@ -6,6 +7,8 @@ import { toKycFormValues } from "@/lib/kyc-form-values";
 import { KycDetailsForm } from "@/components/kyc-details-form";
 import { KycUpload } from "@/components/kyc-upload";
 import { PartnerPageHeader } from "@/components/partner-page-header";
+
+export const metadata: Metadata = { title: "Document Status" };
 
 export const dynamic = "force-dynamic";
 
@@ -49,4 +52,3 @@ export default async function KycPage() {
     </div>
   );
 }
-export const metadata = { title: "Document Status" };

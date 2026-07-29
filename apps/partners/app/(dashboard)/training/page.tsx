@@ -1,8 +1,11 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, BadgeCheck, ClipboardCheck, GraduationCap, ShieldCheck } from "lucide-react";
 import { Button, Card } from "@truelend/ui";
 import { PartnerPageHeader } from "@/components/partner-page-header";
 import { requirePartner } from "@/lib/auth";
+
+export const metadata: Metadata = { title: "Learn and earn" };
 
 export const dynamic = "force-dynamic";
 
@@ -84,5 +87,3 @@ export default async function TrainingPage() {
     </div>
   );
 }
-
-export const metadata = { title: "Learn and earn" };

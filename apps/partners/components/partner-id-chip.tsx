@@ -4,14 +4,13 @@ import { useState } from "react";
 import { Check, Copy } from "lucide-react";
 import { cx } from "@truelend/ui";
 
-/** Shows the Referral Partner's RP reference ID with a copy-to-clipboard button. */
-export function PartnerIdChip({
-  referenceId,
-  className,
-}: {
+interface PartnerIdChipProps {
   referenceId: string;
   className?: string;
-}) {
+}
+
+/** Shows the Referral Partner's RP reference ID with a copy-to-clipboard button. */
+export function PartnerIdChip({ referenceId, className }: PartnerIdChipProps) {
   const [copied, setCopied] = useState(false);
 
   async function copy() {

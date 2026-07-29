@@ -34,14 +34,13 @@ const partnerLeadFieldNames = [
   "consent",
 ] as const;
 
-export function PartnerLeadForm({
-  initialProduct = "",
-  storageKey,
-}: {
+interface PartnerLeadFormProps {
   /** Preselected product slug — callers must validate it against `products`. */
   initialProduct?: string;
   storageKey: string;
-}) {
+}
+
+export function PartnerLeadForm({ initialProduct = "", storageKey }: PartnerLeadFormProps) {
   const [state, action, pending] = useActionState<LeadState, FormData>(submitLead, {});
   const [product, setProduct] = useState(initialProduct);
   const restoreProduct = useCallback((draft: Record<string, boolean | string>) => {

@@ -1,8 +1,11 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { CircleHelp, FileCheck2, FolderKanban, Mail, ShieldCheck } from "lucide-react";
 import { Button, Card } from "@truelend/ui";
 import { referralPartnerEmail } from "@truelend/reference";
 import { PartnerPageHeader } from "@/components/partner-page-header";
+
+export const metadata: Metadata = { title: "Referral partner support" };
 
 export const dynamic = "force-dynamic";
 
@@ -105,5 +108,3 @@ export default async function SupportPage() {
     </div>
   );
 }
-
-export const metadata = { title: "Referral partner support" };

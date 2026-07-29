@@ -8,15 +8,13 @@ import { KycUpload } from "@/components/kyc-upload";
 import { SignOutButton } from "@/components/sign-out-button";
 import { toKycFormValues } from "@/lib/kyc-form-values";
 
-export function PartnerStatusScreen({
-  partner,
-  name,
-  documentTypes,
-}: {
+interface PartnerStatusScreenProps {
   partner: Partner;
   name: string;
   documentTypes: string[];
-}) {
+}
+
+export function PartnerStatusScreen({ partner, name, documentTypes }: PartnerStatusScreenProps) {
   const rejected = partner.status === "rejected";
   const complete = evaluatePartnerApplication(partner, new Set(documentTypes)).isComplete;
   return (

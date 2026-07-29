@@ -5,7 +5,11 @@ import { referralPartnerEmail } from "@truelend/reference";
 import { PublicHeader } from "@/components/public-header";
 import { SignOutButton } from "@/components/sign-out-button";
 
-export function RegistrationAccountBlocked({ email }: { email: string }) {
+interface RegistrationAccountBlockedProps {
+  email: string;
+}
+
+export function RegistrationAccountBlocked({ email }: RegistrationAccountBlockedProps) {
   return (
     <>
       <PublicHeader />

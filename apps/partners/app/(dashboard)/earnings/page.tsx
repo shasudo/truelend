@@ -1,9 +1,12 @@
+import type { Metadata } from "next";
 import { BadgeIndianRupee, CircleCheckBig, Clock3, WalletCards } from "lucide-react";
 import { Card, StatTile } from "@truelend/ui";
 import { formatDate, formatPaise, referralRewardLabel } from "@truelend/reference";
 import { PartnerPageHeader } from "@/components/partner-page-header";
 import { requirePartner, getAuthContext } from "@/lib/auth";
 import { getPartnerMetrics, getPartnerPayouts } from "@/lib/dashboard-queries";
+
+export const metadata: Metadata = { title: "Referral rewards" };
 
 export const dynamic = "force-dynamic";
 
@@ -99,5 +102,3 @@ export default async function EarningsPage() {
     </div>
   );
 }
-
-export const metadata = { title: "Referral rewards" };

@@ -1,6 +1,9 @@
+import type { Metadata } from "next";
 import { requirePartner } from "@/lib/auth";
 import { PartnerPageHeader } from "@/components/partner-page-header";
 import { ProductCatalog, submitProductHref } from "@/components/product-catalog";
+
+export const metadata: Metadata = { title: "Products" };
 
 export const dynamic = "force-dynamic";
 
@@ -21,5 +24,3 @@ export default async function ProductsPage() {
     </div>
   );
 }
-
-export const metadata = { title: "Products" };

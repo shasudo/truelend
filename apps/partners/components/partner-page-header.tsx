@@ -1,16 +1,13 @@
 import type { ReactNode } from "react";
 
-export function PartnerPageHeader({
-  eyebrow,
-  title,
-  description,
-  action,
-}: {
+interface PartnerPageHeaderProps {
   eyebrow?: string;
   title: string;
   description: string;
   action?: ReactNode;
-}) {
+}
+
+export function PartnerPageHeader({ eyebrow, title, description, action }: PartnerPageHeaderProps) {
   return (
     <div className="flex flex-wrap items-end justify-between gap-4">
       <div className="min-w-0 max-w-2xl">
