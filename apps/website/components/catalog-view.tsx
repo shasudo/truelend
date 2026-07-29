@@ -143,7 +143,11 @@ function buildComparison(
 
 /* ---- shared small pieces ---- */
 
-function FactGrid({ facts }: { facts: { label: string; value: string }[] }) {
+interface FactGridProps {
+  facts: { label: string; value: string }[];
+}
+
+function FactGrid({ facts }: FactGridProps) {
   return (
     <div className="grid grid-cols-1 gap-px overflow-hidden rounded-xl border border-hairline bg-hairline min-[420px]:grid-cols-2 lg:grid-cols-4">
       {facts.map((f) => (
@@ -159,15 +163,13 @@ function FactGrid({ facts }: { facts: { label: string; value: string }[] }) {
   );
 }
 
-function BulletCard({
-  icon: Icon,
-  title,
-  items,
-}: {
+interface BulletCardProps {
   icon: typeof UserCheck;
   title: string;
   items: string[];
-}) {
+}
+
+function BulletCard({ icon: Icon, title, items }: BulletCardProps) {
   return (
     <Card className="h-full p-5 sm:p-7">
       <Icon className="h-6 w-6 text-red-600" aria-hidden />
@@ -184,7 +186,12 @@ function BulletCard({
   );
 }
 
-function KVTable({ title, rows }: { title: string; rows: { label: string; value: string }[] }) {
+interface KVTableProps {
+  title: string;
+  rows: { label: string; value: string }[];
+}
+
+function KVTable({ title, rows }: KVTableProps) {
   return (
     <Card className="overflow-hidden p-0">
       <h2 className="border-b border-hairline px-4 py-4 font-display text-lg font-bold text-navy-950 sm:px-6">
@@ -212,7 +219,11 @@ function KVTable({ title, rows }: { title: string; rows: { label: string; value:
   );
 }
 
-function Breadcrumb({ trail }: { trail: { label: string; href?: string }[] }) {
+interface BreadcrumbProps {
+  trail: { label: string; href?: string }[];
+}
+
+function Breadcrumb({ trail }: BreadcrumbProps) {
   return (
     <nav aria-label="Breadcrumb" className="text-sm text-navy-500">
       {trail.map((t, idx) => (
@@ -233,15 +244,13 @@ function Breadcrumb({ trail }: { trail: { label: string; href?: string }[] }) {
 
 /* ---- item detail view ---- */
 
-export function CatalogItemView({
-  category,
-  column,
-  item,
-}: {
+interface CatalogItemViewProps {
   category: CatalogCategory;
   column: CatalogColumn;
   item: CatalogItem;
-}) {
+}
+
+export function CatalogItemView({ category, column, item }: CatalogItemViewProps) {
   const isCard = category.kind === "card";
   const c = contentFor(category.key, item.slug);
   const enquiryHref = `/enquiry?product=${enquirySlugFor(category, item.slug)}`;
@@ -455,7 +464,11 @@ export function CatalogItemView({
 
 /* ---- category listing view ---- */
 
-export function CatalogCategoryView({ category }: { category: CatalogCategory }) {
+interface CatalogCategoryViewProps {
+  category: CatalogCategory;
+}
+
+export function CatalogCategoryView({ category }: CatalogCategoryViewProps) {
   const count = itemsFor(category).length;
   const enquiryHref = `/enquiry?product=${category.enquirySlug}`;
 

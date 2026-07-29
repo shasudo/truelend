@@ -3,7 +3,11 @@ import { MoveUpRight } from "lucide-react";
 import { Badge, Card } from "@truelend/ui";
 import { formatPostDate, type PostMeta } from "@/lib/blog";
 
-export function PostCard({ post }: { post: PostMeta }) {
+interface PostCardProps {
+  post: PostMeta;
+}
+
+export function PostCard({ post }: PostCardProps) {
   return (
     <Link href={`/blog/${post.slug}`} className="group block h-full">
       <Card className="flex h-full flex-col p-6 transition-all duration-200 group-hover:-translate-y-0.5 group-hover:border-navy-800/35 group-hover:shadow-[0_8px_30px_-12px_rgba(20,32,74,0.25)]">

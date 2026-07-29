@@ -124,19 +124,21 @@ export function useLeadForm<T extends FieldValues>(
   };
 }
 
+interface TurnstileFieldProps {
+  resetKey: number;
+  action: TurnstileAction;
+  onToken: (token: string) => void;
+  onExpire: () => void;
+  onError: () => void;
+}
+
 export function TurnstileField({
   resetKey,
   action,
   onToken,
   onExpire,
   onError,
-}: {
-  resetKey: number;
-  action: TurnstileAction;
-  onToken: (token: string) => void;
-  onExpire: () => void;
-  onError: () => void;
-}) {
+}: TurnstileFieldProps) {
   if (!TURNSTILE_SITE_KEY) return null;
   return (
     <Turnstile
@@ -151,7 +153,11 @@ export function TurnstileField({
   );
 }
 
-export function TurnstilePendingHint({ show }: { show: boolean }) {
+interface TurnstilePendingHintProps {
+  show: boolean;
+}
+
+export function TurnstilePendingHint({ show }: TurnstilePendingHintProps) {
   if (!show) return null;
   return (
     <p className="text-xs text-muted" aria-live="polite">
@@ -160,7 +166,11 @@ export function TurnstilePendingHint({ show }: { show: boolean }) {
   );
 }
 
-export function RootError({ message }: { message?: string }) {
+interface RootErrorProps {
+  message?: string;
+}
+
+export function RootError({ message }: RootErrorProps) {
   if (!message) return null;
   return (
     <p
@@ -190,15 +200,13 @@ export function NoScriptFallback() {
   );
 }
 
-export function FormSuccess({
-  title,
-  sub,
-  showWhatsApp = true,
-}: {
+interface FormSuccessProps {
   title: string;
   sub: string;
   showWhatsApp?: boolean;
-}) {
+}
+
+export function FormSuccess({ title, sub, showWhatsApp = true }: FormSuccessProps) {
   const successRef = useRef<HTMLDivElement>(null);
   useEffect(() => successRef.current?.focus(), []);
   return (

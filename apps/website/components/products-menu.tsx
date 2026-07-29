@@ -6,7 +6,11 @@ import { CATEGORIES, itemsFor } from "@truelend/reference";
 // Desktop hover/focus mega-menu for the Products nav item. CSS-only reveal
 // (group-hover + group-focus-within) so it works on hover and via keyboard
 // without client state. Each category and every item links to a real page.
-export function ProductsMenu({ active }: { active: boolean }) {
+interface ProductsMenuProps {
+  active: boolean;
+}
+
+export function ProductsMenu({ active }: ProductsMenuProps) {
   return (
     <div className="group relative shrink-0">
       <Link
