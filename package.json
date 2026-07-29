@@ -20,6 +20,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "sync:partner-assets": "node scripts/sync-partner-product-images.mjs",
+    "health-check": "node scripts/health-check.mjs",
     "deploy": "node scripts/explicit-deploy-required.mjs",
     "deploy:website": "pnpm --filter @truelend/website deploy",
     "deploy:admin": "pnpm --filter @truelend/admin deploy",
