@@ -25,7 +25,13 @@ import {
 
 const MESSAGE_LIMIT = 500;
 
-function Section({ n, title, children }: { n: string; title: string; children: ReactNode }) {
+interface SectionProps {
+  n: string;
+  title: string;
+  children: ReactNode;
+}
+
+function Section({ n, title, children }: SectionProps) {
   return (
     <fieldset className="space-y-5">
       <legend className="mb-1 flex items-center gap-3">
@@ -39,7 +45,11 @@ function Section({ n, title, children }: { n: string; title: string; children: R
   );
 }
 
-export function EnquiryForm({ defaultProduct = "" }: { defaultProduct?: ProductSlug | "" }) {
+interface EnquiryFormProps {
+  defaultProduct?: ProductSlug | "";
+}
+
+export function EnquiryForm({ defaultProduct = "" }: EnquiryFormProps) {
   const {
     form,
     draftFormRef,

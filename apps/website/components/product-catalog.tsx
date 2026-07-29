@@ -3,7 +3,11 @@ import { ArrowUpRight, MoveUpRight } from "lucide-react";
 import { Container } from "@truelend/ui";
 import { CATEGORIES, type CatalogCategory } from "@truelend/reference";
 
-function CategoryBlock({ category }: { category: CatalogCategory }) {
+interface CategoryBlockProps {
+  category: CatalogCategory;
+}
+
+function CategoryBlock({ category }: CategoryBlockProps) {
   return (
     <div className="border-t border-hairline pt-10">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
