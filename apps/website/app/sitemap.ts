@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next";
 import { site } from "@/content/site";
 import { products } from "@/content/products";
 import { getAllPosts } from "@/lib/blog";
+import { CATEGORIES, allProductParams } from "@truelend/reference";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const pages: MetadataRoute.Sitemap = [
@@ -27,6 +28,18 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.8,
   }));
 
+  const catalogCategoryPages = CATEGORIES.map((c) => ({
+    url: `${site.url}/products/all/${c.key}`,
+    changeFrequency: "weekly" as const,
+    priority: 0.7,
+  }));
+
+  const catalogItemPages = allProductParams().map(({ category, item }) => ({
+    url: `${site.url}/products/all/${category}/${item}`,
+    changeFrequency: "weekly" as const,
+    priority: 0.6,
+  }));
+
   const posts = getAllPosts().map((p) => ({
     url: `${site.url}/blog/${p.slug}`,
     lastModified: p.date,
@@ -34,5 +47,5 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.5,
   }));
 
-  return [...pages, ...productPages, ...posts];
+  return [...pages, ...productPages, ...catalogCategoryPages, ...catalogItemPages, ...posts];
 }

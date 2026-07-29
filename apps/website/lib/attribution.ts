@@ -24,7 +24,7 @@ interface StoredAttribution {
   expiresAt: number;
 }
 
-const clean = (value: unknown) =>
+export const clean = (value: unknown) =>
   typeof value === "string" ? value.trim().slice(0, 100) || undefined : undefined;
 
 // Referral Partner reference ids are RP + a sequence number; reject anything else so a

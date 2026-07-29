@@ -9,6 +9,7 @@ import {
   validationMessages,
   validationPatterns,
 } from "@truelend/reference";
+import { clean } from "./attribution";
 
 /* Detailed loan-application fields. Amounts are rupee strings here (digits
  * only) and become integer paise at the server boundary via rupeesToPaise. */
@@ -58,10 +59,7 @@ const phone = z
 
 const consent = z.boolean().refine((v) => v === true, "Please accept to proceed");
 
-const optionalAttribution = z.preprocess(
-  (value) => (typeof value === "string" ? value.trim().slice(0, 100) || undefined : undefined),
-  z.string().max(100).optional(),
-);
+const optionalAttribution = z.preprocess(clean, z.string().max(100).optional());
 
 const base = {
   consent,
@@ -94,7 +92,7 @@ export const enquirySchema = z.object({
     .enum(loanPurposes)
     .or(z.literal(""))
     .refine((v) => v !== "", { message: "Select the purpose of the loan" }),
-  tenureMonths: smallIntOptional(600, "Tenure must be 600 months or less"),
+  tenureMonths: loanDetails.tenureMonths,
   preferredEmi: rupeeAmountOptional,
   // 02 · About you
   name: z.string().trim().min(2, "Please tell us your name").max(100),
