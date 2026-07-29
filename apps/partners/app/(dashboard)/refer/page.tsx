@@ -1,9 +1,12 @@
+import type { Metadata } from "next";
 import { Card } from "@truelend/ui";
 import { requirePartner } from "@/lib/auth";
 import { PartnerLeadForm } from "@/components/partner-lead-form";
 import { PartnerPageHeader } from "@/components/partner-page-header";
 import { ReferralLinkCard } from "@/components/referral-link-card";
 import { preselectedProduct } from "@/lib/preselected-product";
+
+export const metadata: Metadata = { title: "Refer a customer" };
 
 export const dynamic = "force-dynamic";
 
@@ -36,4 +39,3 @@ export default async function ReferPage({
     </div>
   );
 }
-export const metadata = { title: "Refer a customer" };

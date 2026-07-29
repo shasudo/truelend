@@ -41,10 +41,7 @@ const PUBLIC_SITE = appUrls.website;
 export const submitProductHref = (submitHref: string) => (slug: string) =>
   `${submitHref}?product=${slug}`;
 
-export function ProductCatalog({
-  hrefFor,
-  showDetails = false,
-}: {
+interface ProductCatalogProps {
   /*
    * Where a card goes, by slug. The link target is the caller's business —
    * signed-in pages start a prefilled case, the public landing page has no
@@ -53,7 +50,9 @@ export function ProductCatalog({
   hrefFor: (slug: string) => string;
   /** Also link out to the public product page for rates and eligibility. */
   showDetails?: boolean;
-}) {
+}
+
+export function ProductCatalog({ hrefFor, showDetails = false }: ProductCatalogProps) {
   return (
     <div
       className={

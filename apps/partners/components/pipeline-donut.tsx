@@ -54,7 +54,11 @@ const STAGE_COLOR: Record<string, string> = {
   lost: "#ce0e17",
 };
 
-export function PipelineDonut({ stages }: { stages: PipelineStage[] }) {
+interface PipelineDonutProps {
+  stages: PipelineStage[];
+}
+
+export function PipelineDonut({ stages }: PipelineDonutProps) {
   const slices: DonutSlice[] = STAGE_ORDER.flatMap((status) => {
     const stage = stages.find((s) => s.status === status);
     if (!stage || stage.count === 0) return [];

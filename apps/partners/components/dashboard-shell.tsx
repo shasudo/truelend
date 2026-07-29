@@ -56,7 +56,12 @@ function useSignOut() {
   return { signOut, pending, error };
 }
 
-function NavLinks({ groups, onNavigate }: { groups: NavGroup[]; onNavigate?: () => void }) {
+interface NavLinksProps {
+  groups: NavGroup[];
+  onNavigate?: () => void;
+}
+
+function NavLinks({ groups, onNavigate }: NavLinksProps) {
   const pathname = usePathname();
   const active = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
   return (
@@ -97,7 +102,12 @@ function NavLinks({ groups, onNavigate }: { groups: NavGroup[]; onNavigate?: () 
   );
 }
 
-function UserCard({ name, referenceId }: { name: string; referenceId: string }) {
+interface UserCardProps {
+  name: string;
+  referenceId: string;
+}
+
+function UserCard({ name, referenceId }: UserCardProps) {
   const { signOut, pending, error } = useSignOut();
   return (
     <div className="border-t border-hairline p-3">
@@ -126,15 +136,13 @@ function UserCard({ name, referenceId }: { name: string; referenceId: string }) 
   );
 }
 
-export function DashboardShell({
-  referenceId,
-  name,
-  children,
-}: {
+interface DashboardShellProps {
   referenceId: string;
   name: string;
   children: ReactNode;
-}) {
+}
+
+export function DashboardShell({ referenceId, name, children }: DashboardShellProps) {
   const [open, setOpen] = useState(false);
   const navGroups: NavGroup[] = [
     {

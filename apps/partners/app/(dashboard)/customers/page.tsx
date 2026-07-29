@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, Handshake } from "lucide-react";
 import { Button, Card, StatusBadge } from "@truelend/ui";
@@ -5,6 +6,8 @@ import { formatDate, leadStatusLabels, pipelineStatusTone, productName } from "@
 import { PartnerPageHeader } from "@/components/partner-page-header";
 import { requirePartner, getAuthContext } from "@/lib/auth";
 import { getPartnerLeadsPage } from "@/lib/dashboard-queries";
+
+export const metadata: Metadata = { title: "My referrals" };
 
 export const dynamic = "force-dynamic";
 
@@ -158,5 +161,3 @@ export default async function CustomersPage({
     </div>
   );
 }
-
-export const metadata = { title: "My referrals" };

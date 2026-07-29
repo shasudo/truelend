@@ -6,13 +6,12 @@ import { Check, Upload, Loader2, FileText } from "lucide-react";
 import { Card, cx } from "@truelend/ui";
 import { partnerDocTypes } from "@truelend/reference";
 
-export function KycUpload({
-  uploadedDocumentTypes,
-  editable = true,
-}: {
+interface KycUploadProps {
   uploadedDocumentTypes: readonly string[];
   editable?: boolean;
-}) {
+}
+
+export function KycUpload({ uploadedDocumentTypes, editable = true }: KycUploadProps) {
   const uploadedTypes = new Set(uploadedDocumentTypes);
   const allRequiredDone = partnerDocTypes.every((d) => uploadedTypes.has(d.type));
 
@@ -37,15 +36,13 @@ export function KycUpload({
   );
 }
 
-function DocRow({
-  doc,
-  uploaded,
-  editable,
-}: {
+interface DocRowProps {
   doc: { type: string; label: string };
   uploaded: boolean;
   editable: boolean;
-}) {
+}
+
+function DocRow({ doc, uploaded, editable }: DocRowProps) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);

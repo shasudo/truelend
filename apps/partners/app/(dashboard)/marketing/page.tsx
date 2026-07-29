@@ -1,6 +1,9 @@
+import type { Metadata } from "next";
 import { BadgeCheck, Forward, Megaphone, MessageCircleMore, Share2 } from "lucide-react";
 import { Card } from "@truelend/ui";
 import { PartnerPageHeader } from "@/components/partner-page-header";
+
+export const metadata: Metadata = { title: "Marketing materials" };
 
 export const dynamic = "force-dynamic";
 
@@ -103,5 +106,3 @@ export default async function MarketingPage() {
     </div>
   );
 }
-
-export const metadata = { title: "Marketing materials" };

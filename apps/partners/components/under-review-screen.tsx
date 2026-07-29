@@ -55,6 +55,15 @@ const nextSteps = [
   },
 ] as const;
 
+interface UnderReviewScreenProps {
+  name: string;
+  email: string;
+  referenceId: string;
+  submittedAt: Date;
+  referralType: string | null;
+  city: string | null;
+}
+
 export function UnderReviewScreen({
   name,
   email,
@@ -62,14 +71,7 @@ export function UnderReviewScreen({
   submittedAt,
   referralType,
   city,
-}: {
-  name: string;
-  email: string;
-  referenceId: string;
-  submittedAt: Date;
-  referralType: string | null;
-  city: string | null;
-}) {
+}: UnderReviewScreenProps) {
   return (
     <div className="min-h-screen bg-red-50/20">
       <header className="border-b border-hairline bg-white/95 backdrop-blur">

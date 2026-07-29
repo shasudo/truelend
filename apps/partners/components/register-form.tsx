@@ -58,13 +58,12 @@ export interface RegistrationAccountSummary {
   name: string;
 }
 
-export function RegisterForm({
-  siteKey,
-  account,
-}: {
+interface RegisterFormProps {
   siteKey?: string;
   account?: RegistrationAccountSummary;
-}) {
+}
+
+export function RegisterForm({ siteKey, account }: RegisterFormProps) {
   const errorRef = useRef<HTMLDivElement>(null);
   const [step, setStep] = useState<RegistrationStep>(1);
   const [turnstileToken, setTurnstileToken] = useState<string>();

@@ -6,7 +6,11 @@ import { LogOut } from "lucide-react";
 import { cx } from "@truelend/ui";
 import { authClient } from "@truelend/auth/client";
 
-export function SignOutButton({ className }: { className?: string }) {
+interface SignOutButtonProps {
+  className?: string;
+}
+
+export function SignOutButton({ className }: SignOutButtonProps) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string>();

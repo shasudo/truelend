@@ -20,15 +20,13 @@ const kycFieldNames = [
   "nomineePhone",
 ] as const satisfies readonly (keyof KycFormValues)[];
 
-export function KycDetailsForm({
-  values,
-  editable = true,
-  storageKey,
-}: {
+interface KycDetailsFormProps {
   values: KycFormValues;
   editable?: boolean;
   storageKey: string;
-}) {
+}
+
+export function KycDetailsForm({ values, editable = true, storageKey }: KycDetailsFormProps) {
   const [state, action, pending] = useActionState<KycState, FormData>(savePartnerKyc, {});
   const draft = useFormDraft({
     storageKey,

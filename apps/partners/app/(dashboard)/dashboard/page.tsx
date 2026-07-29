@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
 import {
@@ -24,6 +25,8 @@ import { PartnerIdChip } from "@/components/partner-id-chip";
 import { PipelineDonut } from "@/components/pipeline-donut";
 import { ProductCatalog, submitProductHref } from "@/components/product-catalog";
 import { ReferralLinkCard } from "@/components/referral-link-card";
+
+export const metadata: Metadata = { title: "Referral Partner Dashboard" };
 
 export const dynamic = "force-dynamic";
 
@@ -322,5 +325,3 @@ export default async function DashboardPage() {
     </div>
   );
 }
-
-export const metadata = { title: "Referral Partner Dashboard" };

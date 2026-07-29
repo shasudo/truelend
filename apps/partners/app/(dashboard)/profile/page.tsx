@@ -1,11 +1,19 @@
+import type { Metadata } from "next";
 import { requirePartner } from "@/lib/auth";
 import { Card } from "@truelend/ui";
 import { partnerStatusLabel, referralTypeLabel } from "@truelend/reference";
 import { ProfileForm } from "@/components/profile-form";
 
+export const metadata: Metadata = { title: "Profile" };
+
 export const dynamic = "force-dynamic";
 
-function Row({ label, value }: { label: string; value: string | null | undefined }) {
+interface RowProps {
+  label: string;
+  value: string | null | undefined;
+}
+
+function Row({ label, value }: RowProps) {
   return (
     <div className="flex flex-col gap-1 border-b border-hairline py-3 last:border-b-0 min-[420px]:flex-row min-[420px]:justify-between min-[420px]:gap-4">
       <dt className="text-sm text-navy-500">{label}</dt>
@@ -49,4 +57,3 @@ export default async function ProfilePage() {
     </div>
   );
 }
-export const metadata = { title: "Profile" };

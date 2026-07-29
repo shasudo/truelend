@@ -62,13 +62,12 @@ const communityBenefits = [
   },
 ] as const;
 
-export function DedicatedRegister({
-  siteKey,
-  account,
-}: {
+interface DedicatedRegisterProps {
   siteKey?: string;
   account?: RegistrationAccountSummary;
-}) {
+}
+
+export function DedicatedRegister({ siteKey, account }: DedicatedRegisterProps) {
   return (
     <>
       <PublicHeader />

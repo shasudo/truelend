@@ -7,7 +7,11 @@ import { appUrls } from "@truelend/reference";
 
 const REFERRAL_BASE = `${appUrls.website}/enquiry`;
 
-export function ReferralLinkCard({ referenceId }: { referenceId: string }) {
+interface ReferralLinkCardProps {
+  referenceId: string;
+}
+
+export function ReferralLinkCard({ referenceId }: ReferralLinkCardProps) {
   const link = `${REFERRAL_BASE}?ref=${referenceId}`;
   const message = `Looking for a loan? Apply through TrueLend with my referral link and I'll help you through it: ${link}`;
   const [copied, setCopied] = useState(false);
