@@ -49,12 +49,7 @@ const profileSchema = z.object({
     .string()
     .trim()
     .transform((value) => value.toUpperCase())
-    .pipe(
-      z
-        .string()
-        .regex(/^[A-Z]{5}[0-9]{4}[A-Z]$/, "Enter a valid PAN (e.g. ABCDE1234F)")
-        .or(z.literal("")),
-    ),
+    .pipe(z.string().regex(validationPatterns.pan, validationMessages.pan).or(z.literal(""))),
   experienceNote: z.string().trim().max(80).optional().default(""),
   phone: z
     .string()
