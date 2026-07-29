@@ -2,7 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import * as Dialog from "@radix-ui/react-dialog";
 import {
   BadgeIndianRupee,
@@ -21,8 +21,8 @@ import {
   X,
 } from "lucide-react";
 import { Logo, cx } from "@truelend/ui";
-import { authClient } from "@truelend/auth/client";
 import { PartnerIdChip } from "./partner-id-chip";
+import { useSignOut } from "./use-sign-out";
 
 interface NavItem {
   label: string;
@@ -33,27 +33,6 @@ interface NavItem {
 interface NavGroup {
   label: string;
   items: NavItem[];
-}
-
-function useSignOut() {
-  const router = useRouter();
-  const [pending, setPending] = useState(false);
-  const [error, setError] = useState<string>();
-  async function signOut() {
-    if (pending) return;
-    setPending(true);
-    setError(undefined);
-    try {
-      const { error } = await authClient.signOut();
-      if (error) throw new Error("Sign out failed");
-      router.push("/login");
-      router.refresh();
-    } catch {
-      setError("Could not sign out. Please try again.");
-      setPending(false);
-    }
-  }
-  return { signOut, pending, error };
 }
 
 interface NavLinksProps {

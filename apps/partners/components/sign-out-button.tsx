@@ -1,33 +1,15 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { LogOut } from "lucide-react";
 import { cx } from "@truelend/ui";
-import { authClient } from "@truelend/auth/client";
+import { useSignOut } from "./use-sign-out";
 
 interface SignOutButtonProps {
   className?: string;
 }
 
 export function SignOutButton({ className }: SignOutButtonProps) {
-  const router = useRouter();
-  const [pending, setPending] = useState(false);
-  const [error, setError] = useState<string>();
-  async function signOut() {
-    if (pending) return;
-    setPending(true);
-    setError(undefined);
-    try {
-      const result = await authClient.signOut();
-      if (result.error) throw new Error("Sign out failed");
-      router.push("/login");
-      router.refresh();
-    } catch {
-      setError("Could not sign out. Please try again.");
-      setPending(false);
-    }
-  }
+  const { signOut, pending, error } = useSignOut();
   return (
     <div>
       <button
