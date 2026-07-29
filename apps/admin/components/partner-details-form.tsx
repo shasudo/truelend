@@ -27,7 +27,11 @@ type PartnerDetails = {
   nomineePhone: string | null;
 };
 
-export function PartnerDetailsForm({ partner }: { partner: PartnerDetails }) {
+interface PartnerDetailsFormProps {
+  partner: PartnerDetails;
+}
+
+export function PartnerDetailsForm({ partner }: PartnerDetailsFormProps) {
   const router = useRouter();
   const [state, action, pending] = useActionState<ActionResult, FormData>(
     updatePartnerDetailsAction,

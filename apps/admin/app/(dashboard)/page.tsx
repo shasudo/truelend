@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { desc } from "drizzle-orm";
 import { Card, SectionHeading, StatTile } from "@truelend/ui";
 import { productName, leadKindLabels, formatPaise, formatDate } from "@truelend/reference";
@@ -15,6 +16,7 @@ import {
 } from "@/lib/mis-queries";
 
 export const dynamic = "force-dynamic";
+export const metadata: Metadata = { title: "Overview" };
 
 export default async function OverviewPage() {
   const session = await requireStaff();
@@ -97,4 +99,3 @@ export default async function OverviewPage() {
     </>
   );
 }
-export const metadata = { title: "Overview" };

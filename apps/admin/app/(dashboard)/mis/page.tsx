@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { Card } from "@truelend/ui";
 import { formatPaise } from "@truelend/reference";
 import { PageTitle } from "@/components/page-title";
@@ -6,8 +7,14 @@ import { requireAdmin, getAuthContext } from "@/lib/auth";
 import { getMisByProduct, getMisByChannel, getMisByPartner, type MisRow } from "@/lib/mis-queries";
 
 export const dynamic = "force-dynamic";
+export const metadata: Metadata = { title: "MIS" };
 
-function MisTable({ dimension, rows }: { dimension: string; rows: MisRow[] }) {
+interface MisTableProps {
+  dimension: string;
+  rows: MisRow[];
+}
+
+function MisTable({ dimension, rows }: MisTableProps) {
   const totals = rows.reduce(
     (a, r) => ({
       leads: a.leads + r.leads,
@@ -188,4 +195,3 @@ export default async function MisPage() {
     </>
   );
 }
-export const metadata = { title: "MIS" };

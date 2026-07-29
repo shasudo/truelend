@@ -61,7 +61,12 @@ function useSignOut() {
   return { signOut, pending, error };
 }
 
-function NavLinks({ isAdmin, onNavigate }: { isAdmin: boolean; onNavigate?: () => void }) {
+interface NavLinksProps {
+  isAdmin: boolean;
+  onNavigate?: () => void;
+}
+
+function NavLinks({ isAdmin, onNavigate }: NavLinksProps) {
   const pathname = usePathname();
   const active = (href: string) =>
     href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`);
@@ -91,7 +96,11 @@ function NavLinks({ isAdmin, onNavigate }: { isAdmin: boolean; onNavigate?: () =
   );
 }
 
-function UserCard({ user }: { user: SidebarUser }) {
+interface UserCardProps {
+  user: SidebarUser;
+}
+
+function UserCard({ user }: UserCardProps) {
   const { signOut, pending, error } = useSignOut();
   return (
     <div className="border-t border-hairline p-3">
@@ -120,7 +129,11 @@ function UserCard({ user }: { user: SidebarUser }) {
   );
 }
 
-export function Sidebar({ user }: { user: SidebarUser }) {
+interface SidebarProps {
+  user: SidebarUser;
+}
+
+export function Sidebar({ user }: SidebarProps) {
   const isAdmin = user.role === "admin";
   return (
     <aside className="sticky top-0 hidden h-dvh w-64 shrink-0 flex-col border-r border-hairline bg-white lg:flex">
@@ -135,7 +148,11 @@ export function Sidebar({ user }: { user: SidebarUser }) {
   );
 }
 
-export function MobileNav({ user }: { user: SidebarUser }) {
+interface MobileNavProps {
+  user: SidebarUser;
+}
+
+export function MobileNav({ user }: MobileNavProps) {
   const [open, setOpen] = useState(false);
   const isAdmin = user.role === "admin";
   return (

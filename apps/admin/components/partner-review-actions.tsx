@@ -13,7 +13,12 @@ import {
 
 const initialState: ActionResult = {};
 
-function ActionFeedback({ state, success }: { state: ActionResult; success: string }) {
+interface ActionFeedbackProps {
+  state: ActionResult;
+  success: string;
+}
+
+function ActionFeedback({ state, success }: ActionFeedbackProps) {
   if (state.error) {
     return (
       <p
@@ -34,6 +39,16 @@ function ActionFeedback({ state, success }: { state: ActionResult; success: stri
   return null;
 }
 
+interface PartnerReviewActionsProps {
+  partnerId: string;
+  partnerName: string;
+  verified: boolean;
+  canApprove: boolean;
+  approvalBlockedMessage: string | null;
+  canReject: boolean;
+  rejectionBlockedMessage: string | null;
+}
+
 export function PartnerReviewActions({
   partnerId,
   partnerName,
@@ -42,15 +57,7 @@ export function PartnerReviewActions({
   approvalBlockedMessage,
   canReject,
   rejectionBlockedMessage,
-}: {
-  partnerId: string;
-  partnerName: string;
-  verified: boolean;
-  canApprove: boolean;
-  approvalBlockedMessage: string | null;
-  canReject: boolean;
-  rejectionBlockedMessage: string | null;
-}) {
+}: PartnerReviewActionsProps) {
   const router = useRouter();
   const [approvalState, approveAction] = useActionState<ActionResult, FormData>(
     approvePartnerAction,

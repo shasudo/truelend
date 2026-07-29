@@ -1,14 +1,12 @@
 import type { ReactNode } from "react";
 
-export function PageTitle({
-  title,
-  subtitle,
-  actions,
-}: {
+interface PageTitleProps {
   title: string;
   subtitle?: string;
   actions?: ReactNode;
-}) {
+}
+
+export function PageTitle({ title, subtitle, actions }: PageTitleProps) {
   return (
     <div className="mb-7 flex min-w-0 flex-wrap items-end justify-between gap-4 sm:mb-8">
       <div className="min-w-0 flex-1">

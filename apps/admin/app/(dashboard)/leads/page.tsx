@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button, Card, Input, Select, cx } from "@truelend/ui";
 import {
@@ -22,6 +23,7 @@ import {
 } from "@/lib/lead-queries";
 
 export const dynamic = "force-dynamic";
+export const metadata: Metadata = { title: "Leads" };
 
 type SP = Record<string, string | string[] | undefined>;
 
@@ -232,4 +234,3 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
     </>
   );
 }
-export const metadata = { title: "Leads" };
