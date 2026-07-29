@@ -11,8 +11,6 @@ import { errorType } from "./error-type";
 import { scheduleAdminRequestContextCleanup } from "./request-context-cleanup";
 import { planBanMutation, staffDeletionRefusal } from "./team-mutation-policy";
 
-export type { ActionResult };
-
 const ROLES = ["admin", "employee"] as const;
 
 // better-auth's admin plugin types `role` as "admin" | "user" | (...)[] |

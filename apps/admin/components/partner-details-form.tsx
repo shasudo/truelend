@@ -3,7 +3,8 @@
 import { useActionState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button, Field, Input, Textarea } from "@truelend/ui";
-import { updatePartnerDetailsAction, type ActionResult } from "@/lib/partner-actions";
+import type { ActionResult } from "@/lib/action-result";
+import { updatePartnerDetailsAction } from "@/lib/partner-actions";
 
 type PartnerDetails = {
   userId: string;

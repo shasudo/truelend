@@ -23,8 +23,6 @@ import {
   validationPatterns,
 } from "@truelend/reference";
 
-export type { ActionResult };
-
 const UNKNOWN_DETAILS_OUTCOME =
   "We couldn't confirm the details update. Reload this partner before trying again.";
 const UNKNOWN_PAYOUT_OUTCOME =

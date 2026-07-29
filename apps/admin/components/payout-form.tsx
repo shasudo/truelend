@@ -3,7 +3,8 @@
 import { useActionState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button, Field, Input, Select } from "@truelend/ui";
-import { recordPayoutAction, type ActionResult } from "@/lib/partner-actions";
+import type { ActionResult } from "@/lib/action-result";
+import { recordPayoutAction } from "@/lib/partner-actions";
 
 // Client form so the server's balance-guard rejection ("exceeds outstanding")
 // is shown instead of silently swallowed. Resets after a successful entry.
