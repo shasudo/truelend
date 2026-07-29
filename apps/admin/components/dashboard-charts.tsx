@@ -4,7 +4,11 @@ const WIDTH = 720;
 const HEIGHT = 220;
 const PLOT = { left: 36, right: 12, top: 12, bottom: 32 };
 
-function Empty({ label }: { label: string }) {
+interface EmptyProps {
+  label: string;
+}
+
+function Empty({ label }: EmptyProps) {
   return (
     <div className="flex h-[220px] items-center justify-center text-sm text-muted">{label}</div>
   );
@@ -17,8 +21,12 @@ const shortDay = (day: string) =>
     timeZone: "Asia/Kolkata",
   });
 
+interface TrendChartProps {
+  data: TimePoint[];
+}
+
 /** Server-rendered SVG keeps the trend visual without shipping a chart runtime. */
-export function TrendChart({ data }: { data: TimePoint[] }) {
+export function TrendChart({ data }: TrendChartProps) {
   if (data.length === 0) return <Empty label="No leads in the last 30 days" />;
   const plotWidth = WIDTH - PLOT.left - PLOT.right;
   const plotHeight = HEIGHT - PLOT.top - PLOT.bottom;
@@ -102,8 +110,12 @@ export function TrendChart({ data }: { data: TimePoint[] }) {
   );
 }
 
+interface CategoryBarsProps {
+  data: NamedCount[];
+}
+
 /** Exact labels and values stay visible and screen-reader friendly. */
-export function CategoryBars({ data }: { data: NamedCount[] }) {
+export function CategoryBars({ data }: CategoryBarsProps) {
   if (data.length === 0) return <Empty label="No data yet" />;
   const max = Math.max(1, ...data.map((item) => item.count));
   return (

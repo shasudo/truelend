@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { Card } from "@truelend/ui";
 import { partnerStatusLabel, formatDate } from "@truelend/reference";
 import { schema } from "@truelend/db";
@@ -8,6 +9,7 @@ import { listPartners } from "@/lib/partner-queries";
 import { cx } from "@truelend/ui";
 
 export const dynamic = "force-dynamic";
+export const metadata: Metadata = { title: "Referral Partners" };
 
 type SP = Record<string, string | string[] | undefined>;
 
@@ -112,4 +114,3 @@ export default async function PartnersPage({ searchParams }: { searchParams: Pro
     </>
   );
 }
-export const metadata = { title: "Referral Partners" };

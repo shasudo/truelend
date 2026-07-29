@@ -21,13 +21,12 @@ interface Member {
   joined: string;
 }
 
-export function TeamMembers({
-  members,
-  currentUserId,
-}: {
+interface TeamMembersProps {
   members: Member[];
   currentUserId: string;
-}) {
+}
+
+export function TeamMembers({ members, currentUserId }: TeamMembersProps) {
   return (
     <div className="max-w-full overscroll-x-contain overflow-x-auto">
       <table className="w-full min-w-[820px] text-left text-sm">
@@ -50,7 +49,12 @@ export function TeamMembers({
   );
 }
 
-function TeamRow({ m, isSelf }: { m: Member; isSelf: boolean }) {
+interface TeamRowProps {
+  m: Member;
+  isSelf: boolean;
+}
+
+function TeamRow({ m, isSelf }: TeamRowProps) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const [role, setRole] = useState(m.role);

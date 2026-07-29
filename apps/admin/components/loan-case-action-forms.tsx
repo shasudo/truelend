@@ -10,7 +10,12 @@ import {
   type LoanActionResult,
 } from "@/lib/loan-actions";
 
-function ActionFeedback({ state, success }: { state: LoanActionResult; success?: string }) {
+interface ActionFeedbackProps {
+  state: LoanActionResult;
+  success?: string;
+}
+
+function ActionFeedback({ state, success }: ActionFeedbackProps) {
   return (
     <>
       {state.error && (
@@ -30,15 +35,13 @@ function ActionFeedback({ state, success }: { state: LoanActionResult; success?:
   );
 }
 
-export function CreateLoanCaseForm({
-  leadId,
-  cancelHref,
-  children,
-}: {
+interface CreateLoanCaseFormProps {
   leadId: string;
   cancelHref: string;
   children: ReactNode;
-}) {
+}
+
+export function CreateLoanCaseForm({ leadId, cancelHref, children }: CreateLoanCaseFormProps) {
   const [state, action] = useActionState<LoanActionResult, FormData>(createLoanCaseAction, {});
 
   return (
@@ -56,7 +59,12 @@ export function CreateLoanCaseForm({
   );
 }
 
-export function UpdateLoanCaseForm({ caseId, children }: { caseId: string; children: ReactNode }) {
+interface UpdateLoanCaseFormProps {
+  caseId: string;
+  children: ReactNode;
+}
+
+export function UpdateLoanCaseForm({ caseId, children }: UpdateLoanCaseFormProps) {
   const [state, action] = useActionState<LoanActionResult, FormData>(updateLoanCaseAction, {});
 
   return (

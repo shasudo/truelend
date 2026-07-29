@@ -6,9 +6,14 @@ import { Button, Field, Input, Select } from "@truelend/ui";
 import type { ActionResult } from "@/lib/action-result";
 import { recordPayoutAction } from "@/lib/partner-actions";
 
+interface PayoutFormProps {
+  partnerId: string;
+  noun: string;
+}
+
 // Client form so the server's balance-guard rejection ("exceeds outstanding")
 // is shown instead of silently swallowed. Resets after a successful entry.
-export function PayoutForm({ partnerId, noun }: { partnerId: string; noun: string }) {
+export function PayoutForm({ partnerId, noun }: PayoutFormProps) {
   const router = useRouter();
   const [state, action, pending] = useActionState<ActionResult, FormData>(recordPayoutAction, {});
   const formRef = useRef<HTMLFormElement>(null);

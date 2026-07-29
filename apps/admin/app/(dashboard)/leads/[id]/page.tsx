@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Plus, Phone, Mail, MapPin } from "lucide-react";
 import { Button, Card } from "@truelend/ui";
@@ -20,9 +21,14 @@ import { getAuthContext } from "@/lib/auth";
 import { getLead, listEmployees } from "@/lib/lead-queries";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Lead details" };
+export const metadata: Metadata = { title: "Lead details" };
 
-function Detail({ label, value }: { label: string; value: string | null | undefined }) {
+interface DetailProps {
+  label: string;
+  value: string | null | undefined;
+}
+
+function Detail({ label, value }: DetailProps) {
   return (
     <div className="min-w-0">
       <dt className="text-xs font-semibold uppercase tracking-[0.1em] text-muted">{label}</dt>

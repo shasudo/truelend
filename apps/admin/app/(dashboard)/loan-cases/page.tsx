@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button, Card, Select, cx } from "@truelend/ui";
 import {
@@ -16,6 +17,7 @@ import { getAuthContext } from "@/lib/auth";
 import { listLoanCases, type LoanCaseFilters, type LoanCaseStatus } from "@/lib/loan-queries";
 
 export const dynamic = "force-dynamic";
+export const metadata: Metadata = { title: "Loan cases" };
 
 type SP = Record<string, string | string[] | undefined>;
 
@@ -182,4 +184,3 @@ export default async function LoanCasesPage({ searchParams }: { searchParams: Pr
     </>
   );
 }
-export const metadata = { title: "Loan cases" };

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { Card, Stat } from "@truelend/ui";
@@ -11,7 +12,7 @@ import { getLoanCase } from "@/lib/loan-queries";
 import { LoanCaseFields } from "@/components/loan-case-fields";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Loan case details" };
+export const metadata: Metadata = { title: "Loan case details" };
 
 export default async function LoanCaseDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;

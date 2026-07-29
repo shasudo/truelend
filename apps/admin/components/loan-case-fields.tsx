@@ -13,7 +13,11 @@ interface Defaults {
   payoutPaise?: number | null;
 }
 
-export function LoanCaseFields({ defaults }: { defaults?: Defaults }) {
+interface LoanCaseFieldsProps {
+  defaults?: Defaults;
+}
+
+export function LoanCaseFields({ defaults }: LoanCaseFieldsProps) {
   return (
     <div className="grid gap-5 sm:grid-cols-2">
       <Field label="Lender" htmlFor="lenderSlug" required>
@@ -86,15 +90,13 @@ export function LoanCaseFields({ defaults }: { defaults?: Defaults }) {
   );
 }
 
-function AmountField({
-  label,
-  name,
-  value,
-}: {
+interface AmountFieldProps {
   label: string;
   name: string;
   value?: number | null;
-}) {
+}
+
+function AmountField({ label, name, value }: AmountFieldProps) {
   return (
     <Field label={label} htmlFor={name}>
       <Input

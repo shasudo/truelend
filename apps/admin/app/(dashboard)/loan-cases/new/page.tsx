@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { Card } from "@truelend/ui";
@@ -9,6 +10,7 @@ import { getAuthContext } from "@/lib/auth";
 import { getLead } from "@/lib/lead-queries";
 
 export const dynamic = "force-dynamic";
+export const metadata: Metadata = { title: "New loan case" };
 
 export default async function NewLoanCasePage({
   searchParams,
@@ -41,4 +43,3 @@ export default async function NewLoanCasePage({
     </>
   );
 }
-export const metadata = { title: "New loan case" };

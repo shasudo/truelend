@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ArrowLeft, FileText } from "lucide-react";
 import { Card, Stat, cx } from "@truelend/ui";
@@ -24,7 +25,7 @@ import { getPartnerDetail } from "@/lib/partner-queries";
 import { partnerRejectionRefusal } from "@/lib/partner-review-policy";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Referral Partner details" };
+export const metadata: Metadata = { title: "Referral Partner details" };
 
 const statusStyles: Record<string, string> = {
   pending: "bg-navy-800/[0.08] text-navy-700",
@@ -32,7 +33,12 @@ const statusStyles: Record<string, string> = {
   rejected: "bg-red-50 text-red-700",
 };
 
-function Detail({ label, value }: { label: string; value: string | null | undefined }) {
+interface DetailProps {
+  label: string;
+  value: string | null | undefined;
+}
+
+function Detail({ label, value }: DetailProps) {
   return (
     <div className="min-w-0">
       <dt className="text-xs font-semibold uppercase tracking-[0.1em] text-muted">{label}</dt>

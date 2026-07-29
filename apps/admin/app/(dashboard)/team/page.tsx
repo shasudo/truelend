@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { desc, inArray } from "drizzle-orm";
 import { Card } from "@truelend/ui";
 import { schema } from "@truelend/db";
@@ -8,6 +9,7 @@ import { requireAdmin, getAuthContext } from "@/lib/auth";
 import { formatDate } from "@truelend/reference";
 
 export const dynamic = "force-dynamic";
+export const metadata: Metadata = { title: "Team" };
 
 export default async function TeamPage() {
   const session = await requireAdmin();
@@ -49,4 +51,3 @@ export default async function TeamPage() {
     </>
   );
 }
-export const metadata = { title: "Team" };

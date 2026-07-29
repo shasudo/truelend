@@ -6,13 +6,15 @@ import { Check, FileText, Loader2, Upload } from "lucide-react";
 import { Card, cx } from "@truelend/ui";
 import { partnerDocTypes } from "@truelend/reference";
 
+interface PartnerDocumentUploadProps {
+  partnerId: string;
+  uploadedDocumentTypes: readonly string[];
+}
+
 export function PartnerDocumentUpload({
   partnerId,
   uploadedDocumentTypes,
-}: {
-  partnerId: string;
-  uploadedDocumentTypes: readonly string[];
-}) {
+}: PartnerDocumentUploadProps) {
   const uploaded = new Set(uploadedDocumentTypes);
   return (
     <div className="space-y-3">
@@ -31,15 +33,13 @@ export function PartnerDocumentUpload({
   );
 }
 
-function DocumentRow({
-  partnerId,
-  document,
-  uploaded,
-}: {
+interface DocumentRowProps {
   partnerId: string;
   document: { type: string; label: string };
   uploaded: boolean;
-}) {
+}
+
+function DocumentRow({ partnerId, document, uploaded }: DocumentRowProps) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
