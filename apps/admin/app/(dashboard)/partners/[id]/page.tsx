@@ -99,7 +99,7 @@ export default async function PartnerDetailPage({ params }: { params: Promise<{ 
 
       <PageTitle
         title={name}
-        subtitle="Referral Partner"
+        subtitle={`Referral Partner · ${partner.referenceId}`}
         actions={
           <span
             className={cx(

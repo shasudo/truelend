@@ -29,16 +29,17 @@ void test("attribution keeps first touch, updates last touch, and expires", () =
   );
 });
 
-void test("Referral Partner ref is first-touch, normalized, survives UTM touches, and expires", () => {
+void test("Referral Partner ref is last-click, normalized, survives UTM touches, and expires", () => {
   const now = 1_000;
   const first = resolveAttribution(null, {}, now, "rp100002");
   assert.equal(first.fields.ref, "RP100002"); // lowercased input normalized
-  // A later, different ref does not steal credit from the first Referral Partner.
+  // A fresh ?ref= takes over. First-touch stickiness let one stale or dead code
+  // shadow every later link for the whole TTL, silently costing the partner credit.
   const second = resolveAttribution(first.serialized ?? null, {}, now + 10, "RP100009");
-  assert.equal(second.fields.ref, "RP100002");
-  // Ref persists even when a UTM touch arrives afterwards.
+  assert.equal(second.fields.ref, "RP100009");
+  // Ref persists across navigation that carries no ref, and across UTM touches.
   const third = resolveAttribution(second.serialized ?? null, { source: "google" }, now + 20);
-  assert.equal(third.fields.ref, "RP100002");
+  assert.equal(third.fields.ref, "RP100009");
   assert.equal(third.fields.utmSource, "google");
   // Ref ages out with the rest of the attribution window.
   assert.equal(
@@ -53,6 +54,12 @@ void test("refFromSearch accepts only RP Referral Partner codes", () => {
   assert.equal(refFromSearch(new URLSearchParams("ref=DROP TABLE partners")), undefined);
   assert.equal(refFromSearch(new URLSearchParams("ref=XY123")), undefined);
   assert.equal(refFromSearch(new URLSearchParams("")), undefined);
+  // Chat and email linkifiers pull the sentence's punctuation into the href.
+  assert.equal(refFromSearch(new URLSearchParams("ref=RP100022.")), "RP100022");
+  assert.equal(refFromSearch(new URLSearchParams("ref=RP100022),")), "RP100022");
+  // Stripping is trailing-only — junk in the middle or in front still fails.
+  assert.equal(refFromSearch(new URLSearchParams("ref=RP100.022")), undefined);
+  assert.equal(refFromSearch(new URLSearchParams("ref=.RP100022")), undefined);
 });
 
 void test("corrupt, oversized, and blocked-style attribution inputs remain optional", () => {

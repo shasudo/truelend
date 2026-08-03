@@ -1,5 +1,17 @@
 import "server-only";
-import { and, or, eq, ilike, isNull, desc, count, inArray, type SQL } from "drizzle-orm";
+import {
+  and,
+  or,
+  eq,
+  ne,
+  ilike,
+  isNull,
+  isNotNull,
+  desc,
+  count,
+  inArray,
+  type SQL,
+} from "drizzle-orm";
 import { schema, type Database, type Lead } from "@truelend/db";
 
 const PAGE_SIZE = 20;
@@ -7,14 +19,26 @@ const PAGE_SIZE = 20;
 export type LeadStatus = (typeof schema.leadStatus.enumValues)[number];
 export type LeadKind = (typeof schema.leadKind.enumValues)[number];
 
+/** Mirrors channelForKind: partner attribution wins over the website lead kind. */
+export const leadChannelValues = ["partner", "website_referral", "website_direct"] as const;
+export type LeadChannel = (typeof leadChannelValues)[number];
+
 export interface LeadFilters {
   status?: LeadStatus;
   kind?: LeadKind;
+  channel?: LeadChannel;
   product?: string;
   /** user id, or "unassigned" */
   assignee?: string;
   q?: string;
   page: number;
+}
+
+function channelWhere(channel: LeadChannel): SQL | undefined {
+  if (channel === "partner") return isNotNull(schema.leads.partnerId);
+  if (channel === "website_referral")
+    return and(isNull(schema.leads.partnerId), eq(schema.leads.kind, "referral"));
+  return and(isNull(schema.leads.partnerId), ne(schema.leads.kind, "referral"));
 }
 
 interface LeadRow extends Lead {
@@ -25,6 +49,7 @@ function leadWhere(f: LeadFilters): SQL | undefined {
   const clauses: (SQL | undefined)[] = [
     f.status ? eq(schema.leads.status, f.status) : undefined,
     f.kind ? eq(schema.leads.kind, f.kind) : undefined,
+    f.channel ? channelWhere(f.channel) : undefined,
     f.product ? eq(schema.leads.productSlug, f.product) : undefined,
     f.assignee === "unassigned"
       ? isNull(schema.leads.assignedTo)
@@ -79,7 +104,7 @@ export async function getLead(db: Database, id: string) {
   const [lead] = await db.select().from(schema.leads).where(eq(schema.leads.id, id)).limit(1);
   if (!lead) return null;
 
-  const [notes, cases] = await Promise.all([
+  const [notes, cases, auditRows, partnerRows] = await Promise.all([
     db
       .select({ note: schema.leadNotes, authorName: schema.user.name })
       .from(schema.leadNotes)
@@ -91,9 +116,38 @@ export async function getLead(db: Database, id: string) {
       .from(schema.loanCases)
       .where(eq(schema.loanCases.leadId, id))
       .orderBy(desc(schema.loanCases.createdAt)),
+    // The RP code the lead arrived with. submitLead has always written this, and
+    // nothing has ever read it — so "why wasn't this credited?" was unanswerable.
+    db
+      .select({ after: schema.auditLog.after })
+      .from(schema.auditLog)
+      .where(
+        and(
+          eq(schema.auditLog.entityType, "lead"),
+          eq(schema.auditLog.entityId, id),
+          eq(schema.auditLog.action, "lead.create"),
+        ),
+      )
+      .limit(1),
+    lead.partnerId
+      ? db
+          .select({ referenceId: schema.partners.referenceId })
+          .from(schema.partners)
+          .where(eq(schema.partners.userId, lead.partnerId))
+          .limit(1)
+      : Promise.resolve([] as { referenceId: string }[]),
   ]);
 
-  return { lead, isPartnerLead: Boolean(lead.partnerId), notes, cases };
+  return {
+    lead,
+    isPartnerLead: Boolean(lead.partnerId),
+    /** RP code that credited this lead, when it is attributed. */
+    partnerReferenceId: partnerRows[0]?.referenceId,
+    /** RP code the submission carried — present even when it resolved to nobody. */
+    attemptedRef: (auditRows[0]?.after as { partnerRef?: string } | null)?.partnerRef,
+    notes,
+    cases,
+  };
 }
 
 export async function listEmployees(db: Database) {

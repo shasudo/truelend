@@ -42,7 +42,10 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
   const { db } = getAuthContext();
   const [data, employees] = await Promise.all([getLead(db, id), listEmployees(db)]);
   if (!data) notFound();
-  const { lead, isPartnerLead, notes, cases } = data;
+  const { lead, isPartnerLead, partnerReferenceId, attemptedRef, notes, cases } = data;
+  // Show the code that credited the lead; when nothing was credited but the
+  // submission carried one, show that instead so a dead link is visible.
+  const refLabel = partnerReferenceId ?? (attemptedRef && `${attemptedRef} · unresolved`);
 
   return (
     <>
@@ -70,6 +73,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
               <Detail label="Product" value={productName(lead.productSlug)} />
               {lead.referrerName && <Detail label="Referred by" value={lead.referrerName} />}
               {lead.referrerPhone && <Detail label="Referrer phone" value={lead.referrerPhone} />}
+              {refLabel && <Detail label="Referral Partner ref" value={refLabel} />}
             </dl>
             {lead.message && (
               <div className="mt-5 border-t border-hairline pt-4">

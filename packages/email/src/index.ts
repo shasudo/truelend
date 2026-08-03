@@ -698,11 +698,16 @@ export function notifyPartnerPayout(env: EmailEnv, info: PartnerPayoutInfo): Pro
   );
 }
 
-export type PartnerLeadStatus = "contacted" | "logged_in" | "approved" | "declined" | "disbursed";
+export type PartnerLeadStatus =
+  "new" | "contacted" | "logged_in" | "approved" | "declined" | "disbursed";
 
 /**
  * Pipeline stages worth telling the referring partner about. Partners track
  * their own funnel, so they see one stage more than the applicant does.
+ *
+ * "new" is deliberately absent: arrival is announced once, by the capture side
+ * that knows a lead is genuinely new. Listing it here would also re-notify on
+ * any admin edit that parks a lead back at "new".
  */
 export const partnerNotifiableLeadStatuses = [
   "contacted",
@@ -717,6 +722,7 @@ export function isPartnerNotifiableLeadStatus(status: string): status is Partner
 }
 
 const partnerLeadStatusCopy: Readonly<Record<PartnerLeadStatus, string>> = {
+  new: "has reached us through your referral link",
   contacted: "has been picked up by an advisor",
   logged_in: "has been logged in with a lender",
   approved: "has been approved by the lender",
@@ -733,7 +739,7 @@ interface PartnerLeadStatusInfo {
   idempotencyKey?: string;
 }
 
-/** Tells a Referral Partner that a lead they submitted moved stage. */
+/** Tells a Referral Partner that a lead they sourced arrived or moved stage. */
 export function notifyPartnerLeadStatusChanged(
   env: EmailEnv,
   info: PartnerLeadStatusInfo,
@@ -741,14 +747,17 @@ export function notifyPartnerLeadStatusChanged(
   const from = partnerSender(env);
   if (!from)
     return Promise.resolve(logSkip("partner-lead-status email (PARTNER_EMAIL/EMAIL_FROM unset)"));
+  const arrived = info.status === "new";
   return send(
     env,
     "partner_lead_status",
     from,
     info.to,
-    `Update on your referral: ${info.leadName}`,
+    arrived
+      ? `New referral received: ${info.leadName}`
+      : `Update on your referral: ${info.leadName}`,
     {
-      heading: "Your referral moved forward",
+      heading: arrived ? "A new lead came in through your link" : "Your referral moved forward",
       paragraphs: [
         `Hi ${esc(firstName(info.name))}, your referral <strong>${esc(info.leadName)}</strong> ${partnerLeadStatusCopy[info.status]}.`,
         "Your dashboard has the current stage for every lead you've submitted.",

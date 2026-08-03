@@ -20,15 +20,27 @@ interface NotifyNewLeadArgs {
   source: string;
 }
 
+interface PartnerLeadNotice {
+  to: string;
+  name: string;
+  leadName: string;
+  status: string;
+  dashboardUrl: string;
+  idempotencyKey?: string;
+}
+
 interface FakeWebsiteState {
   env: FakeCloudflareEnv;
   waitUntilCalls: Promise<unknown>[];
   dbOptions: FakeDbOptions;
   headers: Headers;
+  /** Referral cookie the edge middleware banks; undefined means none was set. */
+  refCookie?: string;
   /** Defaults to true (passes) — set false to exercise the "verification failed" branch. */
   turnstileResult: boolean;
   notifyNewLead: (args: NotifyNewLeadArgs) => Promise<{ ok: boolean; skipped?: boolean }>;
   notifyNewLeadCalls: NotifyNewLeadArgs[];
+  partnerLeadNoticeCalls: PartnerLeadNotice[];
   /** When set, @truelend/db's ping() rejects with this — used by the health/ready route. */
   pingError?: unknown;
 }
@@ -43,9 +55,11 @@ function defaultState(): FakeWebsiteState {
     waitUntilCalls: [],
     dbOptions: {},
     headers: new Headers(),
+    refCookie: undefined,
     turnstileResult: true,
     notifyNewLead: async () => ({ ok: true, skipped: false }),
     notifyNewLeadCalls: [],
+    partnerLeadNoticeCalls: [],
     pingError: undefined,
   };
 }
@@ -68,6 +82,10 @@ export function getWaitUntilCalls(): readonly Promise<unknown>[] {
 
 export function getNotifyNewLeadCalls(): readonly NotifyNewLeadArgs[] {
   return state.notifyNewLeadCalls;
+}
+
+export function getPartnerLeadNoticeCalls(): readonly PartnerLeadNotice[] {
+  return state.partnerLeadNoticeCalls;
 }
 
 /**
@@ -100,6 +118,12 @@ export function installWebsiteDependencyMocks(): void {
   mock.module("next/headers", {
     namedExports: {
       headers: async () => state.headers,
+      cookies: async () => ({
+        get: (name: string) =>
+          name === "tl-ref" && state.refCookie !== undefined
+            ? { name, value: state.refCookie }
+            : undefined,
+      }),
     },
   });
   mock.module("@truelend/turnstile/server", {
@@ -114,6 +138,10 @@ export function installWebsiteDependencyMocks(): void {
         return state.notifyNewLead(lead);
       },
       notifyLeadReceived: async () => ({ ok: true as const }),
+      notifyPartnerLeadStatusChanged: async (_env: unknown, info: PartnerLeadNotice) => {
+        state.partnerLeadNoticeCalls.push(info);
+        return { ok: true as const };
+      },
     },
   });
 }

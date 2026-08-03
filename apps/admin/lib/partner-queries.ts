@@ -15,6 +15,8 @@ type Row = Record<string, unknown>;
 
 interface PartnerListRow {
   userId: string;
+  /** RP code partners share in their links — the only handle support is ever given. */
+  referenceId: string;
   name: string;
   email: string;
   status: string;
@@ -26,7 +28,7 @@ interface PartnerListRow {
 export async function listPartners(db: Database, status?: string): Promise<PartnerListRow[]> {
   const s = status ?? null;
   const rows = (await db.$client`
-    select p.user_id, p.status, p.created_at, u.name, u.email,
+    select p.user_id, p.reference_id, p.status, p.created_at, u.name, u.email,
       (select count(*)::int from leads l where l.partner_id = p.user_id) as lead_count,
       (select count(*)::int from partner_documents d where d.partner_id = p.user_id) as doc_count
     from partners p join "user" u on u.id = p.user_id
@@ -35,6 +37,7 @@ export async function listPartners(db: Database, status?: string): Promise<Partn
   `) as Row[];
   return rows.map((r) => ({
     userId: String(r.user_id),
+    referenceId: String(r.reference_id),
     name: String(r.name),
     email: String(r.email),
     status: String(r.status),

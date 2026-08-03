@@ -288,8 +288,9 @@ void test("website lead work cannot be replaced by background-task failures", ()
     scheduler,
     /scheduleWebsiteBackgroundTask[\s\S]*task = createTask\(\)[\s\S]*ctx\.waitUntil\(reportedTask\)/,
   );
-  // Team alert, applicant acknowledgement, and the existing submission task.
-  assert.equal(leadActions.match(/\bscheduleWebsiteBackgroundTask\(/g)?.length, 3);
+  // Team alert, applicant acknowledgement, referral-partner arrival notice, and
+  // the existing submission task. A raised count is fine; a raw waitUntil is not.
+  assert.equal(leadActions.match(/\bscheduleWebsiteBackgroundTask\(/g)?.length, 4);
   assert.doesNotMatch(leadActions, /\bctx\.waitUntil\(/);
 });
 

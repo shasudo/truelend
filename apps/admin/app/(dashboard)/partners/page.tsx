@@ -63,6 +63,7 @@ export default async function PartnersPage({ searchParams }: { searchParams: Pro
           <thead>
             <tr className="border-b border-hairline text-xs font-semibold uppercase tracking-[0.1em] text-navy-500">
               <th className="px-5 py-3 font-semibold">Name</th>
+              <th className="px-5 py-3 font-semibold">Ref ID</th>
               <th className="px-5 py-3 font-semibold">Status</th>
               <th className="px-5 py-3 text-right font-semibold">Docs</th>
               <th className="px-5 py-3 text-right font-semibold">Leads</th>
@@ -72,7 +73,7 @@ export default async function PartnersPage({ searchParams }: { searchParams: Pro
           <tbody>
             {partners.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-5 py-12 text-center text-muted">
+                <td colSpan={6} className="px-5 py-12 text-center text-muted">
                   No Referral Partners{status ? ` with status "${status}"` : ""} yet.
                 </td>
               </tr>
@@ -90,6 +91,9 @@ export default async function PartnersPage({ searchParams }: { searchParams: Pro
                     {p.name}
                   </Link>
                   <div className="text-xs text-muted">{p.email}</div>
+                </td>
+                <td className="px-5 py-3.5 tabular-nums font-medium text-navy-700">
+                  {p.referenceId}
                 </td>
                 <td className="px-5 py-3.5">
                   <span

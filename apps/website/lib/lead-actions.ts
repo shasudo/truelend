@@ -1,10 +1,11 @@
 "use server";
 
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { createDb, schema } from "@truelend/db";
-import { notifyLeadReceived, notifyNewLead } from "@truelend/email";
+import { notifyLeadReceived, notifyNewLead, notifyPartnerLeadStatusChanged } from "@truelend/email";
 import {
+  appUrls,
   customerConsentVersion,
   leadKindLabels,
   productName,
@@ -12,6 +13,7 @@ import {
 } from "@truelend/reference";
 import type { TurnstileAction } from "@truelend/turnstile/actions";
 import { verifyTurnstile } from "@truelend/turnstile/server";
+import { REF_COOKIE, sanitizeRef } from "./attribution";
 import { scheduleWebsiteBackgroundTask } from "./background-task";
 import { leadSchema } from "./lead-schemas";
 
@@ -100,17 +102,47 @@ export async function submitLead(input: unknown): Promise<SubmitResult> {
     const db = createDb(env.HYPERDRIVE.connectionString);
     try {
       // Resolve an RP affiliate ref to the Referral Partner it credits. A rejected
-      // Referral Partner earns nothing; an unknown code silently falls back to direct.
-      const refCode = d.ref?.trim().toUpperCase();
-      let partnerId: string | undefined;
+      // Referral Partner earns nothing; an unknown code falls back to direct.
+      // Both sources are re-sanitized here — this is a public action, so the
+      // format is enforced at the boundary rather than trusted from the browser.
+      // The cookie is read first: middleware banks it on every ?ref= hit, while
+      // the client store only updates on pages that render a form, so the cookie
+      // is never the staler of the two. It is also the only signal that survives
+      // an in-app browser with storage blocked.
+      const refCode = sanitizeRef((await cookies()).get(REF_COOKIE)?.value) ?? sanitizeRef(d.ref);
+      let partner: { userId: string; name: string | null; email: string | null } | undefined;
+      let refLookupFailed = false;
       if (refCode) {
-        const rows = (await db.$client`
-        select user_id from partners
-        where reference_id = ${refCode} and status <> 'rejected'
-        limit 1
-      `) as { user_id: string }[];
-        partnerId = rows[0]?.user_id;
+        try {
+          const rows = (await db.$client`
+            select p.user_id, u.name, u.email
+            from partners p join "user" u on u.id = p.user_id
+            where p.reference_id = ${refCode} and p.status <> 'rejected'
+            limit 1
+          `) as { user_id: string; name: string | null; email: string | null }[];
+          const row = rows[0];
+          if (row) partner = { userId: row.user_id, name: row.name, email: row.email };
+        } catch (error) {
+          // Attribution must never cost us the lead — degrade to direct and log.
+          refLookupFailed = true;
+          console.error(
+            JSON.stringify({
+              event: "lead_partner_ref_lookup_failed",
+              ref: refCode,
+              errorType: error instanceof Error ? error.name : "unknown",
+            }),
+          );
+        }
+        if (!partner && !refLookupFailed) {
+          // A code that really matches no live partner, as opposed to an outage.
+          // The audit row below records this too, but nothing reads audit_log —
+          // this line is what actually surfaces a dead referral link in logs.
+          console.error(
+            JSON.stringify({ event: "lead_partner_ref_unresolved", ref: refCode, kind: d.kind }),
+          );
+        }
       }
+      const partnerId = partner?.userId;
 
       // Loan-application detail exists only on the enquiry/referral variants, and
       // the two forms capture different fields — hence the kind-narrowed blocks.
@@ -195,6 +227,9 @@ export async function submitLead(input: unknown): Promise<SubmitResult> {
             contactReason: d.kind === "contact" ? d.reason : undefined,
             partnerRef: refCode,
             partnerResolved: refCode ? Boolean(partnerId) : undefined,
+            // Distinguishes "this code matches no partner" from "the lookup was
+            // down" — otherwise an outage reads back as a batch of dead links.
+            partnerLookupFailed: refLookupFailed || undefined,
             consentVersion: customerConsentVersion,
           },
         });
@@ -210,10 +245,33 @@ export async function submitLead(input: unknown): Promise<SubmitResult> {
           message: contactMessage,
           source: partnerId
             ? `Referral Partner · ${refCode}`
-            : `Website · ${leadKindLabels[d.kind]}`,
+            : refCode
+              ? `Website · ${leadKindLabels[d.kind]} · unresolved ref ${refCode}`
+              : `Website · ${leadKindLabels[d.kind]}`,
           idempotencyKey: leadId ? `new_lead:${leadId}` : undefined,
         }),
       );
+      // Tell the Referral Partner their link produced a lead. Without this the
+      // only party who would notice a broken link gets no signal until a much
+      // later stage change — which is how the attribution bugs went unreported.
+      // Only for the kinds a referral link is actually for: the ref survives 30
+      // days across every form, and naming a contact-form sender or a CIBIL
+      // signup as "your referral" would hand a partner a stranger's details.
+      const isReferrableLead = d.kind === "enquiry" || d.kind === "referral";
+      if (partner?.email && isReferrableLead) {
+        const to = partner.email;
+        const partnerName = partner.name ?? "there";
+        scheduleWebsiteBackgroundTask(ctx, "website_partner_lead_notification_failed", () =>
+          notifyPartnerLeadStatusChanged(env, {
+            to,
+            name: partnerName,
+            leadName: ("name" in d && d.name) || "your referral",
+            status: "new",
+            dashboardUrl: `${appUrls.partners}/dashboard`,
+            idempotencyKey: leadId ? `partner_lead_status:${leadId}:new` : undefined,
+          }),
+        );
+      }
       // Acknowledge to the applicant. Email is optional on every lead form, so
       // this stays best-effort and silent when we have no address.
       const applicantEmail = "email" in d ? blank(d.email) : undefined;
@@ -239,8 +297,12 @@ export async function submitLead(input: unknown): Promise<SubmitResult> {
       );
       return {
         ok: false,
-        error:
-          "We couldn't confirm the submission. Please contact us before retrying if you may have already sent it.",
+        // Same distinction the outer catch makes: only warn about a possible
+        // duplicate when the insert was actually attempted. Anything that throws
+        // before that point leaves nothing stored, and a safe retry is the advice.
+        error: submissionMayHaveBeenStored
+          ? "We couldn't confirm the submission. Please contact us before retrying if you may have already sent it."
+          : "Something went wrong on our side. Please try again, or call us directly.",
       };
     } finally {
       scheduleWebsiteBackgroundTask(ctx, "website_lead_context_cleanup_failed", () =>

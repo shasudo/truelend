@@ -34,6 +34,11 @@ function readStoredDraft(storageKey: string, fields: readonly string[]): FormDra
   }
 }
 
+// Seeded from the stored draft so a field that is currently unmounted keeps its
+// value: the partner referral form remounts assetValue/annualTurnover when the
+// product is switched back, and those submit from the DOM, so an unmounted field
+// can never leak into a submission from here. (Where a form submits from
+// react-hook-form state instead, the fix belongs there — see shouldUnregister.)
 function readFormDraft(
   storageKey: string,
   form: HTMLFormElement,
@@ -51,7 +56,19 @@ function readFormDraft(
   return draft;
 }
 
-function applyDraft(form: HTMLFormElement, draft: FormDraft) {
+/**
+ * Restoring an older session must not erase a value the form was rendered with:
+ * a stale blank slot wipes a deep-linked default (/enquiry?product=…), and on a
+ * React-controlled select it also desyncs the DOM from component state, so the
+ * form submits a different product than the one on screen.
+ *
+ * Only for that restore. Re-filling a form after a rejected submit replays what
+ * the user just typed, where a blank means they cleared it on purpose.
+ */
+export const draftValueWins = (draftValue: string, currentValue: string, stale: boolean) =>
+  !stale || Boolean(draftValue) || !currentValue;
+
+function applyDraft(form: HTMLFormElement, draft: FormDraft, stale = false) {
   for (const [name, value] of Object.entries(draft)) {
     const control = getControl(form, name);
     if (!control) continue;
@@ -59,7 +76,9 @@ function applyDraft(form: HTMLFormElement, draft: FormDraft) {
       if (typeof value === "boolean") control.checked = value;
       continue;
     }
-    if (typeof value === "string") control.value = value;
+    if (typeof value === "string" && draftValueWins(value, control.value, stale)) {
+      control.value = value;
+    }
   }
 }
 
@@ -100,7 +119,9 @@ export function useFormDraft({
   const restoreStored = useCallback(() => {
     if (!formRef.current) return;
     const draft = readStoredDraft(storageKey, fields);
-    applyDraft(formRef.current, draft);
+    // Nothing stored — leave the form on its defaults instead of resetting it.
+    if (Object.keys(draft).length === 0) return;
+    applyDraft(formRef.current, draft, true);
     onRestoreRef.current?.(draft);
   }, [fieldKey, storageKey]);
 

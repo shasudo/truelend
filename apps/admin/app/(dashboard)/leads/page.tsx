@@ -17,10 +17,18 @@ import { getAuthContext } from "@/lib/auth";
 import {
   listLeads,
   listEmployees,
+  leadChannelValues,
+  type LeadChannel,
   type LeadFilters,
   type LeadStatus,
   type LeadKind,
 } from "@/lib/lead-queries";
+
+const channelLabels: Record<LeadChannel, string> = {
+  partner: "Referral Partner",
+  website_referral: "Website · Referral",
+  website_direct: "Website · Direct",
+};
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Leads" };
@@ -35,12 +43,16 @@ function str(sp: SP, key: string): string | undefined {
 function parseFilters(sp: SP): LeadFilters {
   const status = str(sp, "status");
   const kind = str(sp, "kind");
+  const channel = str(sp, "channel");
   return {
     status: (schema.leadStatus.enumValues as readonly string[]).includes(status ?? "")
       ? (status as LeadStatus)
       : undefined,
     kind: (schema.leadKind.enumValues as readonly string[]).includes(kind ?? "")
       ? (kind as LeadKind)
+      : undefined,
+    channel: (leadChannelValues as readonly string[]).includes(channel ?? "")
+      ? (channel as LeadChannel)
       : undefined,
     product: str(sp, "product"),
     assignee: str(sp, "assignee"),
@@ -53,6 +65,7 @@ function queryString(f: LeadFilters, page: number): string {
   const p = new URLSearchParams();
   if (f.status) p.set("status", f.status);
   if (f.kind) p.set("kind", f.kind);
+  if (f.channel) p.set("channel", f.channel);
   if (f.product) p.set("product", f.product);
   if (f.assignee) p.set("assignee", f.assignee);
   if (f.q) p.set("q", f.q);
@@ -65,7 +78,12 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
   const sp = await searchParams;
   const filters = parseFilters(sp);
   const hasFilters = Boolean(
-    filters.status || filters.kind || filters.product || filters.assignee || filters.q,
+    filters.status ||
+    filters.kind ||
+    filters.channel ||
+    filters.product ||
+    filters.assignee ||
+    filters.q,
   );
   const { db } = getAuthContext();
   const [{ rows, total, page, pageCount }, employees] = await Promise.all([
@@ -81,7 +99,7 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
       />
 
       <Card className="mb-6 p-4">
-        <form method="get" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
+        <form method="get" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-7">
           <div className="relative lg:col-span-2">
             <Search
               className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted"
@@ -103,11 +121,22 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
               </option>
             ))}
           </Select>
-          <Select name="kind" defaultValue={filters.kind ?? ""} aria-label="Channel">
-            <option value="">Any channel</option>
+          {/* Lead kind and channel are different axes: a partner-sourced lead is
+              kind "enquiry" but channel "Referral Partner". The old control was a
+              kind filter labelled "Channel", so partner leads looked unfilterable. */}
+          <Select name="kind" defaultValue={filters.kind ?? ""} aria-label="Lead type">
+            <option value="">Any type</option>
             {schema.leadKind.enumValues.map((k) => (
               <option key={k} value={k}>
                 {leadKindLabels[k]}
+              </option>
+            ))}
+          </Select>
+          <Select name="channel" defaultValue={filters.channel ?? ""} aria-label="Channel">
+            <option value="">Any channel</option>
+            {leadChannelValues.map((c) => (
+              <option key={c} value={c}>
+                {channelLabels[c]}
               </option>
             ))}
           </Select>
@@ -128,7 +157,7 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
               </option>
             ))}
           </Select>
-          <div className="flex gap-2 sm:col-span-2 lg:col-span-6">
+          <div className="flex gap-2 sm:col-span-2 lg:col-span-7">
             <Button type="submit" size="sm">
               Apply filters
             </Button>

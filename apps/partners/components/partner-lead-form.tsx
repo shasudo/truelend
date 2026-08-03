@@ -44,7 +44,8 @@ export function PartnerLeadForm({ initialProduct = "", storageKey }: PartnerLead
   const [state, action, pending] = useActionState<LeadState, FormData>(submitLead, {});
   const [product, setProduct] = useState(initialProduct);
   const restoreProduct = useCallback((draft: Record<string, boolean | string>) => {
-    if (typeof draft.productSlug === "string") setProduct(draft.productSlug);
+    // Only a real choice; a blank slot in an old draft must not erase ?product=.
+    if (typeof draft.productSlug === "string" && draft.productSlug) setProduct(draft.productSlug);
   }, []);
   const draft = useFormDraft({
     storageKey,

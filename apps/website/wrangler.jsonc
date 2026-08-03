@@ -37,6 +37,11 @@
   "vars": {
     "EMAIL_FROM": "TrueLend <hello@truelend.in>",
     "TEAM_EMAIL": "loans@truelend.in",
+    // A lead arriving through a ?ref= link notifies the Referral Partner who
+    // sourced it, so this worker sends partner-facing mail too. Without it
+    // partnerSender() falls back to EMAIL_FROM and the message goes out under
+    // the wrong identity — same value as the admin and partners workers.
+    "PARTNER_EMAIL": "TrueLend Referral Partners <partner@truelend.in>",
   },
   // Postgres (Neon), pooled by Hyperdrive. The id is not a secret — credentials
   // live inside the Hyperdrive config on Cloudflare. For local dev/preview the

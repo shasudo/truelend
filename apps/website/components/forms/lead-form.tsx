@@ -53,7 +53,11 @@ export function useLeadForm<T extends FieldValues>(
   defaultValues: DefaultValues<T>,
   draftName: string,
 ) {
-  const form = useForm<T>({ resolver, defaultValues });
+  // shouldUnregister drops values for fields that are no longer rendered. The
+  // enquiry form hides loanAmount/tenureMonths/preferredEmi for card products,
+  // and react-hook-form otherwise keeps what was typed before the switch — a
+  // credit-card enquiry would submit the loan amount from the earlier product.
+  const form = useForm<T>({ resolver, defaultValues, shouldUnregister: true });
   const getAttribution = useAttribution();
   const [succeeded, setSucceeded] = useState(false);
   const [rootError, setRootError] = useState<string>();
@@ -67,7 +71,14 @@ export function useLeadForm<T extends FieldValues>(
     success: succeeded,
     resultKey: rootError ?? succeeded,
     onRestore: (values) => {
-      form.reset({ ...defaultValues, ...values } as T);
+      const restored: Record<string, unknown> = { ...defaultValues, ...values };
+      // A blank slot in a stale draft must not clobber an explicit default —
+      // otherwise an earlier visit erases the product from /enquiry?product=…
+      // Strings only: a checkbox default must never override what the user chose.
+      for (const [key, value] of Object.entries(defaultValues as Record<string, unknown>)) {
+        if (typeof value === "string" && value && !restored[key]) restored[key] = value;
+      }
+      form.reset(restored as T);
     },
   });
   // No widget configured → always ready; otherwise wait for a solved token so

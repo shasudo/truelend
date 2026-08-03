@@ -27,12 +27,22 @@ interface StoredAttribution {
 export const clean = (value: unknown) =>
   typeof value === "string" ? value.trim().slice(0, 100) || undefined : undefined;
 
+/** Cookie the edge middleware banks a ?ref= into, so credit survives a hop to a page with no form. */
+export const REF_COOKIE = "tl-ref";
+
 // Referral Partner reference ids are RP + a sequence number; reject anything else so a
-// hostile ?ref= can't smuggle junk into storage or the lead payload.
+// hostile ?ref= can't smuggle junk into storage or the lead payload. Trailing punctuation
+// is stripped first — linkifiers in chat and email swallow the "." that ends a sentence
+// into the href, and an anchored match would drop the credit with no signal.
 const REF_RE = /^RP\d{4,}$/;
-function sanitizeRef(value: unknown): string | undefined {
+export function sanitizeRef(value: unknown): string | undefined {
   if (typeof value !== "string") return undefined;
-  const v = value.trim().toUpperCase().slice(0, 32);
+  const v = value
+    .trim()
+    .toUpperCase()
+    .slice(0, 64)
+    .replace(/[^A-Z0-9]+$/, "")
+    .slice(0, 32);
   return REF_RE.test(v) ? v : undefined;
 }
 
@@ -87,8 +97,10 @@ export function resolveAttribution(
   }
 
   const cleanCurrent = sanitizeTouch(current);
-  // The first Referral Partner keeps the credit; a later ?ref= does not overwrite.
-  const ref = stored?.ref ?? sanitizeRef(currentRef);
+  // Last click wins. First-touch stickiness stranded a browser on whichever code it saw
+  // first for the whole TTL: a stale or dead RP code silently shadowed the partner's real
+  // link, and the lead landed as Website · Direct with nothing to show why.
+  const ref = sanitizeRef(currentRef) ?? stored?.ref;
 
   if (hasTouch(cleanCurrent)) {
     stored = {
