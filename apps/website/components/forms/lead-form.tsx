@@ -7,6 +7,7 @@ import { CheckCircle2, MessageCircle } from "lucide-react";
 import { Button, useFormDraft } from "@truelend/ui";
 import type { TurnstileAction } from "@truelend/turnstile/actions";
 import { submitLead } from "@/lib/lead-actions";
+import { leadPayload } from "@/lib/lead-payload";
 import {
   resolveAttribution,
   touchFromSearch,
@@ -48,7 +49,7 @@ function useAttribution() {
   return readAttribution;
 }
 
-export function useLeadForm<T extends FieldValues>(
+export function useLeadForm<T extends FieldValues & { kind: string }>(
   resolver: Resolver<T>,
   defaultValues: DefaultValues<T>,
   draftName: string,
@@ -90,7 +91,9 @@ export function useLeadForm<T extends FieldValues>(
     try {
       // Resolve again at submit time so a fast submission cannot race hydration
       // and lose the Referral Partner reference from the current URL.
-      const result = await submitLead({ ...values, ...getAttribution(), turnstileToken });
+      const result = await submitLead(
+        leadPayload(defaultValues, values, getAttribution(), turnstileToken),
+      );
       if (result.ok) {
         setSucceeded(true);
         return;
