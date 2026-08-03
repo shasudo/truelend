@@ -13,7 +13,7 @@ import {
 import { schema } from "@truelend/db";
 import { PageTitle } from "@/components/page-title";
 import { StatusBadge } from "@/components/status-badge";
-import { getAuthContext } from "@/lib/auth";
+import { getAuthContext, requireStaff, scopeFor } from "@/lib/auth";
 import { listLoanCases, type LoanCaseFilters, type LoanCaseStatus } from "@/lib/loan-queries";
 
 export const dynamic = "force-dynamic";
@@ -51,8 +51,9 @@ export default async function LoanCasesPage({ searchParams }: { searchParams: Pr
   const sp = await searchParams;
   const filters = parseFilters(sp);
   const hasFilters = Boolean(filters.status || filters.lender);
+  const session = await requireStaff();
   const { db } = getAuthContext();
-  const { rows, total, page, pageCount } = await listLoanCases(db, filters);
+  const { rows, total, page, pageCount } = await listLoanCases(db, scopeFor(session), filters);
 
   return (
     <>

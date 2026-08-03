@@ -4,20 +4,12 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { and, eq, inArray, isNull, or } from "drizzle-orm";
 import { z } from "zod";
-import { schema, type Database } from "@truelend/db";
-import {
-  isCustomerNotifiableLeadStatus,
-  isPartnerNotifiableLeadStatus,
-  notifyLeadStatusChanged,
-  notifyPartnerLeadStatusChanged,
-} from "@truelend/email";
+import { schema } from "@truelend/db";
 import { bestLoanCaseOutcome } from "@truelend/reference";
-import { getMutationContext } from "./auth";
+import { getMutationContext, isAdminUser } from "./auth";
 import { errorType } from "./error-type";
-import {
-  scheduleAdminBackgroundTask,
-  scheduleAdminRequestContextCleanup,
-} from "./request-context-cleanup";
+import { notifyLeadStatusIfWarranted } from "./lead-notifications";
+import { scheduleAdminRequestContextCleanup } from "./request-context-cleanup";
 
 export type LeadActionResult = { ok?: boolean; error?: string };
 
@@ -30,73 +22,14 @@ function reportLeadActionFailure(event: string, error: unknown): void {
   console.error(JSON.stringify({ event, errorType: errorType(error) }));
 }
 
-/*
- * Read after the transaction rather than widening its SELECT: the pipeline
- * audit row stores the pre-update lead verbatim, and the contact details needed
- * to send mail have no business being copied into the audit log.
+/**
+ * Employees work only their own book, so every lead read and write is narrowed
+ * to the rows assigned to them. An admin gets `undefined` — no restriction.
+ * Folding this into the existing where-clause means a lead that is not theirs
+ * is simply not found, which is also the right answer for a guessed id.
  */
-async function leadNotificationTargets(db: Database, leadId: string) {
-  const [lead] = await db
-    .select({
-      name: schema.leads.name,
-      email: schema.leads.email,
-      partnerId: schema.leads.partnerId,
-    })
-    .from(schema.leads)
-    .where(eq(schema.leads.id, leadId))
-    .limit(1);
-  if (!lead) return undefined;
-  if (!lead.partnerId) return { lead, partner: undefined };
-  const [partner] = await db
-    .select({ email: schema.user.email, name: schema.user.name })
-    .from(schema.user)
-    .where(eq(schema.user.id, lead.partnerId))
-    .limit(1);
-  return { lead, partner };
-}
-
-/*
- * Progress updates, unlike a verification decision, are backgrounded: the
- * pipeline is the most-used admin control and two awaited provider round-trips
- * would sit in front of every save. A failed send is a log line, not a lost
- * decision — the recipient learns the same thing on the next stage change.
- *
- * Only the provider calls are deferred. The reads above must stay on the live
- * request connection, because the same waitUntil queue also carries
- * `db.$client.end()` and a query issued after it is refused.
- */
-function scheduleLeadStatusNotifications(
-  ctx: { waitUntil(promise: Promise<unknown>): void },
-  env: CloudflareEnv,
-  leadId: string,
-  status: string,
-  targets: NonNullable<Awaited<ReturnType<typeof leadNotificationTargets>>>,
-): void {
-  const { lead, partner } = targets;
-  if (lead.email && isCustomerNotifiableLeadStatus(status)) {
-    const to = lead.email;
-    scheduleAdminBackgroundTask(ctx, "lead_status_notification_failed", () =>
-      notifyLeadStatusChanged(env, {
-        to,
-        name: lead.name,
-        status,
-        idempotencyKey: `lead_status:${leadId}:${status}`,
-      }),
-    );
-  }
-  if (partner?.email && isPartnerNotifiableLeadStatus(status)) {
-    const to = partner.email;
-    scheduleAdminBackgroundTask(ctx, "partner_lead_status_notification_failed", () =>
-      notifyPartnerLeadStatusChanged(env, {
-        to,
-        name: partner.name,
-        leadName: lead.name ?? "your referral",
-        status,
-        dashboardUrl: `${env.PARTNERS_URL}/dashboard`,
-        idempotencyKey: `partner_lead_status:${leadId}:${status}`,
-      }),
-    );
-  }
+function leadScope(user: { id: string; role?: string | null }) {
+  return isAdminUser(user) ? undefined : eq(schema.leads.assignedTo, user.id);
 }
 
 /*
@@ -108,7 +41,8 @@ function scheduleLeadStatusNotifications(
 const pipelineSchema = z.object({
   leadId: z.string().uuid(),
   status: z.enum(schema.leadStatus.enumValues),
-  // "" means unassign
+  // "" means unassign; absent means leave the assignee alone. The employee form
+  // omits the control entirely, because only an admin may change it.
   assignedTo: z.string().optional(),
 });
 
@@ -135,11 +69,11 @@ export async function updateLeadPipelineAction(
     const parsed = pipelineSchema.safeParse({
       leadId: formData.get("leadId"),
       status: formData.get("status"),
-      assignedTo: formData.get("assignedTo"),
+      // An absent control posts nothing; `null` would fail the optional string.
+      assignedTo: formData.get("assignedTo") ?? undefined,
     });
     if (!parsed.success) return { error: "Invalid pipeline update." };
-    const assignedTo =
-      parsed.data.assignedTo && parsed.data.assignedTo.length > 0 ? parsed.data.assignedTo : null;
+    const requestedAssignee = parsed.data.assignedTo;
     // This form saves status and assignee together, so it is submitted with an
     // unchanged status whenever someone is reassigned. Notifying on that would
     // re-send a stage email the applicant already had.
@@ -148,12 +82,26 @@ export async function updateLeadPipelineAction(
       const [lead] = await tx
         .select({ status: schema.leads.status, assignedTo: schema.leads.assignedTo })
         .from(schema.leads)
-        .where(eq(schema.leads.id, parsed.data.leadId))
+        .where(and(eq(schema.leads.id, parsed.data.leadId), leadScope(user)))
         .limit(1)
         .for("update");
       if (!lead) return "missing" as const;
       previousStatus = lead.status;
-      if (assignedTo) {
+      const assignedTo =
+        requestedAssignee === undefined
+          ? lead.assignedTo
+          : requestedAssignee.length > 0
+            ? requestedAssignee
+            : null;
+      // Refuses the change, not the field: an admin-authored form that echoes
+      // the current assignee is a no-op either way.
+      if (assignedTo !== lead.assignedTo && !isAdminUser(user)) {
+        return "assign_forbidden" as const;
+      }
+      // Only a *changed* assignee is validated. Re-checking an unchanged one
+      // would block every status update on a lead whose assignee was since
+      // banned — the person saving is not the one who needs replacing.
+      if (assignedTo && assignedTo !== lead.assignedTo) {
         const [staff] = await tx
           .select({ id: schema.user.id })
           .from(schema.user)
@@ -191,6 +139,9 @@ export async function updateLeadPipelineAction(
       return "updated" as const;
     });
     if (outcome === "missing") return { error: "Lead not found. It may have been removed." };
+    if (outcome === "assign_forbidden") {
+      return { error: "Only an admin can change who a lead is assigned to." };
+    }
     if (outcome === "invalid_assignee") {
       return { error: "The selected assignee is no longer available." };
     }
@@ -202,15 +153,8 @@ export async function updateLeadPipelineAction(
     }
     // Guarded so an unchanged status, or an ordinary internal stage move, costs
     // no extra reads and sends nothing.
-    if (
-      previousStatus !== parsed.data.status &&
-      (isCustomerNotifiableLeadStatus(parsed.data.status) ||
-        isPartnerNotifiableLeadStatus(parsed.data.status))
-    ) {
-      const targets = await leadNotificationTargets(db, parsed.data.leadId);
-      if (targets) {
-        scheduleLeadStatusNotifications(ctx, env, parsed.data.leadId, parsed.data.status, targets);
-      }
+    if (previousStatus !== parsed.data.status) {
+      await notifyLeadStatusIfWarranted(db, ctx, env, parsed.data.leadId, parsed.data.status);
     }
     revalidatePath(`/leads/${parsed.data.leadId}`);
     revalidatePath("/leads");
@@ -257,7 +201,7 @@ export async function addLeadNoteAction(
       const [lead] = await tx
         .select({ id: schema.leads.id })
         .from(schema.leads)
-        .where(eq(schema.leads.id, parsed.data.leadId))
+        .where(and(eq(schema.leads.id, parsed.data.leadId), leadScope(user)))
         .limit(1)
         .for("update");
       if (!lead) return false;

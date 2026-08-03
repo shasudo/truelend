@@ -75,6 +75,15 @@ try {
   `;
 
   if (!result) throw new Error("Migration preflight returned no result");
+
+  /*
+   * This runs BEFORE drizzle-kit migrate, so it may only name tables that
+   * already exist on the target. A counter for a table the pending migration
+   * introduces would fail at parse time and take the migration and the deploy
+   * with it — and it could never find anything anyway, since a brand-new table
+   * starts empty and its constraints are enforced from creation. call_tasks is
+   * deliberately absent for that reason.
+   */
   const failures = Object.entries(result)
     .map(([name, count]) => [name, Number(count)] as const)
     .filter(([, count]) => count > 0);

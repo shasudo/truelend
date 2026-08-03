@@ -9,31 +9,7 @@ import {
   updateLoanCaseAction,
   type LoanActionResult,
 } from "@/lib/loan-actions";
-
-interface ActionFeedbackProps {
-  state: LoanActionResult;
-  success?: string;
-}
-
-function ActionFeedback({ state, success }: ActionFeedbackProps) {
-  return (
-    <>
-      {state.error && (
-        <p
-          role="alert"
-          className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
-        >
-          {state.error}
-        </p>
-      )}
-      {state.ok && success && (
-        <p role="status" className="text-sm text-navy-700">
-          {success}
-        </p>
-      )}
-    </>
-  );
-}
+import { ActionFeedback } from "@/components/action-feedback";
 
 interface CreateLoanCaseFormProps {
   leadId: string;

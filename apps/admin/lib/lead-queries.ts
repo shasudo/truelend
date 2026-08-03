@@ -1,74 +1,24 @@
 import "server-only";
-import {
-  and,
-  or,
-  eq,
-  ne,
-  ilike,
-  isNull,
-  isNotNull,
-  desc,
-  count,
-  inArray,
-  type SQL,
-} from "drizzle-orm";
+import { and, eq, desc, count, inArray, isNull, or } from "drizzle-orm";
 import { schema, type Database, type Lead } from "@truelend/db";
+import { leadWhere, ownRow, type LeadFilters } from "./query-filters";
 
 const PAGE_SIZE = 20;
 
-export type LeadStatus = (typeof schema.leadStatus.enumValues)[number];
-export type LeadKind = (typeof schema.leadKind.enumValues)[number];
-
-/** Mirrors channelForKind: partner attribution wins over the website lead kind. */
-export const leadChannelValues = ["partner", "website_referral", "website_direct"] as const;
-export type LeadChannel = (typeof leadChannelValues)[number];
-
-export interface LeadFilters {
-  status?: LeadStatus;
-  kind?: LeadKind;
-  channel?: LeadChannel;
-  product?: string;
-  /** user id, or "unassigned" */
-  assignee?: string;
-  q?: string;
-  page: number;
-}
-
-function channelWhere(channel: LeadChannel): SQL | undefined {
-  if (channel === "partner") return isNotNull(schema.leads.partnerId);
-  if (channel === "website_referral")
-    return and(isNull(schema.leads.partnerId), eq(schema.leads.kind, "referral"));
-  return and(isNull(schema.leads.partnerId), ne(schema.leads.kind, "referral"));
-}
+export {
+  leadChannelValues,
+  type LeadChannel,
+  type LeadFilters,
+  type LeadKind,
+  type LeadStatus,
+} from "./query-filters";
 
 interface LeadRow extends Lead {
   assigneeName: string | null;
 }
 
-function leadWhere(f: LeadFilters): SQL | undefined {
-  const clauses: (SQL | undefined)[] = [
-    f.status ? eq(schema.leads.status, f.status) : undefined,
-    f.kind ? eq(schema.leads.kind, f.kind) : undefined,
-    f.channel ? channelWhere(f.channel) : undefined,
-    f.product ? eq(schema.leads.productSlug, f.product) : undefined,
-    f.assignee === "unassigned"
-      ? isNull(schema.leads.assignedTo)
-      : f.assignee
-        ? eq(schema.leads.assignedTo, f.assignee)
-        : undefined,
-    f.q
-      ? or(
-          ilike(schema.leads.name, `%${f.q}%`),
-          ilike(schema.leads.phone, `%${f.q}%`),
-          ilike(schema.leads.email, `%${f.q}%`),
-        )
-      : undefined,
-  ];
-  return and(...clauses);
-}
-
-export async function listLeads(db: Database, f: LeadFilters) {
-  const where = leadWhere(f);
+export async function listLeads(db: Database, scopeUserId: string | null, f: LeadFilters) {
+  const where = leadWhere(f, scopeUserId);
 
   const totalPromise = db.select({ total: count() }).from(schema.leads).where(where);
   const totalRows = await totalPromise;
@@ -100,8 +50,17 @@ export async function listLeads(db: Database, f: LeadFilters) {
   };
 }
 
-export async function getLead(db: Database, id: string) {
-  const [lead] = await db.select().from(schema.leads).where(eq(schema.leads.id, id)).limit(1);
+/*
+ * `scopeUserId` narrows the lookup itself rather than checking ownership after
+ * the read: an employee guessing another employee's lead id gets no row, so the
+ * caller's existing notFound() answers, with no 403 and no existence leak.
+ */
+export async function getLead(db: Database, scopeUserId: string | null, id: string) {
+  const [lead] = await db
+    .select()
+    .from(schema.leads)
+    .where(and(eq(schema.leads.id, id), ownRow(schema.leads.assignedTo, scopeUserId)))
+    .limit(1);
   if (!lead) return null;
 
   const [notes, cases, auditRows, partnerRows] = await Promise.all([

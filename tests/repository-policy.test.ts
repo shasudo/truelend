@@ -317,11 +317,13 @@ void test("admin mutations do not reuse the cached Server Component context", ()
 
   for (const relativePath of [
     "lib/auth.ts",
+    "lib/crm-actions.ts",
     "lib/lead-actions.ts",
     "lib/loan-actions.ts",
     "lib/partner-actions.ts",
     "lib/team-actions.ts",
     "app/api/auth/[...all]/route.ts",
+    "app/api/crm/import/route.ts",
     "app/api/kyc/upload/route.ts",
     "app/api/kyc/[...key]/route.ts",
   ]) {
@@ -336,6 +338,7 @@ void test("admin mutations do not reuse the cached Server Component context", ()
   }
 
   for (const relativePath of [
+    "lib/crm-actions.ts",
     "lib/lead-actions.ts",
     "lib/loan-actions.ts",
     "lib/partner-actions.ts",
@@ -350,7 +353,11 @@ void test("admin mutations do not reuse the cached Server Component context", ()
     );
   }
 
-  for (const relativePath of ["lib/team-actions.ts", "app/api/kyc/[...key]/route.ts"]) {
+  for (const relativePath of [
+    "lib/team-actions.ts",
+    "app/api/crm/import/route.ts",
+    "app/api/kyc/[...key]/route.ts",
+  ]) {
     const file = join(admin, relativePath);
     const contents = readFileSync(file, "utf8");
     assert.match(contents, /\bcreateAuthContext\(\)/, `${file} must own a fresh context`);
@@ -364,19 +371,24 @@ void test("admin mutations do not reuse the cached Server Component context", ()
   const partnerActions = readFileSync(join(admin, "lib", "partner-actions.ts"), "utf8");
   const teamActions = readFileSync(join(admin, "lib", "team-actions.ts"), "utf8");
   const leadActions = readFileSync(join(admin, "lib", "lead-actions.ts"), "utf8");
+  const leadNotifications = readFileSync(join(admin, "lib", "lead-notifications.ts"), "utf8");
+  const crmActions = readFileSync(join(admin, "lib", "crm-actions.ts"), "utf8");
+  const crmImport = readFileSync(join(admin, "app/api/crm/import/route.ts"), "utf8");
   const kycUpload = readFileSync(join(admin, "app/api/kyc/upload/route.ts"), "utf8");
   const readiness = readFileSync(join(admin, "app/api/health/ready/route.ts"), "utf8");
 
   assert.match(partnerActions, /\bwithPartnerAdminAction</);
   assert.match(teamActions, /\bwithTeamAdminContext</);
   // Files that defer work must defer it through the wrapper, never by touching
-  // waitUntil directly. partner-actions.ts is absent deliberately: its
-  // notifications are awaited inline so a failed send reaches the operator.
+  // waitUntil directly. partner-actions.ts and crm-actions.ts are absent
+  // deliberately: their notifications are awaited inline so a failed send
+  // reaches the operator. Lead-status mail moved to lead-notifications.ts,
+  // which both lead-actions.ts and loan-actions.ts now share.
   assert.match(kycUpload, /\bscheduleAdminBackgroundTask\(/);
-  assert.match(leadActions, /\bscheduleAdminBackgroundTask\(/);
+  assert.match(leadNotifications, /\bscheduleAdminBackgroundTask\(/);
   assert.match(teamActions, /\bscheduleAdminBackgroundTask\(/);
   assert.doesNotMatch(
-    `${partnerActions}\n${teamActions}\n${leadActions}\n${kycUpload}`,
+    `${partnerActions}\n${teamActions}\n${leadActions}\n${leadNotifications}\n${crmActions}\n${crmImport}\n${kycUpload}`,
     /\bctx\.waitUntil\(/,
   );
   assert.match(kycUpload, /if \(uploadedKey && !databaseOutcomeUnknown\)/);

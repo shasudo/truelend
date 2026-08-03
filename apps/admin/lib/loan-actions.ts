@@ -5,8 +5,9 @@ import { redirect } from "next/navigation";
 import { and, eq, ne } from "drizzle-orm";
 import { z } from "zod";
 import { schema, type Database, type NewLoanCase } from "@truelend/db";
-import { getMutationContext } from "./auth";
+import { getMutationContext, isAdminUser } from "./auth";
 import { errorType } from "./error-type";
+import { notifyLeadStatusIfWarranted } from "./lead-notifications";
 import { scheduleAdminRequestContextCleanup } from "./request-context-cleanup";
 import { banks, bestLoanCaseOutcome, productSlugs, rupeesToPaise } from "@truelend/reference";
 
@@ -34,21 +35,52 @@ const leadStatusForCase: Record<CaseStatus, (typeof schema.leadStatus.enumValues
   disbursed: "disbursed",
 };
 
-// Recompute the parent lead's status from ALL its lender cases. Runs on every
-// case create/update, so editing an old case reflects the true aggregate rather
-// than rewinding or clobbering the lead from a single case.
-async function recomputeLeadStatus(db: Executor, leadId: string) {
+/**
+ * Employees work only their own book, so a case may only be created or edited
+ * on a lead assigned to them. Admins get `undefined` — no restriction.
+ */
+function leadScope(user: { id: string; role?: string | null }) {
+  return isAdminUser(user) ? undefined : eq(schema.leads.assignedTo, user.id);
+}
+
+/*
+ * Recompute the parent lead's status from ALL its lender cases. Runs on every
+ * case create/update, so editing an old case reflects the true aggregate rather
+ * than rewinding or clobbering the lead from a single case.
+ *
+ * This is also the sole writer of a case-driven lead status, so the audit row
+ * belongs here rather than at each caller: the pipeline form actively refuses a
+ * status a case controls, which made every disbursal silent and untraceable.
+ * Returns the new status so the caller can notify once the transaction commits.
+ */
+async function recomputeLeadStatus(
+  db: Executor,
+  leadId: string,
+  previousStatus: string,
+  actor: { id: string; email: string },
+): Promise<string | null> {
   const cases = await db
     .select({ status: schema.loanCases.status })
     .from(schema.loanCases)
     .where(eq(schema.loanCases.leadId, leadId));
   const best = bestLoanCaseOutcome(cases.map((c) => c.status));
-  if (!best) return;
+  if (!best) return null;
   const target = leadStatusForCase[best];
+  if (target === previousStatus) return null;
   await db
     .update(schema.leads)
     .set({ status: target })
     .where(and(eq(schema.leads.id, leadId), ne(schema.leads.status, target)));
+  await db.insert(schema.auditLog).values({
+    actorId: actor.id,
+    actorEmail: actor.email,
+    action: "lead.status_recompute",
+    entityType: "lead",
+    entityId: leadId,
+    before: { status: previousStatus },
+    after: { status: target, from: "loan_case" },
+  });
+  return target;
 }
 
 // Which timestamp column records when a case reached each status.
@@ -108,7 +140,7 @@ export async function createLoanCaseAction(
     reportLoanActionFailure("loan_case_create_context_failed", error);
     return { error: UNKNOWN_CREATE_OUTCOME };
   }
-  const { db, ctx, user } = context;
+  const { db, ctx, env, user } = context;
   if (!user) {
     scheduleAdminRequestContextCleanup({ db, ctx });
     redirect("/login");
@@ -136,9 +168,9 @@ export async function createLoanCaseAction(
       // Serialize all case changes for the same lead so two concurrent writes
       // cannot each recompute from an incomplete view and leave a stale status.
       const [lead] = await tx
-        .select({ id: schema.leads.id })
+        .select({ id: schema.leads.id, status: schema.leads.status })
         .from(schema.leads)
-        .where(eq(schema.leads.id, d.leadId))
+        .where(and(eq(schema.leads.id, d.leadId), leadScope(user)))
         .limit(1)
         .for("update");
       if (!lead) return { kind: "missing" } as const;
@@ -147,7 +179,7 @@ export async function createLoanCaseAction(
         .values(values)
         .returning({ id: schema.loanCases.id });
       if (!inserted) throw new Error("Loan case insert returned no identifier");
-      await recomputeLeadStatus(tx, d.leadId);
+      const leadStatus = await recomputeLeadStatus(tx, d.leadId, lead.status, user);
       await tx.insert(schema.auditLog).values({
         actorId: user.id,
         actorEmail: user.email,
@@ -156,12 +188,18 @@ export async function createLoanCaseAction(
         entityId: inserted.id,
         after: values,
       });
-      return { kind: "created", id: inserted.id } as const;
+      return { kind: "created", id: inserted.id, leadStatus } as const;
     });
     if (outcome.kind === "missing") {
       return { error: "Lead not found. It may have been removed." };
     }
     newId = outcome.id;
+    // Before the redirect below, which throws. A case that moves the lead to a
+    // notifiable stage is the applicant's real news; this path used to send
+    // nothing at all, so a disbursal reached nobody.
+    if (outcome.leadStatus) {
+      await notifyLeadStatusIfWarranted(db, ctx, env, d.leadId, outcome.leadStatus);
+    }
     revalidatePath(`/leads/${d.leadId}`);
     revalidatePath("/loan-cases");
   } catch (error) {
@@ -193,7 +231,7 @@ export async function updateLoanCaseAction(
     reportLoanActionFailure("loan_case_update_context_failed", error);
     return { error: UNKNOWN_UPDATE_OUTCOME };
   }
-  const { db, ctx, user } = context;
+  const { db, ctx, env, user } = context;
   if (!user) {
     scheduleAdminRequestContextCleanup({ db, ctx });
     redirect("/login");
@@ -215,9 +253,9 @@ export async function updateLoanCaseAction(
         .for("update");
       if (!existing) return { kind: "missing_case" } as const;
       const [lead] = await tx
-        .select({ id: schema.leads.id })
+        .select({ id: schema.leads.id, status: schema.leads.status })
         .from(schema.leads)
-        .where(eq(schema.leads.id, existing.leadId))
+        .where(and(eq(schema.leads.id, existing.leadId), leadScope(user)))
         .limit(1)
         .for("update");
       if (!lead) return { kind: "missing_lead" } as const;
@@ -231,7 +269,7 @@ export async function updateLoanCaseAction(
       // Stamp the status timestamp the first time it's reached.
       if (!existing[tsField]) set[tsField] = new Date();
       await tx.update(schema.loanCases).set(set).where(eq(schema.loanCases.id, d.caseId));
-      await recomputeLeadStatus(tx, existing.leadId);
+      const leadStatus = await recomputeLeadStatus(tx, existing.leadId, lead.status, user);
       await tx.insert(schema.auditLog).values({
         actorId: user.id,
         actorEmail: user.email,
@@ -241,7 +279,7 @@ export async function updateLoanCaseAction(
         before: existing,
         after: set,
       });
-      return { kind: "updated", leadId: existing.leadId } as const;
+      return { kind: "updated", leadId: existing.leadId, leadStatus } as const;
     });
 
     if (outcome.kind === "missing_case") {
@@ -249,6 +287,9 @@ export async function updateLoanCaseAction(
     }
     if (outcome.kind === "missing_lead") {
       return { error: "The lead for this loan case could not be found." };
+    }
+    if (outcome.leadStatus) {
+      await notifyLeadStatusIfWarranted(db, ctx, env, outcome.leadId, outcome.leadStatus);
     }
     revalidatePath(`/loan-cases/${d.caseId}`);
     revalidatePath(`/leads/${outcome.leadId}`);

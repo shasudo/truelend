@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import test, { beforeEach } from "node:test";
 import { schema } from "@truelend/db";
 import {
+  getLeadStatusNotificationCalls,
+  getWaitUntilCalls,
   installAuthDependencyMocks,
   RedirectSignal,
   resetFakeAuthState,
@@ -9,7 +11,7 @@ import {
   type FakeAdminSession,
 } from "./support/fake-auth-dependencies";
 import { installNextCacheMock } from "./support/fake-next-cache";
-import type { FakeRow } from "@truelend/test-support";
+import type { FakeRow, FakeRowProvider } from "@truelend/test-support";
 
 installAuthDependencyMocks();
 installNextCacheMock();
@@ -150,4 +152,85 @@ void test("updateLoanCaseAction: resubmitting an already-reached status does not
   assert.deepEqual(result, { ok: true });
   const caseUpdate = updates.find((write) => write.table === schema.loanCases);
   assert.equal(caseUpdate?.values.approvedAt, undefined);
+});
+
+void test("updateLoanCaseAction: a case-driven lead move is audited and notified", async () => {
+  const inserts: RecordedWrite[] = [];
+  let leadReads = 0;
+  setFakeAuthState({
+    getSession: async () => buildStaffSession(),
+    dbOptions: {
+      rowsByTable: new Map<unknown, FakeRow[] | FakeRowProvider>([
+        [
+          schema.loanCases,
+          [{ id: CASE_ID, leadId: LEAD_ID, disbursedAt: null, status: "disbursed" }],
+        ],
+        [
+          schema.leads,
+          () => {
+            leadReads += 1;
+            return [{ id: LEAD_ID, status: "approved", email: "applicant@example.com" }];
+          },
+        ],
+      ]),
+      onInsert: (table, values) => inserts.push({ table, values }),
+    },
+  });
+
+  const result = await updateLoanCaseAction({}, buildUpdateForm({ status: "disbursed" }));
+
+  assert.deepEqual(result, { ok: true });
+  const recompute = inserts.find(
+    (write) => write.table === schema.auditLog && write.values.action === "lead.status_recompute",
+  );
+  assert.ok(recompute, "a case-driven lead status change leaves an audit trail");
+  assert.deepEqual(recompute.values.after, { status: "disbursed", from: "loan_case" });
+  // The point of the fix: a disbursal used to reach nobody, because the pipeline
+  // form refuses a status a loan case controls, so this was the only writer and
+  // it sent nothing. Assert the mail itself, not the read count.
+  await Promise.all(getWaitUntilCalls());
+  assert.deepEqual(getLeadStatusNotificationCalls(), [
+    {
+      to: "applicant@example.com",
+      name: undefined,
+      status: "disbursed",
+      idempotencyKey: `lead_status:${LEAD_ID}:disbursed`,
+    },
+  ]);
+  assert.ok(leadReads >= 2, "the notification targets are looked up after the transaction");
+});
+
+void test("updateLoanCaseAction: a recompute to the same status writes no audit row and notifies nobody", async () => {
+  const inserts: RecordedWrite[] = [];
+  let leadReads = 0;
+  setFakeAuthState({
+    getSession: async () => buildStaffSession(),
+    dbOptions: {
+      rowsByTable: new Map<unknown, FakeRow[] | FakeRowProvider>([
+        [
+          schema.loanCases,
+          [{ id: CASE_ID, leadId: LEAD_ID, approvedAt: new Date(), status: "approved" }],
+        ],
+        [
+          schema.leads,
+          () => {
+            leadReads += 1;
+            return [{ id: LEAD_ID, status: "approved", email: "applicant@example.com" }];
+          },
+        ],
+      ]),
+      onInsert: (table, values) => inserts.push({ table, values }),
+    },
+  });
+
+  const result = await updateLoanCaseAction({}, buildUpdateForm({ status: "approved" }));
+
+  assert.deepEqual(result, { ok: true });
+  assert.equal(
+    inserts.some((write) => write.values.action === "lead.status_recompute"),
+    false,
+  );
+  await Promise.all(getWaitUntilCalls());
+  assert.deepEqual(getLeadStatusNotificationCalls(), [], "an unchanged status mails nobody");
+  assert.equal(leadReads, 1, "an unchanged status must not trigger the notification lookup");
 });

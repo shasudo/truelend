@@ -14,31 +14,7 @@ import {
   updateLeadPipelineAction,
   type LeadActionResult,
 } from "@/lib/lead-actions";
-
-interface ActionFeedbackProps {
-  state: LeadActionResult;
-  success: string;
-}
-
-function ActionFeedback({ state, success }: ActionFeedbackProps) {
-  return (
-    <>
-      {state.error && (
-        <p
-          role="alert"
-          className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
-        >
-          {state.error}
-        </p>
-      )}
-      {state.ok && (
-        <p role="status" className="text-sm text-navy-700">
-          {success}
-        </p>
-      )}
-    </>
-  );
-}
+import { ActionFeedback } from "@/components/action-feedback";
 
 interface LeadNoteFormProps {
   leadId: string;
@@ -80,16 +56,21 @@ interface LeadPipelineFormProps {
   leadId: string;
   status: LeadStatus;
   assignedTo: string | null;
+  assigneeName: string | null;
   employees: Array<{ id: string; name: string }>;
   caseStatuses: LoanCaseStatus[];
+  /** Only an admin may reassign. The action refuses a change either way. */
+  canAssign: boolean;
 }
 
 export function LeadPipelineForm({
   leadId,
   status,
   assignedTo,
+  assigneeName,
   employees,
   caseStatuses,
+  canAssign,
 }: LeadPipelineFormProps) {
   const [state, action, pending] = useActionState<LeadActionResult, FormData>(
     updateLeadPipelineAction,
@@ -118,16 +99,25 @@ export function LeadPipelineForm({
           Loan case outcomes control this status. Update a loan case to change it.
         </p>
       )}
-      <Field label="Assigned to" htmlFor="assignedTo">
-        <Select id="assignedTo" name="assignedTo" defaultValue={assignedTo ?? ""}>
-          <option value="">Unassigned</option>
-          {employees.map((employee) => (
-            <option key={employee.id} value={employee.id}>
-              {employee.name}
-            </option>
-          ))}
-        </Select>
-      </Field>
+      {/* Not rendered for an employee, so the field is never submitted — the
+          server refuses a changed assignee from a non-admin regardless. */}
+      {canAssign ? (
+        <Field label="Assigned to" htmlFor="assignedTo">
+          <Select id="assignedTo" name="assignedTo" defaultValue={assignedTo ?? ""}>
+            <option value="">Unassigned</option>
+            {employees.map((employee) => (
+              <option key={employee.id} value={employee.id}>
+                {employee.name}
+              </option>
+            ))}
+          </Select>
+        </Field>
+      ) : (
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.1em] text-muted">Assigned to</p>
+          <p className="mt-0.5 text-navy-900">{assigneeName ?? "Unassigned"}</p>
+        </div>
+      )}
       <ActionFeedback state={state} success="Pipeline saved." />
       <Button type="submit" size="sm" variant="secondary" className="w-full" disabled={pending}>
         {pending ? "Saving…" : "Save"}

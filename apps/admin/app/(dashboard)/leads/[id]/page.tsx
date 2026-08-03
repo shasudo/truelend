@@ -17,7 +17,7 @@ import {
 import { LeadNoteForm, LeadPipelineForm } from "@/components/lead-action-forms";
 import { PageTitle } from "@/components/page-title";
 import { StatusBadge } from "@/components/status-badge";
-import { getAuthContext } from "@/lib/auth";
+import { getAuthContext, requireStaff, scopeFor } from "@/lib/auth";
 import { getLead, listEmployees } from "@/lib/lead-queries";
 
 export const dynamic = "force-dynamic";
@@ -39,8 +39,11 @@ function Detail({ label, value }: DetailProps) {
 
 export default async function LeadDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const session = await requireStaff();
+  const scopeUserId = scopeFor(session);
+  const isAdmin = scopeUserId === null;
   const { db } = getAuthContext();
-  const [data, employees] = await Promise.all([getLead(db, id), listEmployees(db)]);
+  const [data, employees] = await Promise.all([getLead(db, scopeUserId, id), listEmployees(db)]);
   if (!data) notFound();
   const { lead, isPartnerLead, partnerReferenceId, attemptedRef, notes, cases } = data;
   // Show the code that credited the lead; when nothing was credited but the
@@ -214,8 +217,12 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
               leadId={lead.id}
               status={lead.status}
               assignedTo={lead.assignedTo}
-              employees={employees}
+              assigneeName={employees.find((e) => e.id === lead.assignedTo)?.name ?? null}
+              // The roster only feeds the assignee control, which employees do
+              // not get — so it never needs to reach their browser.
+              employees={isAdmin ? employees : []}
               caseStatuses={cases.map((loanCase) => loanCase.status)}
+              canAssign={isAdmin}
             />
 
             <p className="mt-5 border-t border-hairline pt-4 text-xs text-muted">

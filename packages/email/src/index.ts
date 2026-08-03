@@ -40,6 +40,7 @@ export type EmailContext =
   | "new_lead"
   | "lead_received"
   | "lead_status"
+  | "enquiry_form_link"
   | "partner_registration"
   | "partner_kyc_submitted"
   | "partner_decision"
@@ -449,6 +450,40 @@ export function notifyLeadReceived(env: EmailEnv, info: LeadReceivedInfo): Promi
         middle,
         copy.closing,
       ],
+    },
+    { idempotencyKey: info.idempotencyKey },
+  );
+}
+
+interface EnquiryFormLinkInfo {
+  to: string;
+  name?: string | null;
+  /** The public enquiry form, optionally carrying a ?product= preselection. */
+  url: string;
+  idempotencyKey?: string;
+}
+
+/*
+ * Sends a prospect the public enquiry form after a call. There is no token and
+ * no prefill beyond the ?product= query the form already reads — the link is
+ * the same one anybody can reach, so it carries nothing worth intercepting.
+ */
+export function sendEnquiryFormLink(env: EmailEnv, info: EnquiryFormLinkInfo): Promise<SendResult> {
+  if (!env.EMAIL_FROM) return Promise.resolve(logSkip("enquiry form link (EMAIL_FROM unset)"));
+  return send(
+    env,
+    "enquiry_form_link",
+    env.EMAIL_FROM,
+    info.to,
+    "Your TrueLend loan enquiry form",
+    {
+      heading: "Here's your enquiry form",
+      paragraphs: [
+        `Hi ${esc(firstName(info.name))}, thanks for speaking with us just now.`,
+        "Fill in this short form and a Borrowing Advisor will pick it up from there. It takes about two minutes.",
+        "If anything looks wrong or you'd rather we filled it in for you, just reply to this email.",
+      ],
+      action: { href: info.url, label: "Open the enquiry form" },
     },
     { idempotencyKey: info.idempotencyKey },
   );

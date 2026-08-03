@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
-import { and, eq, inArray } from "drizzle-orm";
+import { and, count, eq, inArray, isNull, or } from "drizzle-orm";
 import { z } from "zod";
 import { schema, type Database } from "@truelend/db";
 import { notifyStaffAccountEvent } from "@truelend/email";
@@ -13,7 +13,7 @@ import {
   scheduleAdminBackgroundTask,
   scheduleAdminRequestContextCleanup,
 } from "./request-context-cleanup";
-import { planBanMutation, staffDeletionRefusal } from "./team-mutation-policy";
+import { lastAdminRefusal, planBanMutation, staffDeletionRefusal } from "./team-mutation-policy";
 
 const ROLES = ["admin", "employee"] as const;
 
@@ -56,6 +56,31 @@ async function withTeamAdminContext<TResult>(
   }
 }
 
+/*
+ * Why the audit rows in this module use `db.insert` rather than `tx.insert`:
+ * every one of them records an `auth.api.*` call, and better-auth performs that
+ * write on its own connection. A transaction around our insert would wrap a
+ * single statement and be atomic with nothing — it would look like a guarantee
+ * without being one. The row is written last instead, so a missing row means
+ * the audit insert failed after a successful account change, which the action
+ * already reports as `uncertain`.
+ *
+ * The ban path is the exception: it also releases the teammate's assigned work,
+ * which is our own write, so there the audit row genuinely belongs in the same
+ * transaction.
+ */
+
+/*
+ * The target plus the number of admins who could still sign in without them.
+ * Counted here rather than at each caller so demote, ban and delete cannot
+ * drift apart. `banned` is nullable with no default (better-auth owns the
+ * column), so "not banned" has to be written three-valued.
+ *
+ * ponytail: the count is read outside better-auth's write, so no lock can span
+ * it — two admins simultaneously acting on the last two admin accounts can
+ * still race to zero. Recovery is `pnpm --filter @truelend/admin seed:admin`.
+ * Add an advisory lock if the admin count ever grows past a handful.
+ */
 async function staffTarget(db: Database, userId: string) {
   const [target] = await db
     .select({
@@ -67,7 +92,17 @@ async function staffTarget(db: Database, userId: string) {
     .from(schema.user)
     .where(and(eq(schema.user.id, userId), inArray(schema.user.role, ROLES)))
     .limit(1);
-  return target ?? null;
+  if (!target) return null;
+  const [admins] = await db
+    .select({ total: count() })
+    .from(schema.user)
+    .where(
+      and(
+        eq(schema.user.role, "admin"),
+        or(isNull(schema.user.banned), eq(schema.user.banned, false)),
+      ),
+    );
+  return { ...target, activeAdmins: Number(admins?.total ?? 0) };
 }
 
 export type BanActionResult = ActionResult & { banned?: boolean };
@@ -185,6 +220,10 @@ export async function setRoleAction(formData: FormData): Promise<ActionResult> {
         return { error: "You can't remove your own admin access." };
       const target = await staffTarget(db, parsed.data.userId);
       if (!target) return { error: "Teammate not found." };
+      if (parsed.data.role !== "admin") {
+        const refusal = lastAdminRefusal(target, target.activeAdmins, "demote");
+        if (refusal) return { error: refusal };
+      }
       await auth.api.setRole({
         body: { userId: parsed.data.userId, role: asRole(parsed.data.role) },
         headers: h,
@@ -240,6 +279,10 @@ export async function setBanAction(formData: FormData): Promise<BanActionResult>
       const currentlyBanned = target.banned === true;
       const plan = planBanMutation(currentlyBanned, parsed.data.banned);
       if (!plan.changed) return { ok: true, banned: plan.banned };
+      if (plan.banned) {
+        const refusal = lastAdminRefusal(target, target.activeAdmins, "ban");
+        if (refusal) return { error: refusal };
+      }
       const updated = plan.banned
         ? await auth.api.banUser({ body: { userId: parsed.data.userId }, headers: h })
         : await auth.api.unbanUser({ body: { userId: parsed.data.userId }, headers: h });
@@ -247,16 +290,56 @@ export async function setBanAction(formData: FormData): Promise<BanActionResult>
       if (observedBanned !== plan.banned) {
         throw new Error("Access update returned an unexpected state");
       }
-      await db.insert(schema.auditLog).values({
-        actorId: me.id,
-        actorEmail: me.email,
-        action: plan.auditAction,
-        entityType: "user",
-        entityId: target.id,
-        before: { banned: currentlyBanned },
-        after: { banned: observedBanned },
+      if (plan.banned) {
+        // The UI promises "They'll be signed out immediately". Nothing here
+        // made that true — it rested entirely on better-auth plugin internals.
+        await auth.api.revokeUserSessions({ body: { userId: parsed.data.userId }, headers: h });
+      }
+      await db.transaction(async (tx) => {
+        let unassignedLeads = 0;
+        let unassignedCallTasks = 0;
+        if (plan.banned) {
+          // A banned teammate disappears from every assignee dropdown but their
+          // book stayed pointed at them, so the work was invisible and the lead
+          // form's assignee select defaulted to an option that no longer
+          // renders. Release it, and record how much was released.
+          const [leadCount] = await tx
+            .select({ total: count() })
+            .from(schema.leads)
+            .where(eq(schema.leads.assignedTo, parsed.data.userId));
+          const [taskCount] = await tx
+            .select({ total: count() })
+            .from(schema.callTasks)
+            .where(eq(schema.callTasks.assignedTo, parsed.data.userId));
+          unassignedLeads = Number(leadCount?.total ?? 0);
+          unassignedCallTasks = Number(taskCount?.total ?? 0);
+          await tx
+            .update(schema.leads)
+            .set({ assignedTo: null })
+            .where(eq(schema.leads.assignedTo, parsed.data.userId));
+          await tx
+            .update(schema.callTasks)
+            .set({ assignedTo: null })
+            .where(eq(schema.callTasks.assignedTo, parsed.data.userId));
+        }
+        await tx.insert(schema.auditLog).values({
+          actorId: me.id,
+          actorEmail: me.email,
+          action: plan.auditAction,
+          entityType: "user",
+          entityId: target.id,
+          before: { banned: currentlyBanned },
+          after: {
+            banned: observedBanned,
+            sessionsRevoked: plan.banned,
+            unassignedLeads,
+            unassignedCallTasks,
+          },
+        });
       });
       revalidatePath("/team");
+      revalidatePath("/leads");
+      revalidatePath("/crm");
       return { ok: true, banned: observedBanned };
     },
   );
@@ -314,9 +397,13 @@ export async function removeUserAction(formData: FormData): Promise<ActionResult
       if (parsed.data.userId === me.id) return { error: "You can't delete your own account." };
       const target = await staffTarget(db, parsed.data.userId);
       if (!target) return { error: "Teammate not found." };
+      const lockout = lastAdminRefusal(target, target.activeAdmins, "remove");
+      if (lockout) return { error: lockout };
       // Authored records have restrictive FKs, while partner review rows require
       // verified_by to remain present. Refuse deletion rather than break history.
-      const [notes, cases, partnerReviews] = await Promise.all([
+      // Assigned work has the opposite problem: its FK is onDelete "set null",
+      // so without a probe the delete silently empties their whole book.
+      const [notes, cases, partnerReviews, assignedLeads, assignedCallTasks] = await Promise.all([
         db
           .select({ id: schema.leadNotes.id })
           .from(schema.leadNotes)
@@ -332,11 +419,23 @@ export async function removeUserAction(formData: FormData): Promise<ActionResult
           .from(schema.partners)
           .where(eq(schema.partners.verifiedBy, parsed.data.userId))
           .limit(1),
+        db
+          .select({ id: schema.leads.id })
+          .from(schema.leads)
+          .where(eq(schema.leads.assignedTo, parsed.data.userId))
+          .limit(1),
+        db
+          .select({ id: schema.callTasks.id })
+          .from(schema.callTasks)
+          .where(eq(schema.callTasks.assignedTo, parsed.data.userId))
+          .limit(1),
       ]);
       const refusal = staffDeletionRefusal({
         notes: notes.length > 0,
         cases: cases.length > 0,
         partnerReviews: partnerReviews.length > 0,
+        assignedLeads: assignedLeads.length > 0,
+        assignedCallTasks: assignedCallTasks.length > 0,
       });
       if (refusal) return { error: refusal };
       await auth.api.removeUser({ body: { userId: parsed.data.userId }, headers: h });

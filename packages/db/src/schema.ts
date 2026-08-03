@@ -15,6 +15,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import {
+  callStatusValues,
   employmentTypeValues,
   leadKindValues,
   leadStatusValues,
@@ -190,6 +191,9 @@ export const leads = pgTable(
     index("leads_assigned_to_idx").on(t.assignedTo),
     index("leads_partner_id_idx").on(t.partnerId),
     index("leads_created_at_idx").on(t.createdAt),
+    // Call-queue duplicate detection and conversion both look a lead up by
+    // phone; nothing else in the product does, which is why this arrived late.
+    index("leads_phone_idx").on(t.phone),
     check(
       "leads_required_fields",
       sql`(${t.kind} = 'enquiry' and ${t.name} is not null and ${t.phone} is not null)
@@ -231,6 +235,66 @@ export const leadNotes = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index("lead_notes_lead_id_idx").on(t.leadId)],
+);
+
+export const callStatus = pgEnum("call_status", callStatusValues);
+
+/*
+ * Outbound call queue. Rows arrive by admin CSV import; each one is a person to
+ * phone. Unlike leads, requiredness does not vary by kind here, so name and
+ * phone are notNull at the database rather than deferred to zod.
+ *
+ * Call outcomes and their notes live in audit_log rather than a notes table:
+ * the note is inseparable from the outcome that produced it, and
+ * audit_log_entity_idx already serves the read.
+ */
+export const callTasks = pgTable(
+  "call_tasks",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    name: text("name").notNull(),
+    phone: text("phone").notNull(),
+    email: text("email"),
+    city: text("city"),
+    productSlug: text("product_slug"),
+    source: text("source"),
+    /** The imported row's own note. Call outcomes go to audit_log, not here. */
+    notes: text("notes"),
+
+    status: callStatus("status").notNull().default("new"),
+    callbackAt: timestamp("callback_at", { withTimezone: true }),
+    assignedTo: text("assigned_to").references(() => user.id, { onDelete: "set null" }),
+
+    /** Written only by the conversion action, which is also the only writer of status 'converted'. */
+    leadId: uuid("lead_id").references(() => leads.id, { onDelete: "set null" }),
+
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (t) => [
+    index("call_tasks_assigned_to_idx").on(t.assignedTo),
+    index("call_tasks_status_idx").on(t.status),
+    index("call_tasks_phone_idx").on(t.phone),
+    index("call_tasks_created_at_idx").on(t.createdAt),
+    check(
+      "call_tasks_callback_time",
+      sql`${t.status} <> 'callback_scheduled' or ${t.callbackAt} is not null`,
+    ),
+    // ponytail: a converted task pins its lead, so deleting that lead nulls
+    // lead_id and fails this check instead. The one lead-delete path in the repo
+    // is scripts/cleanup-legacy-business-partners.ts, which runs before every
+    // production migration but only ever touches legacy business-partner leads —
+    // rows the call queue never produces. If that script's scope widens, clear
+    // status and lead_id on the affected call_tasks in the same transaction, or
+    // drop this check; otherwise it will block a release.
+    check(
+      "call_tasks_converted_has_lead",
+      sql`${t.status} <> 'converted' or ${t.leadId} is not null`,
+    ),
+  ],
 );
 
 /* ------------------------------------------------------------------ */
@@ -450,6 +514,8 @@ export const auditLog = pgTable(
 export type Lead = typeof leads.$inferSelect;
 export type NewLead = typeof leads.$inferInsert;
 export type LeadNote = typeof leadNotes.$inferSelect;
+export type CallTask = typeof callTasks.$inferSelect;
+export type NewCallTask = typeof callTasks.$inferInsert;
 export type LoanCase = typeof loanCases.$inferSelect;
 export type NewLoanCase = typeof loanCases.$inferInsert;
 export type User = typeof user.$inferSelect;

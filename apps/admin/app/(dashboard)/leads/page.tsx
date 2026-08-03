@@ -13,7 +13,7 @@ import {
 import { schema } from "@truelend/db";
 import { PageTitle } from "@/components/page-title";
 import { StatusBadge } from "@/components/status-badge";
-import { getAuthContext } from "@/lib/auth";
+import { getAuthContext, requireStaff, scopeFor } from "@/lib/auth";
 import {
   listLeads,
   listEmployees,
@@ -85,9 +85,14 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
     filters.assignee ||
     filters.q,
   );
+  // ponytail: re-reads the session the layout already resolved, one extra
+  // getSession per page. cache() it if session reads show up in Hyperdrive load.
+  const session = await requireStaff();
+  const scopeUserId = scopeFor(session);
+  const isAdmin = scopeUserId === null;
   const { db } = getAuthContext();
   const [{ rows, total, page, pageCount }, employees] = await Promise.all([
-    listLeads(db, filters),
+    listLeads(db, scopeUserId, filters),
     listEmployees(db),
   ]);
 
@@ -148,15 +153,19 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
               </option>
             ))}
           </Select>
-          <Select name="assignee" defaultValue={filters.assignee ?? ""} aria-label="Assignee">
-            <option value="">Any assignee</option>
-            <option value="unassigned">Unassigned</option>
-            {employees.map((e) => (
-              <option key={e.id} value={e.id}>
-                {e.name}
-              </option>
-            ))}
-          </Select>
+          {/* An employee only ever sees their own leads, so filtering by
+              assignee would be a control with one meaningful value. */}
+          {isAdmin && (
+            <Select name="assignee" defaultValue={filters.assignee ?? ""} aria-label="Assignee">
+              <option value="">Any assignee</option>
+              <option value="unassigned">Unassigned</option>
+              {employees.map((e) => (
+                <option key={e.id} value={e.id}>
+                  {e.name}
+                </option>
+              ))}
+            </Select>
+          )}
           <div className="flex gap-2 sm:col-span-2 lg:col-span-7">
             <Button type="submit" size="sm">
               Apply filters

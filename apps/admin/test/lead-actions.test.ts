@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
+import { isDeepStrictEqual } from "node:util";
 import test, { beforeEach } from "node:test";
+import { and, eq } from "drizzle-orm";
 import { schema } from "@truelend/db";
 import {
   installAuthDependencyMocks,
@@ -30,6 +32,7 @@ function buildStaffSession(overrides: Partial<FakeAdminSession["user"]> = {}): F
 }
 
 const LEAD_ID = "11111111-1111-4111-8111-111111111111";
+const OTHER_LEAD_ID = "22222222-2222-4222-8222-222222222222";
 
 interface RecordedWrite {
   table: unknown;
@@ -83,7 +86,8 @@ void test("updateLeadPipelineAction: a fresh status update writes the lead and a
 void test("updateLeadPipelineAction: reassigning without moving stage notifies nobody", async () => {
   let leadReads = 0;
   setFakeAuthState({
-    getSession: async () => buildStaffSession(),
+    // Reassignment is admin-only, so this behaviour is now exercised as one.
+    getSession: async () => buildStaffSession({ role: "admin" }),
     dbOptions: {
       rowsByTable: new Map<unknown, FakeRow[] | FakeRowProvider>([
         [
@@ -148,7 +152,7 @@ void test("updateLeadPipelineAction: a missing lead is reported without writing"
 
 void test("updateLeadPipelineAction: assigning to a non-staff or banned user is rejected", async () => {
   setFakeAuthState({
-    getSession: async () => buildStaffSession(),
+    getSession: async () => buildStaffSession({ role: "admin" }),
     dbOptions: {
       rowsByTable: new Map<unknown, FakeRow[]>([
         [schema.leads, [{ status: "new", assignedTo: null }]],
@@ -184,6 +188,67 @@ void test("updateLeadPipelineAction: a status conflicting with the loan case out
   assert.equal(result.ok, undefined);
   assert.equal(typeof result.error, "string");
   assert.equal(updates.length, 0);
+});
+
+void test("updateLeadPipelineAction: an employee cannot change the assignee", async () => {
+  const updates: RecordedWrite[] = [];
+  setFakeAuthState({
+    getSession: async () => buildStaffSession(),
+    dbOptions: {
+      rowsByTable: new Map<unknown, FakeRow[]>([
+        [schema.leads, [{ status: "new", assignedTo: null }]],
+        [schema.loanCases, []],
+        [schema.user, [{ id: "staff-2" }]],
+      ]),
+      onUpdate: (table, values) => updates.push({ table, values }),
+    },
+  });
+
+  const result = await updateLeadPipelineAction({}, buildPipelineForm({ assignedTo: "staff-2" }));
+
+  assert.equal(result.ok, undefined);
+  assert.equal(typeof result.error, "string");
+  assert.equal(updates.length, 0, "a refused assignment must not write the status either");
+});
+
+void test("updateLeadPipelineAction: an employee cannot touch a lead assigned to someone else", async () => {
+  const updates: RecordedWrite[] = [];
+  setFakeAuthState({
+    getSession: async () => buildStaffSession(),
+    dbOptions: {
+      rowsByTable: new Map<unknown, FakeRow[] | FakeRowProvider>([
+        [
+          schema.leads,
+          // Proves the scope reached SQL: the row is returned only when the
+          // query carries both the id and this employee's own assignment.
+          (query) =>
+            isDeepStrictEqual(query.whereArgs, [
+              and(eq(schema.leads.id, LEAD_ID), eq(schema.leads.assignedTo, "staff-1")),
+            ])
+              ? [{ status: "new", assignedTo: "staff-1" }]
+              : [],
+        ],
+        [schema.loanCases, []],
+      ]),
+      onUpdate: (table, values) => updates.push({ table, values }),
+    },
+  });
+
+  // The employee form renders no assignee control, so it posts none.
+  const employeeForm = (leadId: string) => {
+    const formData = new FormData();
+    formData.set("leadId", leadId);
+    formData.set("status", "qualified");
+    return formData;
+  };
+
+  const mine = await updateLeadPipelineAction({}, employeeForm(LEAD_ID));
+  assert.deepEqual(mine, { ok: true });
+
+  // A lead that is not theirs never matches, so it reads as simply missing.
+  const theirs = await updateLeadPipelineAction({}, employeeForm(OTHER_LEAD_ID));
+  assert.equal(theirs.ok, undefined);
+  assert.equal(typeof theirs.error, "string");
 });
 
 void test("addLeadNoteAction: a valid note is inserted with an audit row", async () => {

@@ -39,6 +39,50 @@ export async function getOverviewStats(db: Database): Promise<OverviewStats> {
   };
 }
 
+export interface EmployeeOverviewStats {
+  myLeads: number;
+  myOpenLeads: number;
+  myCallTasks: number;
+  myCallbacksDue: number;
+  myConversions: number;
+}
+
+/*
+ * An employee's own numbers. A separate query rather than a scoped variant of
+ * getOverviewStats because AGENTS.md bans conditional empty postgres.js
+ * fragments, and because an employee has no business seeing revenue: the
+ * company P&L tiles are simply absent here rather than zeroed.
+ */
+export async function getEmployeeOverviewStats(
+  db: Database,
+  userId: string,
+): Promise<EmployeeOverviewStats> {
+  const rows = (await db.$client`
+    select
+      (select count(*) from leads where assigned_to = ${userId})::int as my_leads,
+      (select count(*) from leads
+        where assigned_to = ${userId}
+          and status in ('new','contacted','qualified','docs_collected','logged_in','approved'))::int
+        as my_open_leads,
+      (select count(*) from call_tasks
+        where assigned_to = ${userId} and status not in ('converted','not_interested','wrong_number'))::int
+        as my_call_tasks,
+      (select count(*) from call_tasks
+        where assigned_to = ${userId} and status = 'callback_scheduled' and callback_at <= now())::int
+        as my_callbacks_due,
+      (select count(*) from call_tasks
+        where assigned_to = ${userId} and status = 'converted')::int as my_conversions
+  `) as Row[];
+  const r = rows[0] ?? {};
+  return {
+    myLeads: num(r.my_leads),
+    myOpenLeads: num(r.my_open_leads),
+    myCallTasks: num(r.my_call_tasks),
+    myCallbacksDue: num(r.my_callbacks_due),
+    myConversions: num(r.my_conversions),
+  };
+}
+
 export interface TimePoint {
   day: string;
   count: number;

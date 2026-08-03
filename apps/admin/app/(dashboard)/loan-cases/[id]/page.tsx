@@ -7,7 +7,7 @@ import { bankName, productName, formatPaise, formatDateTime } from "@truelend/re
 import { UpdateLoanCaseForm } from "@/components/loan-case-action-forms";
 import { PageTitle } from "@/components/page-title";
 import { StatusBadge } from "@/components/status-badge";
-import { getAuthContext } from "@/lib/auth";
+import { getAuthContext, requireStaff, scopeFor } from "@/lib/auth";
 import { getLoanCase } from "@/lib/loan-queries";
 import { LoanCaseFields } from "@/components/loan-case-fields";
 
@@ -16,8 +16,9 @@ export const metadata: Metadata = { title: "Loan case details" };
 
 export default async function LoanCaseDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const session = await requireStaff();
   const { db } = getAuthContext();
-  const c = await getLoanCase(db, id);
+  const c = await getLoanCase(db, scopeFor(session), id);
   if (!c) notFound();
 
   const net =

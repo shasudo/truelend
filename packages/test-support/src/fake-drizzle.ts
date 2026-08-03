@@ -21,6 +21,13 @@ interface FakeSelectChain extends PromiseLike<FakeRow[]> {
   where(...args: unknown[]): FakeSelectChain;
   limit(...args: unknown[]): FakeSelectChain;
   for(...args: unknown[]): FakeSelectChain;
+  /**
+   * Accepted and ignored, like `.for()`. Configured rows are returned in the
+   * order the test declared them, so a query that only orders to make `limit(1)`
+   * deterministic stays reachable. This fake still cannot verify ordering — a
+   * test must not assert on it.
+   */
+  orderBy(...args: unknown[]): FakeSelectChain;
 }
 
 interface FakeUpdateChain {
@@ -128,6 +135,10 @@ function createFakeQueryClient(options: FakeDbOptions): FakeQueryClient {
           return chain;
         },
         for(...args: unknown[]) {
+          void args;
+          return chain;
+        },
+        orderBy(...args: unknown[]) {
           void args;
           return chain;
         },

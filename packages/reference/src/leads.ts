@@ -55,6 +55,10 @@ export function bestLoanCaseOutcome(statuses: readonly LoanCaseStatus[]): LoanCa
 
 export type PipelineStatusTone = "neutral" | "info" | "emphasis" | "success" | "danger";
 
+// Lead, loan-case and call-task statuses share this one flat lookup. The value
+// sets do not collide (only `new` is common, and it means the same thing in
+// both), so a second parallel function would be a duplicate with a second
+// fallback to keep in sync.
 const pipelineStatusTones: Readonly<Record<string, PipelineStatusTone>> = {
   new: "neutral",
   contacted: "info",
@@ -65,6 +69,12 @@ const pipelineStatusTones: Readonly<Record<string, PipelineStatusTone>> = {
   disbursed: "success",
   declined: "danger",
   lost: "danger",
+  attempted: "info",
+  callback_scheduled: "info",
+  interested: "emphasis",
+  converted: "success",
+  not_interested: "danger",
+  wrong_number: "danger",
 };
 
 export function pipelineStatusTone(status: string): PipelineStatusTone {

@@ -7,6 +7,7 @@ import * as Dialog from "@radix-ui/react-dialog";
 import {
   LayoutDashboard,
   Inbox,
+  PhoneCall,
   Banknote,
   Handshake,
   BarChart3,
@@ -27,6 +28,10 @@ interface NavItem {
 
 const nav: NavItem[] = [
   { label: "Overview", href: "/", icon: LayoutDashboard },
+  // Not adminOnly: employees work their own queue here. Note that adminOnly
+  // only hides a link — every real gate is requireStaff/requireAdmin in the
+  // page plus the SQL scope in the query.
+  { label: "Call Queue", href: "/crm", icon: PhoneCall },
   { label: "Leads", href: "/leads", icon: Inbox },
   { label: "Loan Cases", href: "/loan-cases", icon: Banknote },
   { label: "Referral Partners", href: "/partners", icon: Handshake, adminOnly: true },

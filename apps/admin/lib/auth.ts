@@ -103,6 +103,21 @@ export async function requireAdmin(): Promise<AdminSession> {
   return session;
 }
 
+/**
+ * Row-level read scope for the queues staff work: null for an admin (no
+ * restriction), otherwise the user's own id. Query modules take this as a
+ * required argument so a new caller cannot forget it — an omitted scope is a
+ * compile error, not a silent leak of another employee's book.
+ */
+export function scopeFor(session: AdminSession): string | null {
+  return session.user.role === "admin" ? null : session.user.id;
+}
+
+/** The mutation-side twin of `scopeFor`, for the user shape actions receive. */
+export function isAdminUser(user: { role?: string | null }): boolean {
+  return user.role === "admin";
+}
+
 interface MutationContext {
   db: Database;
   ctx: ExecutionContext;

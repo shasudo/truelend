@@ -6,7 +6,7 @@ import { Card } from "@truelend/ui";
 import { CreateLoanCaseForm } from "@/components/loan-case-action-forms";
 import { PageTitle } from "@/components/page-title";
 import { LoanCaseFields } from "@/components/loan-case-fields";
-import { getAuthContext } from "@/lib/auth";
+import { getAuthContext, requireStaff, scopeFor } from "@/lib/auth";
 import { getLead } from "@/lib/lead-queries";
 
 export const dynamic = "force-dynamic";
@@ -20,8 +20,9 @@ export default async function NewLoanCasePage({
   const { lead: leadId } = await searchParams;
   if (!leadId) redirect("/leads");
 
+  const session = await requireStaff();
   const { db } = getAuthContext();
-  const data = await getLead(db, leadId);
+  const data = await getLead(db, scopeFor(session), leadId);
   if (!data) notFound();
   const { lead } = data;
 

@@ -42,6 +42,19 @@ export interface NotifyPartnerDecisionArgs {
   idempotencyKey?: string;
 }
 
+export interface LeadStatusNotificationArgs {
+  to: string;
+  status: string;
+  idempotencyKey?: string;
+}
+
+export interface SendEnquiryFormLinkArgs {
+  to: string;
+  name?: string | null;
+  url: string;
+  idempotencyKey?: string;
+}
+
 type FakeSendResult = { ok: true; skipped?: boolean } | { ok: false; error: string };
 
 interface FakeAuthState {
@@ -56,6 +69,10 @@ interface FakeAuthState {
   /** Override to exercise the "saved, but the email failed" notice path. */
   notifyPartnerDecision: () => Promise<FakeSendResult>;
   notifyPartnerPayout: () => Promise<FakeSendResult>;
+  sendEnquiryFormLinkCalls: SendEnquiryFormLinkArgs[];
+  /** Override to exercise the "we couldn't send the form link" path. */
+  sendEnquiryFormLink: () => Promise<FakeSendResult>;
+  leadStatusNotificationCalls: LeadStatusNotificationArgs[];
   /** better-auth admin-plugin methods team-actions.ts calls on `auth.api`. */
   createUser: (args: unknown) => Promise<{ user: { id: string } }>;
   requestPasswordReset: (args: unknown) => Promise<void>;
@@ -86,6 +103,9 @@ function defaultState(): FakeAuthState {
     notifyPartnerDecisionCalls: [],
     notifyPartnerDecision: async () => ({ ok: true }),
     notifyPartnerPayout: async () => ({ ok: true }),
+    sendEnquiryFormLinkCalls: [],
+    sendEnquiryFormLink: async () => ({ ok: true }),
+    leadStatusNotificationCalls: [],
     createUser: async () => ({ user: { id: "new-user-1" } }),
     requestPasswordReset: async () => undefined,
     removeUser: async () => undefined,
@@ -107,6 +127,14 @@ export function setFakeAuthState(overrides: Partial<FakeAuthState>): void {
 
 export function getNotifyPartnerDecisionCalls(): readonly NotifyPartnerDecisionArgs[] {
   return state.notifyPartnerDecisionCalls;
+}
+
+export function getSendEnquiryFormLinkCalls(): readonly SendEnquiryFormLinkArgs[] {
+  return state.sendEnquiryFormLinkCalls;
+}
+
+export function getLeadStatusNotificationCalls(): readonly LeadStatusNotificationArgs[] {
+  return state.leadStatusNotificationCalls;
 }
 
 /** Restores every field to its default — call this at the start of each test so state never leaks across tests. */
@@ -189,7 +217,14 @@ export function installAuthDependencyMocks(): void {
         return state.notifyPartnerDecision();
       },
       notifyPartnerPayout: async () => state.notifyPartnerPayout(),
-      notifyLeadStatusChanged: async () => ({ ok: true as const }),
+      sendEnquiryFormLink: async (_env: unknown, args: SendEnquiryFormLinkArgs) => {
+        state.sendEnquiryFormLinkCalls.push(args);
+        return state.sendEnquiryFormLink();
+      },
+      notifyLeadStatusChanged: async (_env: unknown, args: LeadStatusNotificationArgs) => {
+        state.leadStatusNotificationCalls.push(args);
+        return { ok: true as const };
+      },
       notifyPartnerLeadStatusChanged: async () => ({ ok: true as const }),
       notifyStaffAccountEvent: async () => ({ ok: true as const }),
       // Status gating is real policy, not a stub: a test that moves a lead to an

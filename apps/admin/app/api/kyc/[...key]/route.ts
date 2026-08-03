@@ -50,6 +50,9 @@ export async function GET(_req: Request, { params }: { params: Promise<{ key: st
     }
     const obj = await env.BUCKET.get(r2Key);
     if (!obj) return errorPage("Document not found", "This file may have been removed.", 404);
+    // A lone statement in a GET with no paired mutation: already atomic, so a
+    // transaction here would prove nothing. Awaited deliberately — an
+    // unrecorded KYC view is worse than a failed one.
     await db.insert(schema.auditLog).values({
       actorId: session.user.id,
       actorEmail: session.user.email,

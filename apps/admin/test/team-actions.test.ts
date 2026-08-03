@@ -8,7 +8,7 @@ import {
   type FakeAdminSession,
 } from "./support/fake-auth-dependencies";
 import { installNextCacheMock } from "./support/fake-next-cache";
-import type { FakeRow } from "@truelend/test-support";
+import type { FakeRow, FakeRowProvider } from "@truelend/test-support";
 
 installAuthDependencyMocks();
 installNextCacheMock();
@@ -32,6 +32,15 @@ function buildAdminSession(overrides: Partial<FakeAdminSession["user"]> = {}): F
 interface RecordedWrite {
   table: unknown;
   values: FakeRow;
+}
+
+/*
+ * staffTarget makes two reads of schema.user: the target lookup, which is
+ * `.limit(1)`, and the active-admin count, which is not. Discriminating on that
+ * is how one fake table serves both.
+ */
+function userRows(target: FakeRow, activeAdmins: number): FakeRowProvider {
+  return (query) => (query.limitArgs.length > 0 ? [target] : [{ total: activeAdmins }]);
 }
 
 void test("createUserAction: a non-admin session is refused (no trailing period, unlike the other actions)", async () => {
@@ -228,5 +237,112 @@ void test("removeUserAction: retained history (notes, cases, or partner reviews)
 
   assert.equal(result.ok, undefined);
   assert.equal(typeof result.error, "string");
+  assert.equal(removeUserCalled, false);
+});
+
+void test("setBanAction: the last active admin cannot be banned, and better-auth is never called", async () => {
+  let banUserCalled = false;
+  const inserts: RecordedWrite[] = [];
+  setFakeAuthState({
+    getSession: async () => buildAdminSession(),
+    banUser: async () => {
+      banUserCalled = true;
+      return { user: { banned: true } };
+    },
+    dbOptions: {
+      rowsByTable: new Map<unknown, FakeRow[] | FakeRowProvider>([
+        [
+          schema.user,
+          userRows({ id: "admin-2", email: "a2@example.com", role: "admin", banned: false }, 1),
+        ],
+      ]),
+      onInsert: (table, values) => inserts.push({ table, values }),
+    },
+  });
+  const formData = new FormData();
+  formData.set("userId", "admin-2");
+  formData.set("banned", "true");
+
+  const result = await setBanAction(formData);
+
+  assert.equal(result.ok, undefined);
+  assert.match(result.error ?? "", /only active admin/);
+  assert.equal(banUserCalled, false);
+  assert.equal(inserts.length, 0);
+});
+
+void test("setBanAction: a ban releases the teammate's book and revokes their sessions", async () => {
+  const updates: RecordedWrite[] = [];
+  const inserts: RecordedWrite[] = [];
+  let revoked = false;
+  setFakeAuthState({
+    getSession: async () => buildAdminSession(),
+    banUser: async () => ({ user: { banned: true } }),
+    revokeUserSessions: async () => {
+      revoked = true;
+    },
+    dbOptions: {
+      rowsByTable: new Map<unknown, FakeRow[] | FakeRowProvider>([
+        [
+          schema.user,
+          userRows({ id: "staff-2", email: "s2@example.com", role: "employee", banned: false }, 2),
+        ],
+        [schema.leads, [{ total: 3 }]],
+        [schema.callTasks, [{ total: 2 }]],
+      ]),
+      onUpdate: (table, values) => updates.push({ table, values }),
+      onInsert: (table, values) => inserts.push({ table, values }),
+    },
+  });
+  const formData = new FormData();
+  formData.set("userId", "staff-2");
+  formData.set("banned", "true");
+
+  const result = await setBanAction(formData);
+
+  assert.deepEqual(result, { ok: true, banned: true });
+  assert.equal(revoked, true, "the UI promises they are signed out immediately");
+  assert.equal(
+    updates.filter((write) => write.table === schema.leads).length,
+    1,
+    "their leads go back to the pool",
+  );
+  assert.equal(updates.filter((write) => write.table === schema.callTasks).length, 1);
+  const audit = inserts.find((write) => write.table === schema.auditLog);
+  assert.deepEqual(audit?.values.after, {
+    banned: true,
+    sessionsRevoked: true,
+    unassignedLeads: 3,
+    unassignedCallTasks: 2,
+  });
+});
+
+void test("removeUserAction: assigned work blocks deletion so the FK cannot silently orphan it", async () => {
+  let removeUserCalled = false;
+  setFakeAuthState({
+    getSession: async () => buildAdminSession(),
+    removeUser: async () => {
+      removeUserCalled = true;
+    },
+    dbOptions: {
+      rowsByTable: new Map<unknown, FakeRow[] | FakeRowProvider>([
+        [
+          schema.user,
+          userRows({ id: "staff-2", email: "s2@example.com", role: "employee", banned: false }, 2),
+        ],
+        [schema.leadNotes, []],
+        [schema.loanCases, []],
+        [schema.partners, []],
+        [schema.leads, [{ id: "lead-1" }]],
+        [schema.callTasks, []],
+      ]),
+    },
+  });
+  const formData = new FormData();
+  formData.set("userId", "staff-2");
+
+  const result = await removeUserAction(formData);
+
+  assert.match(result.error ?? "", /Ban them first/);
   assert.equal(removeUserCalled, false);
 });

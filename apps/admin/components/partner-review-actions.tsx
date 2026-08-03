@@ -10,41 +10,9 @@ import {
   rejectPartnerAction,
   revokePartnerAction,
 } from "@/lib/partner-actions";
+import { ActionFeedback } from "@/components/action-feedback";
 
 const initialState: ActionResult = {};
-
-interface ActionFeedbackProps {
-  state: ActionResult;
-  success: string;
-}
-
-function ActionFeedback({ state, success }: ActionFeedbackProps) {
-  if (state.error) {
-    return (
-      <p
-        role="alert"
-        className="mt-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
-      >
-        {state.error}
-      </p>
-    );
-  }
-  if (state.ok) {
-    return (
-      <p
-        role="status"
-        className={
-          state.notice
-            ? "mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800"
-            : "mt-2 text-sm text-navy-700"
-        }
-      >
-        {state.notice ?? success}
-      </p>
-    );
-  }
-  return null;
-}
 
 interface PartnerReviewActionsProps {
   partnerId: string;
