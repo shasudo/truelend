@@ -361,8 +361,9 @@ export function CallTaskImport() {
         <div className="min-w-0 flex-1">
           <p className="text-sm font-semibold text-navy-950">Import a call list</p>
           <p className="text-xs text-muted">
-            CSV with <code>name</code> and <code>phone</code> columns. Up to 2000 rows, 512KB. Any
-            invalid row rejects the whole file.
+            CSV needs <code>name</code> and <code>phone</code>. Optional: <code>email</code>,{" "}
+            <code>city</code>, <code>product</code>, <code>source</code>, <code>remark</code>. Up to
+            2000 rows, 512KB. Any invalid row rejects the whole file.
           </p>
         </div>
         <input

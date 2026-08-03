@@ -52,7 +52,9 @@ export const callTaskCsvColumns = {
   city: ["city", "location"],
   product: ["product", "product slug", "loan type"],
   source: ["source", "campaign", "list"],
-  notes: ["notes", "note", "remarks", "comments"],
+  // Optional free-text the caller sees before dialling. Both spellings of
+  // remark(s) matter: a header of "remark" would otherwise import as nothing.
+  notes: ["remark", "remarks", "notes", "note", "comments", "comment"],
 } as const;
 
 export type CallTaskCsvColumn = keyof typeof callTaskCsvColumns;

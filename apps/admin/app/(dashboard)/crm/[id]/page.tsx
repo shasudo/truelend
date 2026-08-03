@@ -98,7 +98,7 @@ export default async function CallTaskPage({ params }: { params: Promise<{ id: s
             {task.notes && (
               <div className="mt-5 border-t border-hairline pt-4">
                 <p className="text-xs font-semibold uppercase tracking-[0.1em] text-muted">
-                  Imported note
+                  Remark
                 </p>
                 <p className="mt-1 break-words leading-relaxed text-navy-700">{task.notes}</p>
               </div>

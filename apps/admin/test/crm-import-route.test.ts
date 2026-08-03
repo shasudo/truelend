@@ -214,3 +214,27 @@ void test("crm import: an unbalanced quote is refused before anything is written
   assert.equal(response.status, 400);
   assert.equal(inserts.length, 0);
 });
+
+void test("crm import: a remark column is imported and stays optional", async () => {
+  const inserts: RecordedWrite[] = [];
+  setFakeAuthState({
+    getSession: async () => buildAdminSession(),
+    env: buildEnv(),
+    dbOptions: { onInsert: (table, values) => inserts.push({ table, values }) },
+  });
+
+  const response = await POST(
+    buildRequest(
+      csvForm(
+        "name,phone,remark\nAnil Rao,9876543210,Asked to call after 6pm\nMeera S,9812345678,\n",
+      ),
+    ),
+  );
+
+  assert.equal(response.status, 200);
+  const rows = inserts.find((write) => write.table === schema.callTasks)?.values as unknown as {
+    notes: string | null;
+  }[];
+  assert.equal(rows[0]?.notes, "Asked to call after 6pm");
+  assert.equal(rows[1]?.notes, null, "a blank remark is null, not an import failure");
+});

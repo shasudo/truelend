@@ -60,3 +60,11 @@ void test("a quote that never closes is refused rather than merging records", ()
     UnbalancedQuoteError,
   );
 });
+
+void test("both spellings of remark resolve to the same optional column", () => {
+  assert.equal(mapHeader(["name", "phone", "Remark"]).notes, 2);
+  assert.equal(mapHeader(["name", "phone", "REMARKS"]).notes, 2);
+  assert.equal(mapHeader(["name", "phone", "Notes"]).notes, 2);
+  // Still genuinely optional — absence is not an error.
+  assert.equal(mapHeader(["name", "phone"]).notes, undefined);
+});

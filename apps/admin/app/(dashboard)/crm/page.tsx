@@ -58,13 +58,14 @@ export default async function CallQueuePage({ searchParams }: { searchParams: Pr
 
   const table = (
     <Card className="max-w-full overscroll-x-contain overflow-x-auto">
-      <table className="w-full min-w-[880px] text-left text-sm">
+      <table className="w-full min-w-[1040px] text-left text-sm">
         <thead>
           <tr className="border-b border-hairline text-xs font-semibold uppercase tracking-[0.1em] text-navy-500">
             {isAdmin && <th className="w-10 px-5 py-3 font-semibold" aria-label="Select" />}
             <th className="px-5 py-3 font-semibold">Name</th>
             <th className="px-5 py-3 font-semibold">Phone</th>
             <th className="px-5 py-3 font-semibold">Product</th>
+            <th className="px-5 py-3 font-semibold">Remark</th>
             <th className="px-5 py-3 font-semibold">Outcome</th>
             <th className="px-5 py-3 font-semibold">Assignee</th>
             <th className="px-5 py-3 font-semibold">Callback</th>
@@ -74,7 +75,7 @@ export default async function CallQueuePage({ searchParams }: { searchParams: Pr
         <tbody>
           {rows.length === 0 && (
             <tr>
-              <td colSpan={isAdmin ? 8 : 7} className="px-5 py-12 text-center text-muted">
+              <td colSpan={isAdmin ? 9 : 8} className="px-5 py-12 text-center text-muted">
                 {hasFilters
                   ? "No call tasks match these filters."
                   : isAdmin
@@ -113,6 +114,18 @@ export default async function CallQueuePage({ searchParams }: { searchParams: Pr
               </td>
               <td className="px-5 py-3.5 tabular-nums text-navy-700">{task.phone}</td>
               <td className="px-5 py-3.5 text-navy-700">{productName(task.productSlug)}</td>
+              {/* Context the caller wants before dialling, not after opening
+                  the task. Truncated so one long remark can't blow the row up;
+                  the full text is on the detail page and in the title. */}
+              <td className="max-w-56 px-5 py-3.5 text-navy-700">
+                {task.notes ? (
+                  <span className="block truncate" title={task.notes}>
+                    {task.notes}
+                  </span>
+                ) : (
+                  "—"
+                )}
+              </td>
               <td className="px-5 py-3.5">
                 <StatusBadge status={task.status} kind="call" />
               </td>
