@@ -15,7 +15,7 @@ import {
   validationMessages,
   validationPatterns,
 } from "@truelend/reference";
-import { notifyNewLead } from "@truelend/email";
+import { notifyLeadReceived, notifyNewLead } from "@truelend/email";
 import { reportPartnerActionFailure } from "./action-errors";
 import { withPartnerMutation } from "./auth";
 import { schedulePartnerBackgroundTask } from "./owned-request-context";
@@ -98,6 +98,9 @@ export async function submitLead(_prev: LeadState, formData: FormData): Promise<
         return { error: parsed.error.issues[0]?.message ?? "Please check the fields." };
       const d = parsed.data;
       const consentAt = new Date();
+      // Hoisted out of the transaction: the notification keys below derive from
+      // it so a retried submission cannot produce a second copy of either email.
+      let leadId: string | undefined;
       const outcome = await db.transaction(async (tx) => {
         const [currentPartner] = await tx
           .select({ status: schema.partners.status })
@@ -135,6 +138,7 @@ export async function submitLead(_prev: LeadState, formData: FormData): Promise<
             annualTurnoverPaise: rupeesToPaise(d.annualTurnover),
           })
           .returning({ id: schema.leads.id });
+        leadId = lead?.id;
         await tx.insert(schema.auditLog).values({
           actorId: partner.userId,
           action: "lead.create",
@@ -147,17 +151,33 @@ export async function submitLead(_prev: LeadState, formData: FormData): Promise<
       if (outcome === "not_verified") {
         return { error: "Your verification status changed. Refresh the page before trying again." };
       }
+      const product = d.productSlug ? productName(d.productSlug) : undefined;
       schedulePartnerBackgroundTask(ctx, "partner_lead_notification_failed", () =>
         notifyNewLead(env, {
           name: d.name,
           phone: d.phone,
           email: blank(d.email),
           city: blank(d.city),
-          product: d.productSlug ? productName(d.productSlug) : undefined,
+          product,
           message: blank(d.message),
           source: "Referral Partner",
+          idempotencyKey: leadId ? `new_lead:${leadId}` : undefined,
         }),
       );
+      // Acknowledge to the referred applicant. The partner supplies the address
+      // and it is optional, so this stays best-effort and silent without one.
+      const applicantEmail = blank(d.email);
+      if (applicantEmail) {
+        schedulePartnerBackgroundTask(ctx, "partner_lead_acknowledgement_failed", () =>
+          notifyLeadReceived(env, {
+            to: applicantEmail,
+            name: d.name,
+            product,
+            kind: "referral",
+            idempotencyKey: leadId ? `lead_received:${leadId}` : undefined,
+          }),
+        );
+      }
       revalidatePath("/dashboard");
       return { ok: true };
     });

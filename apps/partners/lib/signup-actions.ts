@@ -265,6 +265,7 @@ export async function registerPartner(
           name: profile.name,
           referenceId,
           dashboardUrl: `${env.BETTER_AUTH_URL}/dashboard`,
+          idempotencyKey: `partner_registration:${referenceId}`,
         }),
       );
     }

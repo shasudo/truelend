@@ -3,7 +3,7 @@
 import { headers } from "next/headers";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { createDb, schema } from "@truelend/db";
-import { notifyNewLead } from "@truelend/email";
+import { notifyLeadReceived, notifyNewLead } from "@truelend/email";
 import {
   customerConsentVersion,
   leadKindLabels,
@@ -148,6 +148,9 @@ export async function submitLead(input: unknown): Promise<SubmitResult> {
 
       const consentAt = new Date();
       submissionMayHaveBeenStored = true;
+      // Hoisted out of the transaction: the notification keys below derive from
+      // it so a retried submission cannot produce a second copy of either email.
+      let leadId: string | undefined;
       await db.transaction(async (tx) => {
         const [lead] = await tx
           .insert(schema.leads)
@@ -177,6 +180,7 @@ export async function submitLead(input: unknown): Promise<SubmitResult> {
             consentVersion: customerConsentVersion,
           })
           .returning({ id: schema.leads.id });
+        leadId = lead?.id;
         await tx.insert(schema.auditLog).values({
           action: "lead.create",
           entityType: "lead",
@@ -195,19 +199,35 @@ export async function submitLead(input: unknown): Promise<SubmitResult> {
           },
         });
       });
+      const product = "productSlug" in d && d.productSlug ? productName(d.productSlug) : undefined;
       scheduleWebsiteBackgroundTask(ctx, "website_lead_notification_failed", () =>
         notifyNewLead(env, {
           name: "name" in d ? d.name : undefined,
           phone: "phone" in d ? d.phone : undefined,
           email: "email" in d ? d.email : undefined,
           city: "city" in d ? d.city : undefined,
-          product: "productSlug" in d && d.productSlug ? productName(d.productSlug) : undefined,
+          product,
           message: contactMessage,
           source: partnerId
             ? `Referral Partner · ${refCode}`
             : `Website · ${leadKindLabels[d.kind]}`,
+          idempotencyKey: leadId ? `new_lead:${leadId}` : undefined,
         }),
       );
+      // Acknowledge to the applicant. Email is optional on every lead form, so
+      // this stays best-effort and silent when we have no address.
+      const applicantEmail = "email" in d ? blank(d.email) : undefined;
+      if (applicantEmail) {
+        scheduleWebsiteBackgroundTask(ctx, "website_lead_acknowledgement_failed", () =>
+          notifyLeadReceived(env, {
+            to: applicantEmail,
+            name: "name" in d ? d.name : undefined,
+            product,
+            kind: d.kind,
+            idempotencyKey: leadId ? `lead_received:${leadId}` : undefined,
+          }),
+        );
+      }
       return { ok: true };
     } catch (error) {
       console.error(

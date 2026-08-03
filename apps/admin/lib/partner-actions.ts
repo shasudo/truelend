@@ -4,16 +4,13 @@ import { revalidatePath } from "next/cache";
 import { eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { schema, type Database } from "@truelend/db";
-import { notifyPartnerDecision } from "@truelend/email";
+import { notifyPartnerDecision, notifyPartnerPayout, type SendResult } from "@truelend/email";
 import { type ActionResult } from "./action-result";
 import { getMutationContext } from "./auth";
 import { errorType } from "./error-type";
 import { normalizePartnerLedger } from "./partner-ledger";
 import { changedPartnerReviewFields, partnerRejectionRefusal } from "./partner-review-policy";
-import {
-  scheduleAdminBackgroundTask,
-  scheduleAdminRequestContextCleanup,
-} from "./request-context-cleanup";
+import { scheduleAdminRequestContextCleanup } from "./request-context-cleanup";
 import {
   evaluatePartnerApplication,
   formatPaise,
@@ -67,6 +64,30 @@ async function withPartnerAdminAction<TResult>(
   } finally {
     if (context) scheduleAdminRequestContextCleanup(context);
   }
+}
+
+const NOTIFICATION_FAILED_NOTICE =
+  "Saved, but the notification email to the Referral Partner was not accepted for delivery. Run the same action again to resend it.";
+
+/*
+ * Partner-facing mail is awaited rather than backgrounded. These are
+ * human-paced admin clicks, and a decision the partner never hears about is
+ * worse than a slower response: backgrounding it means a failed send is only
+ * ever a log line nobody reads. Awaiting lets the operator retry, and the
+ * per-event idempotency key keeps that retry from double-sending.
+ */
+async function notifyPartnerInline(
+  event: string,
+  send: () => Promise<SendResult>,
+): Promise<string | undefined> {
+  try {
+    const result = await send();
+    if (result.ok) return undefined;
+    console.error(JSON.stringify({ event, status: result.status }));
+  } catch (error) {
+    console.error(JSON.stringify({ event, errorType: errorType(error) }));
+  }
+  return NOTIFICATION_FAILED_NOTICE;
 }
 
 // partnerId === user.id (1:1), so contact info comes from the user row.
@@ -241,10 +262,13 @@ export async function approvePartnerAction(
   return withPartnerAdminAction<ActionResult>(
     "partner_approval_failed",
     { error: UNKNOWN_APPROVAL_OUTCOME, uncertain: true },
-    async ({ db, ctx, env, isAdmin, adminId, adminEmail }) => {
+    async ({ db, env, isAdmin, adminId, adminEmail }) => {
       if (!isAdmin || !adminId) return { error: "Not authorized." };
       const parsed = idSchema.safeParse(Object.fromEntries(formData));
       if (!parsed.success) return { error: "Invalid approval request." };
+      // Hoisted so the notification key below is tied to this decision: a retry
+      // resends the same message, a later re-approval sends a new one.
+      let verifiedAt: Date | undefined;
       const outcome = await db.transaction(async (tx) => {
         const [partner] = await tx
           .select()
@@ -262,6 +286,7 @@ export async function approvePartnerAction(
           return "not_eligible" as const;
         }
         const now = new Date();
+        verifiedAt = now;
         await tx
           .update(schema.partners)
           .set({
@@ -290,19 +315,20 @@ export async function approvePartnerAction(
         };
       }
       const contact = await partnerContact(db, parsed.data.partnerId);
-      if (contact) {
-        scheduleAdminBackgroundTask(ctx, "partner_approval_notification_failed", () =>
-          notifyPartnerDecision(env, {
-            to: contact.email,
-            name: contact.name,
-            decision: "verified",
-            loginUrl: `${env.PARTNERS_URL}/login`,
-          }),
-        );
-      }
+      const notice = contact
+        ? await notifyPartnerInline("partner_approval_notification_failed", () =>
+            notifyPartnerDecision(env, {
+              to: contact.email,
+              name: contact.name,
+              decision: "verified",
+              loginUrl: `${env.PARTNERS_URL}/login`,
+              idempotencyKey: `partner_decision:${parsed.data.partnerId}:verified:${verifiedAt?.toISOString() ?? ""}`,
+            }),
+          )
+        : undefined;
       revalidatePath(`/partners/${parsed.data.partnerId}`);
       revalidatePath("/partners");
-      return { ok: true };
+      return notice ? { ok: true, notice } : { ok: true };
     },
   );
 }
@@ -314,10 +340,12 @@ export async function revokePartnerAction(
   return withPartnerAdminAction<ActionResult>(
     "partner_verification_revoke_failed",
     { error: UNKNOWN_REVOCATION_OUTCOME, uncertain: true },
-    async ({ db, isAdmin, adminId, adminEmail }) => {
+    async ({ db, env, isAdmin, adminId, adminEmail }) => {
       if (!isAdmin || !adminId) return { error: "Not authorized." };
       const parsed = idSchema.safeParse(Object.fromEntries(formData));
       if (!parsed.success) return { error: "Invalid verification request." };
+      // Hoisted so the notification key below is tied to this revocation.
+      let revokedAt: Date | undefined;
       // Back to pending: an accidental approval must be reversible from the UI.
       const outcome = await db.transaction(async (tx) => {
         const [partner] = await tx
@@ -328,6 +356,7 @@ export async function revokePartnerAction(
           .for("update");
         if (!partner) return "missing" as const;
         if (partner.status !== "verified") return "not_verified" as const;
+        revokedAt = new Date();
         await tx
           .update(schema.partners)
           .set({ status: "pending", verifiedBy: null, verifiedAt: null })
@@ -350,9 +379,23 @@ export async function revokePartnerAction(
             "This Referral Partner is no longer verified. Reload before taking another action.",
         };
       }
+      // Losing verification is exactly as consequential as gaining it, so it is
+      // told to the partner on the same footing as approval and rejection.
+      const contact = await partnerContact(db, parsed.data.partnerId);
+      const notice = contact
+        ? await notifyPartnerInline("partner_revocation_notification_failed", () =>
+            notifyPartnerDecision(env, {
+              to: contact.email,
+              name: contact.name,
+              decision: "revoked",
+              loginUrl: `${env.PARTNERS_URL}/login`,
+              idempotencyKey: `partner_decision:${parsed.data.partnerId}:revoked:${revokedAt?.toISOString() ?? ""}`,
+            }),
+          )
+        : undefined;
       revalidatePath(`/partners/${parsed.data.partnerId}`);
       revalidatePath("/partners");
-      return { ok: true };
+      return notice ? { ok: true, notice } : { ok: true };
     },
   );
 }
@@ -369,13 +412,15 @@ export async function rejectPartnerAction(
   return withPartnerAdminAction<ActionResult>(
     "partner_rejection_failed",
     { error: UNKNOWN_REJECTION_OUTCOME, uncertain: true },
-    async ({ db, ctx, env, isAdmin, adminId, adminEmail }) => {
+    async ({ db, env, isAdmin, adminId, adminEmail }) => {
       if (!isAdmin || !adminId) return { error: "Not authorized." };
       const parsed = rejectSchema.safeParse(Object.fromEntries(formData));
       if (!parsed.success) {
         return { error: parsed.error.issues[0]?.message ?? "Invalid rejection request." };
       }
       const reason = parsed.data.reason;
+      // Hoisted so the notification key below is tied to this decision.
+      let rejectedAt: Date | undefined;
       const outcome = await db.transaction(async (tx) => {
         const [partner] = await tx
           .select({
@@ -390,6 +435,7 @@ export async function rejectPartnerAction(
         const refusal = partnerRejectionRefusal(partner);
         if (refusal) return { kind: "refused", error: refusal } as const;
         const now = new Date();
+        rejectedAt = now;
         await tx
           .update(schema.partners)
           .set({
@@ -413,20 +459,21 @@ export async function rejectPartnerAction(
       if (outcome.kind === "missing") return { error: "Referral Partner not found." };
       if (outcome.kind === "refused") return { error: outcome.error };
       const contact = await partnerContact(db, parsed.data.partnerId);
-      if (contact) {
-        scheduleAdminBackgroundTask(ctx, "partner_rejection_notification_failed", () =>
-          notifyPartnerDecision(env, {
-            to: contact.email,
-            name: contact.name,
-            decision: "rejected",
-            reason,
-            loginUrl: `${env.PARTNERS_URL}/login`,
-          }),
-        );
-      }
+      const notice = contact
+        ? await notifyPartnerInline("partner_rejection_notification_failed", () =>
+            notifyPartnerDecision(env, {
+              to: contact.email,
+              name: contact.name,
+              decision: "rejected",
+              reason,
+              loginUrl: `${env.PARTNERS_URL}/login`,
+              idempotencyKey: `partner_decision:${parsed.data.partnerId}:rejected:${rejectedAt?.toISOString() ?? ""}`,
+            }),
+          )
+        : undefined;
       revalidatePath(`/partners/${parsed.data.partnerId}`);
       revalidatePath("/partners");
-      return { ok: true };
+      return notice ? { ok: true, notice } : { ok: true };
     },
   );
 }
@@ -445,13 +492,16 @@ export async function recordPayoutAction(
   return withPartnerAdminAction<ActionResult>(
     "partner_payout_record_failed",
     { error: UNKNOWN_PAYOUT_OUTCOME, uncertain: true },
-    async ({ db, isAdmin, adminId, adminEmail }) => {
+    async ({ db, env, isAdmin, adminId, adminEmail }) => {
       if (!isAdmin || !adminId) return { error: "Not authorized." };
       const parsed = payoutSchema.safeParse(Object.fromEntries(formData));
       if (!parsed.success) return { error: "Please check the fields." };
       const amountPaise = rupeesToPaise(parsed.data.amount);
       if (amountPaise == null || amountPaise <= 0) return { error: "Enter a valid amount." };
 
+      // Hoisted so the notification key below is tied to this ledger row: two
+      // identical entries are two different emails, one retried entry is one.
+      let entryId: string | undefined;
       const result = await db.transaction(async (tx) => {
         // Lock the partner row to serialize every ledger write for this partner.
         const [partner] = await tx
@@ -501,6 +551,7 @@ export async function recordPayoutAction(
             recordedBy: adminId,
           })
           .returning({ id: schema.partnerPayouts.id });
+        entryId = entry?.id;
         await tx.insert(schema.auditLog).values({
           actorId: adminId,
           actorEmail: adminEmail,
@@ -517,8 +568,22 @@ export async function recordPayoutAction(
         return { ok: true };
       });
       if ("error" in result) return result;
+      const contact = await partnerContact(db, parsed.data.partnerId);
+      const notice = contact
+        ? await notifyPartnerInline("partner_payout_notification_failed", () =>
+            notifyPartnerPayout(env, {
+              to: contact.email,
+              name: contact.name,
+              kind: parsed.data.kind,
+              amount: formatPaise(amountPaise),
+              note: parsed.data.note || null,
+              dashboardUrl: `${env.PARTNERS_URL}/dashboard`,
+              idempotencyKey: `partner_payout:${entryId ?? ""}`,
+            }),
+          )
+        : undefined;
       revalidatePath(`/partners/${parsed.data.partnerId}`);
-      return { ok: true };
+      return notice ? { ok: true, notice } : { ok: true };
     },
   );
 }

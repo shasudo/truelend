@@ -288,7 +288,8 @@ void test("website lead work cannot be replaced by background-task failures", ()
     scheduler,
     /scheduleWebsiteBackgroundTask[\s\S]*task = createTask\(\)[\s\S]*ctx\.waitUntil\(reportedTask\)/,
   );
-  assert.equal(leadActions.match(/\bscheduleWebsiteBackgroundTask\(/g)?.length, 2);
+  // Team alert, applicant acknowledgement, and the existing submission task.
+  assert.equal(leadActions.match(/\bscheduleWebsiteBackgroundTask\(/g)?.length, 3);
   assert.doesNotMatch(leadActions, /\bctx\.waitUntil\(/);
 });
 
@@ -361,14 +362,22 @@ void test("admin mutations do not reuse the cached Server Component context", ()
 
   const partnerActions = readFileSync(join(admin, "lib", "partner-actions.ts"), "utf8");
   const teamActions = readFileSync(join(admin, "lib", "team-actions.ts"), "utf8");
+  const leadActions = readFileSync(join(admin, "lib", "lead-actions.ts"), "utf8");
   const kycUpload = readFileSync(join(admin, "app/api/kyc/upload/route.ts"), "utf8");
   const readiness = readFileSync(join(admin, "app/api/health/ready/route.ts"), "utf8");
 
   assert.match(partnerActions, /\bwithPartnerAdminAction</);
   assert.match(teamActions, /\bwithTeamAdminContext</);
-  assert.match(partnerActions, /\bscheduleAdminBackgroundTask\(/);
+  // Files that defer work must defer it through the wrapper, never by touching
+  // waitUntil directly. partner-actions.ts is absent deliberately: its
+  // notifications are awaited inline so a failed send reaches the operator.
   assert.match(kycUpload, /\bscheduleAdminBackgroundTask\(/);
-  assert.doesNotMatch(`${partnerActions}\n${kycUpload}`, /\bctx\.waitUntil\(/);
+  assert.match(leadActions, /\bscheduleAdminBackgroundTask\(/);
+  assert.match(teamActions, /\bscheduleAdminBackgroundTask\(/);
+  assert.doesNotMatch(
+    `${partnerActions}\n${teamActions}\n${leadActions}\n${kycUpload}`,
+    /\bctx\.waitUntil\(/,
+  );
   assert.match(kycUpload, /if \(uploadedKey && !databaseOutcomeUnknown\)/);
   assert.match(readiness, /\bscheduleAdminRequestContextCleanup\(\{ db: connection, ctx \}\)/);
   assert.doesNotMatch(readiness, /\bctx\.waitUntil\(/);

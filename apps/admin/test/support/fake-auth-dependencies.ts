@@ -39,7 +39,10 @@ export interface NotifyPartnerDecisionArgs {
   decision: string;
   reason?: string;
   loginUrl: string;
+  idempotencyKey?: string;
 }
+
+type FakeSendResult = { ok: true; skipped?: boolean } | { ok: false; error: string };
 
 interface FakeAuthState {
   env: FakeCloudflareEnv;
@@ -50,6 +53,9 @@ interface FakeAuthState {
   headers: Headers;
   sendPasswordReset: (args: SendResetPasswordArgs) => Promise<{ ok: boolean; skipped?: boolean }>;
   notifyPartnerDecisionCalls: NotifyPartnerDecisionArgs[];
+  /** Override to exercise the "saved, but the email failed" notice path. */
+  notifyPartnerDecision: () => Promise<FakeSendResult>;
+  notifyPartnerPayout: () => Promise<FakeSendResult>;
   /** better-auth admin-plugin methods team-actions.ts calls on `auth.api`. */
   createUser: (args: unknown) => Promise<{ user: { id: string } }>;
   requestPasswordReset: (args: unknown) => Promise<void>;
@@ -78,6 +84,8 @@ function defaultState(): FakeAuthState {
     headers: new Headers(),
     sendPasswordReset: async () => ({ ok: true, skipped: false }),
     notifyPartnerDecisionCalls: [],
+    notifyPartnerDecision: async () => ({ ok: true }),
+    notifyPartnerPayout: async () => ({ ok: true }),
     createUser: async () => ({ user: { id: "new-user-1" } }),
     requestPasswordReset: async () => undefined,
     removeUser: async () => undefined,
@@ -178,8 +186,18 @@ export function installAuthDependencyMocks(): void {
         state.sendPasswordReset(args),
       notifyPartnerDecision: async (_env: unknown, args: NotifyPartnerDecisionArgs) => {
         state.notifyPartnerDecisionCalls.push(args);
-        return { ok: true as const, skipped: false };
+        return state.notifyPartnerDecision();
       },
+      notifyPartnerPayout: async () => state.notifyPartnerPayout(),
+      notifyLeadStatusChanged: async () => ({ ok: true as const }),
+      notifyPartnerLeadStatusChanged: async () => ({ ok: true as const }),
+      notifyStaffAccountEvent: async () => ({ ok: true as const }),
+      // Status gating is real policy, not a stub: a test that moves a lead to an
+      // internal-only stage must see no mail attempted.
+      isCustomerNotifiableLeadStatus: (status: string) =>
+        ["contacted", "approved", "declined", "disbursed"].includes(status),
+      isPartnerNotifiableLeadStatus: (status: string) =>
+        ["contacted", "logged_in", "approved", "declined", "disbursed"].includes(status),
     },
   });
 }

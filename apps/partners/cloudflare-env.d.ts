@@ -10,7 +10,8 @@ interface __BaseEnv_CloudflareEnv {
 	BETTER_AUTH_URL: "https://partner.truelend.in";
 	TURNSTILE_SITE_KEY: "0x4AAAAAAD0gmfEKR5XdzhJR";
 	EMAIL_FROM: "TrueLend Referral Partners <partner@truelend.in>";
-	TEAM_EMAIL: "shathwik@icloud.com";
+	PARTNER_EMAIL: "TrueLend Referral Partners <partner@truelend.in>";
+	TEAM_EMAIL: "loans@truelend.in";
 }
 declare namespace Cloudflare {
 	interface Env extends __BaseEnv_CloudflareEnv {}
@@ -20,5 +21,5 @@ type StringifyValues<EnvType extends Record<string, unknown>> = {
 	[Binding in keyof EnvType]: EnvType[Binding] extends string ? EnvType[Binding] : string;
 };
 declare namespace NodeJS {
-	interface ProcessEnv extends StringifyValues<Pick<Cloudflare.Env, "BETTER_AUTH_URL" | "TURNSTILE_SITE_KEY" | "EMAIL_FROM" | "TEAM_EMAIL">> {}
+	interface ProcessEnv extends StringifyValues<Pick<Cloudflare.Env, "BETTER_AUTH_URL" | "TURNSTILE_SITE_KEY" | "EMAIL_FROM" | "PARTNER_EMAIL" | "TEAM_EMAIL">> {}
 }

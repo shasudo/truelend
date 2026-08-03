@@ -113,6 +113,7 @@ export function installWebsiteDependencyMocks(): void {
         state.notifyNewLeadCalls.push(lead);
         return state.notifyNewLead(lead);
       },
+      notifyLeadReceived: async () => ({ ok: true as const }),
     },
   });
 }

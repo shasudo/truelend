@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { schema } from "@truelend/db";
+import { notifyPartnerKycSubmitted } from "@truelend/email";
 import {
   evaluatePartnerApplication,
   isKycEditable,
@@ -13,6 +14,7 @@ import {
 } from "@truelend/reference";
 import { reportPartnerActionFailure } from "./action-errors";
 import { withPartnerMutation } from "./auth";
+import { schedulePartnerBackgroundTask } from "./owned-request-context";
 
 const LOCKED_MSG =
   "Your KYC is locked while it's under review or after verification. Contact us to make changes.";
@@ -134,8 +136,11 @@ export async function submitForReview(_prev: KycState, _formData: FormData): Pro
   void _prev;
   void _formData;
   try {
-    return await withPartnerMutation(async ({ db, session }) => {
+    return await withPartnerMutation(async ({ db, ctx, env, session }) => {
       if (!session) return { error: "Please sign in again." };
+      // Hoisted out of the transaction so the confirmation below is keyed to
+      // this submission and a resubmission after a rejection mails again.
+      let submittedAt: Date | undefined;
       const outcome = await db.transaction(async (tx) => {
         const [partner] = await tx
           .select()
@@ -153,7 +158,7 @@ export async function submitForReview(_prev: KycState, _formData: FormData): Pro
           .where(eq(schema.partnerDocuments.partnerId, partner.userId));
         const uploaded = new Set(docs.map((document) => document.docType));
         if (!evaluatePartnerApplication(partner, uploaded).canSubmit) return "incomplete" as const;
-        const submittedAt = new Date();
+        submittedAt = new Date();
         await tx
           .update(schema.partners)
           .set({ submittedAt, status: "pending", rejectionReason: null })
@@ -176,6 +181,14 @@ export async function submitForReview(_prev: KycState, _formData: FormData): Pro
             "Your application details or documents changed. Review the checklist and try again.",
         };
       }
+      schedulePartnerBackgroundTask(ctx, "partner_kyc_submitted_notification_failed", () =>
+        notifyPartnerKycSubmitted(env, {
+          to: session.user.email,
+          name: session.user.name,
+          dashboardUrl: `${env.BETTER_AUTH_URL}/dashboard`,
+          idempotencyKey: `partner_kyc_submitted:${session.user.id}:${submittedAt?.toISOString() ?? ""}`,
+        }),
+      );
       revalidatePath("/dashboard");
       return { ok: true };
     });

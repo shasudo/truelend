@@ -5,7 +5,7 @@ interface __BaseEnv_CloudflareEnv {
 	LEAD_RATE_LIMITER: RateLimit;
 	ASSETS: Fetcher;
 	EMAIL_FROM: "TrueLend <hello@truelend.in>";
-	TEAM_EMAIL: "shathwik@icloud.com";
+	TEAM_EMAIL: "loans@truelend.in";
 }
 declare namespace Cloudflare {
 	interface Env extends __BaseEnv_CloudflareEnv {}

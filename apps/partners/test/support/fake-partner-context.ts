@@ -3,6 +3,7 @@ import { mock } from "node:test";
 export interface FakeSessionUser {
   id: string;
   email: string;
+  name: string;
 }
 
 export interface FakeSession {
@@ -19,9 +20,23 @@ export interface FakePartnerContext {
 
 let current: FakePartnerContext = { db: undefined, session: null };
 
+/*
+ * Actions that defer notification work need a ctx and env even when the test
+ * only cares about the database. Without them the deferred task dies in its
+ * wrapper's catch and the test silently proves nothing about the send.
+ */
+const defaultCtx = () => ({
+  waitUntil: (promise: Promise<unknown>) => void promise.catch(() => undefined),
+});
+const defaultEnv = () => ({ BETTER_AUTH_URL: "https://partner.example.com" });
+
 /** Sets the context the next call to a mocked withPartnerMutation/withPartnerRequest callback receives. */
 export function setPartnerContext(context: FakePartnerContext): void {
-  current = context;
+  current = {
+    ...context,
+    ctx: context.ctx ?? defaultCtx(),
+    env: context.env ?? defaultEnv(),
+  };
 }
 
 export function buildSession(overrides: Partial<FakeSessionUser> = {}): FakeSession {
@@ -29,8 +44,38 @@ export function buildSession(overrides: Partial<FakeSessionUser> = {}): FakeSess
     user: {
       id: overrides.id ?? "user-1",
       email: overrides.email ?? "partner@example.com",
+      name: overrides.name ?? "Synthetic Partner",
     },
   };
+}
+
+export interface NotifyPartnerKycSubmittedArgs {
+  to: string;
+  name: string;
+  dashboardUrl: string;
+  idempotencyKey?: string;
+}
+
+let kycSubmittedCalls: NotifyPartnerKycSubmittedArgs[] = [];
+
+export function getPartnerKycSubmittedCalls(): readonly NotifyPartnerKycSubmittedArgs[] {
+  return kycSubmittedCalls;
+}
+
+export function resetPartnerEmailCalls(): void {
+  kycSubmittedCalls = [];
+}
+
+/** Install alongside installPartnerAuthMock() when the action under test sends mail. */
+export function installPartnerEmailMock(): void {
+  mock.module("@truelend/email", {
+    namedExports: {
+      notifyPartnerKycSubmitted: async (_env: unknown, args: NotifyPartnerKycSubmittedArgs) => {
+        kycSubmittedCalls.push(args);
+        return { ok: true as const };
+      },
+    },
+  });
 }
 
 /**

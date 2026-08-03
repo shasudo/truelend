@@ -9,7 +9,7 @@ import {
   type FakeAdminSession,
 } from "./support/fake-auth-dependencies";
 import { installNextCacheMock } from "./support/fake-next-cache";
-import type { FakeRow } from "@truelend/test-support";
+import type { FakeRow, FakeRowProvider } from "@truelend/test-support";
 
 installAuthDependencyMocks();
 installNextCacheMock();
@@ -78,6 +78,60 @@ void test("updateLeadPipelineAction: a fresh status update writes the lead and a
   assert.equal(updates.length, 1);
   assert.equal(updates[0]?.values.status, "qualified");
   assert.equal(inserts.length, 1);
+});
+
+void test("updateLeadPipelineAction: reassigning without moving stage notifies nobody", async () => {
+  let leadReads = 0;
+  setFakeAuthState({
+    getSession: async () => buildStaffSession(),
+    dbOptions: {
+      rowsByTable: new Map<unknown, FakeRow[] | FakeRowProvider>([
+        [
+          schema.leads,
+          () => {
+            leadReads += 1;
+            return [{ status: "approved", assignedTo: null, email: "applicant@example.com" }];
+          },
+        ],
+        [schema.loanCases, []],
+        [schema.user, [{ id: "staff-2", email: "lead@example.com", name: "Lead" }]],
+      ]),
+    },
+  });
+
+  const result = await updateLeadPipelineAction(
+    {},
+    buildPipelineForm({ status: "approved", assignedTo: "staff-2" }),
+  );
+
+  assert.deepEqual(result, { ok: true });
+  // The notification lookup is the only read of schema.leads outside the
+  // transaction, so a single read proves nothing was queued.
+  assert.equal(leadReads, 1, "an unchanged status must not trigger the notification lookup");
+});
+
+void test("updateLeadPipelineAction: an actual stage move does look up who to notify", async () => {
+  let leadReads = 0;
+  setFakeAuthState({
+    getSession: async () => buildStaffSession(),
+    dbOptions: {
+      rowsByTable: new Map<unknown, FakeRow[] | FakeRowProvider>([
+        [
+          schema.leads,
+          () => {
+            leadReads += 1;
+            return [{ status: "contacted", assignedTo: null, email: "applicant@example.com" }];
+          },
+        ],
+        [schema.loanCases, []],
+      ]),
+    },
+  });
+
+  const result = await updateLeadPipelineAction({}, buildPipelineForm({ status: "approved" }));
+
+  assert.deepEqual(result, { ok: true });
+  assert.equal(leadReads, 2, "a real stage move must look up the notification targets");
 });
 
 void test("updateLeadPipelineAction: a missing lead is reported without writing", async () => {

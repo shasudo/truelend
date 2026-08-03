@@ -3,6 +3,7 @@ import test, { beforeEach } from "node:test";
 import { schema } from "@truelend/db";
 import { partnerDocumentTypeValues } from "@truelend/reference";
 import {
+  getNotifyPartnerDecisionCalls,
   installAuthDependencyMocks,
   resetFakeAuthState,
   setFakeAuthState,
@@ -190,6 +191,56 @@ void test("revokePartnerAction: a verified partner is reverted to pending", asyn
 
   assert.deepEqual(result, { ok: true });
   assert.equal(updates[0]?.values.status, "pending");
+});
+
+void test("revokePartnerAction: losing verification is told to the partner, like gaining it", async () => {
+  setFakeAuthState({
+    getSession: async () => buildAdminSession(),
+    dbOptions: {
+      rowsByTable: new Map<unknown, FakeRow[]>([
+        [schema.partners, [{ status: "verified" }]],
+        [schema.user, [{ email: "partner@example.com", name: "Synthetic Partner" }]],
+      ]),
+    },
+  });
+
+  const result = await revokePartnerAction({}, buildIdForm());
+
+  assert.deepEqual(result, { ok: true });
+  const [decision] = getNotifyPartnerDecisionCalls();
+  assert.ok(decision);
+  assert.equal(decision.decision, "revoked");
+  assert.equal(decision.to, "partner@example.com");
+});
+
+void test("approvePartnerAction: a rejected notification is reported without claiming the approval failed", async () => {
+  const updates: RecordedWrite[] = [];
+  const partner: FakeRow = {
+    userId: PARTNER_ID,
+    status: "pending",
+    submittedAt: new Date(),
+    ...COMPLETE_PARTNER_FIELDS,
+  };
+  setFakeAuthState({
+    getSession: async () => buildAdminSession(),
+    notifyPartnerDecision: async () => ({ ok: false, error: "provider rejected" }),
+    dbOptions: {
+      rowsByTable: new Map<unknown, FakeRow[]>([
+        [schema.partners, [partner]],
+        [schema.partnerDocuments, [...ALL_DOC_TYPES].map((docType) => ({ docType }))],
+        [schema.user, [{ email: "partner@example.com", name: "Synthetic Partner" }]],
+      ]),
+      onUpdate: (table, values) => updates.push({ table, values }),
+    },
+  });
+
+  const result = await approvePartnerAction({}, buildIdForm());
+
+  // The mutation committed, so this is a notice, never an error.
+  assert.equal(result.ok, true);
+  assert.equal(result.error, undefined);
+  assert.match(result.notice ?? "", /not accepted for delivery/);
+  assert.equal(updates[0]?.values.status, "verified");
 });
 
 void test("rejectPartnerAction: a pending, awaiting-review application is rejected with a reason", async () => {

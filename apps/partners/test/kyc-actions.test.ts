@@ -4,7 +4,10 @@ import { schema } from "@truelend/db";
 import { installNextCacheMock } from "./support/fake-next-cache";
 import {
   buildSession,
+  getPartnerKycSubmittedCalls,
   installPartnerAuthMock,
+  installPartnerEmailMock,
+  resetPartnerEmailCalls,
   setPartnerContext,
 } from "./support/fake-partner-context";
 import { createFakeDb, type FakeRow } from "@truelend/test-support";
@@ -17,6 +20,7 @@ import type { KycState } from "../lib/kyc-actions";
 // import) before any of this file's own code runs.
 installNextCacheMock();
 installPartnerAuthMock();
+installPartnerEmailMock();
 const { savePartnerKyc, submitForReview, reopenApplication } = await import("../lib/kyc-actions");
 
 const EMPTY_STATE: KycState = {};
@@ -172,6 +176,7 @@ void test("submitForReview: a fresh complete application is submitted for review
   const partner = buildPartnerRow({ status: "pending", submittedAt: null });
   const { db, updates, inserts } = trackedDb({ partner });
   setPartnerContext({ db, session: buildSession() });
+  resetPartnerEmailCalls();
 
   const result = await submitForReview(EMPTY_STATE, new FormData());
 
@@ -180,6 +185,22 @@ void test("submitForReview: a fresh complete application is submitted for review
   assert.equal(updates[0]?.values.status, "pending");
   assert.equal(updates[0].values.rejectionReason, null);
   assert.equal(inserts.length, 1);
+  const [confirmation] = getPartnerKycSubmittedCalls();
+  assert.ok(confirmation);
+  assert.equal(confirmation.to, "partner@example.com");
+  assert.match(confirmation.idempotencyKey ?? "", /^partner_kyc_submitted:user-1:.+/);
+});
+
+void test("submitForReview: an application already under review is not confirmed twice", async () => {
+  const partner = buildPartnerRow({ status: "pending", submittedAt: new Date() });
+  const { db } = trackedDb({ partner });
+  setPartnerContext({ db, session: buildSession() });
+  resetPartnerEmailCalls();
+
+  const result = await submitForReview(EMPTY_STATE, new FormData());
+
+  assert.deepEqual(result, { ok: true });
+  assert.deepEqual(getPartnerKycSubmittedCalls(), []);
 });
 
 void test("submitForReview: a rejected partner can resubmit", async () => {

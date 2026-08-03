@@ -5,10 +5,14 @@ import { headers } from "next/headers";
 import { and, eq, inArray } from "drizzle-orm";
 import { z } from "zod";
 import { schema, type Database } from "@truelend/db";
+import { notifyStaffAccountEvent } from "@truelend/email";
 import { type ActionResult } from "./action-result";
 import { createAuthContext } from "./auth";
 import { errorType } from "./error-type";
-import { scheduleAdminRequestContextCleanup } from "./request-context-cleanup";
+import {
+  scheduleAdminBackgroundTask,
+  scheduleAdminRequestContextCleanup,
+} from "./request-context-cleanup";
 import { planBanMutation, staffDeletionRefusal } from "./team-mutation-policy";
 
 const ROLES = ["admin", "employee"] as const;
@@ -22,11 +26,11 @@ const ROLES = ["admin", "employee"] as const;
 const asRole = (r: (typeof ROLES)[number]) => r as "admin";
 
 async function adminContext() {
-  const { auth, db, ctx } = createAuthContext();
+  const { auth, db, ctx, env } = createAuthContext();
   try {
     const h = await headers();
     const session = await auth.api.getSession({ headers: h });
-    return { auth, db, ctx, h, me: session?.user ?? null };
+    return { auth, db, ctx, env, h, me: session?.user ?? null };
   } catch (error) {
     scheduleAdminRequestContextCleanup({ db, ctx });
     throw error;
@@ -88,7 +92,7 @@ export async function createUserAction(
       error: "We couldn't confirm teammate creation. Refresh the team list before trying again.",
       uncertain: true,
     }),
-    async ({ auth, db, h, me }) => {
+    async ({ auth, db, ctx, env, h, me }) => {
       let createdUserId: string | undefined;
       try {
         if (me?.role !== "admin") return { error: "Not authorized" };
@@ -120,6 +124,16 @@ export async function createUserAction(
           entityId: created.user.id,
           after: { email: parsed.data.email, role: parsed.data.role, activationSent: true },
         });
+        scheduleAdminBackgroundTask(ctx, "staff_account_notification_failed", () =>
+          notifyStaffAccountEvent(env, {
+            event: "created",
+            staffEmail: parsed.data.email,
+            staffName: parsed.data.name,
+            role: parsed.data.role,
+            actorEmail: me.email,
+            idempotencyKey: `staff_account:created:${created.user.id}`,
+          }),
+        );
         revalidatePath("/team");
         return { ok: true, createdEmail: parsed.data.email };
       } catch (error) {
@@ -162,7 +176,7 @@ export async function setRoleAction(formData: FormData): Promise<ActionResult> {
       error: "We couldn't confirm the role update. Refresh the team list before trying again.",
       uncertain: true,
     }),
-    async ({ auth, db, h, me }) => {
+    async ({ auth, db, ctx, env, h, me }) => {
       if (me?.role !== "admin") return { error: "Not authorized." };
       const parsed = roleSchema.safeParse(Object.fromEntries(formData));
       if (!parsed.success) return { error: "Invalid request." };
@@ -184,6 +198,18 @@ export async function setRoleAction(formData: FormData): Promise<ActionResult> {
         before: { role: target.role },
         after: { role: parsed.data.role },
       });
+      // Deliberately unkeyed: keying on (user, role) would swallow the second
+      // alert of an admin → employee → admin flip inside the provider's 24-hour
+      // window. A duplicate alert in the team inbox beats a missing one about a
+      // privilege change.
+      scheduleAdminBackgroundTask(ctx, "staff_account_notification_failed", () =>
+        notifyStaffAccountEvent(env, {
+          event: "role_changed",
+          staffEmail: target.email,
+          role: parsed.data.role,
+          actorEmail: me.email,
+        }),
+      );
       revalidatePath("/team");
       return { ok: true };
     },

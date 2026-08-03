@@ -156,6 +156,9 @@ export function installAuthDependencyMocks(): void {
       sendPasswordReset: (_env: unknown, args: SendResetPasswordArgs) =>
         state.sendPasswordReset(args),
       notifyPartnerRegistration: async () => ({ ok: true as const, skipped: false }),
+      notifyPartnerKycSubmitted: async () => ({ ok: true as const }),
+      notifyLeadReceived: async () => ({ ok: true as const }),
+      notifyNewLead: async () => ({ ok: true as const }),
     },
   });
   mock.module("@truelend/turnstile/server", {

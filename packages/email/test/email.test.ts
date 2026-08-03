@@ -1,6 +1,50 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { notifyPartnerRegistration, sendPasswordReset } from "../src/index";
+import {
+  notifyLeadStatusChanged,
+  notifyNewLead,
+  notifyPartnerDecision,
+  notifyPartnerRegistration,
+  sendPasswordReset,
+} from "../src/index";
+
+const provider = {
+  RESEND_API_KEY: "synthetic-api-key",
+  EMAIL_FROM: "TrueLend <hello@example.test>",
+  PARTNER_EMAIL: "TrueLend Referral Partners <partner@example.test>",
+  TEAM_EMAIL: "team@example.test",
+};
+
+interface Capture {
+  bodies: Record<string, unknown>[];
+  keys: string[];
+}
+
+/** Captures what would have been sent, and restores globals afterwards. */
+async function capture(
+  run: () => Promise<unknown>,
+  status: (call: number) => number = () => 200,
+): Promise<Capture> {
+  const originalFetch = globalThis.fetch;
+  const originalWarn = console.warn;
+  const captured: Capture = { bodies: [], keys: [] };
+  let calls = 0;
+
+  globalThis.fetch = async (_input, init) => {
+    calls += 1;
+    captured.bodies.push(JSON.parse(String(init?.body)) as Record<string, unknown>);
+    captured.keys.push(new Headers(init?.headers).get("Idempotency-Key") ?? "");
+    return new Response(null, { status: status(calls) });
+  };
+  console.warn = () => undefined;
+  try {
+    await run();
+  } finally {
+    globalThis.fetch = originalFetch;
+    console.warn = originalWarn;
+  }
+  return captured;
+}
 
 void test("email failures log bounded metadata without provider bodies or message content", async () => {
   const originalFetch = globalThis.fetch;
@@ -11,21 +55,16 @@ void test("email failures log bounded metadata without provider bodies or messag
   globalThis.fetch = async () => new Response(providerBody, { status: 422 });
   console.error = (...values: unknown[]) => messages.push(values.map(String).join(" "));
   try {
-    const result = await sendPasswordReset(
-      {
-        RESEND_API_KEY: "synthetic-api-key",
-        EMAIL_FROM: "TrueLend <test@example.test>",
-      },
-      {
-        to: "recipient@example.test",
-        name: "Synthetic User",
-        url: "https://example.test/reset?token=synthetic-token",
-      },
-    );
+    const result = await sendPasswordReset(provider, {
+      to: "recipient@example.test",
+      name: "Synthetic User",
+      url: "https://example.test/reset?token=synthetic-token",
+    });
 
     assert.deepEqual(result, {
       ok: false,
       error: "Email provider rejected the request (422)",
+      status: 422,
     });
     const logged = messages.join("\n");
     assert.match(logged, /"context":"password_reset"/);
@@ -38,79 +77,143 @@ void test("email failures log bounded metadata without provider bodies or messag
 });
 
 void test("Referral Partner registration email uses the dedicated sender", async () => {
-  const originalFetch = globalThis.fetch;
-  let requestBody: Record<string, unknown> | undefined;
-
-  globalThis.fetch = async (_input, init) => {
-    requestBody = JSON.parse(String(init?.body)) as Record<string, unknown>;
-    return new Response(null, { status: 200 });
-  };
-  try {
-    const result = await notifyPartnerRegistration(
-      {
-        RESEND_API_KEY: "synthetic-api-key",
-        EMAIL_FROM: "TrueLend <hello@example.test>",
-        PARTNER_EMAIL: "TrueLend Referral Partners <partner@example.test>",
-      },
-      {
-        to: "recipient@example.test",
-        name: "Synthetic Partner",
-        referenceId: "RP000001",
-        dashboardUrl: "https://partner.example.test/dashboard",
-      },
-    );
-
-    assert.deepEqual(result, { ok: true });
-    assert.ok(requestBody);
-    const html = requestBody.html;
-    assert.equal(typeof html, "string");
-    if (typeof html !== "string") throw new TypeError("Expected an HTML email body");
-    assert.match(html, /RP000001/);
-    assert.match(html, /remaining details and documents/);
-    assert.doesNotMatch(html, /application has been submitted/);
-    assert.deepEqual(requestBody, {
-      from: "TrueLend Referral Partners <partner@example.test>",
-      to: ["recipient@example.test"],
-      subject: "Complete your TrueLend Referral Partner application",
-      html,
+  let result: unknown;
+  const sent = await capture(async () => {
+    result = await notifyPartnerRegistration(provider, {
+      to: "recipient@example.test",
+      name: "Synthetic Partner",
+      referenceId: "RP000001",
+      dashboardUrl: "https://partner.example.test/dashboard",
     });
-  } finally {
-    globalThis.fetch = originalFetch;
+  });
+
+  assert.deepEqual(result, { ok: true });
+  const [body] = sent.bodies;
+  assert.ok(body);
+  const html = body.html;
+  const text = body.text;
+  assert.equal(typeof html, "string");
+  assert.equal(typeof text, "string");
+  if (typeof html !== "string" || typeof text !== "string") {
+    throw new TypeError("Expected HTML and text email bodies");
   }
+  assert.match(html, /RP000001/);
+  assert.match(html, /remaining details and documents/);
+  assert.doesNotMatch(html, /application has been submitted/);
+  assert.deepEqual(body, {
+    from: "TrueLend Referral Partners <partner@example.test>",
+    to: ["recipient@example.test"],
+    subject: "Complete your TrueLend Referral Partner application",
+    html,
+    text,
+  });
 });
 
 void test("transient provider failures retry with one idempotency key", async () => {
-  const originalFetch = globalThis.fetch;
-  const originalWarn = console.warn;
-  const idempotencyKeys: string[] = [];
-  let calls = 0;
-
-  globalThis.fetch = async (_input, init) => {
-    calls += 1;
-    const headers = new Headers(init?.headers);
-    idempotencyKeys.push(headers.get("Idempotency-Key") ?? "");
-    return new Response(null, { status: calls === 1 ? 503 : 200 });
-  };
-  console.warn = () => undefined;
-  try {
-    const result = await sendPasswordReset(
-      {
-        RESEND_API_KEY: "synthetic-api-key",
-        EMAIL_FROM: "TrueLend <test@example.test>",
-      },
-      {
+  let result: unknown;
+  const sent = await capture(
+    async () => {
+      result = await sendPasswordReset(provider, {
         to: "recipient@example.test",
         name: "Synthetic User",
         url: "https://example.test/reset?token=synthetic-token",
-      },
-    );
+      });
+    },
+    (call) => (call === 1 ? 503 : 200),
+  );
 
-    assert.deepEqual(result, { ok: true });
-    assert.equal(calls, 2);
-    assert.equal(idempotencyKeys[0], idempotencyKeys[1]);
-    assert.match(idempotencyKeys[0] ?? "", /^[0-9a-f-]{36}$/i);
-  } finally {
-    globalThis.fetch = originalFetch;
-    console.warn = originalWarn;
+  assert.deepEqual(result, { ok: true });
+  assert.equal(sent.keys.length, 2);
+  assert.equal(sent.keys[0], sent.keys[1]);
+  assert.match(sent.keys[0] ?? "", /^[0-9a-f-]{36}$/i);
+});
+
+void test("a caller-supplied idempotency key is what reaches the provider", async () => {
+  const sent = await capture(() =>
+    notifyPartnerDecision(provider, {
+      to: "recipient@example.test",
+      name: "Synthetic Partner",
+      decision: "verified",
+      loginUrl: "https://partner.example.test/login",
+      idempotencyKey: "partner_decision:user-1:verified:2026-08-03T00:00:00.000Z",
+    }),
+  );
+
+  assert.deepEqual(sent.keys, ["partner_decision:user-1:verified:2026-08-03T00:00:00.000Z"]);
+});
+
+void test("every partner decision renders its own outcome, and only rejection carries a reason", async () => {
+  const outcomes = ["verified", "rejected", "revoked"] as const;
+  const subjects: string[] = [];
+  for (const decision of outcomes) {
+    const sent = await capture(() =>
+      notifyPartnerDecision(provider, {
+        to: "recipient@example.test",
+        name: "Synthetic Partner",
+        decision,
+        reason: decision === "rejected" ? "Aadhaar was unreadable" : null,
+        loginUrl: "https://partner.example.test/login",
+      }),
+    );
+    const [body] = sent.bodies;
+    assert.ok(body);
+    subjects.push(String(body.subject));
+    assert.equal(
+      String(body.html).includes("Aadhaar was unreadable"),
+      decision === "rejected",
+      `${decision} should ${decision === "rejected" ? "" : "not "}carry a reason`,
+    );
   }
+  assert.equal(new Set(subjects).size, outcomes.length, "each outcome needs a distinct subject");
+});
+
+void test("the plain-text part carries the message without markup", async () => {
+  const sent = await capture(() =>
+    notifyLeadStatusChanged(provider, {
+      to: "applicant@example.test",
+      name: "Synthetic Applicant",
+      status: "approved",
+    }),
+  );
+
+  const text = String(sent.bodies[0]?.text);
+  assert.doesNotMatch(text, /[<>]/);
+  assert.match(text, /Your application is approved/);
+  assert.match(text, /Hi Synthetic,/);
+});
+
+void test("the new-lead alert goes to the team inbox, drops blank fields, and replies to the lead", async () => {
+  const sent = await capture(() =>
+    notifyNewLead(provider, {
+      name: "Synthetic Applicant",
+      phone: "9876543210",
+      email: "applicant@example.test",
+      city: null,
+      product: undefined,
+      source: "Website · Enquiry",
+    }),
+  );
+
+  const [body] = sent.bodies;
+  assert.ok(body);
+  assert.deepEqual(body.to, ["team@example.test"]);
+  assert.equal(body.reply_to, "applicant@example.test");
+  const text = String(body.text);
+  assert.match(text, /Phone: 9876543210/);
+  assert.doesNotMatch(text, /City:|Product:/);
+});
+
+void test("a link that is not http(s) is refused rather than delivered", () => {
+  // Thrown synchronously, before any fetch: best-effort callers run inside a
+  // background-task wrapper that logs it, and password reset fails closed.
+  assert.throws(
+    () =>
+      notifyPartnerRegistration(provider, {
+        to: "recipient@example.test",
+        name: "Synthetic Partner",
+        referenceId: "RP000001",
+        dashboardUrl: "javascript:alert(1)",
+      }),
+    /http\(s\)/,
+  );
 });

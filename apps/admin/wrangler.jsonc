@@ -28,12 +28,14 @@
     // Overridden to http://localhost:3001 in .dev.vars for local dev.
     "BETTER_AUTH_URL": "https://admin.truelend.in",
     // Email (Resend). RESEND_API_KEY is a secret. EMAIL_FROM must be a verified
-    // sender; TEAM_EMAIL receives new-lead alerts. PARTNERS_URL links the
-    // Referral Partner in verified/rejected emails. Local development may omit delivery;
-    // production preflight requires the API key.
+    // sender; TEAM_EMAIL receives new-lead and staff-account alerts and must stay
+    // a monitored role mailbox — those alerts carry applicant contact details.
+    // PARTNER_EMAIL sends everything Referral Partner facing. PARTNERS_URL links
+    // the Referral Partner in decision emails. Local development may omit
+    // delivery; production preflight requires the API key.
     "EMAIL_FROM": "TrueLend <hello@truelend.in>",
     "PARTNER_EMAIL": "TrueLend Referral Partners <partner@truelend.in>",
-    "TEAM_EMAIL": "shathwik@icloud.com",
+    "TEAM_EMAIL": "loans@truelend.in",
     "PARTNERS_URL": "https://partner.truelend.in",
   },
   // Same account-level Hyperdrive config the website uses (shared Neon pool).

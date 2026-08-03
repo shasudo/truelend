@@ -95,6 +95,9 @@ void test("submitLead: a valid submission with no ref code inserts the lead unat
       product: undefined,
       message: undefined,
       source: "Website · CIBIL Notify",
+      // Derived from the inserted row, so a resubmitted form collapses to one
+      // alert inside the provider's 24-hour idempotency window.
+      idempotencyKey: "new_lead:lead-1",
     },
   ]);
 });

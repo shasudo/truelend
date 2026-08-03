@@ -41,11 +41,15 @@
     // A site key is public. Pass it at runtime so the registration form can
     // render Turnstile after the Worker is deployed.
     "TURNSTILE_SITE_KEY": "0x4AAAAAAD0gmfEKR5XdzhJR",
-    // Email (Resend). RESEND_API_KEY is a secret; TEAM_EMAIL receives Referral Partner
-    // lead alerts. Local development may omit delivery; production preflight
-    // requires the API key.
+    // Email (Resend). RESEND_API_KEY is a secret; TEAM_EMAIL receives Referral
+    // Partner lead alerts and must stay a monitored role mailbox — those alerts
+    // carry applicant contact details. PARTNER_EMAIL is set explicitly rather
+    // than left to fall back to EMAIL_FROM, so retargeting the general sender
+    // cannot silently change who partner-facing mail comes from.
+    // Local development may omit delivery; production preflight requires the key.
     "EMAIL_FROM": "TrueLend Referral Partners <partner@truelend.in>",
-    "TEAM_EMAIL": "shathwik@icloud.com",
+    "PARTNER_EMAIL": "TrueLend Referral Partners <partner@truelend.in>",
+    "TEAM_EMAIL": "loans@truelend.in",
   },
   // Same account-level Hyperdrive config (shared Neon pool) the other apps use.
   "hyperdrive": [

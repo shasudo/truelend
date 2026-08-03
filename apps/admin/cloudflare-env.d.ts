@@ -8,7 +8,7 @@ interface __BaseEnv_CloudflareEnv {
 	BETTER_AUTH_URL: "https://admin.truelend.in";
 	EMAIL_FROM: "TrueLend <hello@truelend.in>";
 	PARTNER_EMAIL: "TrueLend Referral Partners <partner@truelend.in>";
-	TEAM_EMAIL: "shathwik@icloud.com";
+	TEAM_EMAIL: "loans@truelend.in";
 	PARTNERS_URL: "https://partner.truelend.in";
 }
 declare namespace Cloudflare {

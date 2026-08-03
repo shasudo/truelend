@@ -22,17 +22,17 @@ export function scheduleAdminBackgroundTask(
   try {
     pending = task();
   } catch (error) {
-    console.error(JSON.stringify({ event, phase: "start", errorType: errorType(error) }));
+    console.error(JSON.stringify({ event, stage: "create", errorType: errorType(error) }));
     return;
   }
 
   const reported = pending.catch((error: unknown) => {
-    console.error(JSON.stringify({ event, phase: "run", errorType: errorType(error) }));
+    console.error(JSON.stringify({ event, stage: "run", errorType: errorType(error) }));
   });
   try {
     ctx.waitUntil(reported);
   } catch (error) {
-    console.error(JSON.stringify({ event, phase: "schedule", errorType: errorType(error) }));
+    console.error(JSON.stringify({ event, stage: "schedule", errorType: errorType(error) }));
   }
 }
 
