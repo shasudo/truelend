@@ -56,3 +56,21 @@ void test("health/ready: a correct token with a healthy db and configured auth r
   assert.equal(body.db, "ok");
   assert.equal(body.auth, "ok");
 });
+
+void test("health/ready: a missing audit append-only guard fails readiness", async () => {
+  // The guard is a trigger plus a function, neither of which drizzle models, so
+  // a rebuild can drop them while every migration still reports as applied.
+  setFakeAuthState({
+    env: buildEnv({ HEALTHCHECK_SECRET: "s" }),
+    auditGuardError: new Error("audit_log append-only guard is missing"),
+  });
+
+  const response = await GET(
+    new Request("https://admin.example.com/api/health/ready", {
+      headers: { authorization: "Bearer s" },
+    }),
+  );
+
+  assert.equal(response.status, 503);
+  assert.equal(((await response.json()) as { db: string }).db, "error");
+});

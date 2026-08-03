@@ -1,5 +1,5 @@
 import { getCloudflareContext } from "@opennextjs/cloudflare";
-import { createDb, ping } from "@truelend/db";
+import { createDb, ping, pingAuditImmutability } from "@truelend/db";
 import {
   hasConfiguredValues,
   healthHeaders,
@@ -22,6 +22,9 @@ export async function GET(request: Request) {
   let db: "ok" | "error" = "error";
   try {
     await ping(connection);
+    // The audit trail is evidence for auth, role, KYC and finance changes, so a
+    // database that will silently accept edits to it is not ready to serve.
+    await pingAuditImmutability(connection);
     db = "ok";
   } catch {
     db = "error";

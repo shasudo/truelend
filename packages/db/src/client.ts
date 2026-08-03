@@ -36,6 +36,45 @@ export function assertPartnerRegistrationSchemaReady(
   }
 }
 
+export interface AuditImmutabilityProbe {
+  guardFunction: string | null;
+  guardTrigger: string | null;
+}
+
+/*
+ * The audit_log append-only guard is a trigger plus a plpgsql function, and
+ * Drizzle models neither — they exist only in raw migration SQL. A push, branch
+ * restore or snapshot rebuild recreates the table without them, which is how
+ * production ended up with a freely mutable audit log despite the migration
+ * being recorded as applied. Nothing else would have noticed, so readiness does.
+ */
+export function assertAuditImmutabilityReady(probe: AuditImmutabilityProbe | undefined): void {
+  if (!probe?.guardFunction || !probe.guardTrigger) {
+    throw new Error("audit_log append-only guard is missing");
+  }
+}
+
+export async function pingAuditImmutability(db: Database): Promise<void> {
+  const [probe] = await db.$client<AuditImmutabilityProbe[]>`
+    select
+      to_regproc(
+        format('%I.%I', current_schema(), 'prevent_audit_log_mutation')
+      )::text as "guardFunction",
+      (
+        select t.tgname
+        from pg_trigger t
+        join pg_class c on c.oid = t.tgrelid
+        join pg_namespace n on n.oid = c.relnamespace
+        where not t.tgisinternal
+          and n.nspname = current_schema()
+          and c.relname = 'audit_log'
+          and t.tgname = 'audit_log_immutable'
+          and t.tgenabled <> 'D'
+      ) as "guardTrigger"
+  `;
+  assertAuditImmutabilityReady(probe);
+}
+
 export async function pingPartnerRegistrationSchema(db: Database): Promise<void> {
   const [probe] = await db.$client<PartnerRegistrationSchemaProbe[]>`
     select

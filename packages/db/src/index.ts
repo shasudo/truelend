@@ -1,8 +1,11 @@
 export {
+  assertAuditImmutabilityReady,
   assertPartnerRegistrationSchemaReady,
   createDb,
   ping,
+  pingAuditImmutability,
   pingPartnerRegistrationSchema,
+  type AuditImmutabilityProbe,
   type Database,
   type PartnerRegistrationSchemaProbe,
 } from "./client";

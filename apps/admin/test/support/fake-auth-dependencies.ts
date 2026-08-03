@@ -85,6 +85,8 @@ interface FakeAuthState {
   authHandler: (req: Request) => Promise<Response>;
   /** When set, @truelend/db's ping() rejects with this instead of resolving — used by the health/ready routes. */
   pingError?: unknown;
+  /** When set, pingAuditImmutability() rejects — the audit append-only guard is missing. */
+  auditGuardError?: unknown;
 }
 
 function defaultState(): FakeAuthState {
@@ -115,6 +117,7 @@ function defaultState(): FakeAuthState {
     revokeUserSessions: async () => undefined,
     authHandler: async () => Response.json({ ok: true }),
     pingError: undefined,
+    auditGuardError: undefined,
   };
 }
 
@@ -170,6 +173,9 @@ export function installAuthDependencyMocks(): void {
       createDb: () => createFakeDb(state.dbOptions),
       ping: async () => {
         if (state.pingError !== undefined) throw state.pingError;
+      },
+      pingAuditImmutability: async () => {
+        if (state.auditGuardError !== undefined) throw state.auditGuardError;
       },
     },
   });
