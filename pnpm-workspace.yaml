@@ -58,9 +58,10 @@ catalog:
 overrides:
   # GHSA-r28c-9q8g-f849: prior source-map loading may disclose arbitrary .map files.
   postcss: "8.5.18"
-  # GHSA-mh99-v99m-4gvg: force the fixed release tree-wide; retain the legacy
-  # ESM default import through the narrow pnpm patch below.
-  brace-expansion: "5.0.8"
+  # GHSA-mh99-v99m-4gvg, then GHSA-rgw5-rvv9-x895 (the 5.0.8 mitigation could be
+  # bypassed): force the fixed release tree-wide; retain the legacy ESM default
+  # import through the narrow pnpm patch below.
+  brace-expansion: "5.0.9"
   sharp: ">=0.35.0" # GHSA-f88m-g3jw-g9cj: libvips memory-safety fixes
   # GHSA-67mh-4wv8-2f99: drizzle-kit's deprecated @esbuild-kit loader pins esbuild 0.18.
   # Scope to that path only (modern tsx/wrangler esbuild untouched); 0.25.4 is already in-tree.
@@ -76,4 +77,4 @@ allowBuilds:
   sharp: false
 
 patchedDependencies:
-  brace-expansion@5.0.8: patches/brace-expansion@5.0.8.patch
+  brace-expansion@5.0.9: patches/brace-expansion@5.0.9.patch

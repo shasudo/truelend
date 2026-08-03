@@ -150,12 +150,12 @@ catalogs:
 
 overrides:
   postcss: 8.5.18
-  brace-expansion: 5.0.8
+  brace-expansion: 5.0.9
   sharp: '>=0.35.0'
   '@esbuild-kit/core-utils>esbuild': 0.25.4
 
 patchedDependencies:
-  brace-expansion@5.0.8: e0830805f32bf378ccef77c948ddd263ebdd5ba532df74b18c655cbb2825cedf
+  brace-expansion@5.0.9: b5c5cfde41fd5e38f74339767921c5ff95c125d1d3dee14561a6ff6597480089
 
 importers:
 
@@ -2852,8 +2852,8 @@ packages:
   bowser@2.14.1:
     resolution: {integrity: sha512-tzPjzCxygAKWFOJP011oxFHs57HzIhOEracIgAePE4pqB3LikALKnSzUyU4MGs9/iCEUuHlAJTjTc5M+u7YEGg==}
 
-  brace-expansion@5.0.8:
-    resolution: {integrity: sha512-JZyDyq3D4AUifKTPOB7DELf6XsB3WdPuNxCtob1vFXPsSXhdAiHBWJ/tJ8HAc9aH84BK+5JFZLNkJKx3G9kzQg==}
+  brace-expansion@5.0.9:
+    resolution: {integrity: sha512-ScQ4IuvIEF1TMlP7Zt+vjJ//9zlPb2SDcxWxM3bk8s6t6GGdJ7KO1dCcTidOPJKePW30LE/2cT7wCyPho9/Wxg==}
     engines: {node: 20 || >=22}
 
   braces@3.0.3:
@@ -7328,7 +7328,7 @@ snapshots:
 
   bowser@2.14.1: {}
 
-  brace-expansion@5.0.8(patch_hash=e0830805f32bf378ccef77c948ddd263ebdd5ba532df74b18c655cbb2825cedf):
+  brace-expansion@5.0.9(patch_hash=b5c5cfde41fd5e38f74339767921c5ff95c125d1d3dee14561a6ff6597480089):
     dependencies:
       balanced-match: 4.0.4
 
@@ -9056,15 +9056,15 @@ snapshots:
 
   minimatch@10.2.5:
     dependencies:
-      brace-expansion: 5.0.8(patch_hash=e0830805f32bf378ccef77c948ddd263ebdd5ba532df74b18c655cbb2825cedf)
+      brace-expansion: 5.0.9(patch_hash=b5c5cfde41fd5e38f74339767921c5ff95c125d1d3dee14561a6ff6597480089)
 
   minimatch@3.1.5:
     dependencies:
-      brace-expansion: 5.0.8(patch_hash=e0830805f32bf378ccef77c948ddd263ebdd5ba532df74b18c655cbb2825cedf)
+      brace-expansion: 5.0.9(patch_hash=b5c5cfde41fd5e38f74339767921c5ff95c125d1d3dee14561a6ff6597480089)
 
   minimatch@8.0.7:
     dependencies:
-      brace-expansion: 5.0.8(patch_hash=e0830805f32bf378ccef77c948ddd263ebdd5ba532df74b18c655cbb2825cedf)
+      brace-expansion: 5.0.9(patch_hash=b5c5cfde41fd5e38f74339767921c5ff95c125d1d3dee14561a6ff6597480089)
 
   minimist@1.2.8: {}
 
