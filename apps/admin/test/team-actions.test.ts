@@ -346,3 +346,52 @@ void test("removeUserAction: assigned work blocks deletion so the FK cannot sile
   assert.match(result.error ?? "", /Ban them first/);
   assert.equal(removeUserCalled, false);
 });
+
+void test("createUserAction: a Referral Partner's email cannot become a staff account", async () => {
+  let createUserCalled = false;
+  setFakeAuthState({
+    getSession: async () => buildAdminSession(),
+    createUser: async () => {
+      createUserCalled = true;
+      return { user: { id: "new-user-1" } };
+    },
+    dbOptions: {
+      rowsByTable: new Map<unknown, FakeRow[]>([
+        [schema.user, [{ id: "partner-1" }]],
+        [schema.partners, [{ userId: "partner-1" }]],
+      ]),
+    },
+  });
+  const formData = new FormData();
+  formData.set("name", "Shathwik");
+  formData.set("email", "partner@example.com");
+  formData.set("role", "employee");
+
+  const result = await createUserAction({}, formData);
+
+  // AGENTS.md: staff provisioning refuses partner-linked or existing identities.
+  assert.match(result.error ?? "", /Referral Partner/);
+  assert.equal(result.uncertain, undefined, "a refusal is a certain outcome, not an unknown one");
+  assert.equal(createUserCalled, false, "better-auth is never reached for a taken identity");
+});
+
+void test("createUserAction: an email already held by staff is refused too", async () => {
+  setFakeAuthState({
+    getSession: async () => buildAdminSession(),
+    dbOptions: {
+      rowsByTable: new Map<unknown, FakeRow[]>([
+        [schema.user, [{ id: "staff-9" }]],
+        [schema.partners, []],
+      ]),
+    },
+  });
+  const formData = new FormData();
+  formData.set("name", "Someone Else");
+  formData.set("email", "taken@example.com");
+  formData.set("role", "employee");
+
+  const result = await createUserAction({}, formData);
+
+  assert.match(result.error ?? "", /already has an account/);
+  assert.equal(result.uncertain, undefined);
+});

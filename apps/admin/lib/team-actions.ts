@@ -135,6 +135,36 @@ export async function createUserAction(
         if (!parsed.success) {
           return { error: parsed.error.issues[0]?.message ?? "Please check the fields." };
         }
+        /*
+         * Staff provisioning refuses an existing or partner-linked identity
+         * before it reaches better-auth (AGENTS.md: "Staff provisioning must
+         * refuse partner-linked or existing identities by default"). Without
+         * this, `user.email`'s unique index throws and the catch below reports a
+         * deterministic, operator-fixable mistake as an unknown outcome —
+         * telling them to refresh and retry something that can never succeed.
+         *
+         * Partner identity is the partners row, not the role, so check both:
+         * a partner mid-registration can still be role NULL.
+         */
+        const [taken] = await db
+          .select({ id: schema.user.id })
+          .from(schema.user)
+          .where(eq(schema.user.email, parsed.data.email))
+          .limit(1);
+        if (taken) {
+          // Only reached when we are already refusing, so the happy path pays
+          // for one indexed lookup on a unique column and nothing more.
+          const [partner] = await db
+            .select({ userId: schema.partners.userId })
+            .from(schema.partners)
+            .where(eq(schema.partners.userId, taken.id))
+            .limit(1);
+          return {
+            error: partner
+              ? "That email already belongs to a Referral Partner. Staff and partner accounts can't share an identity — use a different address."
+              : "Someone already has an account with that email.",
+          };
+        }
         const created = await auth.api.createUser({
           body: {
             name: parsed.data.name,
@@ -192,11 +222,20 @@ export async function createUserAction(
             errorType: errorType(error),
           }),
         );
-        return {
-          error:
-            "We couldn't confirm teammate creation. Refresh the team list before trying again.",
-          uncertain: true,
-        };
+        /*
+         * `uncertain` means "we don't know whether the write landed", and the
+         * client turns it into a refresh. That is only true once the account
+         * exists: if createUser itself threw, nothing was created and the
+         * outcome is certain, so say so rather than sending the operator to
+         * re-read a list that has not changed.
+         */
+        return createdUserId
+          ? {
+              error:
+                "We couldn't confirm teammate creation. Refresh the team list before trying again.",
+              uncertain: true,
+            }
+          : { error: "We couldn't create that teammate. Check the details and try again." };
       }
     },
   );
