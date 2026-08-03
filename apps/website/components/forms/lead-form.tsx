@@ -7,7 +7,7 @@ import { CheckCircle2, MessageCircle } from "lucide-react";
 import { Button, useFormDraft } from "@truelend/ui";
 import type { TurnstileAction } from "@truelend/turnstile/actions";
 import { submitLead } from "@/lib/lead-actions";
-import { leadPayload } from "@/lib/lead-payload";
+import { withLeadKind } from "@/lib/lead-resolver";
 import {
   resolveAttribution,
   touchFromSearch,
@@ -58,7 +58,13 @@ export function useLeadForm<T extends FieldValues & { kind: string }>(
   // enquiry form hides loanAmount/tenureMonths/preferredEmi for card products,
   // and react-hook-form otherwise keeps what was typed before the switch — a
   // credit-card enquiry would submit the loan amount from the earlier product.
-  const form = useForm<T>({ resolver, defaultValues, shouldUnregister: true });
+  //
+  // It also drops `kind` — see withLeadKind, which puts it back.
+  const form = useForm<T>({
+    resolver: withLeadKind(resolver, defaultValues),
+    defaultValues,
+    shouldUnregister: true,
+  });
   const getAttribution = useAttribution();
   const [succeeded, setSucceeded] = useState(false);
   const [rootError, setRootError] = useState<string>();
@@ -91,9 +97,7 @@ export function useLeadForm<T extends FieldValues & { kind: string }>(
     try {
       // Resolve again at submit time so a fast submission cannot race hydration
       // and lose the Referral Partner reference from the current URL.
-      const result = await submitLead(
-        leadPayload(defaultValues, values, getAttribution(), turnstileToken),
-      );
+      const result = await submitLead({ ...values, ...getAttribution(), turnstileToken });
       if (result.ok) {
         setSucceeded(true);
         return;
