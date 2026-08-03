@@ -1,3 +1,4 @@
+import { displayTimeZone } from "@truelend/reference";
 import { blogIndex } from "@/content/blog-index";
 
 export interface PostMeta {
@@ -18,4 +19,9 @@ export function getAllPosts(): PostMeta[] {
 export const postBySlug = (slug: string) => getAllPosts().find((p) => p.slug === slug);
 
 export const formatPostDate = (date: Date) =>
-  new Intl.DateTimeFormat("en-IN", { day: "numeric", month: "long", year: "numeric" }).format(date);
+  new Intl.DateTimeFormat("en-IN", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    timeZone: displayTimeZone,
+  }).format(date);

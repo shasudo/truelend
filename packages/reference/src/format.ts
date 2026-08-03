@@ -50,10 +50,23 @@ export function normalizeSafeInteger(value: unknown, label = "Numeric aggregate"
   return normalized;
 }
 
+/*
+ * Every timestamp in the product is displayed in IST, pinned rather than left
+ * to the runtime. Without this a Worker (which runs in UTC) renders one time
+ * and the browser renders another for the same instant — so a lead captured at
+ * 9pm showed as 3:30pm on a server-rendered page, and any client component
+ * formatting the same value disagreed with it on screen.
+ *
+ * The business is India-only; if that ever changes, resolve the viewer's zone
+ * instead of hardcoding one here.
+ */
+export const displayTimeZone = "Asia/Kolkata";
+
 const dateFmt = new Intl.DateTimeFormat("en-IN", {
   day: "numeric",
   month: "short",
   year: "numeric",
+  timeZone: displayTimeZone,
 });
 
 const dateTimeFmt = new Intl.DateTimeFormat("en-IN", {
@@ -62,6 +75,7 @@ const dateTimeFmt = new Intl.DateTimeFormat("en-IN", {
   year: "numeric",
   hour: "numeric",
   minute: "2-digit",
+  timeZone: displayTimeZone,
 });
 
 export const formatDate = (d: Date) => dateFmt.format(d);
