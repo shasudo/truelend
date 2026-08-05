@@ -17,7 +17,8 @@
     "cf:validate": "node ../../scripts/check-cloudflare-types.mjs partners",
     "lint": "eslint .",
     "test": "node ../../scripts/run-package-tests.mjs --experimental-test-module-mocks",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "seed:partner": "tsx scripts/seed-partner.ts"
   },
   "dependencies": {
     "@marsidev/react-turnstile": "catalog:",
@@ -33,6 +34,7 @@
     "drizzle-orm": "catalog:",
     "lucide-react": "catalog:",
     "next": "catalog:",
+    "qrcode": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
     "zod": "catalog:"
@@ -45,6 +47,7 @@
     "@truelend/test-support": "workspace:*",
     "@truelend/typescript-config": "workspace:*",
     "@types/node": "catalog:",
+    "@types/qrcode": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
     "eslint": "catalog:",

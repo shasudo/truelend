@@ -1,6 +1,12 @@
 import "server-only";
 import { count, desc, eq } from "drizzle-orm";
-import { schema, type Database, type Lead, type PartnerPayout } from "@truelend/db";
+import {
+  schema,
+  type BankApplyLead,
+  type Database,
+  type Lead,
+  type PartnerPayout,
+} from "@truelend/db";
 
 const num = (v: unknown) => Number(v ?? 0);
 type Row = Record<string, unknown>;
@@ -110,4 +116,35 @@ export async function getPartnerLeads(db: Database, partnerId: string): Promise<
     .where(eq(schema.leads.partnerId, partnerId))
     .orderBy(desc(schema.leads.createdAt))
     .limit(10);
+}
+
+interface PaginatedBankApplyLeads {
+  rows: BankApplyLead[];
+  total: number;
+  page: number;
+  pageCount: number;
+}
+
+/** This partner's own QR quick-apply referrals — scoped by partnerId, like every query above. */
+export async function getPartnerBankLeads(
+  db: Database,
+  partnerId: string,
+  requestedPage: number,
+): Promise<PaginatedBankApplyLeads> {
+  const pageSize = 20;
+  const [totalRow] = await db
+    .select({ total: count() })
+    .from(schema.bankApplyLeads)
+    .where(eq(schema.bankApplyLeads.partnerId, partnerId));
+  const total = totalRow?.total ?? 0;
+  const pageCount = Math.max(1, Math.ceil(total / pageSize));
+  const page = Math.min(Math.max(1, requestedPage), pageCount);
+  const rows = await db
+    .select()
+    .from(schema.bankApplyLeads)
+    .where(eq(schema.bankApplyLeads.partnerId, partnerId))
+    .orderBy(desc(schema.bankApplyLeads.createdAt))
+    .limit(pageSize)
+    .offset((page - 1) * pageSize);
+  return { rows, total, page, pageCount };
 }

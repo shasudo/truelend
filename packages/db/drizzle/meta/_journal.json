@@ -127,6 +127,13 @@
       "when": 1785775852398,
       "tag": "0017_restore_audit_log_immutable",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1785910353015,
+      "tag": "0018_workable_nova",
+      "breakpoints": true
     }
   ]
 }

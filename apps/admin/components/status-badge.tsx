@@ -1,5 +1,6 @@
 import { StatusBadge as Pill } from "@truelend/ui";
 import {
+  bankApplyLeadStatusLabels,
   callStatusLabels,
   leadStatusLabels,
   loanCaseStatusLabels,
@@ -8,10 +9,15 @@ import {
 
 interface StatusBadgeProps {
   status: string;
-  kind?: "lead" | "case" | "call";
+  kind?: "lead" | "case" | "call" | "bank";
 }
 
-const labelsFor = { lead: leadStatusLabels, case: loanCaseStatusLabels, call: callStatusLabels };
+const labelsFor = {
+  lead: leadStatusLabels,
+  case: loanCaseStatusLabels,
+  call: callStatusLabels,
+  bank: bankApplyLeadStatusLabels,
+};
 
 export function StatusBadge({ status, kind = "lead" }: StatusBadgeProps) {
   const label = labelsFor[kind][status] ?? status;
