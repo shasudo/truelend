@@ -28,7 +28,7 @@ export function ActionFeedback({ state, success }: ActionFeedbackProps) {
         role="status"
         className={
           state.notice
-            ? "mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800"
+            ? "mt-2 rounded-lg border border-sun-400/40 bg-sun-50 px-3 py-2 text-sm text-sun-600"
             : "mt-2 text-sm text-navy-700"
         }
       >

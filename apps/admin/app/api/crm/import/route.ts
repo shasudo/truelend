@@ -1,10 +1,13 @@
 import { headers } from "next/headers";
+import { and, inArray, notInArray } from "drizzle-orm";
+import { z } from "zod";
 import { schema, type NewCallTask } from "@truelend/db";
 import {
   callTaskCsvColumns,
   callTaskCsvRequiredColumns,
-  isProductSlug,
   normalizeIndianMobile,
+  resolveProductSlug,
+  terminalCallStatusValues,
   validationPatterns,
 } from "@truelend/reference";
 import { createAuthContext } from "@/lib/auth";
@@ -20,9 +23,18 @@ const allowedContentTypes = ["text/csv", "application/vnd.ms-excel", "text/plain
 /** One failed row, reported by position and reason only — never by value. */
 interface RowFailure {
   row: number;
-  code: "name_missing" | "phone_invalid" | "too_many_columns";
+  code: "name_missing" | "phone_invalid" | "too_many_columns" | "duplicate_phone";
 }
 const MAX_REPORTED_FAILURES = 50;
+
+// Same bound convertSchema applies to a call task's email at conversion time —
+// reused here so an import can't seed a value conversion would have rejected.
+const emailPattern = z.string().trim().max(254).email();
+
+/** Cap a free-text cell the way the equivalent field is capped everywhere else in the app. */
+function capped(value: string, max: number): string | null {
+  return value ? value.slice(0, max) : null;
+}
 
 /*
  * Bulk prospect import. A CSV has no magic bytes to sniff, so the equivalent
@@ -76,6 +88,19 @@ export async function POST(req: Request) {
     }
 
     const bytes = new Uint8Array(await file.arrayBuffer());
+    // Excel's "Save As -> Unicode Text" (sitting right next to "CSV UTF-8" in
+    // the same dropdown) produces UTF-16, which the generic NUL sniff below
+    // would also catch — but as the wrong, unhelpful "not a CSV" message. Name
+    // the actual problem for the one encoding mistake an Excel user is most
+    // likely to make.
+    const hasUtf16Bom =
+      (bytes[0] === 0xff && bytes[1] === 0xfe) || (bytes[0] === 0xfe && bytes[1] === 0xff);
+    if (hasUtf16Bom) {
+      return Response.json(
+        { error: "That file is UTF-16. Re-save it as CSV UTF-8 and try again." },
+        { status: 400 },
+      );
+    }
     if (bytes.subarray(0, 512).includes(0x00)) {
       return Response.json({ error: "That file is not a CSV." }, { status: 400 });
     }
@@ -121,7 +146,10 @@ export async function POST(req: Request) {
     };
 
     const failures: RowFailure[] = [];
-    const values: NewCallTask[] = [];
+    // Kept separate from `values` until the post-loop duplicate check below
+    // decides whether they actually survive — see the comment there for why.
+    const candidates: { recordNumber: number; phone: string; value: NewCallTask }[] = [];
+    const seenPhones = new Set<string>();
     dataRows.forEach((row, index) => {
       // +2: one for the header, one because operators count from 1. This is the
       // record number, which only differs from the file line when a quoted field
@@ -144,17 +172,59 @@ export async function POST(req: Request) {
         failures.push({ row: recordNumber, code: "phone_invalid" });
         return;
       }
-      const product = cell(row, "product");
-      values.push({
-        name: name.slice(0, 120),
+      // A repeated phone within the same file — a re-exported list, a copy-paste
+      // slip — would otherwise seed two call tasks for one person.
+      if (seenPhones.has(phone)) {
+        failures.push({ row: recordNumber, code: "duplicate_phone" });
+        return;
+      }
+      seenPhones.add(phone);
+
+      const emailRaw = cell(row, "email");
+      const email = emailRaw && emailPattern.safeParse(emailRaw).success ? emailRaw : null;
+
+      candidates.push({
+        recordNumber,
         phone,
-        email: cell(row, "email") || null,
-        city: cell(row, "city") || null,
-        productSlug: isProductSlug(product) ? product : null,
-        source: cell(row, "source") || null,
-        notes: cell(row, "notes") || null,
+        value: {
+          name: name.slice(0, 120),
+          phone,
+          email,
+          city: capped(cell(row, "city"), 80),
+          productSlug: resolveProductSlug(cell(row, "product")),
+          source: capped(cell(row, "source"), 120),
+          notes: capped(cell(row, "notes"), 4000),
+        },
       });
     });
+
+    // A phone already open in the queue (imported before, or still being
+    // worked) is also a duplicate — just one the file alone can't see. A
+    // *closed* task for the same phone is not: re-importing a closed-out
+    // prospect to reopen them is the documented way to do it, so only an
+    // open task blocks the row.
+    if (failures.length === 0 && candidates.length > 0) {
+      const openDuplicates = await db
+        .select({ phone: schema.callTasks.phone })
+        .from(schema.callTasks)
+        .where(
+          and(
+            inArray(
+              schema.callTasks.phone,
+              candidates.map((c) => c.phone),
+            ),
+            notInArray(schema.callTasks.status, [...terminalCallStatusValues]),
+          ),
+        );
+      const openPhones = new Set(openDuplicates.map((r) => r.phone));
+      if (openPhones.size > 0) {
+        for (const candidate of candidates) {
+          if (openPhones.has(candidate.phone)) {
+            failures.push({ row: candidate.recordNumber, code: "duplicate_phone" });
+          }
+        }
+      }
+    }
 
     // All or nothing: importing 1999 of 2000 rows silently drops row 1443 out
     // of a call list, and nothing downstream would ever surface it.
@@ -169,9 +239,10 @@ export async function POST(req: Request) {
         { status: 400 },
       );
     }
-    if (values.length === 0) {
+    if (candidates.length === 0) {
       return Response.json({ error: "That file has no rows." }, { status: 400 });
     }
+    const values = candidates.map((c) => c.value);
 
     // ponytail: 2000 rows / 512KB / one transaction, chunked at 100 rows per
     // INSERT. If imports outgrow this, split the file client-side before

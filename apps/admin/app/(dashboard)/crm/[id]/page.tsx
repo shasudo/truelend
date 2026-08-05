@@ -45,7 +45,7 @@ export default async function CallTaskPage({ params }: { params: Promise<{ id: s
   // is a 404 rather than a 403 that confirms the row exists.
   const data = await getCallTask(db, scopeFor(session), id);
   if (!data) notFound();
-  const { task, duplicateLead, hasDuplicateTask, history } = data;
+  const { task, duplicateLead, duplicateTask, history } = data;
 
   const enquiryUrl = `${appUrls.website}/enquiry${
     task.productSlug ? `?product=${encodeURIComponent(task.productSlug)}` : ""
@@ -66,9 +66,9 @@ export default async function CallTaskPage({ params }: { params: Promise<{ id: s
         actions={<StatusBadge status={task.status} kind="call" />}
       />
 
-      {(duplicateLead || hasDuplicateTask) && (
-        <Card className="mb-6 border-amber-200 bg-amber-50 p-4">
-          <p className="flex flex-wrap items-center gap-2 text-sm text-amber-800">
+      {(duplicateLead || duplicateTask) && (
+        <Card className="mb-6 border-sun-400/40 bg-sun-50 p-4">
+          <p className="flex flex-wrap items-center gap-2 text-sm text-sun-600">
             <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden />
             {duplicateLead ? (
               <>
@@ -79,7 +79,16 @@ export default async function CallTaskPage({ params }: { params: Promise<{ id: s
                 — converting will link to it rather than create a second lead.
               </>
             ) : (
-              "Another call task has this same phone number."
+              <>
+                Another call task has this same phone number
+                {duplicateTask!.assigneeName
+                  ? `, assigned to ${duplicateTask!.assigneeName}`
+                  : ""}.{" "}
+                <Link href={`/crm/${duplicateTask!.id}`} className="font-semibold underline">
+                  Open it
+                </Link>{" "}
+                before calling — someone may already be working this prospect.
+              </>
             )}
           </p>
         </Card>
