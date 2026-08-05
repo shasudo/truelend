@@ -1,5 +1,3 @@
-import { callTaskCsvColumns, type CallTaskCsvColumn } from "@truelend/reference";
-
 /*
  * A small RFC4180 reader. Operators export call lists from Excel or Google
  * Sheets, so quoted fields, "" escapes, embedded commas and newlines, CRLF and
@@ -85,17 +83,20 @@ export function parseCsv(text: string): string[][] {
 }
 
 /**
- * Resolves a header row to column indexes using the alias table. Matching is
- * case-insensitive and trimmed; the first alias to match a column wins, so a
- * sheet with both "phone" and "mobile" keeps the leftmost.
+ * Resolves a header row to column indexes using the given alias table.
+ * Matching is case-insensitive and trimmed; the first alias to match a
+ * column wins, so a sheet with both "phone" and "mobile" keeps the leftmost.
  */
-export function mapHeader(header: readonly string[]): Partial<Record<CallTaskCsvColumn, number>> {
-  const columns: Partial<Record<CallTaskCsvColumn, number>> = {};
+export function mapHeader<Column extends string>(
+  header: readonly string[],
+  columnAliases: Record<Column, readonly string[]>,
+): Partial<Record<Column, number>> {
+  const columns: Partial<Record<Column, number>> = {};
   header.forEach((raw, index) => {
     const cell = raw.trim().toLowerCase();
     if (cell === "") return;
-    for (const [column, aliases] of Object.entries(callTaskCsvColumns)) {
-      const key = column as CallTaskCsvColumn;
+    for (const [column, aliases] of Object.entries(columnAliases)) {
+      const key = column as Column;
       if (columns[key] === undefined && (aliases as readonly string[]).includes(cell)) {
         columns[key] = index;
         return;

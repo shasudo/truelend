@@ -1,4 +1,5 @@
 export * from "./app-urls";
+export * from "./bank-apply";
 export * from "./catalog";
 export * from "./contact";
 export * from "./crm";

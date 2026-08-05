@@ -16,6 +16,7 @@ import { verifyTurnstile } from "@truelend/turnstile/server";
 import { REF_COOKIE, sanitizeRef } from "./attribution";
 import { scheduleWebsiteBackgroundTask } from "./background-task";
 import { leadSchema } from "./lead-schemas";
+import { resolvePartnerByRef } from "./partner-lookup";
 
 type SubmitResult = { ok: true } | { ok: false; error: string };
 const TURNSTILE_ACTIONS: Record<string, TurnstileAction> = {
@@ -110,37 +111,14 @@ export async function submitLead(input: unknown): Promise<SubmitResult> {
       // is never the staler of the two. It is also the only signal that survives
       // an in-app browser with storage blocked.
       const refCode = sanitizeRef((await cookies()).get(REF_COOKIE)?.value) ?? sanitizeRef(d.ref);
-      let partner: { userId: string; name: string | null; email: string | null } | undefined;
-      let refLookupFailed = false;
-      if (refCode) {
-        try {
-          const rows = (await db.$client`
-            select p.user_id, u.name, u.email
-            from partners p join "user" u on u.id = p.user_id
-            where p.reference_id = ${refCode} and p.status <> 'rejected'
-            limit 1
-          `) as { user_id: string; name: string | null; email: string | null }[];
-          const row = rows[0];
-          if (row) partner = { userId: row.user_id, name: row.name, email: row.email };
-        } catch (error) {
-          // Attribution must never cost us the lead — degrade to direct and log.
-          refLookupFailed = true;
-          console.error(
-            JSON.stringify({
-              event: "lead_partner_ref_lookup_failed",
-              ref: refCode,
-              errorType: error instanceof Error ? error.name : "unknown",
-            }),
-          );
-        }
-        if (!partner && !refLookupFailed) {
-          // A code that really matches no live partner, as opposed to an outage.
-          // The audit row below records this too, but nothing reads audit_log —
-          // this line is what actually surfaces a dead referral link in logs.
-          console.error(
-            JSON.stringify({ event: "lead_partner_ref_unresolved", ref: refCode, kind: d.kind }),
-          );
-        }
+      const { partner, refLookupFailed } = await resolvePartnerByRef(db, refCode, "lead");
+      if (refCode && !partner && !refLookupFailed) {
+        // A code that really matches no live partner, as opposed to an outage.
+        // The audit row below records this too, but nothing reads audit_log —
+        // this line is what actually surfaces a dead referral link in logs.
+        console.error(
+          JSON.stringify({ event: "lead_partner_ref_unresolved", ref: refCode, kind: d.kind }),
+        );
       }
       const partnerId = partner?.userId;
 

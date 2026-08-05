@@ -15,6 +15,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import {
+  bankApplyLeadStatusValues,
   callStatusValues,
   employmentTypeValues,
   leadKindValues,
@@ -484,6 +485,65 @@ export const partnerPayouts = pgTable(
   ],
 );
 
+export const bankApplyLeadStatus = pgEnum("bank_apply_lead_status", bankApplyLeadStatusValues);
+
+/*
+ * QR quick-apply flow: a partner's QR code lands a customer on the website,
+ * they enter their phone number, then tap a bank product and go straight to
+ * that bank's own hosted application page with a tracking code embedded in
+ * the URL. Separate from `leads` — no loan-application detail is captured
+ * here, and the bank fields only populate once an admin CSV import
+ * reconciles a status against `tracking_code`.
+ */
+export const bankApplyLeads = pgTable(
+  "bank_apply_leads",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    // 8-digit numeric code; the bank sees it back as utm_content=TRUE<code>.
+    trackingCode: text("tracking_code").notNull().unique(),
+    // Slug from @truelend/reference's bankApplyProducts config, not an FK —
+    // same convention as leads.product_slug / loan_cases.product_slug.
+    productSlug: text("product_slug").notNull(),
+    partnerId: text("partner_id").references(() => partners.userId, { onDelete: "set null" }),
+    phone: text("phone").notNull(),
+
+    consent: boolean("consent").notNull().default(false),
+    consentAt: timestamp("consent_at", { withTimezone: true }),
+    consentSource: text("consent_source"),
+    consentVersion: text("consent_version"),
+
+    status: bankApplyLeadStatus("status").notNull().default("sent"),
+
+    // Populated only once an admin CSV import matches this row by tracking_code.
+    bankApplicationId: text("bank_application_id"),
+    bankStatus: text("bank_status"),
+    bankSubStatus: text("bank_sub_status"),
+    bankStage: text("bank_stage"),
+    bankWorkflowStatus: text("bank_workflow_status"),
+    cardIssualDate: date("card_issual_date", { mode: "string" }),
+    // Full matched CSV row (header → cell), so nothing is lost if the bank's
+    // export gains or renames columns before the schema catches up.
+    bankRaw: jsonb("bank_raw"),
+    bankStatusUpdatedAt: timestamp("bank_status_updated_at", { withTimezone: true }),
+
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (t) => [
+    index("bank_apply_leads_partner_id_idx").on(t.partnerId),
+    index("bank_apply_leads_phone_idx").on(t.phone),
+    index("bank_apply_leads_status_idx").on(t.status),
+    index("bank_apply_leads_created_at_idx").on(t.createdAt),
+    check(
+      "bank_apply_leads_consent_proof",
+      sql`${t.consent} = false or (${t.consentAt} is not null and ${t.consentSource} is not null and ${t.consentVersion} is not null)`,
+    ),
+  ],
+);
+
 /*
  * Append-only audit trail: who did what to which entity, with optional
  * before/after snapshots. Insert-only in application code — never updated or
@@ -523,5 +583,7 @@ export type Partner = typeof partners.$inferSelect;
 export type NewPartner = typeof partners.$inferInsert;
 export type PartnerDocument = typeof partnerDocuments.$inferSelect;
 export type PartnerPayout = typeof partnerPayouts.$inferSelect;
+export type BankApplyLead = typeof bankApplyLeads.$inferSelect;
+export type NewBankApplyLead = typeof bankApplyLeads.$inferInsert;
 export type AuditLog = typeof auditLog.$inferSelect;
 export type NewAuditLog = typeof auditLog.$inferInsert;

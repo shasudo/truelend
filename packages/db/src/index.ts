@@ -14,6 +14,7 @@ export * as schema from "./schema";
 // top-level access; everything else (LeadNote, User, NewPartner, AuditLog,
 // NewAuditLog, ...) stays reachable through the schema namespace above.
 export type {
+  BankApplyLead,
   CallTask,
   Lead,
   LoanCase,

@@ -1,6 +1,7 @@
 import { headers } from "next/headers";
 import { schema, type NewCallTask } from "@truelend/db";
 import {
+  callTaskCsvColumns,
   callTaskCsvRequiredColumns,
   isProductSlug,
   normalizeIndianMobile,
@@ -96,7 +97,7 @@ export async function POST(req: Request) {
     }
     const [header, ...dataRows] = records;
     if (!header) return Response.json({ error: "That file is empty." }, { status: 400 });
-    const columns = mapHeader(header);
+    const columns = mapHeader(header, callTaskCsvColumns);
     const missing = callTaskCsvRequiredColumns.filter((name) => columns[name] === undefined);
     if (missing.length > 0) {
       return Response.json(

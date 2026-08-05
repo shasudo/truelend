@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { callTaskCsvColumns } from "@truelend/reference";
 // Pure module with no mocked dependencies, so a static import is safe here.
 import { parseCsv, mapHeader, UnbalancedQuoteError } from "../lib/csv";
 
@@ -41,7 +42,7 @@ void test("a trailing newline adds no empty row, and a missing one loses no row"
 });
 
 void test("header aliases resolve case- and space-insensitively", () => {
-  assert.deepEqual(mapHeader([" Full Name ", "MOBILE", "Remarks", "unknown"]), {
+  assert.deepEqual(mapHeader([" Full Name ", "MOBILE", "Remarks", "unknown"], callTaskCsvColumns), {
     name: 0,
     phone: 1,
     notes: 2,
@@ -49,7 +50,7 @@ void test("header aliases resolve case- and space-insensitively", () => {
 });
 
 void test("a header missing a required column reports it as absent", () => {
-  assert.equal(mapHeader(["name", "city"]).phone, undefined);
+  assert.equal(mapHeader(["name", "city"], callTaskCsvColumns).phone, undefined);
 });
 
 void test("a quote that never closes is refused rather than merging records", () => {
@@ -62,9 +63,9 @@ void test("a quote that never closes is refused rather than merging records", ()
 });
 
 void test("both spellings of remark resolve to the same optional column", () => {
-  assert.equal(mapHeader(["name", "phone", "Remark"]).notes, 2);
-  assert.equal(mapHeader(["name", "phone", "REMARKS"]).notes, 2);
-  assert.equal(mapHeader(["name", "phone", "Notes"]).notes, 2);
+  assert.equal(mapHeader(["name", "phone", "Remark"], callTaskCsvColumns).notes, 2);
+  assert.equal(mapHeader(["name", "phone", "REMARKS"], callTaskCsvColumns).notes, 2);
+  assert.equal(mapHeader(["name", "phone", "Notes"], callTaskCsvColumns).notes, 2);
   // Still genuinely optional — absence is not an error.
-  assert.equal(mapHeader(["name", "phone"]).notes, undefined);
+  assert.equal(mapHeader(["name", "phone"], callTaskCsvColumns).notes, undefined);
 });

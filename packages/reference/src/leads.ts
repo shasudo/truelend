@@ -75,6 +75,10 @@ const pipelineStatusTones: Readonly<Record<string, PipelineStatusTone>> = {
   converted: "success",
   not_interested: "danger",
   wrong_number: "danger",
+  sent: "neutral",
+  in_progress: "info",
+  card_issued: "success",
+  rejected: "danger",
 };
 
 export function pipelineStatusTone(status: string): PipelineStatusTone {

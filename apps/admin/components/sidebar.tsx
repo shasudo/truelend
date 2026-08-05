@@ -10,6 +10,7 @@ import {
   PhoneCall,
   Banknote,
   Handshake,
+  QrCode,
   BarChart3,
   Users,
   LogOut,
@@ -35,6 +36,7 @@ const nav: NavItem[] = [
   { label: "Leads", href: "/leads", icon: Inbox },
   { label: "Loan Cases", href: "/loan-cases", icon: Banknote },
   { label: "Referral Partners", href: "/partners", icon: Handshake, adminOnly: true },
+  { label: "Card Referrals", href: "/bank-leads", icon: QrCode, adminOnly: true },
   { label: "MIS", href: "/mis", icon: BarChart3, adminOnly: true },
   { label: "Team", href: "/team", icon: Users, adminOnly: true },
 ];
