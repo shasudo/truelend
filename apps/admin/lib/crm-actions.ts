@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { and, desc, eq, inArray, isNull, or } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, notInArray, or, sql } from "drizzle-orm";
 import { z } from "zod";
 import { schema } from "@truelend/db";
 import { sendEnquiryFormLink } from "@truelend/email";
@@ -14,11 +14,13 @@ import {
   normalizeIndianMobile,
   productSlugs,
   rupeesToPaise,
+  terminalCallStatusValues,
   validationMessages,
   validationPatterns,
 } from "@truelend/reference";
 import { type ActionResult } from "./action-result";
 import { getMutationContext, isAdminUser } from "./auth";
+import { balanceCallQueue } from "./balance-call-queue";
 import { errorType } from "./error-type";
 import { scheduleAdminRequestContextCleanup } from "./request-context-cleanup";
 
@@ -29,6 +31,16 @@ const UNKNOWN_ASSIGN_OUTCOME =
 const UNKNOWN_CONVERT_OUTCOME =
   "We couldn't confirm the conversion. Reload this task before trying again — it may already have a lead.";
 const UNKNOWN_EMAIL_OUTCOME = "We couldn't confirm the send. Check the task before trying again.";
+const UNKNOWN_BALANCE_OUTCOME =
+  "We couldn't confirm the redistribution. Reload the call queue before trying again.";
+/*
+ * Covers both a guessed id and a task that fell out of the caller's scope
+ * (reassigned to someone else, say) — the query can't and shouldn't tell them
+ * apart (see taskScope above), so the copy must read honestly for the far
+ * more common, entirely benign case rather than sounding like data loss.
+ */
+const TASK_OUT_OF_SCOPE =
+  "This task is no longer in your queue — it may have been reassigned or closed. Reload the call queue and try again.";
 
 function reportCrmActionFailure(event: string, error: unknown): void {
   console.error(JSON.stringify({ event, errorType: errorType(error) }));
@@ -79,6 +91,10 @@ export async function assignCallTasksAction(
     if (!parsed.success) return { error: "Select at least one call task to assign." };
     const assignedTo =
       parsed.data.assignedTo && parsed.data.assignedTo.length > 0 ? parsed.data.assignedTo : null;
+    // A hand-crafted request (never the checkbox UI, which can't repeat a
+    // value) could repeat an id and inflate the audit count below the actual
+    // row count.
+    const taskIds = [...new Set(parsed.data.taskIds)];
 
     const outcome = await db.transaction(async (tx) => {
       if (assignedTo) {
@@ -93,31 +109,246 @@ export async function assignCallTasksAction(
             ),
           )
           .limit(1);
-        if (!staff) return "invalid_assignee" as const;
+        if (!staff) return { kind: "invalid_assignee" } as const;
       }
+
+      // Locks every selected row for the rest of this transaction, so a second
+      // bulk-assign touching the same tasks blocks here rather than silently
+      // overwriting this one the instant it commits.
+      const current = await tx
+        .select({
+          id: schema.callTasks.id,
+          status: schema.callTasks.status,
+          assignedTo: schema.callTasks.assignedTo,
+        })
+        .from(schema.callTasks)
+        .where(inArray(schema.callTasks.id, taskIds))
+        .for("update");
+
+      // A closed task has nothing left to do; reassigning it is almost never
+      // what was intended; the default queue view shows every status side by
+      // side, so it is easy to sweep one into a selection by accident.
+      const assignable = current.filter((task) => !isTerminalCallStatus(task.status));
+      const skipped = current.length - assignable.length;
+      if (assignable.length === 0) return { kind: "none_assignable" } as const;
+
       await tx
         .update(schema.callTasks)
         .set({ assignedTo })
-        .where(inArray(schema.callTasks.id, parsed.data.taskIds));
-      await tx.insert(schema.auditLog).values({
-        actorId: user.id,
-        actorEmail: user.email,
-        action: "call_task.assign",
-        entityType: "call_task",
-        // A bulk action has no single entity; the count and target carry it.
-        entityId: null,
-        after: { count: parsed.data.taskIds.length, assignedTo },
-      });
-      return "assigned" as const;
+        .where(
+          inArray(
+            schema.callTasks.id,
+            assignable.map((task) => task.id),
+          ),
+        );
+
+      // One row per task, not one summary row: this is what makes the change
+      // show up in that task's own "Call history" (entityId = task.id) and
+      // records exactly who had it before — a plain bulk-summary row with no
+      // entityId is invisible everywhere a person would actually look.
+      await tx.insert(schema.auditLog).values(
+        assignable.map((task) => ({
+          actorId: user.id,
+          actorEmail: user.email,
+          action: "call_task.assign",
+          entityType: "call_task",
+          entityId: task.id,
+          before: { assignedTo: task.assignedTo },
+          after: { assignedTo },
+        })),
+      );
+      return { kind: "assigned", count: assignable.length, skipped } as const;
     });
-    if (outcome === "invalid_assignee") {
+
+    if (outcome.kind === "invalid_assignee") {
       return { error: "The selected assignee is no longer available." };
     }
+    if (outcome.kind === "none_assignable") {
+      return { error: "Every selected task is already closed. There is nothing to assign." };
+    }
     revalidatePath("/crm");
-    return { ok: true };
+    return outcome.skipped > 0
+      ? {
+          ok: true,
+          notice: `${outcome.skipped} of ${outcome.skipped + outcome.count} selected tasks were already closed and were skipped.`,
+        }
+      : { ok: true };
   } catch (error) {
     reportCrmActionFailure("crm_assign_failed", error);
     return { error: UNKNOWN_ASSIGN_OUTCOME };
+  } finally {
+    scheduleAdminRequestContextCleanup({ db, ctx });
+  }
+}
+
+/* ---- balance the open queue across a chosen set of callers (admin only) ---- */
+
+const balanceSchema = z.object({
+  // Staff ids are better-auth text, not uuid. 50 is far more callers than this
+  // team will ever have, and it bounds the staff lookup's parameter count.
+  employeeIds: z.array(z.string().trim().min(1).max(64)).min(1).max(50),
+});
+
+/*
+ * ponytail: the whole open queue in one transaction, capped at the same 2000
+ * rows an import is capped at, so a freshly imported list always balances in
+ * one go. Past that the run is refused outright rather than balancing a subset,
+ * because a partial balance looks exactly like a complete one and nothing
+ * downstream would ever surface the difference. If real queues outgrow this,
+ * close out or bulk-assign some first — this account has no Queue, Durable
+ * Object or cron binding to run a background pass on.
+ */
+const MAX_BALANCE_TASKS = 2000;
+const BALANCE_CHUNK = 100;
+
+export async function balanceCallQueueAction(
+  _prev: ActionResult,
+  formData: FormData,
+): Promise<ActionResult> {
+  let context: Awaited<ReturnType<typeof getMutationContext>>;
+  try {
+    context = await getMutationContext();
+  } catch (error) {
+    reportCrmActionFailure("crm_balance_context_failed", error);
+    return { error: UNKNOWN_BALANCE_OUTCOME };
+  }
+  const { db, ctx, user } = context;
+  if (!user) {
+    scheduleAdminRequestContextCleanup({ db, ctx });
+    redirect("/login");
+  }
+
+  try {
+    if (!isAdminUser(user)) return { error: "Not authorized." };
+    const parsed = balanceSchema.safeParse({
+      employeeIds: formData.getAll("employeeIds").map(String),
+    });
+    if (!parsed.success) return { error: "Pick at least one caller to balance the queue across." };
+    const employeeIds = [...new Set(parsed.data.employeeIds)];
+
+    const outcome = await db.transaction(async (tx) => {
+      /*
+       * One balance at a time. Two runs would otherwise lock overlapping halves
+       * of the same queue in whatever order their scans happened to take, and
+       * deadlock; a second click just waits here and then finds nothing left to
+       * move. Same per-transaction advisory lock convertCallTaskAction uses,
+       * released on commit or rollback.
+       */
+      await tx.execute(sql`select pg_advisory_xact_lock(hashtext('balance_call_queue'))`);
+
+      const staff = await tx
+        .select({ id: schema.user.id })
+        .from(schema.user)
+        .where(
+          and(
+            inArray(schema.user.id, employeeIds),
+            inArray(schema.user.role, ["admin", "employee"]),
+            or(isNull(schema.user.banned), eq(schema.user.banned, false)),
+          ),
+        );
+      // All or nothing. If one of the chosen callers was just banned or
+      // demoted, an even split across whoever is left is not what was asked
+      // for — and silently dropping them would look like the run succeeded.
+      if (staff.length !== employeeIds.length) return { kind: "invalid_assignee" } as const;
+
+      /*
+       * The pool, and the lock over it, for the rest of this transaction. This
+       * where-clause IS the "leave everyone else's book alone" rule: a task
+       * held by an unselected caller is never read, never locked, never moved.
+       * No search/product/source filter is accepted — balancing a filtered
+       * slice produces a split that looks fair and is not.
+       *
+       * Ordered by id so this scan takes its row locks in the same order every
+       * time; limited to one past the cap so an oversized queue is detected
+       * without locking all of it first.
+       */
+      const pool = await tx
+        .select({
+          id: schema.callTasks.id,
+          status: schema.callTasks.status,
+          assignedTo: schema.callTasks.assignedTo,
+        })
+        .from(schema.callTasks)
+        .where(
+          and(
+            notInArray(schema.callTasks.status, [...terminalCallStatusValues]),
+            or(
+              isNull(schema.callTasks.assignedTo),
+              inArray(schema.callTasks.assignedTo, employeeIds),
+            ),
+          ),
+        )
+        .orderBy(schema.callTasks.id)
+        .limit(MAX_BALANCE_TASKS + 1)
+        .for("update");
+      if (pool.length > MAX_BALANCE_TASKS) return { kind: "too_large" } as const;
+
+      const moves = balanceCallQueue(pool, employeeIds);
+      if (moves.length === 0) return { kind: "settled", pooled: pool.length } as const;
+
+      // One UPDATE per caller, not per task. Worst case is one caller taking
+      // all 2000 ids: 2001 bind parameters, 3% of what a statement may carry.
+      const idsByOwner = new Map<string, string[]>();
+      for (const move of moves) {
+        const ids = idsByOwner.get(move.to);
+        if (ids) ids.push(move.taskId);
+        else idsByOwner.set(move.to, [move.taskId]);
+      }
+      for (const [owner, ids] of idsByOwner) {
+        await tx
+          .update(schema.callTasks)
+          .set({ assignedTo: owner })
+          .where(inArray(schema.callTasks.id, ids));
+      }
+
+      /*
+       * One row per task, same as a bulk assign and for the same reason: this
+       * is what puts the change in that task's own "Call history" (entityId =
+       * task.id) alongside who held it before, which is the only place anyone
+       * looks when they ask where their task went. A distinct action string, so
+       * a redistribution is never mistaken for a hand-picked assignment.
+       * Chunked at 100 like the import route.
+       */
+      const auditRows = moves.map((move) => ({
+        actorId: user.id,
+        actorEmail: user.email,
+        action: "call_task.balance",
+        entityType: "call_task",
+        entityId: move.taskId,
+        before: { assignedTo: move.from },
+        after: { assignedTo: move.to },
+      }));
+      for (let i = 0; i < auditRows.length; i += BALANCE_CHUNK) {
+        await tx.insert(schema.auditLog).values(auditRows.slice(i, i + BALANCE_CHUNK));
+      }
+      return { kind: "balanced", moved: moves.length, pooled: pool.length } as const;
+    });
+
+    if (outcome.kind === "invalid_assignee") {
+      return { error: "One of the selected callers is no longer available. Reload and try again." };
+    }
+    if (outcome.kind === "too_large") {
+      return {
+        error: `The open queue is over ${MAX_BALANCE_TASKS} tasks, which is more than one balance can move at once. Close out or bulk-assign some, then try again.`,
+      };
+    }
+    revalidatePath("/crm");
+    if (outcome.kind === "settled") {
+      return {
+        ok: true,
+        notice:
+          outcome.pooled === 0
+            ? "There are no open tasks to balance."
+            : "The open queue is already evenly split — nothing moved.",
+      };
+    }
+    return {
+      ok: true,
+      notice: `Moved ${outcome.moved} of ${outcome.pooled} open tasks across ${employeeIds.length} ${employeeIds.length === 1 ? "caller" : "callers"}.`,
+    };
+  } catch (error) {
+    reportCrmActionFailure("crm_balance_failed", error);
+    return { error: UNKNOWN_BALANCE_OUTCOME };
   } finally {
     scheduleAdminRequestContextCleanup({ db, ctx });
   }
@@ -193,6 +424,10 @@ export async function updateCallTaskStatusAction(
       // Not found and not yours deliberately return the same outcome.
       if (!task) return "missing" as const;
       if (task.status === "converted") return "converted" as const;
+      // Every terminal status closes the task, not just "converted" — a
+      // wrong_number/not_interested task must refuse a further outcome the
+      // same way the UI already hides the form for one.
+      if (isTerminalCallStatus(task.status)) return "terminal" as const;
 
       await tx
         .update(schema.callTasks)
@@ -211,9 +446,12 @@ export async function updateCallTaskStatusAction(
       });
       return "updated" as const;
     });
-    if (outcome === "missing") return { error: "Call task not found." };
+    if (outcome === "missing") return { error: TASK_OUT_OF_SCOPE };
     if (outcome === "converted") {
       return { error: "This task already became a lead. Work it from the lead instead." };
+    }
+    if (outcome === "terminal") {
+      return { error: "This task is already closed. No further outcome can be recorded." };
     }
     revalidatePath(`/crm/${parsed.data.taskId}`);
     revalidatePath("/crm");
@@ -302,6 +540,17 @@ export async function convertCallTaskAction(
       if (!task) return "missing" as const;
       if (task.leadId) return "already_converted" as const;
       if (isTerminalCallStatus(task.status)) return "terminal" as const;
+
+      /*
+       * Serializes every conversion for this phone number. Without this, two
+       * call tasks that share a number (e.g. a duplicate CSV import) converting
+       * at the same moment could both see "no existing lead" below and both
+       * insert one. The lock is per-transaction and releases itself on
+       * commit/rollback — a concurrent waiter just blocks here until this
+       * transaction finishes, then its own lookup finds the lead just created
+       * (or linked) and links to it instead of duplicating it.
+       */
+      await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${task.phone}))`);
 
       /*
        * The prospect may have filled the public form themselves after the call,
@@ -429,7 +678,7 @@ export async function convertCallTaskAction(
       return linkedExisting ? ("linked" as const) : ("created" as const);
     });
 
-    if (outcome === "missing") return { error: "Call task not found." };
+    if (outcome === "missing") return { error: TASK_OUT_OF_SCOPE };
     if (outcome === "already_converted") {
       return { error: "This task already has a lead." };
     }
@@ -492,7 +741,7 @@ export async function emailEnquiryFormAction(
       .from(schema.callTasks)
       .where(and(eq(schema.callTasks.id, parsed.data.taskId), taskScope(user)))
       .limit(1);
-    if (!task) return { error: "Call task not found." };
+    if (!task) return { error: TASK_OUT_OF_SCOPE };
     if (!task.email) {
       return { error: "This prospect has no email address. Copy the link and send it instead." };
     }

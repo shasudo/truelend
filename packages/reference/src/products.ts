@@ -31,6 +31,25 @@ export function isProductSlug(value: string): value is ProductSlug {
   return productsBySlug.has(value);
 }
 
+const productsByName: ReadonlyMap<string, ProductSlug> = new Map(
+  products.map((product) => [product.name.toLowerCase(), product.slug]),
+);
+
+/**
+ * Resolves free text to a product slug: the exact slug, or a human label
+ * typed into a spreadsheet ("Personal Loan", "personal loan"). A CSV import
+ * column inviting "Loan Type" as a header alias all but guarantees the latter
+ * — matching only the exact slug would silently drop the product on every
+ * such row.
+ */
+export function resolveProductSlug(value: string): ProductSlug | null {
+  const trimmed = value.trim();
+  if (trimmed === "") return null;
+  const bySlug = trimmed.toLowerCase().replace(/\s+/g, "-");
+  if (isProductSlug(bySlug)) return bySlug;
+  return productsByName.get(trimmed.toLowerCase()) ?? null;
+}
+
 export function productName(slug: string | null | undefined): string {
   return (slug && productsBySlug.get(slug)?.name) || slug || "—";
 }

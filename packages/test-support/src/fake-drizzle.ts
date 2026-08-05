@@ -52,6 +52,8 @@ export interface FakeQueryClient {
   update(table: unknown): FakeUpdateChain;
   insert(table: unknown): FakeInsertChain;
   delete(table: unknown): FakeDeleteChain;
+  /** Raw `sql\`...\`` statements (e.g. an advisory lock). Accepted and ignored, like `.for()`. */
+  execute(query: unknown): Promise<unknown>;
 }
 
 export interface FakeDbOptions {
@@ -192,6 +194,10 @@ function createFakeQueryClient(options: FakeDbOptions): FakeQueryClient {
           return Promise.resolve();
         },
       };
+    },
+    execute(query) {
+      void query;
+      return Promise.resolve(undefined);
     },
   };
 }

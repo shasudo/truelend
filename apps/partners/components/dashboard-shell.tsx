@@ -106,17 +106,44 @@ function NavLinks({ groups, onNavigate }: NavLinksProps) {
 interface UserCardProps {
   name: string;
   referenceId: string;
+  photoUrl?: string | null;
 }
 
-function UserCard({ name, referenceId }: UserCardProps) {
+function UserAvatar({ name, photoUrl }: { name: string; photoUrl?: string | null }) {
+  if (photoUrl) {
+    // A private, per-partner document behind auth — a plain <img>, not
+    // next/image, since there is nothing here for Next's loader to optimize
+    // or publicly cache.
+    return (
+      <img
+        src={photoUrl}
+        alt=""
+        className="h-10 w-10 shrink-0 rounded-full object-cover ring-1 ring-navy-800/10"
+      />
+    );
+  }
+  return (
+    <span
+      aria-hidden
+      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-navy-800/[0.07] text-sm font-semibold text-navy-600"
+    >
+      {name.trim().charAt(0).toUpperCase() || "?"}
+    </span>
+  );
+}
+
+function UserCard({ name, referenceId, photoUrl }: UserCardProps) {
   const { signOut, pending, error } = useSignOut();
   return (
     <div className="border-t border-hairline p-3">
-      <div className="px-2 py-1.5">
-        <p className="truncate text-sm font-semibold text-navy-950">{name}</p>
-        <span className="mt-1 inline-block rounded-full bg-navy-800/[0.07] px-2 py-0.5 text-xs font-semibold text-navy-600">
-          Referral Partner
-        </span>
+      <div className="flex items-center gap-3 px-2 py-1.5">
+        <UserAvatar name={name} photoUrl={photoUrl} />
+        <div className="min-w-0">
+          <p className="truncate text-sm font-semibold text-navy-950">{name}</p>
+          <span className="mt-1 inline-block rounded-full bg-navy-800/[0.07] px-2 py-0.5 text-xs font-semibold text-navy-600">
+            Referral Partner
+          </span>
+        </div>
       </div>
       <PartnerIdChip referenceId={referenceId} className="mt-2 w-full justify-between" />
       <button
@@ -140,10 +167,11 @@ function UserCard({ name, referenceId }: UserCardProps) {
 interface DashboardShellProps {
   referenceId: string;
   name: string;
+  photoUrl?: string | null;
   children: ReactNode;
 }
 
-export function DashboardShell({ referenceId, name, children }: DashboardShellProps) {
+export function DashboardShell({ referenceId, name, photoUrl, children }: DashboardShellProps) {
   const [open, setOpen] = useState(false);
   const navGroups: NavGroup[] = [
     {
@@ -190,7 +218,7 @@ export function DashboardShell({ referenceId, name, children }: DashboardShellPr
         <nav className="flex-1 overflow-y-auto p-3" aria-label="Main">
           <NavLinks groups={navGroups} />
         </nav>
-        <UserCard name={name} referenceId={referenceId} />
+        <UserCard name={name} referenceId={referenceId} photoUrl={photoUrl} />
       </aside>
 
       <div className="flex min-h-screen min-w-0 flex-1 flex-col">
@@ -230,7 +258,7 @@ export function DashboardShell({ referenceId, name, children }: DashboardShellPr
                 <nav className="flex-1 overflow-y-auto p-3" aria-label="Main">
                   <NavLinks groups={navGroups} onNavigate={() => setOpen(false)} />
                 </nav>
-                <UserCard name={name} referenceId={referenceId} />
+                <UserCard name={name} referenceId={referenceId} photoUrl={photoUrl} />
               </Dialog.Content>
             </Dialog.Portal>
           </Dialog.Root>

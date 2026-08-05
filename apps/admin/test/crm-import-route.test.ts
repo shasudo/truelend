@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
+import { isDeepStrictEqual } from "node:util";
 import test, { beforeEach } from "node:test";
+import { and, inArray, notInArray } from "drizzle-orm";
 import { schema } from "@truelend/db";
+import { terminalCallStatusValues } from "@truelend/reference";
 import {
   installAuthDependencyMocks,
   resetFakeAuthState,
@@ -8,7 +11,7 @@ import {
   type FakeAdminSession,
   type FakeCloudflareEnv,
 } from "./support/fake-auth-dependencies";
-import type { FakeRow } from "@truelend/test-support";
+import type { FakeRow, FakeRowProvider } from "@truelend/test-support";
 
 installAuthDependencyMocks();
 beforeEach(() => {
@@ -111,6 +114,20 @@ void test("crm import: a binary payload renamed .csv is refused", async () => {
   assert.equal(response.status, 400);
 });
 
+void test("crm import: a UTF-16 export names the encoding, not just 'not a CSV'", async () => {
+  setFakeAuthState({ getSession: async () => buildAdminSession(), env: buildEnv() });
+  // Excel's "Save As -> Unicode Text": a UTF-16LE BOM followed by ASCII text,
+  // which is NUL-dense the same way a ZIP is — the two must not collapse into
+  // the same generic message.
+  const utf16 = new Uint8Array([0xff, 0xfe, ...Buffer.from("name,phone\n", "utf16le")]).buffer;
+
+  const response = await POST(buildRequest(csvForm(utf16)));
+
+  assert.equal(response.status, 400);
+  const body = (await response.json()) as { error: string };
+  assert.match(body.error, /UTF-16/);
+});
+
 void test("crm import: a header without a phone column is refused", async () => {
   setFakeAuthState({ getSession: async () => buildAdminSession(), env: buildEnv() });
 
@@ -129,9 +146,7 @@ void test("crm import: one bad row rejects the whole file and writes nothing", a
     dbOptions: { onInsert: (table, values) => inserts.push({ table, values }) },
   });
 
-  const response = await POST(
-    buildRequest(csvForm("name,phone\nAnil,9876543210\nMeera,+919812345678\n")),
-  );
+  const response = await POST(buildRequest(csvForm("name,phone\nAnil,9876543210\nMeera,12345\n")));
 
   assert.equal(response.status, 400);
   const body = (await response.json()) as {
@@ -144,6 +159,141 @@ void test("crm import: one bad row rejects the whole file and writes nothing", a
   // Row 3: the header is row 1. Reported by position and code, never by value.
   assert.deepEqual(body.failures, [{ row: 3, code: "phone_invalid" }]);
   assert.equal(inserts.length, 0, "a partial import must never land");
+});
+
+void test("crm import: a +91-prefixed phone is accepted like a bare 10-digit one", async () => {
+  const inserts: RecordedWrite[] = [];
+  setFakeAuthState({
+    getSession: async () => buildAdminSession(),
+    env: buildEnv(),
+    dbOptions: { onInsert: (table, values) => inserts.push({ table, values }) },
+  });
+
+  const response = await POST(
+    buildRequest(csvForm("name,phone\nAnil Rao,+91 98765 43210\nMeera S,09812345678\n")),
+  );
+
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), { ok: true, imported: 2 });
+  const rows = inserts.find((write) => write.table === schema.callTasks)?.values as unknown as {
+    phone: string;
+  }[];
+  assert.deepEqual(
+    rows.map((r) => r.phone),
+    ["9876543210", "9812345678"],
+  );
+});
+
+void test("crm import: a repeated phone within the file rejects the whole file", async () => {
+  const inserts: RecordedWrite[] = [];
+  setFakeAuthState({
+    getSession: async () => buildAdminSession(),
+    env: buildEnv(),
+    dbOptions: { onInsert: (table, values) => inserts.push({ table, values }) },
+  });
+
+  const response = await POST(
+    buildRequest(csvForm("name,phone\nAnil Rao,9876543210\nAnil Again,9876543210\n")),
+  );
+
+  assert.equal(response.status, 400);
+  const body = (await response.json()) as { failures: { row: number; code: string }[] };
+  assert.deepEqual(body.failures, [{ row: 3, code: "duplicate_phone" }]);
+  assert.equal(inserts.length, 0);
+});
+
+void test("crm import: a phone already open in the queue rejects the row", async () => {
+  const inserts: RecordedWrite[] = [];
+  setFakeAuthState({
+    getSession: async () => buildAdminSession(),
+    env: buildEnv(),
+    dbOptions: {
+      rowsByTable: new Map([[schema.callTasks, [{ phone: "9876543210" }]]]),
+      onInsert: (table, values) => inserts.push({ table, values }),
+    },
+  });
+
+  const response = await POST(buildRequest(csvForm("name,phone\nAnil Rao,9876543210\n")));
+
+  assert.equal(response.status, 400);
+  const body = (await response.json()) as { failures: { row: number; code: string }[] };
+  assert.deepEqual(body.failures, [{ row: 2, code: "duplicate_phone" }]);
+  assert.equal(inserts.length, 0);
+});
+
+void test("crm import: a closed task with the same phone does not block re-import", async () => {
+  const inserts: RecordedWrite[] = [];
+  setFakeAuthState({
+    getSession: async () => buildAdminSession(),
+    env: buildEnv(),
+    dbOptions: {
+      rowsByTable: new Map<unknown, FakeRow[] | FakeRowProvider>([
+        [
+          schema.callTasks,
+          // Proves the query excludes terminal statuses at the clause level,
+          // the same way the auth-scoping tests prove a WHERE clause rather
+          // than trusting that rows came back for the right reason.
+          (query) =>
+            isDeepStrictEqual(query.whereArgs, [
+              and(
+                inArray(schema.callTasks.phone, ["9876543210"]),
+                notInArray(schema.callTasks.status, [...terminalCallStatusValues]),
+              ),
+            ])
+              ? []
+              : [{ phone: "9876543210" }],
+        ],
+      ]),
+      onInsert: (table, values) => inserts.push({ table, values }),
+    },
+  });
+
+  const response = await POST(buildRequest(csvForm("name,phone\nAnil Rao,9876543210\n")));
+
+  assert.equal(response.status, 200);
+});
+
+void test("crm import: a human product label resolves to its slug", async () => {
+  const inserts: RecordedWrite[] = [];
+  setFakeAuthState({
+    getSession: async () => buildAdminSession(),
+    env: buildEnv(),
+    dbOptions: { onInsert: (table, values) => inserts.push({ table, values }) },
+  });
+
+  const response = await POST(
+    buildRequest(
+      csvForm(
+        "name,phone,product\nAnil Rao,9876543210,Personal Loan\nMeera S,9812345678,nonsense\n",
+      ),
+    ),
+  );
+
+  assert.equal(response.status, 200);
+  const rows = inserts.find((write) => write.table === schema.callTasks)?.values as unknown as {
+    productSlug: string | null;
+  }[];
+  assert.equal(rows[0]?.productSlug, "personal-loan");
+  assert.equal(rows[1]?.productSlug, null, "an unrecognized label is dropped, not a failure");
+});
+
+void test("crm import: a malformed email cell imports as no email, not a failure", async () => {
+  const inserts: RecordedWrite[] = [];
+  setFakeAuthState({
+    getSession: async () => buildAdminSession(),
+    env: buildEnv(),
+    dbOptions: { onInsert: (table, values) => inserts.push({ table, values }) },
+  });
+
+  const response = await POST(
+    buildRequest(csvForm("name,phone,email\nAnil Rao,9876543210,not-an-email\n")),
+  );
+
+  assert.equal(response.status, 200);
+  const rows = inserts.find((write) => write.table === schema.callTasks)?.values as unknown as {
+    email: string | null;
+  }[];
+  assert.equal(rows[0]?.email, null);
 });
 
 void test("crm import: a clean file inserts the rows and one audit entry", async () => {

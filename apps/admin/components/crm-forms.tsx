@@ -1,9 +1,9 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState, type ReactNode } from "react";
+import { useActionState, useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { Copy, Check, Mail, Upload } from "lucide-react";
-import { Button, Card, Field, Input, Select, Textarea, cx } from "@truelend/ui";
+import { Copy, Check, Mail, Scale, Upload } from "lucide-react";
+import { Button, Card, Checkbox, Field, Input, Select, Textarea, cx } from "@truelend/ui";
 import {
   callStatusLabels,
   employeeCallStatusValues,
@@ -14,6 +14,7 @@ import { ActionFeedback } from "@/components/action-feedback";
 import type { ActionResult } from "@/lib/action-result";
 import {
   assignCallTasksAction,
+  balanceCallQueueAction,
   convertCallTaskAction,
   emailEnquiryFormAction,
   updateCallTaskStatusAction,
@@ -272,8 +273,31 @@ export function AssignCallTasksForm({ employees, children }: AssignCallTasksForm
     if (state.ok) router.refresh();
   }, [state, router]);
 
+  // The table shows each row's current assignee, but nothing stops a careless
+  // multi-page selection from including tasks someone else is already
+  // working. Confirm once, naming how many, before silently taking them.
+  function confirmReassignment(event: FormEvent<HTMLFormElement>) {
+    const form = event.currentTarget;
+    const targetId = new FormData(form).get("assignedTo");
+    const targetName = employees.find((employee) => employee.id === targetId)?.name ?? "Unassigned";
+    const stolen = Array.from(
+      form.querySelectorAll<HTMLInputElement>('input[name="taskIds"]:checked'),
+    ).filter((box) => {
+      const current = box.dataset.assignee ?? "";
+      return current !== "" && current !== targetName;
+    });
+    if (
+      stolen.length > 0 &&
+      !window.confirm(
+        `${stolen.length} of the selected ${stolen.length === 1 ? "task is" : "tasks are"} already assigned to someone else. Reassign to ${targetName} anyway?`,
+      )
+    ) {
+      event.preventDefault();
+    }
+  }
+
   return (
-    <form action={action}>
+    <form action={action} onSubmit={confirmReassignment}>
       <div className="mb-3 flex flex-wrap items-end gap-2">
         <Field label="Assign selected to" htmlFor="assign-to" className="min-w-52">
           <Select id="assign-to" name="assignedTo" defaultValue="">
@@ -295,6 +319,89 @@ export function AssignCallTasksForm({ employees, children }: AssignCallTasksForm
   );
 }
 
+/* ---- balance the queue (admin only) ---- */
+
+interface BalanceCallQueueFormProps {
+  callers: Array<{ id: string; name: string; open: number }>;
+  totalOpen: number;
+  unassignedOpen: number;
+}
+
+export function BalanceCallQueueForm({
+  callers,
+  totalOpen,
+  unassignedOpen,
+}: BalanceCallQueueFormProps) {
+  const [state, action, pending] = useActionState<ActionResult, FormData>(
+    balanceCallQueueAction,
+    initialState,
+  );
+  const router = useRouter();
+
+  useEffect(() => {
+    if (state.ok) router.refresh();
+  }, [state, router]);
+
+  /*
+   * One click moves other people's work, so it asks first — same reasoning as
+   * confirmReassignment. Deliberately does NOT predict how many tasks will
+   * move: that would mean a second copy of the balancing maths living in the
+   * browser, free to drift from the real one on the server.
+   */
+  function confirmBalance(event: FormEvent<HTMLFormElement>) {
+    const ticked = Array.from(
+      event.currentTarget.querySelectorAll<HTMLInputElement>('input[name="employeeIds"]:checked'),
+    );
+    if (ticked.length === 0) return; // the server refuses this too, with a message
+    if (
+      !window.confirm(
+        `Spread the ${totalOpen} open ${totalOpen === 1 ? "task" : "tasks"} evenly across ${ticked.length} ${ticked.length === 1 ? "caller" : "callers"}? Tasks already assigned to them may move to someone else. Scheduled callbacks stay put.`,
+      )
+    ) {
+      event.preventDefault();
+    }
+  }
+
+  return (
+    <Card className="mb-6 p-4">
+      <form action={action} onSubmit={confirmBalance}>
+        <div className="flex flex-wrap items-center gap-3">
+          <Scale className="h-4 w-4 text-navy-500" aria-hidden />
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold text-navy-950">Balance the queue</p>
+            <p className="text-xs text-muted">
+              {totalOpen} open {totalOpen === 1 ? "task" : "tasks"} · {unassignedOpen} unassigned.
+              Evens the load across the callers you tick. Scheduled callbacks never move, and anyone
+              unticked keeps what they already have.
+            </p>
+          </div>
+          <Button type="submit" size="sm" disabled={pending || callers.length === 0}>
+            {pending ? "Balancing…" : "Balance queue"}
+          </Button>
+        </div>
+        {callers.length === 0 ? (
+          <p className="mt-3 text-sm text-muted">No active callers to balance across.</p>
+        ) : (
+          <ul className="mt-3 flex flex-wrap gap-x-5 gap-y-2 border-t border-hairline pt-3">
+            {callers.map((caller) => (
+              <li key={caller.id}>
+                <label className="flex items-center gap-2 text-sm text-navy-700">
+                  <Checkbox name="employeeIds" value={caller.id} defaultChecked className="mt-0" />
+                  <span>
+                    {caller.name}{" "}
+                    <span className="tabular-nums text-muted">({caller.open} open)</span>
+                  </span>
+                </label>
+              </li>
+            ))}
+          </ul>
+        )}
+        <ActionFeedback state={state} success="Queue balanced." />
+      </form>
+    </Card>
+  );
+}
+
 /* ---- CSV import (admin only) ---- */
 
 interface ImportFailure {
@@ -306,12 +413,14 @@ const failureCopy: Record<string, string> = {
   name_missing: "no name",
   phone_invalid: "phone is not a 10-digit Indian mobile",
   too_many_columns: "more columns than the header",
+  duplicate_phone: "same phone as another row, or an already-open task",
 };
 
 export function CallTaskImport() {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
   const [failures, setFailures] = useState<ImportFailure[]>([]);
+  const [invalidTotal, setInvalidTotal] = useState<number | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
@@ -319,6 +428,7 @@ export function CallTaskImport() {
     setBusy(true);
     setMessage(null);
     setFailures([]);
+    setInvalidTotal(null);
     try {
       const body = new FormData();
       body.set("file", file);
@@ -328,13 +438,19 @@ export function CallTaskImport() {
         imported?: number;
         error?: string;
         uncertain?: boolean;
+        total?: number;
         invalid?: number;
         failures?: ImportFailure[];
       };
       if (result.uncertain) router.refresh();
       if (!result.ok) {
-        setMessage({ ok: false, text: result.error ?? "Import failed." });
+        const counts =
+          typeof result.invalid === "number" && typeof result.total === "number"
+            ? ` ${result.invalid} of ${result.total} rows failed.`
+            : "";
+        setMessage({ ok: false, text: `${result.error ?? "Import failed."}${counts}` });
         setFailures(result.failures ?? []);
+        setInvalidTotal(result.invalid ?? null);
         return;
       }
       setMessage({
@@ -394,13 +510,20 @@ export function CallTaskImport() {
         </p>
       )}
       {failures.length > 0 && (
-        <ul className="mt-2 space-y-1 text-xs text-red-700">
-          {failures.map((failure) => (
-            <li key={`${failure.row}-${failure.code}`}>
-              Record {failure.row}: {failureCopy[failure.code] ?? failure.code}
-            </li>
-          ))}
-        </ul>
+        <>
+          <ul className="mt-2 space-y-1 text-xs text-red-700">
+            {failures.map((failure) => (
+              <li key={`${failure.row}-${failure.code}`}>
+                Record {failure.row}: {failureCopy[failure.code] ?? failure.code}
+              </li>
+            ))}
+          </ul>
+          {invalidTotal !== null && invalidTotal > failures.length && (
+            <p className="mt-2 text-xs text-red-700">
+              Showing the first {failures.length} of {invalidTotal} failing rows.
+            </p>
+          )}
+        </>
       )}
     </Card>
   );

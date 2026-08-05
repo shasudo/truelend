@@ -23,11 +23,19 @@ const shortDay = (day: string) =>
 
 interface TrendChartProps {
   data: TimePoint[];
+  /*
+   * Namespaces the gradient and the a11y title/desc. Two charts on one page
+   * would otherwise share `lead-trend-*` ids — duplicate DOM ids, and the
+   * second chart's fill silently resolving to the first one's gradient.
+   */
+  id?: string;
+  /** What the series counts, e.g. "leads" or "call tasks". */
+  noun?: string;
 }
 
 /** Server-rendered SVG keeps the trend visual without shipping a chart runtime. */
-export function TrendChart({ data }: TrendChartProps) {
-  if (data.length === 0) return <Empty label="No leads in the last 30 days" />;
+export function TrendChart({ data, id = "lead-trend", noun = "leads" }: TrendChartProps) {
+  if (data.length === 0) return <Empty label={`No ${noun} in the last 30 days`} />;
   const plotWidth = WIDTH - PLOT.left - PLOT.right;
   const plotHeight = HEIGHT - PLOT.top - PLOT.bottom;
   const max = Math.max(1, ...data.map((point) => point.count));
@@ -46,12 +54,16 @@ export function TrendChart({ data }: TrendChartProps) {
         viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
         className="h-[220px] w-full"
         role="img"
-        aria-labelledby="lead-trend-title lead-trend-desc"
+        aria-labelledby={`${id}-title ${id}-desc`}
       >
-        <title id="lead-trend-title">Leads over the last 30 days</title>
-        <desc id="lead-trend-desc">Daily lead counts. The highest daily count is {max}.</desc>
+        <title id={`${id}-title`}>
+          {noun.charAt(0).toUpperCase() + noun.slice(1)} over the last 30 days
+        </title>
+        <desc id={`${id}-desc`}>
+          Daily {noun} counts. The highest daily count is {max}.
+        </desc>
         <defs>
-          <linearGradient id="lead-trend-fill" x1="0" y1="0" x2="0" y2="1">
+          <linearGradient id={`${id}-fill`} x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor="#14204a" stopOpacity="0.18" />
             <stop offset="100%" stopColor="#14204a" stopOpacity="0" />
           </linearGradient>
@@ -78,7 +90,7 @@ export function TrendChart({ data }: TrendChartProps) {
             </g>
           );
         })}
-        <path d={area} fill="url(#lead-trend-fill)" />
+        <path d={area} fill={`url(#${id}-fill)`} />
         <polyline
           points={line}
           fill="none"
@@ -104,7 +116,7 @@ export function TrendChart({ data }: TrendChartProps) {
         })}
       </svg>
       <figcaption className="sr-only">
-        {data.map((point) => `${shortDay(point.day)}: ${point.count} leads`).join("; ")}
+        {data.map((point) => `${shortDay(point.day)}: ${point.count} ${noun}`).join("; ")}
       </figcaption>
     </figure>
   );
@@ -112,14 +124,16 @@ export function TrendChart({ data }: TrendChartProps) {
 
 interface CategoryBarsProps {
   data: NamedCount[];
+  /** What the bars count — read out before the list on a screen reader. */
+  label?: string;
 }
 
 /** Exact labels and values stay visible and screen-reader friendly. */
-export function CategoryBars({ data }: CategoryBarsProps) {
+export function CategoryBars({ data, label = "Lead counts" }: CategoryBarsProps) {
   if (data.length === 0) return <Empty label="No data yet" />;
   const max = Math.max(1, ...data.map((item) => item.count));
   return (
-    <ul className="space-y-3" aria-label="Lead counts">
+    <ul className="space-y-3" aria-label={label}>
       {data.map((item) => (
         <li
           key={item.name}

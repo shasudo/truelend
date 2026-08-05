@@ -33,7 +33,8 @@ export const callStatusLabels: Readonly<Record<string, string>> = {
 } satisfies Record<CallStatus, string>;
 
 // A terminal task is done: no further outcome, and the convert action refuses it.
-const terminalCallStatuses = new Set<string>(["not_interested", "wrong_number", "converted"]);
+export const terminalCallStatusValues = ["not_interested", "wrong_number", "converted"] as const;
+const terminalCallStatuses = new Set<string>(terminalCallStatusValues);
 
 export function isTerminalCallStatus(status: string): boolean {
   return terminalCallStatuses.has(status);
@@ -47,7 +48,11 @@ export function isTerminalCallStatus(status: string): boolean {
  */
 export const callTaskCsvColumns = {
   name: ["name", "full name", "customer name", "contact name"],
-  phone: ["phone", "mobile", "phone number", "mobile number", "contact"],
+  // Deliberately excludes the bare word "contact": it's as likely to mean a
+  // point-of-contact name as a phone number, and claiming it here would let it
+  // silently swallow a real name column or, worse, route non-phone text into
+  // the phone field on every row.
+  phone: ["phone", "mobile", "phone number", "mobile number"],
   email: ["email", "email id", "email address"],
   city: ["city", "location"],
   product: ["product", "product slug", "loan type"],

@@ -1,14 +1,33 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { Search, ChevronLeft, ChevronRight, AlertTriangle } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight, AlertTriangle, BarChart3 } from "lucide-react";
 import { Button, Card, Input, Select, cx } from "@truelend/ui";
-import { callStatusLabels, formatDate, formatDateTime, productName } from "@truelend/reference";
+import {
+  callStatusLabels,
+  formatDate,
+  formatDateTime,
+  productName,
+  products,
+} from "@truelend/reference";
 import { schema } from "@truelend/db";
 import { PageTitle } from "@/components/page-title";
 import { StatusBadge } from "@/components/status-badge";
-import { AssignCallTasksForm, CallTaskImport } from "@/components/crm-forms";
+import { AssignCallTasksForm, BalanceCallQueueForm, CallTaskImport } from "@/components/crm-forms";
+import { SelectAllCheckbox } from "@/components/select-all-checkbox";
 import { getAuthContext, requireStaff, scopeFor } from "@/lib/auth";
-import { listCallTasks, type CallStatus, type CallTaskFilters } from "@/lib/crm-queries";
+import {
+  getCallQueueLoad,
+  listCallTaskSources,
+  listCallTasks,
+  type CallStatus,
+  type CallTaskFilters,
+} from "@/lib/crm-queries";
+import {
+  callbackFilterValues,
+  callTaskSortValues,
+  type CallbackFilter,
+  type CallTaskSort,
+} from "@/lib/query-filters";
 import { listEmployees } from "@/lib/lead-queries";
 
 export const dynamic = "force-dynamic";
@@ -16,19 +35,54 @@ export const metadata: Metadata = { title: "Call Queue" };
 
 type SP = Record<string, string | string[] | undefined>;
 
+const callbackLabels: Record<CallbackFilter, string> = {
+  overdue: "Callback overdue",
+  today: "Callback due today",
+  scheduled: "Callback scheduled",
+};
+
+const sortLabels: Record<CallTaskSort, string> = {
+  newest: "Newest first",
+  oldest: "Oldest first",
+  callback: "Callback soonest",
+};
+
 function str(sp: SP, key: string): string | undefined {
   const v = sp[key];
   return typeof v === "string" && v !== "" ? v : undefined;
 }
 
-function parseFilters(sp: SP): CallTaskFilters {
+function oneOf<T extends string>(value: string | undefined, allowed: readonly T[]): T | undefined {
+  return allowed.includes(value as T) ? (value as T) : undefined;
+}
+
+/** A bare YYYY-MM-DD; anything else is ignored rather than becoming an Invalid Date. */
+function day(sp: SP, key: string): string | undefined {
+  const value = str(sp, key);
+  return value && /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : undefined;
+}
+
+/*
+ * `isAdmin` gates `assignee`: for a scoped employee, callTaskWhere ANDs their
+ * own assignment with this filter, which is unsatisfiable for any value but
+ * their own id. The assignee control is admin-only in the UI below, so an
+ * employee can only reach that state via a bare URL param — reading it for
+ * them would silently empty their whole queue with no visible cause.
+ */
+function parseFilters(sp: SP, isAdmin: boolean): CallTaskFilters {
   const status = str(sp, "status");
   return {
     status: (schema.callStatus.enumValues as readonly string[]).includes(status ?? "")
       ? (status as CallStatus)
       : undefined,
-    assignee: str(sp, "assignee"),
+    assignee: isAdmin ? str(sp, "assignee") : undefined,
+    source: str(sp, "source"),
+    product: str(sp, "product"),
+    callback: oneOf(str(sp, "callback"), callbackFilterValues),
+    from: day(sp, "from"),
+    to: day(sp, "to"),
     q: str(sp, "q"),
+    sort: oneOf(str(sp, "sort"), callTaskSortValues),
     page: Math.max(1, Number(str(sp, "page")) || 1),
   };
 }
@@ -37,7 +91,13 @@ function queryString(f: CallTaskFilters, page: number): string {
   const p = new URLSearchParams();
   if (f.status) p.set("status", f.status);
   if (f.assignee) p.set("assignee", f.assignee);
+  if (f.source) p.set("source", f.source);
+  if (f.product) p.set("product", f.product);
+  if (f.callback) p.set("callback", f.callback);
+  if (f.from) p.set("from", f.from);
+  if (f.to) p.set("to", f.to);
   if (f.q) p.set("q", f.q);
+  if (f.sort) p.set("sort", f.sort);
   if (page > 1) p.set("page", String(page));
   const s = p.toString();
   return s ? `?${s}` : "";
@@ -45,15 +105,28 @@ function queryString(f: CallTaskFilters, page: number): string {
 
 export default async function CallQueuePage({ searchParams }: { searchParams: Promise<SP> }) {
   const sp = await searchParams;
-  const filters = parseFilters(sp);
-  const hasFilters = Boolean(filters.status || filters.assignee || filters.q);
   const session = await requireStaff();
   const scopeUserId = scopeFor(session);
   const isAdmin = scopeUserId === null;
+  const filters = parseFilters(sp, isAdmin);
+  const hasFilters = Boolean(
+    filters.status ||
+    filters.assignee ||
+    filters.source ||
+    filters.product ||
+    filters.callback ||
+    filters.from ||
+    filters.to ||
+    filters.q,
+  );
   const { db } = getAuthContext();
-  const [{ rows, total, page, pageCount }, employees] = await Promise.all([
+  const [{ rows, total, page, pageCount }, employees, sources, load] = await Promise.all([
     listCallTasks(db, scopeUserId, filters),
     listEmployees(db),
+    listCallTaskSources(db),
+    // Only the admin sees the balance controls, so only the admin pays for the
+    // workload aggregate.
+    isAdmin ? getCallQueueLoad(db) : null,
   ]);
 
   const table = (
@@ -61,7 +134,11 @@ export default async function CallQueuePage({ searchParams }: { searchParams: Pr
       <table className="w-full min-w-[1040px] text-left text-sm">
         <thead>
           <tr className="border-b border-hairline text-xs font-semibold uppercase tracking-[0.1em] text-navy-500">
-            {isAdmin && <th className="w-10 px-5 py-3 font-semibold" aria-label="Select" />}
+            {isAdmin && (
+              <th className="w-10 px-5 py-3 font-semibold">
+                <SelectAllCheckbox name="taskIds" />
+              </th>
+            )}
             <th className="px-5 py-3 font-semibold">Name</th>
             <th className="px-5 py-3 font-semibold">Phone</th>
             <th className="px-5 py-3 font-semibold">Product</th>
@@ -92,6 +169,7 @@ export default async function CallQueuePage({ searchParams }: { searchParams: Pr
                     type="checkbox"
                     name="taskIds"
                     value={task.id}
+                    data-assignee={task.assigneeName ?? ""}
                     aria-label={`Select ${task.name}`}
                   />
                 </td>
@@ -105,7 +183,7 @@ export default async function CallQueuePage({ searchParams }: { searchParams: Pr
                 </Link>
                 {task.possibleDuplicate && (
                   <span
-                    className="ml-2 inline-flex items-center gap-1 text-xs text-amber-700"
+                    className="ml-2 inline-flex items-center gap-1 text-xs text-sun-600"
                     title="A lead already exists with this phone number"
                   >
                     <AlertTriangle className="h-3.5 w-3.5" aria-hidden /> duplicate?
@@ -152,9 +230,25 @@ export default async function CallQueuePage({ searchParams }: { searchParams: Pr
             ? `${total} ${total === 1 ? "task" : "tasks"} across the team`
             : `${total} ${total === 1 ? "task" : "tasks"} assigned to you`
         }
+        actions={
+          isAdmin ? (
+            <Button variant="outline" size="sm" asChild>
+              <Link href="/crm/analytics">
+                <BarChart3 className="h-4 w-4" aria-hidden /> Analytics
+              </Link>
+            </Button>
+          ) : undefined
+        }
       />
 
       {isAdmin && <CallTaskImport />}
+      {load && (
+        <BalanceCallQueueForm
+          callers={load.callers}
+          totalOpen={load.totalOpen}
+          unassignedOpen={load.unassignedOpen}
+        />
+      )}
 
       <Card className="mb-6 p-4">
         <form method="get" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -179,6 +273,15 @@ export default async function CallQueuePage({ searchParams }: { searchParams: Pr
               </option>
             ))}
           </Select>
+          {/* The daily working view: who is owed a call back right now. */}
+          <Select name="callback" defaultValue={filters.callback ?? ""} aria-label="Callback">
+            <option value="">Any callback</option>
+            {callbackFilterValues.map((value) => (
+              <option key={value} value={value}>
+                {callbackLabels[value]}
+              </option>
+            ))}
+          </Select>
           {/* An employee only sees their own queue, so an assignee filter would
               be a control with one meaningful value. */}
           {isAdmin && (
@@ -192,6 +295,50 @@ export default async function CallQueuePage({ searchParams }: { searchParams: Pr
               ))}
             </Select>
           )}
+          <Select name="product" defaultValue={filters.product ?? ""} aria-label="Product">
+            <option value="">Any product</option>
+            {products.map((product) => (
+              <option key={product.slug} value={product.slug}>
+                {product.name}
+              </option>
+            ))}
+          </Select>
+          {/* Absent until an import has actually carried a source, so the
+              control never appears as an empty dropdown. */}
+          {sources.length > 0 && (
+            <Select name="source" defaultValue={filters.source ?? ""} aria-label="Source list">
+              <option value="">Any source</option>
+              {sources.map((source) => (
+                <option key={source} value={source}>
+                  {source}
+                </option>
+              ))}
+            </Select>
+          )}
+          <Select name="sort" defaultValue={filters.sort ?? ""} aria-label="Sort">
+            {callTaskSortValues.map((value) => (
+              <option key={value} value={value}>
+                {sortLabels[value]}
+              </option>
+            ))}
+          </Select>
+          <div className="flex items-center gap-2 sm:col-span-2">
+            <Input
+              type="date"
+              name="from"
+              defaultValue={filters.from ?? ""}
+              aria-label="Added from"
+              className="min-w-0"
+            />
+            <span className="shrink-0 text-sm text-muted">to</span>
+            <Input
+              type="date"
+              name="to"
+              defaultValue={filters.to ?? ""}
+              aria-label="Added until"
+              className="min-w-0"
+            />
+          </div>
           <div className="flex gap-2 sm:col-span-2 lg:col-span-4">
             <Button type="submit" size="sm">
               Apply filters

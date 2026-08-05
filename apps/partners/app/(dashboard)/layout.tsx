@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { requirePartnerSession, getAuthContext } from "@/lib/auth";
-import { getPartnerDocumentTypes } from "@/lib/kyc-document-queries";
+import { getPartnerDocumentTypes, getPartnerPhoto } from "@/lib/kyc-document-queries";
 import { PartnerStatusScreen } from "@/components/partner-status-screen";
 import { UnderReviewScreen } from "@/components/under-review-screen";
 import { DashboardShell } from "@/components/dashboard-shell";
@@ -37,8 +37,15 @@ export default async function DashboardLayout({ children }: { children: ReactNod
     );
   }
 
+  const { db } = getAuthContext();
+  const photo = await getPartnerPhoto(db, partner.userId);
+
   return (
-    <DashboardShell referenceId={partner.referenceId} name={session.user.name}>
+    <DashboardShell
+      referenceId={partner.referenceId}
+      name={session.user.name}
+      photoUrl={photo ? `/api/kyc/${photo.r2Key}` : null}
+    >
       {children}
     </DashboardShell>
   );
