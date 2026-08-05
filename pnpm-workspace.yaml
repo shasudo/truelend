@@ -68,6 +68,10 @@ overrides:
   # GHSA-67mh-4wv8-2f99: drizzle-kit's deprecated @esbuild-kit loader pins esbuild 0.18.
   # Scope to that path only (modern tsx/wrangler esbuild untouched); 0.25.4 is already in-tree.
   "@esbuild-kit/core-utils>esbuild": "0.25.4"
+  # GHSA-4cwx-7wf7-3272: cross-user info disclosure / parse-time crash via degenerate
+  # private cache directives. Pulled in by wrangler>miniflare, dev tooling only
+  # (never shipped in a Worker bundle), but still worth pinning past the fix.
+  undici: ">=7.29.0"
 
 # Postinstall scripts are blocked by default. Allow only the native binaries we
 # use: esbuild (drizzle-kit/tsx), workerd (wrangler dev/preview/deploy),
