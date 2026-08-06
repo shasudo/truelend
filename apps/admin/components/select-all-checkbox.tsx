@@ -16,6 +16,9 @@ export function SelectAllCheckbox({ name }: SelectAllCheckboxProps) {
     <input
       type="checkbox"
       aria-label="Select all"
+      // Lets an enclosing client form find this box and keep it (and its
+      // indeterminate state) in step with a selection made elsewhere.
+      data-select-all={name}
       onChange={(event) => {
         const checked = event.currentTarget.checked;
         event.currentTarget

@@ -183,12 +183,6 @@ export async function assignCallTasksAction(
 
 /* ---- balance the open queue across a chosen set of callers (admin only) ---- */
 
-const balanceSchema = z.object({
-  // Staff ids are better-auth text, not uuid. 50 is far more callers than this
-  // team will ever have, and it bounds the staff lookup's parameter count.
-  employeeIds: z.array(z.string().trim().min(1).max(64)).min(1).max(50),
-});
-
 /*
  * ponytail: the whole open queue in one transaction, capped at the same 2000
  * rows an import is capped at, so a freshly imported list always balances in
@@ -200,6 +194,14 @@ const balanceSchema = z.object({
  */
 const MAX_BALANCE_TASKS = 2000;
 const BALANCE_CHUNK = 100;
+
+const balanceSchema = z.object({
+  // Staff ids are better-auth text, not uuid. 50 is far more callers than this
+  // team will ever have, and it bounds the staff lookup's parameter count.
+  employeeIds: z.array(z.string().trim().min(1).max(64)).min(1).max(50),
+  // Blank means "no ceiling" — the original behaviour.
+  maxPerEmployee: z.coerce.number().int().min(1).max(MAX_BALANCE_TASKS).optional(),
+});
 
 export async function balanceCallQueueAction(
   _prev: ActionResult,
@@ -220,11 +222,20 @@ export async function balanceCallQueueAction(
 
   try {
     if (!isAdminUser(user)) return { error: "Not authorized." };
+    const rawMax = String(formData.get("maxPerEmployee") ?? "").trim();
     const parsed = balanceSchema.safeParse({
       employeeIds: formData.getAll("employeeIds").map(String),
+      maxPerEmployee: rawMax === "" ? undefined : rawMax,
     });
-    if (!parsed.success) return { error: "Pick at least one caller to balance the queue across." };
+    if (!parsed.success) {
+      return {
+        error: parsed.error.issues.some((issue) => issue.path[0] === "maxPerEmployee")
+          ? `The per-caller maximum must be a whole number between 1 and ${MAX_BALANCE_TASKS}, or blank for no limit.`
+          : "Pick at least one caller to balance the queue across.",
+      };
+    }
     const employeeIds = [...new Set(parsed.data.employeeIds)];
+    const maxPerEmployee = parsed.data.maxPerEmployee;
 
     const outcome = await db.transaction(async (tx) => {
       /*
@@ -283,8 +294,16 @@ export async function balanceCallQueueAction(
         .for("update");
       if (pool.length > MAX_BALANCE_TASKS) return { kind: "too_large" } as const;
 
-      const moves = balanceCallQueue(pool, employeeIds);
-      if (moves.length === 0) return { kind: "settled", pooled: pool.length } as const;
+      const moves = balanceCallQueue(pool, employeeIds, maxPerEmployee);
+      // What the cap left on the floor: open rows nobody holds that nobody was
+      // given. Counted here rather than returned from the maths so the pure
+      // function keeps its single, testable return value.
+      const stranded =
+        pool.filter((task) => task.assignedTo === null).length -
+        moves.filter((move) => move.from === null).length;
+      if (moves.length === 0) {
+        return { kind: "settled", pooled: pool.length, stranded } as const;
+      }
 
       // One UPDATE per caller, not per task. Worst case is one caller taking
       // all 2000 ids: 2001 bind parameters, 3% of what a statement may carry.
@@ -321,7 +340,7 @@ export async function balanceCallQueueAction(
       for (let i = 0; i < auditRows.length; i += BALANCE_CHUNK) {
         await tx.insert(schema.auditLog).values(auditRows.slice(i, i + BALANCE_CHUNK));
       }
-      return { kind: "balanced", moved: moves.length, pooled: pool.length } as const;
+      return { kind: "balanced", moved: moves.length, pooled: pool.length, stranded } as const;
     });
 
     if (outcome.kind === "invalid_assignee") {
@@ -333,18 +352,25 @@ export async function balanceCallQueueAction(
       };
     }
     revalidatePath("/crm");
+    // A cap that could not fit the whole queue is the one outcome an operator
+    // would otherwise misread as a complete balance, so it is always said out
+    // loud — including when nothing moved at all.
+    const strandedNote =
+      outcome.stranded > 0
+        ? ` ${outcome.stranded} ${outcome.stranded === 1 ? "task is" : "tasks are"} still unassigned — the cap of ${maxPerEmployee} per caller left no room.`
+        : "";
     if (outcome.kind === "settled") {
       return {
         ok: true,
         notice:
           outcome.pooled === 0
             ? "There are no open tasks to balance."
-            : "The open queue is already evenly split — nothing moved.",
+            : `The open queue is already evenly split — nothing moved.${strandedNote}`,
       };
     }
     return {
       ok: true,
-      notice: `Moved ${outcome.moved} of ${outcome.pooled} open tasks across ${employeeIds.length} ${employeeIds.length === 1 ? "caller" : "callers"}.`,
+      notice: `Moved ${outcome.moved} of ${outcome.pooled} open tasks across ${employeeIds.length} ${employeeIds.length === 1 ? "caller" : "callers"}${maxPerEmployee ? `, max ${maxPerEmployee} each` : ""}.${strandedNote}`,
     };
   } catch (error) {
     reportCrmActionFailure("crm_balance_failed", error);

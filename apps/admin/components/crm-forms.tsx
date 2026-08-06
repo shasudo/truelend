@@ -1,6 +1,14 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
+import {
+  useActionState,
+  useEffect,
+  useRef,
+  useState,
+  type FormEvent,
+  type MouseEvent as ReactMouseEvent,
+  type ReactNode,
+} from "react";
 import { useRouter } from "next/navigation";
 import { Copy, Check, Mail, Scale, Upload } from "lucide-react";
 import { Button, Card, Checkbox, Field, Input, Select, Textarea, cx } from "@truelend/ui";
@@ -268,10 +276,61 @@ export function AssignCallTasksForm({ employees, children }: AssignCallTasksForm
     initialState,
   );
   const router = useRouter();
+  const formRef = useRef<HTMLFormElement>(null);
+  const [selected, setSelected] = useState(0);
+  /** Index of the last row clicked, so shift-click can fill the range between. */
+  const anchor = useRef<number | null>(null);
 
   useEffect(() => {
     if (state.ok) router.refresh();
   }, [state, router]);
+
+  const boxes = () =>
+    Array.from(formRef.current?.querySelectorAll<HTMLInputElement>('input[name="taskIds"]') ?? []);
+
+  function recount() {
+    const all = boxes();
+    const checked = all.filter((box) => box.checked).length;
+    setSelected(checked);
+    // Keep the header box honest about a selection made from the toolbar, by
+    // shift-click, or one row at a time.
+    const header = formRef.current?.querySelector<HTMLInputElement>('[data-select-all="taskIds"]');
+    if (header) {
+      header.checked = checked > 0 && checked === all.length;
+      header.indeterminate = checked > 0 && checked < all.length;
+    }
+  }
+
+  function selectAll(checked: boolean) {
+    boxes().forEach((box) => {
+      box.checked = checked;
+    });
+    anchor.current = null;
+    recount();
+  }
+
+  /*
+   * Shift-click fills every row between this one and the last one clicked —
+   * the behaviour every mail client has, and the difference between assigning
+   * a page of 20 in one gesture and in twenty. Only row boxes take part; the
+   * header's select-all is not one of them.
+   */
+  function onRowClick(event: ReactMouseEvent<HTMLFormElement>) {
+    const target = event.target as HTMLElement;
+    if (!(target instanceof HTMLInputElement) || target.name !== "taskIds") return;
+    const all = boxes();
+    const index = all.indexOf(target);
+    if (index < 0) return;
+    if (event.shiftKey && anchor.current !== null && anchor.current !== index) {
+      const to = Math.max(anchor.current, index);
+      for (let i = Math.min(anchor.current, index); i <= to; i += 1) {
+        const box = all[i];
+        if (box) box.checked = target.checked;
+      }
+    }
+    anchor.current = index;
+    recount();
+  }
 
   // The table shows each row's current assignee, but nothing stops a careless
   // multi-page selection from including tasks someone else is already
@@ -297,7 +356,16 @@ export function AssignCallTasksForm({ employees, children }: AssignCallTasksForm
   }
 
   return (
-    <form action={action} onSubmit={confirmReassignment}>
+    // onChange catches the header select-all and keyboard toggles; onClick adds
+    // shift-range selection on top of it. Both just recount off the DOM, so the
+    // row checkboxes stay uncontrolled and the table stays server-rendered.
+    <form
+      ref={formRef}
+      action={action}
+      onSubmit={confirmReassignment}
+      onChange={recount}
+      onClick={onRowClick}
+    >
       <div className="mb-3 flex flex-wrap items-end gap-2">
         <Field label="Assign selected to" htmlFor="assign-to" className="min-w-52">
           <Select id="assign-to" name="assignedTo" defaultValue="">
@@ -309,9 +377,30 @@ export function AssignCallTasksForm({ employees, children }: AssignCallTasksForm
             ))}
           </Select>
         </Field>
-        <Button type="submit" size="sm" disabled={pending}>
-          {pending ? "Assigning…" : "Assign"}
+        <Button type="submit" size="sm" disabled={pending || selected === 0}>
+          {pending ? "Assigning…" : `Assign${selected > 0 ? ` ${selected}` : ""}`}
         </Button>
+        <div className="flex items-center gap-3 pb-2 text-xs">
+          <button
+            type="button"
+            className="font-semibold text-red-600 hover:underline"
+            onClick={() => selectAll(true)}
+          >
+            Select all on this page
+          </button>
+          {selected > 0 && (
+            <>
+              <button
+                type="button"
+                className="font-semibold text-navy-500 hover:underline"
+                onClick={() => selectAll(false)}
+              >
+                Clear
+              </button>
+              <span className="text-muted">{selected} selected · shift-click to pick a range</span>
+            </>
+          )}
+        </div>
       </div>
       <ActionFeedback state={state} success="Call tasks assigned." />
       {children}
@@ -342,29 +431,57 @@ export function BalanceCallQueueForm({
     if (state.ok) router.refresh();
   }, [state, router]);
 
+  const formRef = useRef<HTMLFormElement>(null);
+  const [max, setMax] = useState("");
+  // Ticked callers, recounted off the DOM on every change so the even-split
+  // hint below and the confirm text can never disagree with what is submitted.
+  const [ticked, setTicked] = useState(callers.length);
+
+  function recount() {
+    setTicked(
+      formRef.current?.querySelectorAll('input[name="employeeIds"]:checked').length ??
+        callers.length,
+    );
+  }
+
+  function tickAll(checked: boolean) {
+    formRef.current
+      ?.querySelectorAll<HTMLInputElement>('input[name="employeeIds"]')
+      .forEach((box) => {
+        box.checked = checked;
+      });
+    recount();
+  }
+
   /*
    * One click moves other people's work, so it asks first — same reasoning as
    * confirmReassignment. Deliberately does NOT predict how many tasks will
    * move: that would mean a second copy of the balancing maths living in the
-   * browser, free to drift from the real one on the server.
+   * browser, free to drift from the real one on the server. The even split
+   * shown below is arithmetic on two numbers already on screen, not a
+   * prediction of the moves.
    */
   function confirmBalance(event: FormEvent<HTMLFormElement>) {
-    const ticked = Array.from(
-      event.currentTarget.querySelectorAll<HTMLInputElement>('input[name="employeeIds"]:checked'),
-    );
-    if (ticked.length === 0) return; // the server refuses this too, with a message
+    const count = event.currentTarget.querySelectorAll('input[name="employeeIds"]:checked').length;
+    if (count === 0) return; // the server refuses this too, with a message
+    const cap = Number(max) > 0 ? ` Nobody will be handed more than ${max}.` : "";
     if (
       !window.confirm(
-        `Spread the ${totalOpen} open ${totalOpen === 1 ? "task" : "tasks"} evenly across ${ticked.length} ${ticked.length === 1 ? "caller" : "callers"}? Tasks already assigned to them may move to someone else. Scheduled callbacks stay put.`,
+        `Spread the ${totalOpen} open ${totalOpen === 1 ? "task" : "tasks"} evenly across ${count} ${count === 1 ? "caller" : "callers"}? Tasks already assigned to them may move to someone else. Scheduled callbacks stay put.${cap}`,
       )
     ) {
       event.preventDefault();
     }
   }
 
+  const evenSplit = ticked > 0 ? Math.ceil(totalOpen / ticked) : 0;
+  const capped = Number(max) > 0 && Number(max) < evenSplit;
+
   return (
     <Card className="mb-6 p-4">
-      <form action={action} onSubmit={confirmBalance}>
+      {/* onChange on the form: a caller box ticked by mouse or keyboard bubbles
+          here, so nothing needs a per-checkbox handler. */}
+      <form ref={formRef} action={action} onSubmit={confirmBalance} onChange={recount}>
         <div className="flex flex-wrap items-center gap-3">
           <Scale className="h-4 w-4 text-navy-500" aria-hidden />
           <div className="min-w-0 flex-1">
@@ -375,26 +492,76 @@ export function BalanceCallQueueForm({
               unticked keeps what they already have.
             </p>
           </div>
-          <Button type="submit" size="sm" disabled={pending || callers.length === 0}>
+          <div className="w-36 shrink-0">
+            <label className="mb-1 block text-xs font-semibold text-navy-700" htmlFor="balance-max">
+              Max per caller
+            </label>
+            <Input
+              id="balance-max"
+              name="maxPerEmployee"
+              type="number"
+              min={1}
+              max={2000}
+              step={1}
+              inputMode="numeric"
+              placeholder="No limit"
+              value={max}
+              onChange={(event) => setMax(event.target.value)}
+            />
+          </div>
+          <Button type="submit" size="sm" disabled={pending || ticked === 0}>
             {pending ? "Balancing…" : "Balance queue"}
           </Button>
         </div>
         {callers.length === 0 ? (
           <p className="mt-3 text-sm text-muted">No active callers to balance across.</p>
         ) : (
-          <ul className="mt-3 flex flex-wrap gap-x-5 gap-y-2 border-t border-hairline pt-3">
-            {callers.map((caller) => (
-              <li key={caller.id}>
-                <label className="flex items-center gap-2 text-sm text-navy-700">
-                  <Checkbox name="employeeIds" value={caller.id} defaultChecked className="mt-0" />
-                  <span>
-                    {caller.name}{" "}
-                    <span className="tabular-nums text-muted">({caller.open} open)</span>
-                  </span>
-                </label>
-              </li>
-            ))}
-          </ul>
+          <>
+            <div className="mt-3 flex flex-wrap items-center gap-3 border-t border-hairline pt-3 text-xs">
+              <span className="font-semibold text-navy-700">
+                {ticked} of {callers.length} selected
+              </span>
+              <button
+                type="button"
+                className="font-semibold text-red-600 hover:underline"
+                onClick={() => tickAll(true)}
+              >
+                Select all
+              </button>
+              <button
+                type="button"
+                className="font-semibold text-navy-500 hover:underline"
+                onClick={() => tickAll(false)}
+              >
+                Clear
+              </button>
+              {ticked > 0 && (
+                <span className="text-muted">
+                  {capped
+                    ? `Capped at ${max} each — about ${totalOpen - Number(max) * ticked} would stay unassigned.`
+                    : `≈ ${evenSplit} ${evenSplit === 1 ? "task" : "tasks"} each.`}
+                </span>
+              )}
+            </div>
+            <ul className="mt-3 flex flex-wrap gap-x-5 gap-y-2">
+              {callers.map((caller) => (
+                <li key={caller.id}>
+                  <label className="flex items-center gap-2 text-sm text-navy-700">
+                    <Checkbox
+                      name="employeeIds"
+                      value={caller.id}
+                      defaultChecked
+                      className="mt-0"
+                    />
+                    <span>
+                      {caller.name}{" "}
+                      <span className="tabular-nums text-muted">({caller.open} open)</span>
+                    </span>
+                  </label>
+                </li>
+              ))}
+            </ul>
+          </>
         )}
         <ActionFeedback state={state} success="Queue balanced." />
       </form>

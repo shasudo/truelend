@@ -65,10 +65,18 @@ function byKeepOrder(a: BalanceTask, b: BalanceTask): number {
  * statuses), restricted to rows that are unassigned or held by one of
  * `employeeIds`. A row held by anyone else is ignored here too, so the SQL and
  * the maths agree even if one of them is edited later.
+ *
+ * `maxPerEmployee`, when given, is a ceiling on what anyone is *handed*: with a
+ * cap the shares no longer sum to the pool, so whatever does not fit is simply
+ * left where it is — unassigned rows stay unassigned, and a caller already over
+ * the cap keeps what they hold rather than having it stripped. Pinned callbacks
+ * can push someone past the cap for the same reason they always could: nobody
+ * else can take them.
  */
 export function balanceCallQueue(
   tasks: readonly BalanceTask[],
   employeeIds: readonly string[],
+  maxPerEmployee?: number,
 ): BalanceMove[] {
   const buckets: Bucket[] = [...new Set(employeeIds)].map((id) => ({
     id,
@@ -112,13 +120,21 @@ export function balanceCallQueue(
    * `pinned` — so no target can go negative, and there is no second
    * "redistribute the overflow" pass that could fail to settle.
    *
+   * With a cap the caps sum to at most `total` instead of exactly it, which the
+   * placement loop below already tolerates: it stops when the free slots run
+   * out, leaving the surplus untouched.
+   *
    * The id tie-break, not the order the checkboxes were ticked, is what makes
    * a re-run of an already-balanced queue produce zero moves.
    */
   buckets.sort((a, b) => b.pinned - a.pinned || compareIds(a.id, b.id));
   let left = total;
   buckets.forEach((bucket, index) => {
-    bucket.cap = Math.max(bucket.pinned, Math.floor(left / (buckets.length - index)));
+    const share = Math.floor(left / (buckets.length - index));
+    bucket.cap = Math.max(
+      bucket.pinned,
+      maxPerEmployee === undefined ? share : Math.min(share, maxPerEmployee),
+    );
     left -= bucket.cap;
   });
 

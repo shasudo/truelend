@@ -215,6 +215,55 @@ void test("a caller ticked twice still only gets one share", () => {
   assert.deepEqual(sortedLoads(tasks, moves), [2, 2]);
 });
 
+/* ---- max per caller ---- */
+
+void test("a max nobody reaches changes nothing", () => {
+  const tasks = unassigned(6);
+
+  assert.deepEqual(
+    balanceCallQueue(tasks, ["a", "b", "c"], 10),
+    balanceCallQueue(tasks, ["a", "b", "c"]),
+  );
+});
+
+void test("nobody is handed more than the max, and the surplus stays unassigned", () => {
+  const tasks = unassigned(10);
+  const moves = balanceCallQueue(tasks, ["a", "b"], 3);
+
+  assert.deepEqual(sortedLoads(tasks, moves), [3, 3]);
+  assert.equal(moves.length, 6, "the other four were left unassigned, not forced onto someone");
+});
+
+void test("the max is a ceiling on what is handed out, never a strip of what is held", () => {
+  const tasks = [
+    ...Array.from({ length: 5 }, (_, i) => task(`a${i}`, "new", "a")),
+    ...Array.from({ length: 5 }, (_, i) => task(`b${i}`, "new", "b")),
+  ];
+  const moves = balanceCallQueue(tasks, ["a", "b"], 2);
+
+  assert.deepEqual(moves, [], "a balanced pair over the cap were raided for no reason");
+});
+
+void test("scheduled callbacks can hold a caller above the max, since nobody else can take them", () => {
+  const tasks = [
+    ...Array.from({ length: 4 }, (_, i) => task(`c${i}`, "callback_scheduled", "a")),
+    ...unassigned(4),
+  ];
+  const moves = balanceCallQueue(tasks, ["a", "b"], 2);
+
+  const loads = loadsAfter(tasks, moves);
+  assert.equal(loads.get("a"), 4, "pinned work cannot be shed to honour a cap");
+  assert.equal(loads.get("b"), 2, "and the other caller still stops at the cap");
+});
+
+void test("balancing under a max is stable on a second run", () => {
+  const tasks = [...unassigned(9), task("x", "new", "a")];
+  const employees = ["a", "b", "c"];
+  const settled = applied(tasks, balanceCallQueue(tasks, employees, 3));
+
+  assert.deepEqual(balanceCallQueue(settled, employees, 3), []);
+});
+
 void test("`from` reports the real previous owner, which is what the audit row records", () => {
   const tasks = [...Array.from({ length: 3 }, (_, i) => task(`a${i}`, "new", "a")), task("u0")];
   const moves = balanceCallQueue(tasks, ["a", "b"]);

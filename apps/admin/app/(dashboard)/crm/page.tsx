@@ -1,6 +1,13 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { Search, ChevronLeft, ChevronRight, AlertTriangle, BarChart3 } from "lucide-react";
+import {
+  Search,
+  ChevronLeft,
+  ChevronRight,
+  AlertTriangle,
+  BarChart3,
+  MessageCircle,
+} from "lucide-react";
 import { Button, Card, Input, Select, cx } from "@truelend/ui";
 import {
   callStatusLabels,
@@ -103,6 +110,22 @@ function queryString(f: CallTaskFilters, page: number): string {
   return s ? `?${s}` : "";
 }
 
+/*
+ * Written as query strings rather than filter objects so `active` below is a
+ * string compare against the canonical queryString() output — one definition of
+ * "this link is the view you are looking at", with no second parser to keep in
+ * step. "Unassigned" is admin-only for the same reason the assignee select is.
+ */
+function quickFilters(isAdmin: boolean): Array<{ label: string; query: string }> {
+  return [
+    { label: "All tasks", query: "" },
+    { label: "Callback overdue", query: "?callback=overdue&sort=callback" },
+    { label: "Due today", query: "?callback=today&sort=callback" },
+    { label: "Never dialled", query: "?status=new&sort=oldest" },
+    ...(isAdmin ? [{ label: "Unassigned", query: "?assignee=unassigned" }] : []),
+  ];
+}
+
 export default async function CallQueuePage({ searchParams }: { searchParams: Promise<SP> }) {
   const sp = await searchParams;
   const session = await requireStaff();
@@ -119,6 +142,7 @@ export default async function CallQueuePage({ searchParams }: { searchParams: Pr
     filters.to ||
     filters.q,
   );
+  const now = Date.now();
   const { db } = getAuthContext();
   const [{ rows, total, page, pageCount }, employees, sources, load] = await Promise.all([
     listCallTasks(db, scopeUserId, filters),
@@ -190,7 +214,24 @@ export default async function CallQueuePage({ searchParams }: { searchParams: Pr
                   </span>
                 )}
               </td>
-              <td className="px-5 py-3.5 tabular-nums text-navy-700">{task.phone}</td>
+              {/* The point of the page is to dial. On a desktop softphone and
+                  on a phone alike, tel: is the shortest path from row to call;
+                  WhatsApp is how half of these prospects actually reply. */}
+              <td className="whitespace-nowrap px-5 py-3.5 tabular-nums text-navy-700">
+                <a href={`tel:+91${task.phone}`} className="hover:text-red-600">
+                  {task.phone}
+                </a>
+                <a
+                  href={`https://wa.me/91${task.phone}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="ml-2 align-middle text-muted hover:text-red-600"
+                  title={`WhatsApp ${task.phone}`}
+                >
+                  <MessageCircle className="inline h-3.5 w-3.5" aria-hidden />
+                  <span className="sr-only">WhatsApp {task.name}</span>
+                </a>
+              </td>
               <td className="px-5 py-3.5 text-navy-700">{productName(task.productSlug)}</td>
               {/* Context the caller wants before dialling, not after opening
                   the task. Truncated so one long remark can't blow the row up;
@@ -208,8 +249,18 @@ export default async function CallQueuePage({ searchParams }: { searchParams: Pr
                 <StatusBadge status={task.status} kind="call" />
               </td>
               <td className="px-5 py-3.5 text-navy-700">{task.assigneeName ?? "—"}</td>
-              <td className="px-5 py-3.5 text-xs tabular-nums text-muted">
+              {/* A callback that has come and gone is the one thing on this row
+                  that needs acting on today, so it is the one thing coloured. */}
+              <td
+                className={cx(
+                  "px-5 py-3.5 text-xs tabular-nums",
+                  task.callbackAt && task.callbackAt.getTime() < now
+                    ? "font-semibold text-red-600"
+                    : "text-muted",
+                )}
+              >
                 {task.callbackAt ? formatDateTime(task.callbackAt) : "—"}
+                {task.callbackAt && task.callbackAt.getTime() < now && " · overdue"}
               </td>
               <td className="px-5 py-3.5 text-xs tabular-nums text-muted">
                 {formatDate(task.createdAt)}
@@ -249,6 +300,30 @@ export default async function CallQueuePage({ searchParams }: { searchParams: Pr
           unassignedOpen={load.unassignedOpen}
         />
       )}
+
+      {/* The four views anyone actually opens this page for, one click each.
+          Plain links, so they are shareable, bookmarkable and back-button
+          friendly — the same URLs the form below produces the long way. */}
+      <nav className="mb-4 flex flex-wrap gap-2" aria-label="Quick filters">
+        {quickFilters(isAdmin).map((quick) => {
+          const active = quick.query === queryString(filters, 1);
+          return (
+            <Link
+              key={quick.label}
+              href={`/crm${quick.query}`}
+              aria-current={active ? "page" : undefined}
+              className={cx(
+                "rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors",
+                active
+                  ? "border-red-600 bg-red-600 text-white"
+                  : "border-hairline bg-white text-navy-700 hover:border-red-200 hover:text-red-600",
+              )}
+            >
+              {quick.label}
+            </Link>
+          );
+        })}
+      </nav>
 
       <Card className="mb-6 p-4">
         <form method="get" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
