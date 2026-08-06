@@ -117,6 +117,16 @@ void test("Referral Partner registration email uses the dedicated sender", async
   assert.match(text, /\[done\] Account created/);
   assert.match(text, /^7\. Get paid$/m);
   assert.doesNotMatch(text, /<[a-z]/i);
+
+  /*
+   * The layout writes icons and ticks as numeric entities, which a text reader
+   * must receive as characters — an undecoded "&#10003;" beside every required
+   * document is worse than no tick at all. The checklist must also survive as
+   * separate lines: stripping the markup is what removed the only separation.
+   */
+  assert.doesNotMatch(text, /&#\d+;|&nbsp;|&amp;/);
+  assert.match(text, /^ +✓ PAN card$/m);
+  assert.match(text, /^ +✓ Cancelled cheque$/m);
 });
 
 void test("transient provider failures retry with one idempotency key", async () => {

@@ -153,20 +153,65 @@ async function sendEmail(
 const NAVY = "#14204a";
 const RED = "#ce0e17";
 const PAPER = "#faf8f3";
+const GREEN = "#0f7a3d";
+const MUTED = "#6d7dac";
+
+/** A small-caps label with a hairline beside it, for separating sections. */
+const sectionRule = (caption: string) =>
+  `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;margin:2px 0 18px 0;"><tr>` +
+  `<td style="white-space:nowrap;padding-right:10px;font-size:10px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;color:${MUTED};font-family:Helvetica,Arial,sans-serif;">${caption.replace(/&/g, "&amp;").replace(/</g, "&lt;")}</td>` +
+  `<td width="100%" bgcolor="#e2e6f2" style="background:#e2e6f2;font-size:0;line-height:0;height:1px;">&nbsp;</td>` +
+  `</tr></table>`;
 
 const esc = (s: string) =>
   s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
-// Reverses esc for the derived text part. "&amp;" is undone last so that an
-// escaped entity in the source ("&amp;lt;") survives the round trip intact.
+const namedEntities: Readonly<Record<string, string>> = {
+  "&nbsp;": " ",
+  "&middot;": "·",
+  "&zwnj;": "",
+  "&lt;": "<",
+  "&gt;": ">",
+  "&quot;": '"',
+};
+
+/*
+ * Reverses esc for the derived text part, and decodes the numeric entities the
+ * layout uses for icons and ticks — without this a plain-text reader gets a
+ * literal "&#10003;" where the HTML reader sees a checkmark. "&amp;" is undone
+ * last so an escaped entity in the source ("&amp;lt;") survives the round trip
+ * intact; the numeric pass runs first for the same reason and cannot match
+ * inside an already-escaped "&amp;#10003;".
+ */
 const unesc = (s: string) =>
   s
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
+    .replace(/&#(\d+);/g, (_match, code: string) => String.fromCodePoint(Number(code)))
+    .replace(/&nbsp;|&middot;|&zwnj;|&lt;|&gt;|&quot;/g, (match) => namedEntities[match] ?? match)
     .replace(/&amp;/g, "&");
 
-const textOf = (html: string) => unesc(html.replace(/<[^>]*>/g, "")).trim();
+/*
+ * Block boundaries become newlines before the tags are stripped. Otherwise a
+ * bulleted checklist inside a step collapses into one unreadable run-on line —
+ * the markup carried the only separation there was.
+ */
+const textOf = (html: string) =>
+  unesc(
+    html
+      .replace(/<br\s*\/?>/gi, "\n")
+      .replace(/<\/?(?:p|div|tr|table|li|h[1-6])(?:\s[^>]*)?>/gi, "\n")
+      .replace(/<[^>]*>/g, ""),
+  )
+    .replace(/[^\S\n]+/g, " ")
+    .replace(/ *\n */g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+
+/** Keeps a wrapped step body aligned under its number instead of only the first line. */
+const indent = (value: string) =>
+  value
+    .split("\n")
+    .map((line) => `   ${line}`.trimEnd())
+    .join("\n");
 
 const firstName = (name?: string | null) => {
   const trimmed = (name ?? "").trim();
@@ -204,22 +249,46 @@ interface MessageStep {
   /** Inline HTML is permitted; callers escape their own interpolations. */
   title: string;
   body: string;
+  /**
+   * An emoji shown beside the title. Emoji is the only icon format that
+   * survives every client: Gmail and Outlook block remote AND data-URI images
+   * until the reader opts in, and neither renders inline SVG at all — so an
+   * icon set of either kind would be invisible exactly when first impressions
+   * are made. A font glyph always draws.
+   */
+  icon?: string;
   /** Renders a tick instead of a number — for a step already behind them. */
   done?: boolean;
 }
 
 interface Message {
+  /** Small caps label above the heading, e.g. "Welcome". */
+  eyebrow?: string;
   heading: string;
   /** Inline HTML is permitted; callers escape their own interpolations. */
   paragraphs: string[];
   /** A boxed callout under the paragraphs, for the one fact worth keeping. */
-  highlight?: { label: string; value: string };
+  highlight?: { label: string; value: string; caption?: string };
   /** A numbered walkthrough. Rendered between the paragraphs and the rows. */
   steps?: { caption?: string; items: MessageStep[] };
   rows?: (readonly [string, string])[];
   action?: { href: string; label: string };
   /** Small print under the button, e.g. what to do if the button fails. */
   footnote?: string;
+  /**
+   * The grey line an inbox shows next to the subject. Without one, clients
+   * scrape the opening body text, which on a branded layout means the reader's
+   * preview is whatever the header happened to contain.
+   */
+  preheader?: string;
+  /**
+   * Top-right label in the header band, naming which side of the product this
+   * came from. Omitted on messages that are not audience-specific — this shell
+   * renders customer, staff and partner mail alike.
+   */
+  brandTag?: string;
+  /** The "you are receiving this because…" line. Omitted when there is nothing honest to say. */
+  reason?: string;
 }
 
 function render(message: Message): { html: string; text: string } {
@@ -227,10 +296,19 @@ function render(message: Message): { html: string; text: string } {
   const rows = message.rows ?? [];
   const steps = message.steps;
 
+  /*
+   * A membership card rather than a tinted box: this is the one value the
+   * reader is asked to keep, and on a phone it is what they screenshot. Navy
+   * fill so it survives a dark-mode client's inversion looking deliberate.
+   */
   const highlightHtml = message.highlight
-    ? `<table role="presentation" style="width:100%;border-collapse:separate;margin:0 0 22px 0;"><tr><td style="background:${PAPER};border:1px solid rgba(20,32,74,0.10);border-left:3px solid ${RED};border-radius:10px;padding:14px 16px;">` +
-      `<div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#6d7dac;">${esc(message.highlight.label)}</div>` +
-      `<div style="margin-top:4px;font-size:19px;font-weight:800;letter-spacing:0.5px;color:${NAVY};">${esc(message.highlight.value)}</div>` +
+    ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:separate;margin:4px 0 26px 0;"><tr>` +
+      `<td bgcolor="${NAVY}" style="background:${NAVY};border-radius:12px;padding:18px 20px;">` +
+      `<div style="font-size:10px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;color:#8fa0d4;">${esc(message.highlight.label)}</div>` +
+      `<div style="margin-top:6px;font-size:24px;font-weight:800;letter-spacing:2px;color:#ffffff;font-family:'SF Mono',Consolas,Menlo,monospace;">${esc(message.highlight.value)}</div>` +
+      (message.highlight.caption
+        ? `<div style="margin-top:8px;font-size:12px;line-height:1.5;color:#8fa0d4;">${esc(message.highlight.caption)}</div>`
+        : "") +
       `</td></tr></table>`
     : "";
 
@@ -241,29 +319,40 @@ function render(message: Message): { html: string; text: string } {
    * are unavailable here, so the numbered badge is a fixed-width cell.
    */
   const stepsHtml = steps
-    ? `<div style="margin:0 0 6px 0;">` +
-      (steps.caption
-        ? `<div style="margin:0 0 14px 0;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#6d7dac;">${esc(steps.caption)}</div>`
-        : "") +
+    ? (steps.caption ? sectionRule(steps.caption) : "") +
       steps.items
         .map((step, index) => {
-          const badge = step.done
-            ? `background:#0f7a3d;color:#ffffff;`
-            : `background:${NAVY};color:#ffffff;`;
+          const last = index === steps.items.length - 1;
+          const badgeFill = step.done ? GREEN : NAVY;
           const mark = step.done ? "&#10003;" : String(index + 1);
+          /*
+           * The rail is a 2px-wide cell rather than a border, because Outlook
+           * drops borders on empty cells but honours a background colour on one
+           * with a spacer in it. It stops at the last step so the timeline reads
+           * as finished rather than trailing off.
+           */
+          const rail = last
+            ? ""
+            : `<tr><td style="padding:0;"><table role="presentation" width="28" cellpadding="0" cellspacing="0" border="0"><tr>` +
+              `<td width="13" style="font-size:0;line-height:0;">&nbsp;</td>` +
+              `<td width="2" bgcolor="#e2e6f2" style="background:#e2e6f2;font-size:0;line-height:0;height:14px;">&nbsp;</td>` +
+              `<td width="13" style="font-size:0;line-height:0;">&nbsp;</td>` +
+              `</tr></table></td><td style="padding:0;">&nbsp;</td></tr>`;
           return (
-            `<table role="presentation" style="width:100%;border-collapse:collapse;"><tr>` +
-            `<td style="width:28px;padding:0 12px 16px 0;vertical-align:top;">` +
-            `<div style="width:26px;height:26px;line-height:26px;border-radius:13px;${badge}font-size:13px;font-weight:700;text-align:center;">${mark}</div>` +
-            `</td>` +
-            `<td style="padding:0 0 16px 0;vertical-align:top;">` +
-            `<div style="font-size:15px;font-weight:700;color:${NAVY};line-height:1.4;">${step.title}</div>` +
-            `<div style="margin-top:4px;font-size:14px;line-height:1.6;color:#4a5a8a;">${step.body}</div>` +
-            `</td></tr></table>`
+            `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;"><tr>` +
+            `<td width="28" style="width:28px;padding:0 14px 0 0;vertical-align:top;">` +
+            `<table role="presentation" width="28" height="28" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;"><tr>` +
+            `<td align="center" bgcolor="${badgeFill}" style="background:${badgeFill};border-radius:14px;height:28px;width:28px;color:#ffffff;font-size:13px;font-weight:700;font-family:Helvetica,Arial,sans-serif;text-align:center;">${mark}</td>` +
+            `</tr></table></td>` +
+            `<td style="padding:0 0 2px 0;vertical-align:top;">` +
+            `<div style="font-size:15px;font-weight:700;color:${NAVY};line-height:1.45;padding-top:4px;">` +
+            (step.icon ? `<span style="font-size:16px;">${step.icon}</span>&nbsp;` : "") +
+            `${step.title}</div>` +
+            `<div style="margin-top:5px;font-size:14px;line-height:1.65;color:#4a5a8a;">${step.body}</div>` +
+            `</td></tr>${rail}</table>`
           );
         })
-        .join("") +
-      `</div>`
+        .join("")
     : "";
 
   const rowsHtml =
@@ -276,21 +365,34 @@ function render(message: Message): { html: string; text: string } {
           .join("")}</table>`
       : "";
 
+  /*
+   * A table button, not a padded anchor. Outlook's Word engine ignores padding
+   * on an inline element, which collapses the call to action into bare
+   * underlined text — the one element in the message that must never degrade.
+   */
   const actionHtml =
     href && message.action
-      ? `<div style="margin-top:8px;"><a href="${esc(href)}" style="display:inline-block;background:${RED};color:#ffffff;text-decoration:none;font-weight:600;font-size:15px;padding:12px 22px;border-radius:9px;">${esc(message.action.label)}</a></div>`
+      ? `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="border-collapse:separate;margin:26px 0 0 0;"><tr>` +
+        `<td align="center" bgcolor="${RED}" style="background:${RED};border-radius:10px;">` +
+        `<a href="${esc(href)}" style="display:inline-block;padding:14px 30px;font-family:Helvetica,Arial,sans-serif;font-size:15px;font-weight:700;color:#ffffff;text-decoration:none;border-radius:10px;">${esc(message.action.label)} &nbsp;&#8594;</a>` +
+        `</td></tr></table>`
       : "";
 
   const footnoteHtml = message.footnote
-    ? `<p style="margin:16px 0 0 0;font-size:12px;line-height:1.6;color:#6d7dac;">${message.footnote}</p>`
+    ? `<p style="margin:18px 0 0 0;font-size:12px;line-height:1.65;color:${MUTED};">${message.footnote}</p>`
+    : "";
+
+  const eyebrowHtml = message.eyebrow
+    ? `<div style="margin:0 0 8px 0;font-size:10px;font-weight:700;letter-spacing:1.6px;text-transform:uppercase;color:${RED};">${esc(message.eyebrow)}</div>`
     : "";
 
   const body =
-    `<h1 style="margin:0 0 12px 0;font-size:22px;font-weight:800;color:${NAVY};">${esc(message.heading)}</h1>` +
+    eyebrowHtml +
+    `<h1 style="margin:0 0 14px 0;font-size:25px;line-height:1.25;font-weight:800;letter-spacing:-0.4px;color:${NAVY};">${esc(message.heading)}</h1>` +
     message.paragraphs
       .map(
         (paragraph) =>
-          `<p style="margin:0 0 14px 0;font-size:15px;line-height:1.6;color:#2d3d74;">${paragraph}</p>`,
+          `<p style="margin:0 0 14px 0;font-size:15px;line-height:1.65;color:#2d3d74;">${paragraph}</p>`,
       )
       .join("") +
     highlightHtml +
@@ -299,18 +401,46 @@ function render(message: Message): { html: string; text: string } {
     actionHtml +
     footnoteHtml;
 
-  const html = `<!doctype html><html><body style="margin:0;padding:0;background:${PAPER};font-family:Helvetica,Arial,sans-serif;color:#1c2a56;">
-  <div style="max-width:560px;margin:0 auto;padding:24px 16px;">
-    <div style="padding:8px 0 20px 0;font-size:22px;font-weight:800;letter-spacing:-0.5px;color:${NAVY};">
-      True<span style="font-weight:500;">Lend</span>
-    </div>
-    <div style="background:#ffffff;border:1px solid rgba(20,32,74,0.12);border-radius:14px;padding:28px;">
-      ${body}
-    </div>
-    <p style="margin:20px 4px 0 4px;font-size:12px;color:#6d7dac;">
-      TrueLend · Lending Choices, Simplified.
-    </p>
-  </div></body></html>`;
+  /*
+   * Hidden from the body, read by the inbox list as the grey line beside the
+   * subject. The trailing filler stops Gmail from topping it up with whatever
+   * markup follows.
+   */
+  const preheaderHtml = message.preheader
+    ? `<div style="display:none;font-size:1px;color:${PAPER};line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;">${esc(message.preheader)}${"&#847;&zwnj;&nbsp;".repeat(60)}</div>`
+    : "";
+
+  const html = `<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light"><meta name="supported-color-schemes" content="light">
+<!--[if mso]><style>body,table,td,a{font-family:Arial,Helvetica,sans-serif !important}</style><![endif]-->
+</head><body style="margin:0;padding:0;background:${PAPER};-webkit-font-smoothing:antialiased;">
+${preheaderHtml}
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${PAPER}" style="background:${PAPER};">
+  <tr><td align="center" style="padding:28px 14px 36px 14px;">
+    <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;border-collapse:collapse;font-family:Helvetica,Arial,sans-serif;">
+      <tr><td bgcolor="${NAVY}" style="background:${NAVY};border-radius:16px 16px 0 0;padding:22px 30px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+          <td style="font-size:21px;font-weight:800;letter-spacing:-0.5px;color:#ffffff;">True<span style="font-weight:400;color:#b9c4e6;">Lend</span></td>
+          ${message.brandTag ? `<td align="right" style="font-size:10px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;color:#8fa0d4;">${esc(message.brandTag)}</td>` : ""}
+        </tr></table>
+      </td></tr>
+      <tr><td bgcolor="#ffffff" style="background:#ffffff;padding:32px 30px 34px 30px;border-left:1px solid #e7e2d8;border-right:1px solid #e7e2d8;">
+        ${body}
+      </td></tr>
+      <tr><td bgcolor="#ffffff" style="background:#ffffff;border-radius:0 0 16px 16px;border-left:1px solid #e7e2d8;border-right:1px solid #e7e2d8;border-bottom:1px solid #e7e2d8;padding:0 30px 26px 30px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+          <td bgcolor="#e7e2d8" style="background:#e7e2d8;font-size:0;line-height:0;height:1px;">&nbsp;</td>
+        </tr></table>
+        <p style="margin:16px 0 0 0;font-size:12px;line-height:1.6;color:${MUTED};">
+          <strong style="color:${NAVY};">TrueLend</strong> &middot; Lending Choices, Simplified.
+        </p>
+      </td></tr>
+      ${message.reason ? `<tr><td style="padding:16px 8px 0 8px;font-size:11px;line-height:1.6;color:#9aa5c4;">${esc(message.reason)}</td></tr>` : ""}
+    </table>
+  </td></tr>
+</table>
+</body></html>`;
 
   const lines = [message.heading, ""];
   for (const paragraph of message.paragraphs) lines.push(textOf(paragraph), "");
@@ -321,7 +451,7 @@ function render(message: Message): { html: string; text: string } {
     if (steps.caption) lines.push(steps.caption.toUpperCase(), "");
     steps.items.forEach((step, index) => {
       lines.push(`${step.done ? "[done]" : `${index + 1}.`} ${textOf(step.title)}`);
-      lines.push(`   ${textOf(step.body)}`, "");
+      lines.push(indent(textOf(step.body)), "");
     });
   }
   for (const [label, value] of rows) lines.push(`${label}: ${value}`);
@@ -658,52 +788,72 @@ export function notifyPartnerRegistration(
     info.to,
     "Welcome to TrueLend — here's what happens next",
     {
-      heading: `Welcome aboard, ${firstName(info.name)}`,
+      brandTag: "Referral Partners",
+      preheader: `Your Partner ID is ${info.referenceId}. Here are the seven steps from here to your first payout.`,
+      eyebrow: "Welcome",
+      heading: `You're in, ${firstName(info.name)}`,
       paragraphs: [
         "Your Referral Partner account is created. Everything from here is a short, one-time setup — then you can start referring customers and earning on every loan that lands.",
         "Here is the whole journey, start to finish, so nothing takes you by surprise.",
       ],
-      highlight: { label: "Your Referral Partner ID", value: info.referenceId },
+      highlight: {
+        label: "Your Referral Partner ID",
+        value: info.referenceId,
+        caption: "Quote this any time you contact us — it pulls up your whole file instantly.",
+      },
       steps: {
         caption: "How it works",
         items: [
           {
             done: true,
+            icon: "&#127881;",
             title: "Account created",
-            body: "Done — that's this email. Your Referral Partner ID above identifies you in every conversation with our team, so keep it somewhere handy.",
+            body: "Done — that's this email. Nothing else to do on this step.",
           },
           {
+            icon: "&#128203;",
             title: "Complete your profile and KYC",
-            body: "Sign in and fill in your PAN, address, occupation, bank account details and nominee. Then upload four documents: <strong>PAN card, Aadhaar card, a passport-size photo and a cancelled cheque</strong>. The cheque is how we pay you, so make sure the account details match it exactly.",
+            body:
+              "Sign in and fill in your PAN, address, occupation, bank account details and nominee. Then upload four documents:" +
+              `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;margin:10px 0 4px 0;background:${PAPER};border-radius:8px;"><tr><td style="padding:10px 14px;font-size:13px;line-height:1.9;color:${NAVY};">` +
+              "&#10003;&nbsp; PAN card<br>&#10003;&nbsp; Aadhaar card<br>&#10003;&nbsp; Passport-size photo<br>&#10003;&nbsp; Cancelled cheque" +
+              "</td></tr></table>" +
+              "The cheque is how we pay you, so make sure the account details match it exactly.",
           },
           {
+            icon: "&#128228;",
             title: "Submit for review",
-            body: "One button once everything is in. Your details lock at that point so nothing changes underneath our check — you'll still be able to see everything you submitted.",
+            body: "One button, once everything is in. Your details lock at that point so nothing changes underneath our check — you'll still be able to see everything you submitted.",
           },
           {
+            icon: "&#128269;",
             title: "We verify you",
-            body: "Our team reviews applications within <strong>two working days</strong> and emails you either way. If something needs correcting we'll tell you exactly what, unlock your form, and you can resubmit — there's no penalty and no starting over.",
+            body: "Our team reviews applications within <strong>two working days</strong> and emails you either way. If something needs correcting we'll tell you exactly what, unlock your form, and you can resubmit — no penalty, no starting over.",
           },
           {
+            icon: "&#129309;",
             title: "Start referring customers",
-            body: "Once verified, refer a customer in under a minute from your dashboard, or share your personal referral link and QR code and let them apply themselves.",
+            body: "Once verified, refer someone in under a minute from your dashboard — or share your personal referral link and QR code and let them apply themselves.",
           },
           {
+            icon: "&#128200;",
             title: "Track every referral to disbursal",
             body: "Each referral moves through your pipeline — contacted, documents, approved, disbursed — and you get an email at every stage. No chasing anyone for updates.",
           },
           {
+            icon: "&#128176;",
             title: "Get paid",
             // "incentive" matches referralRewardLabel in @truelend/reference.
             // Spelled out rather than imported: this package is deliberately
             // dependency-free, and one word is not worth the coupling.
-            body: "Your incentive is recorded against a referral the moment it qualifies, and again when the money is actually sent to your account. Both land in your earnings page and in your inbox.",
+            body: "Your incentive is recorded against a referral the moment it qualifies, and again when the money actually reaches your account. Both land on your earnings page and in your inbox.",
           },
         ],
       },
       action: { href: info.dashboardUrl, label: "Complete your application" },
       footnote:
-        "If the button doesn't work, copy the link into your browser. Just reply to this email if you get stuck at any point — a real person reads it.",
+        "Button not working? Copy the link into your browser. And if you get stuck at any point, just reply to this email — a real person reads it.",
+      reason: "You are receiving this because you registered as a TrueLend Referral Partner.",
     },
     { idempotencyKey: info.idempotencyKey },
   );
