@@ -270,15 +270,21 @@ export async function balanceCallQueueAction(
       if (staff.length !== employeeIds.length) return { kind: "invalid_assignee" } as const;
 
       /*
-       * The pool, and the lock over it, for the rest of this transaction. This
-       * where-clause IS the "leave everyone else's book alone" rule: a task
-       * held by an unselected caller is never read, never locked, never moved.
-       * No search/product/source filter is accepted — balancing a filtered
-       * slice produces a split that looks fair and is not.
+       * The pool the split is computed from. This where-clause IS the "leave
+       * everyone else's book alone" rule: a task held by an unselected caller is
+       * never read and never moved. No search/product/source filter is accepted
+       * — balancing a filtered slice produces a split that looks fair and is not.
        *
-       * Ordered by id so this scan takes its row locks in the same order every
-       * time; limited to one past the cap so an oversized queue is detected
-       * without locking all of it first.
+       * Deliberately NOT `FOR UPDATE`. An open queue is mostly rows this run will
+       * never touch — a capped 16000-task queue changes about 1200 of them — and
+       * locking every one of them made the statement's cost scale with the queue
+       * instead of with the work. The advisory lock above already serialises
+       * balance against balance; the rows actually being written are locked and
+       * re-checked below, which is what protects them from a concurrent assign or
+       * status update.
+       *
+       * Ordered by id for a stable read, and limited to one past the cap so an
+       * oversized queue is detected before any of it is locked.
        */
       const pool = await tx
         .select({
@@ -297,21 +303,66 @@ export async function balanceCallQueueAction(
           ),
         )
         .orderBy(schema.callTasks.id)
-        .limit(MAX_BALANCE_TASKS + 1)
-        .for("update");
+        .limit(MAX_BALANCE_TASKS + 1);
       if (pool.length > MAX_BALANCE_TASKS) return { kind: "too_large" } as const;
 
       const moves = balanceCallQueue(pool, employeeIds, maxPerEmployee);
+      const unassignedBefore = pool.filter((task) => task.assignedTo === null).length;
+      if (moves.length === 0) {
+        return {
+          kind: "settled",
+          pooled: pool.length,
+          unassignedAfter: unassignedBefore,
+          parked: 0,
+          drifted: 0,
+        } as const;
+      }
+
+      /*
+       * Now take the locks, on exactly the rows about to be written and nothing
+       * else. Sorted by id so the chunks are claimed in a stable order, which is
+       * what keeps this from deadlocking against a concurrent bulk assign.
+       */
+      const movedIds = moves.map((move) => move.taskId).sort();
+      const current = new Map<string, { status: string; assignedTo: string | null }>();
+      for (let i = 0; i < movedIds.length; i += BALANCE_UPDATE_CHUNK) {
+        const rows = await tx
+          .select({
+            id: schema.callTasks.id,
+            status: schema.callTasks.status,
+            assignedTo: schema.callTasks.assignedTo,
+          })
+          .from(schema.callTasks)
+          .where(inArray(schema.callTasks.id, movedIds.slice(i, i + BALANCE_UPDATE_CHUNK)))
+          .orderBy(schema.callTasks.id)
+          .for("update");
+        for (const row of rows) current.set(row.id, row);
+      }
+
+      /*
+       * A task someone reassigned or closed between the unlocked read and these
+       * locks is dropped rather than failing the whole run: with a queue this
+       * size and callers working it live, one closed task must not cost the
+       * operator the other 1199 moves. The split ends up off by however many
+       * drifted, which a re-run settles — and the count is reported, so it is
+       * never a silent difference.
+       */
+      const applicable = moves.filter((move) => {
+        const row = current.get(move.taskId);
+        return (
+          row !== undefined && row.assignedTo === move.from && !isTerminalCallStatus(row.status)
+        );
+      });
+      const drifted = moves.length - applicable.length;
 
       /*
        * The resulting state, not the delta — this is what the operator is told,
        * and a cap that parked half the queue must never read as a clean split.
-       * Derived from the moves rather than re-queried: the rows are locked, so
-       * the pool plus the moves IS the post-commit truth.
+       * Counted off `applicable`, so a dropped task is not reported as moved.
        */
-      let unassignedAfter = pool.filter((task) => task.assignedTo === null).length;
+      let unassignedAfter = unassignedBefore;
       let parked = 0;
-      for (const move of moves) {
+      for (const move of applicable) {
         if (move.to === null) {
           unassignedAfter += 1;
           parked += 1;
@@ -319,8 +370,8 @@ export async function balanceCallQueueAction(
           unassignedAfter -= 1;
         }
       }
-      if (moves.length === 0) {
-        return { kind: "settled", pooled: pool.length, unassignedAfter, parked } as const;
+      if (applicable.length === 0) {
+        return { kind: "settled", pooled: pool.length, unassignedAfter, parked, drifted } as const;
       }
 
       /*
@@ -331,7 +382,7 @@ export async function balanceCallQueueAction(
        * nor kind to the query planner.
        */
       const idsByOwner = new Map<string | null, string[]>();
-      for (const move of moves) {
+      for (const move of applicable) {
         const ids = idsByOwner.get(move.to);
         if (ids) ids.push(move.taskId);
         else idsByOwner.set(move.to, [move.taskId]);
@@ -353,7 +404,7 @@ export async function balanceCallQueueAction(
        * a redistribution is never mistaken for a hand-picked assignment. An
        * `after.assignedTo` of null is a task the cap parked, and reads as one.
        */
-      const auditRows = moves.map((move) => ({
+      const auditRows = applicable.map((move) => ({
         actorId: user.id,
         actorEmail: user.email,
         action: "call_task.balance",
@@ -367,10 +418,11 @@ export async function balanceCallQueueAction(
       }
       return {
         kind: "balanced",
-        moved: moves.length,
+        moved: applicable.length,
         pooled: pool.length,
         unassignedAfter,
         parked,
+        drifted,
       } as const;
     });
 
@@ -382,6 +434,23 @@ export async function balanceCallQueueAction(
         error: `The open queue is over ${MAX_BALANCE_TASKS} tasks, which is more than one balance can move at once. Close out or bulk-assign some, then try again.`,
       };
     }
+    /*
+     * The shape of the run, not its contents. A balance that dies inside the
+     * Worker rather than throwing leaves no other trace, so this line is what
+     * tells the next investigation how big the pool actually was and how much
+     * work the transaction was asked to do.
+     */
+    console.log(
+      JSON.stringify({
+        event: "crm_balance_completed",
+        pooled: outcome.pooled,
+        moved: outcome.kind === "balanced" ? outcome.moved : 0,
+        parked: outcome.parked,
+        drifted: outcome.drifted,
+        callers: employeeIds.length,
+        maxPerEmployee: maxPerEmployee ?? null,
+      }),
+    );
     revalidatePath("/crm");
     /*
      * Whatever the cap left in the unassigned pool is always said out loud. It
@@ -407,9 +476,14 @@ export async function balanceCallQueueAction(
       outcome.parked > 0
         ? ` ${outcome.parked} over the cap ${outcome.parked === 1 ? "was" : "were"} unassigned.`
         : "";
+    // Never silent: a re-run settles these, but only if the operator knows to.
+    const driftedNote =
+      outcome.drifted > 0
+        ? ` ${outcome.drifted} ${outcome.drifted === 1 ? "task was" : "tasks were"} reassigned or closed mid-run and left alone — balance again to settle them.`
+        : "";
     return {
       ok: true,
-      notice: `Moved ${outcome.moved} of ${outcome.pooled} open tasks across ${callerCount}${maxPerEmployee ? `, max ${maxPerEmployee} each` : ""}.${parkedNote}${pooledNote}`,
+      notice: `Moved ${outcome.moved} of ${outcome.pooled} open tasks across ${callerCount}${maxPerEmployee ? `, max ${maxPerEmployee} each` : ""}.${parkedNote}${pooledNote}${driftedNote}`,
     };
   } catch (error) {
     reportCrmActionFailure("crm_balance_failed", error);

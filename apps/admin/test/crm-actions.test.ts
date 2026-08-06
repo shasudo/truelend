@@ -543,6 +543,59 @@ void test("balanceCallQueueAction: a cap unassigns what nobody is allowed to kee
   );
 });
 
+/*
+ * The pool is read unlocked, so a task can be reassigned or closed between that
+ * read and the locks taken on the rows about to change. Such a task is dropped
+ * from the run rather than failing it — one closed task must not cost the
+ * operator every other move — but it is never dropped silently.
+ */
+void test("balanceCallQueueAction: a task that changed hands mid-run is skipped, not written", async () => {
+  const updates: { table: unknown; values: FakeRow }[] = [];
+  const inserts: { table: unknown; values: FakeRow }[] = [];
+  const held = Array.from({ length: 5 }, (_, i) => ({
+    id: `t${i}`,
+    status: "new",
+    assignedTo: "staff-2",
+  }));
+  setFakeAuthState({
+    getSession: async () => buildStaffSession({ role: "admin" }),
+    dbOptions: {
+      rowsByTable: new Map<unknown, FakeRow[] | FakeRowProvider>([
+        [schema.user, [{ id: "staff-2" }]],
+        [
+          schema.callTasks,
+          // The unlocked pool read is the one carrying a limit; the locking
+          // re-read is not. That is what tells the two apart here.
+          (query) =>
+            query.limitArgs.length > 0
+              ? poolRows(held)
+              : poolRows([
+                  ...held.slice(0, 2),
+                  // t2 is one of the three the cap parks — grabbed by another
+                  // admin's bulk assign between the read and the lock.
+                  { ...held[2]!, assignedTo: "staff-9" },
+                  ...held.slice(3),
+                ]),
+        ],
+      ]),
+      onUpdate: (table, values) => updates.push({ table, values }),
+      onInsert: (table, values) => inserts.push({ table, values }),
+    },
+  });
+
+  const result = await balanceCallQueueAction({}, cappedBalanceForm(2, "staff-2"));
+
+  assert.equal(result.ok, true);
+  assert.match(result.notice ?? "", /1 task was reassigned or closed mid-run/);
+  const audits = inserts.filter((write) => write.table === schema.auditLog);
+  const rows = audits[0]?.values as unknown as { entityId: string }[];
+  assert.equal(rows.length, 2, "only the two tasks still where we left them were written");
+  assert.ok(
+    rows.every((row) => row.entityId !== "t2"),
+    "the task that changed hands must not get an audit row claiming we moved it",
+  );
+});
+
 void test("balanceCallQueueAction: a queue past the cap is refused rather than half-balanced", async () => {
   const updates: RecordedWrite[] = [];
   const inserts: RecordedWrite[] = [];
