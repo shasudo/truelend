@@ -202,6 +202,65 @@ void test("the plain-text part carries the message without markup", async () => 
   assert.match(text, /Hi Synthetic,/);
 });
 
+void test("a status email draws the whole pipeline, marking where the reader stands", async () => {
+  const sent = await capture(() =>
+    notifyLeadStatusChanged(provider, {
+      to: "a@example.test",
+      name: "Synthetic",
+      status: "contacted",
+    }),
+  );
+  const text = String(sent.bodies[0]?.text);
+
+  assert.match(text, /Received {2}→ {2}\[Advisor review\] {2}→ {2}Approved {2}→ {2}Disbursed/);
+});
+
+/*
+ * A declined application must not render "Disbursed" beyond the current stage:
+ * greyed out or not, a stage drawn after the current one reads as still to come,
+ * which is precisely the wrong thing to tell someone who was just turned down.
+ */
+void test("a declined application's pipeline stops where it stopped", async () => {
+  const sent = await capture(() =>
+    notifyLeadStatusChanged(provider, {
+      to: "a@example.test",
+      name: "Synthetic",
+      status: "declined",
+    }),
+  );
+  const [body] = sent.bodies;
+  const text = String(body?.text);
+
+  assert.match(text, /\[Not approved\]$/m);
+  assert.doesNotMatch(text, /Disbursed/);
+  assert.doesNotMatch(String(body?.html), /Disbursed/);
+});
+
+/*
+ * One shell renders customer, staff and partner mail. Audience-specific
+ * furniture has to stay opt-in, or a password reset picks up partner branding.
+ */
+void test("the shared layout carries no audience branding unless a message asks for it", async () => {
+  const reset = await capture(() =>
+    sendPasswordReset(provider, {
+      to: "user@example.test",
+      name: "Synthetic",
+      url: "https://example.test/reset?token=t",
+    }),
+  );
+  const partner = await capture(() =>
+    notifyPartnerRegistration(provider, {
+      to: "p@example.test",
+      name: "Synthetic",
+      referenceId: "RP000002",
+      dashboardUrl: "https://partner.example.test/dashboard",
+    }),
+  );
+
+  assert.doesNotMatch(String(reset.bodies[0]?.html), /Referral Partner/);
+  assert.match(String(partner.bodies[0]?.html), /Referral Partners/);
+});
+
 void test("the new-lead alert goes to the team inbox, drops blank fields, and replies to the lead", async () => {
   const sent = await capture(() =>
     notifyNewLead(provider, {
