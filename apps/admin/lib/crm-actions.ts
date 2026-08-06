@@ -184,16 +184,23 @@ export async function assignCallTasksAction(
 /* ---- balance the open queue across a chosen set of callers (admin only) ---- */
 
 /*
- * ponytail: the whole open queue in one transaction, capped at the same 2000
- * rows an import is capped at, so a freshly imported list always balances in
- * one go. Past that the run is refused outright rather than balancing a subset,
- * because a partial balance looks exactly like a complete one and nothing
- * downstream would ever surface the difference. If real queues outgrow this,
- * close out or bulk-assign some first — this account has no Queue, Durable
- * Object or cron binding to run a background pass on.
+ * The whole open queue in one transaction. Past this the run is refused
+ * outright rather than balancing a subset, because a partial balance looks
+ * exactly like a complete one and nothing downstream would ever surface the
+ * difference.
+ *
+ * ponytail: 20000 is sized off a real queue (~16k open) with headroom, not off
+ * a measurement. The cost that scales is round-trips, not rows: one locking
+ * SELECT, one UPDATE per 1000 ids, one audit INSERT per 500 rows — so a full
+ * 20k run is ~60 statements, not 20000. Raise it further only with a timing
+ * measured against Hyperdrive; this account has no Queue, Durable Object or
+ * cron binding to move the work off the request if it stops fitting.
  */
-const MAX_BALANCE_TASKS = 2000;
-const BALANCE_CHUNK = 100;
+const MAX_BALANCE_TASKS = 20000;
+/** Rows per audit INSERT. 500 x 7 columns is well inside Postgres' 65535 bind parameters. */
+const BALANCE_CHUNK = 500;
+/** Ids per UPDATE ... WHERE id IN (...), for the same parameter budget. */
+const BALANCE_UPDATE_CHUNK = 1000;
 
 const balanceSchema = z.object({
   // Staff ids are better-auth text, not uuid. 50 is far more callers than this
@@ -295,29 +302,47 @@ export async function balanceCallQueueAction(
       if (pool.length > MAX_BALANCE_TASKS) return { kind: "too_large" } as const;
 
       const moves = balanceCallQueue(pool, employeeIds, maxPerEmployee);
-      // What the cap left on the floor: open rows nobody holds that nobody was
-      // given. Counted here rather than returned from the maths so the pure
-      // function keeps its single, testable return value.
-      const stranded =
-        pool.filter((task) => task.assignedTo === null).length -
-        moves.filter((move) => move.from === null).length;
+
+      /*
+       * The resulting state, not the delta — this is what the operator is told,
+       * and a cap that parked half the queue must never read as a clean split.
+       * Derived from the moves rather than re-queried: the rows are locked, so
+       * the pool plus the moves IS the post-commit truth.
+       */
+      let unassignedAfter = pool.filter((task) => task.assignedTo === null).length;
+      let parked = 0;
+      for (const move of moves) {
+        if (move.to === null) {
+          unassignedAfter += 1;
+          parked += 1;
+        } else if (move.from === null) {
+          unassignedAfter -= 1;
+        }
+      }
       if (moves.length === 0) {
-        return { kind: "settled", pooled: pool.length, stranded } as const;
+        return { kind: "settled", pooled: pool.length, unassignedAfter, parked } as const;
       }
 
-      // One UPDATE per caller, not per task. Worst case is one caller taking
-      // all 2000 ids: 2001 bind parameters, 3% of what a statement may carry.
-      const idsByOwner = new Map<string, string[]>();
+      /*
+       * Grouped by destination, so this is one UPDATE per caller rather than per
+       * task — plus one for `null`, the tasks a cap sent back to the unassigned
+       * pool. Chunked because a single caller can legitimately take the whole
+       * queue, and 20000 bind parameters in one statement is neither necessary
+       * nor kind to the query planner.
+       */
+      const idsByOwner = new Map<string | null, string[]>();
       for (const move of moves) {
         const ids = idsByOwner.get(move.to);
         if (ids) ids.push(move.taskId);
         else idsByOwner.set(move.to, [move.taskId]);
       }
       for (const [owner, ids] of idsByOwner) {
-        await tx
-          .update(schema.callTasks)
-          .set({ assignedTo: owner })
-          .where(inArray(schema.callTasks.id, ids));
+        for (let i = 0; i < ids.length; i += BALANCE_UPDATE_CHUNK) {
+          await tx
+            .update(schema.callTasks)
+            .set({ assignedTo: owner })
+            .where(inArray(schema.callTasks.id, ids.slice(i, i + BALANCE_UPDATE_CHUNK)));
+        }
       }
 
       /*
@@ -325,8 +350,8 @@ export async function balanceCallQueueAction(
        * is what puts the change in that task's own "Call history" (entityId =
        * task.id) alongside who held it before, which is the only place anyone
        * looks when they ask where their task went. A distinct action string, so
-       * a redistribution is never mistaken for a hand-picked assignment.
-       * Chunked at 100 like the import route.
+       * a redistribution is never mistaken for a hand-picked assignment. An
+       * `after.assignedTo` of null is a task the cap parked, and reads as one.
        */
       const auditRows = moves.map((move) => ({
         actorId: user.id,
@@ -340,7 +365,13 @@ export async function balanceCallQueueAction(
       for (let i = 0; i < auditRows.length; i += BALANCE_CHUNK) {
         await tx.insert(schema.auditLog).values(auditRows.slice(i, i + BALANCE_CHUNK));
       }
-      return { kind: "balanced", moved: moves.length, pooled: pool.length, stranded } as const;
+      return {
+        kind: "balanced",
+        moved: moves.length,
+        pooled: pool.length,
+        unassignedAfter,
+        parked,
+      } as const;
     });
 
     if (outcome.kind === "invalid_assignee") {
@@ -352,12 +383,15 @@ export async function balanceCallQueueAction(
       };
     }
     revalidatePath("/crm");
-    // A cap that could not fit the whole queue is the one outcome an operator
-    // would otherwise misread as a complete balance, so it is always said out
-    // loud — including when nothing moved at all.
-    const strandedNote =
-      outcome.stranded > 0
-        ? ` ${outcome.stranded} ${outcome.stranded === 1 ? "task is" : "tasks are"} still unassigned — the cap of ${maxPerEmployee} per caller left no room.`
+    /*
+     * Whatever the cap left in the unassigned pool is always said out loud. It
+     * is the one number an operator would otherwise misread as a clean split —
+     * which is exactly what "already evenly split" used to claim while a cap was
+     * quietly holding thousands of tasks back.
+     */
+    const pooledNote =
+      outcome.unassignedAfter > 0
+        ? ` ${outcome.unassignedAfter} ${outcome.unassignedAfter === 1 ? "task is" : "tasks are"} now unassigned${maxPerEmployee ? ` — the cap of ${maxPerEmployee} per caller left no room` : ""}.`
         : "";
     if (outcome.kind === "settled") {
       return {
@@ -365,12 +399,17 @@ export async function balanceCallQueueAction(
         notice:
           outcome.pooled === 0
             ? "There are no open tasks to balance."
-            : `The open queue is already evenly split — nothing moved.${strandedNote}`,
+            : `Every ticked caller is already within their share — nothing moved.${pooledNote}`,
       };
     }
+    const callerCount = `${employeeIds.length} ${employeeIds.length === 1 ? "caller" : "callers"}`;
+    const parkedNote =
+      outcome.parked > 0
+        ? ` ${outcome.parked} over the cap ${outcome.parked === 1 ? "was" : "were"} unassigned.`
+        : "";
     return {
       ok: true,
-      notice: `Moved ${outcome.moved} of ${outcome.pooled} open tasks across ${employeeIds.length} ${employeeIds.length === 1 ? "caller" : "callers"}${maxPerEmployee ? `, max ${maxPerEmployee} each` : ""}.${strandedNote}`,
+      notice: `Moved ${outcome.moved} of ${outcome.pooled} open tasks across ${callerCount}${maxPerEmployee ? `, max ${maxPerEmployee} each` : ""}.${parkedNote}${pooledNote}`,
     };
   } catch (error) {
     reportCrmActionFailure("crm_balance_failed", error);

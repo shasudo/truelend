@@ -15,17 +15,27 @@ import { parseCsv, mapHeader } from "@/lib/csv";
 import { errorType } from "@/lib/error-type";
 import { scheduleAdminRequestContextCleanup } from "@/lib/request-context-cleanup";
 
-const MAX_BYTES = 512 * 1024;
-const MAX_ROWS = 2000;
+const MAX_BYTES = 4 * 1024 * 1024;
+const MAX_ROWS = 20000;
 // Excel and Windows both hand `.csv` a spreadsheet MIME; Safari sends text/plain.
 const allowedContentTypes = ["text/csv", "application/vnd.ms-excel", "text/plain", ""];
 
-/** One failed row, reported by position and reason only — never by value. */
+/**
+ * One failed row, reported by position and reason only — never by value.
+ *
+ * A duplicate is deliberately NOT one of these: re-exported call lists overlap
+ * as a matter of course, and rejecting a whole file because 12 of 16000 rows
+ * were already in the queue makes the import unusable. Duplicates are skipped
+ * and counted instead. A malformed row still fails the file, because that is a
+ * data problem someone has to go and fix.
+ */
 interface RowFailure {
   row: number;
-  code: "name_missing" | "phone_invalid" | "too_many_columns" | "duplicate_phone";
+  code: "name_missing" | "phone_invalid" | "too_many_columns";
 }
 const MAX_REPORTED_FAILURES = 50;
+/** Phones per duplicate-lookup statement, keeping bind parameters well inside Postgres' 65535. */
+const LOOKUP_CHUNK = 1000;
 
 // Same bound convertSchema applies to a call task's email at conversion time —
 // reused here so an import can't seed a value conversion would have rejected.
@@ -150,6 +160,8 @@ export async function POST(req: Request) {
     // decides whether they actually survive — see the comment there for why.
     const candidates: { recordNumber: number; phone: string; value: NewCallTask }[] = [];
     const seenPhones = new Set<string>();
+    /** Rows dropped as duplicates. Reported, never fatal. */
+    let skipped = 0;
     dataRows.forEach((row, index) => {
       // +2: one for the header, one because operators count from 1. This is the
       // record number, which only differs from the file line when a quoted field
@@ -173,9 +185,11 @@ export async function POST(req: Request) {
         return;
       }
       // A repeated phone within the same file — a re-exported list, a copy-paste
-      // slip — would otherwise seed two call tasks for one person.
+      // slip — would otherwise seed two call tasks for one person. The first
+      // occurrence wins and the later one is dropped, so which row survives does
+      // not depend on anything but file order.
       if (seenPhones.has(phone)) {
-        failures.push({ row: recordNumber, code: "duplicate_phone" });
+        skipped += 1;
         return;
       }
       seenPhones.add(phone);
@@ -198,36 +212,12 @@ export async function POST(req: Request) {
       });
     });
 
-    // A phone already open in the queue (imported before, or still being
-    // worked) is also a duplicate — just one the file alone can't see. A
-    // *closed* task for the same phone is not: re-importing a closed-out
-    // prospect to reopen them is the documented way to do it, so only an
-    // open task blocks the row.
-    if (failures.length === 0 && candidates.length > 0) {
-      const openDuplicates = await db
-        .select({ phone: schema.callTasks.phone })
-        .from(schema.callTasks)
-        .where(
-          and(
-            inArray(
-              schema.callTasks.phone,
-              candidates.map((c) => c.phone),
-            ),
-            notInArray(schema.callTasks.status, [...terminalCallStatusValues]),
-          ),
-        );
-      const openPhones = new Set(openDuplicates.map((r) => r.phone));
-      if (openPhones.size > 0) {
-        for (const candidate of candidates) {
-          if (openPhones.has(candidate.phone)) {
-            failures.push({ row: candidate.recordNumber, code: "duplicate_phone" });
-          }
-        }
-      }
-    }
-
-    // All or nothing: importing 1999 of 2000 rows silently drops row 1443 out
-    // of a call list, and nothing downstream would ever surface it.
+    /*
+     * All or nothing, for malformed rows only: importing 1999 of 2000 rows
+     * silently drops row 1443 out of a call list, and nothing downstream would
+     * ever surface it. Checked before the duplicate lookup so a broken file
+     * costs no database work.
+     */
     if (failures.length > 0) {
       return Response.json(
         {
@@ -239,16 +229,54 @@ export async function POST(req: Request) {
         { status: 400 },
       );
     }
+
+    // Every data row was blank padding, or every one was a repeat of an earlier
+    // row in the same file. Distinct from "nothing new to import" below.
     if (candidates.length === 0) {
       return Response.json({ error: "That file has no rows." }, { status: 400 });
     }
-    const values = candidates.map((c) => c.value);
 
-    // ponytail: 2000 rows / 512KB / one transaction, chunked at 100 rows per
-    // INSERT. If imports outgrow this, split the file client-side before
-    // reaching for a job runner — this account has no Queue, Durable Object,
-    // KV or cron binding to run one on.
-    const CHUNK = 100;
+    /*
+     * A phone already open in the queue (imported before, or still being
+     * worked) is also a duplicate — just one the file alone can't see. A
+     * *closed* task for the same phone is not: re-importing a closed-out
+     * prospect to reopen them is the documented way to do it, so only an
+     * open task drops the row.
+     *
+     * Chunked because this runs over every surviving row of a file that may
+     * carry 20000 of them.
+     */
+    const openPhones = new Set<string>();
+    for (let i = 0; i < candidates.length; i += LOOKUP_CHUNK) {
+      const phones = candidates.slice(i, i + LOOKUP_CHUNK).map((c) => c.phone);
+      const rows = await db
+        .select({ phone: schema.callTasks.phone })
+        .from(schema.callTasks)
+        .where(
+          and(
+            inArray(schema.callTasks.phone, phones),
+            notInArray(schema.callTasks.status, [...terminalCallStatusValues]),
+          ),
+        );
+      for (const row of rows) openPhones.add(row.phone);
+    }
+
+    const fresh = candidates.filter((candidate) => !openPhones.has(candidate.phone));
+    skipped += candidates.length - fresh.length;
+
+    if (fresh.length === 0) {
+      // Not an error: re-uploading a list already in the queue is a no-op, and
+      // saying so is more useful than a red box claiming the file was bad.
+      return Response.json({ ok: true, imported: 0, skipped });
+    }
+    const values = fresh.map((c) => c.value);
+
+    // ponytail: 20000 rows / 4MB / one transaction, chunked at 500 rows per
+    // INSERT — 4000 bind parameters a statement, 40 statements for a full file.
+    // If imports outgrow this, split the file client-side before reaching for a
+    // job runner: this account has no Queue, Durable Object, KV or cron binding
+    // to run one on.
+    const CHUNK = 500;
     databaseOutcomeUnknown = true;
     await db.transaction(async (tx) => {
       for (let i = 0; i < values.length; i += CHUNK) {
@@ -260,12 +288,12 @@ export async function POST(req: Request) {
         action: "call_task.import",
         entityType: "call_task",
         entityId: null,
-        after: { imported: values.length },
+        after: { imported: values.length, skippedDuplicates: skipped },
       });
     });
     databaseOutcomeUnknown = false;
 
-    return Response.json({ ok: true, imported: values.length });
+    return Response.json({ ok: true, imported: values.length, skipped });
   } catch (error) {
     console.error(JSON.stringify({ event: "crm_import_failed", errorType: errorType(error) }));
     return Response.json(

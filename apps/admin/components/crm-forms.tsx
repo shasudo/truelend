@@ -464,7 +464,12 @@ export function BalanceCallQueueForm({
   function confirmBalance(event: FormEvent<HTMLFormElement>) {
     const count = event.currentTarget.querySelectorAll('input[name="employeeIds"]:checked').length;
     if (count === 0) return; // the server refuses this too, with a message
-    const cap = Number(max) > 0 ? ` Nobody will be handed more than ${max}.` : "";
+    // A cap takes work off people rather than only withholding it, so it is
+    // spelled out separately instead of tacked onto the general warning.
+    const cap =
+      Number(max) > 0
+        ? ` Nobody will keep more than ${max} — everything above that is unassigned and goes back to the pool.`
+        : "";
     if (
       !window.confirm(
         `Spread the ${totalOpen} open ${totalOpen === 1 ? "task" : "tasks"} evenly across ${count} ${count === 1 ? "caller" : "callers"}? Tasks already assigned to them may move to someone else. Scheduled callbacks stay put.${cap}`,
@@ -501,7 +506,7 @@ export function BalanceCallQueueForm({
               name="maxPerEmployee"
               type="number"
               min={1}
-              max={2000}
+              max={20000}
               step={1}
               inputMode="numeric"
               placeholder="No limit"
@@ -536,9 +541,9 @@ export function BalanceCallQueueForm({
                 Clear
               </button>
               {ticked > 0 && (
-                <span className="text-muted">
+                <span className={capped ? "font-semibold text-sun-600" : "text-muted"}>
                   {capped
-                    ? `Capped at ${max} each — about ${totalOpen - Number(max) * ticked} would stay unassigned.`
+                    ? `${max} each — the other ~${totalOpen - Number(max) * ticked} go back to unassigned.`
                     : `≈ ${evenSplit} ${evenSplit === 1 ? "task" : "tasks"} each.`}
                 </span>
               )}
@@ -576,11 +581,11 @@ interface ImportFailure {
   code: string;
 }
 
+// No duplicate entry: a repeated phone is skipped and counted, never a failure.
 const failureCopy: Record<string, string> = {
   name_missing: "no name",
   phone_invalid: "phone is not a 10-digit Indian mobile",
   too_many_columns: "more columns than the header",
-  duplicate_phone: "same phone as another row, or an already-open task",
 };
 
 export function CallTaskImport() {
@@ -603,6 +608,7 @@ export function CallTaskImport() {
       const result = (await response.json()) as {
         ok?: boolean;
         imported?: number;
+        skipped?: number;
         error?: string;
         uncertain?: boolean;
         total?: number;
@@ -620,9 +626,16 @@ export function CallTaskImport() {
         setInvalidTotal(result.invalid ?? null);
         return;
       }
+      // The skipped count is always shown when non-zero: "imported 15988" on a
+      // 16000-row file is otherwise a silent, unexplained shortfall.
+      const skipped = result.skipped ?? 0;
       setMessage({
         ok: true,
-        text: `Imported ${result.imported} call ${result.imported === 1 ? "task" : "tasks"}.`,
+        text:
+          `Imported ${result.imported} call ${result.imported === 1 ? "task" : "tasks"}.` +
+          (skipped > 0
+            ? ` Skipped ${skipped} ${skipped === 1 ? "duplicate" : "duplicates"} — already in the queue, or repeated in the file.`
+            : ""),
       });
       router.refresh();
     } catch {
@@ -646,7 +659,7 @@ export function CallTaskImport() {
           <p className="text-xs text-muted">
             CSV needs <code>name</code> and <code>phone</code>. Optional: <code>email</code>,{" "}
             <code>city</code>, <code>product</code>, <code>source</code>, <code>remark</code>. Up to
-            2000 rows, 512KB. Any invalid row rejects the whole file.
+            20,000 rows, 4MB. Duplicate phones are skipped; any invalid row rejects the whole file.
           </p>
         </div>
         <input

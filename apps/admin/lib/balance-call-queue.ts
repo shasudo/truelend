@@ -26,7 +26,12 @@ export interface BalanceMove {
   taskId: string;
   /** Who held it before; null when it was unassigned. Carried so the audit row reads honestly without a second lookup. */
   from: string | null;
-  to: string;
+  /**
+   * Who holds it after. `null` means "put it back in the unassigned pool", which
+   * only ever happens under a `maxPerEmployee` cap: without one the shares sum to
+   * the whole pool, so every task lands on somebody.
+   */
+  to: string | null;
 }
 
 interface Bucket {
@@ -66,12 +71,20 @@ function byKeepOrder(a: BalanceTask, b: BalanceTask): number {
  * `employeeIds`. A row held by anyone else is ignored here too, so the SQL and
  * the maths agree even if one of them is edited later.
  *
- * `maxPerEmployee`, when given, is a ceiling on what anyone is *handed*: with a
- * cap the shares no longer sum to the pool, so whatever does not fit is simply
- * left where it is — unassigned rows stay unassigned, and a caller already over
- * the cap keeps what they hold rather than having it stripped. Pinned callbacks
- * can push someone past the cap for the same reason they always could: nobody
- * else can take them.
+ * `maxPerEmployee`, when given, is a hard ceiling on what any ticked caller ends
+ * up holding: everything above it goes back to the unassigned pool (`to: null`)
+ * rather than staying on an over-loaded caller. That is the whole point of the
+ * control — "give me 100 each and park the rest" — and it is why a move may now
+ * unassign. Without a cap this never happens.
+ *
+ * Two things the cap deliberately cannot override:
+ *   - Pinned callbacks. A caller whose scheduled callbacks alone exceed the cap
+ *     stays above it, because nobody else can take a promise they made.
+ *   - Unticked callers. Their tasks are not in `tasks` at all, so the cap never
+ *     touches a book that was not offered up.
+ *
+ * What gets parked is chosen by `keepRank`: never-dialled rows go first, and the
+ * `interested` ones a caller built rapport on are the last to leave them.
  */
 export function balanceCallQueue(
   tasks: readonly BalanceTask[],
@@ -151,10 +164,13 @@ export function balanceCallQueue(
   }
 
   /*
-   * The caps sum to `total`, so the pooled tasks and the free slots are the
-   * same count: one pass in cap order places every one of them. A caller who
-   * gave a task up has zero room left, so nothing can be handed straight back
-   * to the person it was just taken from.
+   * Uncapped, the caps sum to `total`, so the pooled tasks and the free slots
+   * are the same count and one pass in cap order places every one of them. A
+   * caller who gave a task up has zero room left, so nothing can be handed
+   * straight back to the person it was just taken from.
+   *
+   * Capped, the caps sum to at most `total`, so the pool can only ever be
+   * larger than the slots — never smaller. The leftover is drained below.
    */
   unheld.sort(byKeepOrder);
   const moves: BalanceMove[] = [];
@@ -162,10 +178,25 @@ export function balanceCallQueue(
   for (const bucket of buckets) {
     for (let held = bucket.pinned + bucket.own.length; held < bucket.cap; held += 1) {
       const task = unheld[next];
-      // Invariant, not a guard: the pool runs out exactly as the last slot fills.
-      if (!task) return moves;
+      // Invariant, not a guard: sum(cap) <= total, so the pool always covers
+      // the slots. `break`, not `return`, so a broken invariant still falls
+      // through to the drain rather than silently leaving tasks double-counted.
+      if (!task) break;
       next += 1;
       moves.push({ taskId: task.id, from: task.assignedTo, to: bucket.id });
+    }
+  }
+
+  /*
+   * What the cap would not let anyone hold. Anything still owned goes back to
+   * the unassigned pool; a task that was already unassigned and stays that way
+   * is not a change, so it is not a move — which is also what keeps a second
+   * run of an already-capped queue a no-op.
+   */
+  for (; next < unheld.length; next += 1) {
+    const task = unheld[next];
+    if (task && task.assignedTo !== null) {
+      moves.push({ taskId: task.id, from: task.assignedTo, to: null });
     }
   }
   return moves;

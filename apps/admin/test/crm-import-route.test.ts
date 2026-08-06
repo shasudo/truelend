@@ -174,7 +174,7 @@ void test("crm import: a +91-prefixed phone is accepted like a bare 10-digit one
   );
 
   assert.equal(response.status, 200);
-  assert.deepEqual(await response.json(), { ok: true, imported: 2 });
+  assert.deepEqual(await response.json(), { ok: true, imported: 2, skipped: 0 });
   const rows = inserts.find((write) => write.table === schema.callTasks)?.values as unknown as {
     phone: string;
   }[];
@@ -184,7 +184,7 @@ void test("crm import: a +91-prefixed phone is accepted like a bare 10-digit one
   );
 });
 
-void test("crm import: a repeated phone within the file rejects the whole file", async () => {
+void test("crm import: a phone repeated in the file is skipped, and the rest still import", async () => {
   const inserts: RecordedWrite[] = [];
   setFakeAuthState({
     getSession: async () => buildAdminSession(),
@@ -193,16 +193,50 @@ void test("crm import: a repeated phone within the file rejects the whole file",
   });
 
   const response = await POST(
-    buildRequest(csvForm("name,phone\nAnil Rao,9876543210\nAnil Again,9876543210\n")),
+    buildRequest(
+      csvForm("name,phone\nAnil Rao,9876543210\nAnil Again,9876543210\nMeera Nair,9812345678\n"),
+    ),
   );
 
-  assert.equal(response.status, 400);
-  const body = (await response.json()) as { failures: { row: number; code: string }[] };
-  assert.deepEqual(body.failures, [{ row: 3, code: "duplicate_phone" }]);
-  assert.equal(inserts.length, 0);
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), { ok: true, imported: 2, skipped: 1 });
+  const rows = inserts.find((w) => w.table === schema.callTasks)?.values as unknown as {
+    phone: string;
+  }[];
+  assert.deepEqual(
+    rows.map((r) => r.phone),
+    ["9876543210", "9812345678"],
+    "the first occurrence survives and the later repeat is the one dropped",
+  );
 });
 
-void test("crm import: a phone already open in the queue rejects the row", async () => {
+void test("crm import: a phone already open in the queue is skipped, not fatal", async () => {
+  const inserts: RecordedWrite[] = [];
+  setFakeAuthState({
+    getSession: async () => buildAdminSession(),
+    env: buildEnv(),
+    dbOptions: {
+      rowsByTable: new Map([[schema.callTasks, [{ phone: "9876543210" }]]]),
+      onInsert: (table, values) => inserts.push({ table, values }),
+    },
+  });
+
+  const response = await POST(
+    buildRequest(csvForm("name,phone\nAnil Rao,9876543210\nMeera Nair,9812345678\n")),
+  );
+
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), { ok: true, imported: 1, skipped: 1 });
+  const rows = inserts.find((w) => w.table === schema.callTasks)?.values as unknown as {
+    phone: string;
+  }[];
+  assert.deepEqual(
+    rows.map((r) => r.phone),
+    ["9812345678"],
+  );
+});
+
+void test("crm import: a file of nothing but already-open phones imports nothing and says so", async () => {
   const inserts: RecordedWrite[] = [];
   setFakeAuthState({
     getSession: async () => buildAdminSession(),
@@ -215,9 +249,26 @@ void test("crm import: a phone already open in the queue rejects the row", async
 
   const response = await POST(buildRequest(csvForm("name,phone\nAnil Rao,9876543210\n")));
 
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), { ok: true, imported: 0, skipped: 1 });
+  assert.equal(inserts.length, 0, "no insert, and no audit row for an import that did nothing");
+});
+
+void test("crm import: a malformed row still rejects the whole file, duplicates aside", async () => {
+  const inserts: RecordedWrite[] = [];
+  setFakeAuthState({
+    getSession: async () => buildAdminSession(),
+    env: buildEnv(),
+    dbOptions: { onInsert: (table, values) => inserts.push({ table, values }) },
+  });
+
+  const response = await POST(
+    buildRequest(csvForm("name,phone\nAnil Rao,9876543210\nNo Phone,123\n")),
+  );
+
   assert.equal(response.status, 400);
   const body = (await response.json()) as { failures: { row: number; code: string }[] };
-  assert.deepEqual(body.failures, [{ row: 2, code: "duplicate_phone" }]);
+  assert.deepEqual(body.failures, [{ row: 3, code: "phone_invalid" }]);
   assert.equal(inserts.length, 0);
 });
 
@@ -307,7 +358,7 @@ void test("crm import: a clean file inserts the rows and one audit entry", async
   const response = await POST(buildRequest(csvForm(VALID_CSV)));
 
   assert.equal(response.status, 200);
-  assert.deepEqual(await response.json(), { ok: true, imported: 2 });
+  assert.deepEqual(await response.json(), { ok: true, imported: 2, skipped: 0 });
   const taskWrite = inserts.find((write) => write.table === schema.callTasks);
   assert.ok(taskWrite, "call tasks are inserted");
   // One chunked multi-row insert, not one statement per row.
@@ -345,7 +396,7 @@ void test("crm import: spreadsheet padding rows are skipped, not reported as fai
   const response = await POST(buildRequest(csvForm("name,phone\nAnil Rao,9876543210\n,,\n   ,\n")));
 
   assert.equal(response.status, 200);
-  assert.deepEqual(await response.json(), { ok: true, imported: 1 });
+  assert.deepEqual(await response.json(), { ok: true, imported: 1, skipped: 0 });
   assert.ok(inserts.some((write) => write.table === schema.callTasks));
 });
 

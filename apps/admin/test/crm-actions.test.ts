@@ -337,6 +337,13 @@ function balanceForm(...employeeIds: string[]): FormData {
   return formData;
 }
 
+/** The same form with a per-caller ceiling, which is what makes a move able to unassign. */
+function cappedBalanceForm(max: number, ...employeeIds: string[]): FormData {
+  const formData = balanceForm(...employeeIds);
+  formData.set("maxPerEmployee", String(max));
+  return formData;
+}
+
 /** Open queue rows the balance action's locking scan reads. */
 function poolRows(rows: { id: string; status: string; assignedTo: string | null }[]): FakeRow[] {
   return rows as unknown as FakeRow[];
@@ -470,9 +477,70 @@ void test("balanceCallQueueAction: an already-even queue reports it and writes n
   const result = await balanceCallQueueAction({}, balanceForm("staff-2", "staff-3"));
 
   assert.equal(result.ok, true);
-  assert.match(result.notice ?? "", /already evenly split/);
+  assert.match(result.notice ?? "", /already within their share/);
   assert.equal(updates.length, 0);
   assert.equal(inserts.length, 0);
+});
+
+/*
+ * The bug this pins: with every caller already over the cap there are no free
+ * slots, so the shed tasks had nowhere to go and were handed straight back to
+ * their owner. Zero moves, zero writes, and a notice claiming the queue was
+ * already even while the cap had in fact done nothing at all.
+ */
+void test("balanceCallQueueAction: a cap unassigns what nobody is allowed to keep", async () => {
+  const updates: { table: unknown; values: FakeRow }[] = [];
+  const inserts: { table: unknown; values: FakeRow }[] = [];
+  setFakeAuthState({
+    getSession: async () => buildStaffSession({ role: "admin" }),
+    dbOptions: {
+      rowsByTable: new Map<unknown, FakeRow[]>([
+        [schema.user, [{ id: "staff-2" }]],
+        [
+          schema.callTasks,
+          poolRows(
+            Array.from({ length: 5 }, (_, i) => ({
+              id: `t${i}`,
+              status: "new",
+              assignedTo: "staff-2",
+            })),
+          ),
+        ],
+      ]),
+      onUpdate: (table, values) => updates.push({ table, values }),
+      onInsert: (table, values) => inserts.push({ table, values }),
+    },
+  });
+
+  const result = await balanceCallQueueAction({}, cappedBalanceForm(2, "staff-2"));
+
+  assert.equal(result.ok, true);
+  assert.match(result.notice ?? "", /3 over the cap were unassigned/);
+  assert.match(result.notice ?? "", /3 tasks are now unassigned/);
+  const taskUpdates = updates.filter((write) => write.table === schema.callTasks);
+  assert.equal(taskUpdates.length, 1, "one UPDATE, grouped by destination");
+  assert.deepEqual(
+    taskUpdates[0]?.values,
+    { assignedTo: null } as unknown as FakeRow,
+    "the excess was released to the pool, not moved to another caller",
+  );
+  const audits = inserts.filter((write) => write.table === schema.auditLog);
+  assert.equal(audits.length, 1, "one chunked insert");
+  const rows = audits[0]?.values as unknown as {
+    action: string;
+    before: { assignedTo: string | null };
+    after: { assignedTo: string | null };
+  }[];
+  assert.equal(rows.length, 3, "one audit row per parked task");
+  assert.ok(
+    rows.every(
+      (row) =>
+        row.action === "call_task.balance" &&
+        row.before.assignedTo === "staff-2" &&
+        row.after.assignedTo === null,
+    ),
+    "the history must show where each task came from and that it is now unheld",
+  );
 });
 
 void test("balanceCallQueueAction: a queue past the cap is refused rather than half-balanced", async () => {
@@ -487,7 +555,7 @@ void test("balanceCallQueueAction: a queue past the cap is refused rather than h
           schema.callTasks,
           // The action asks for MAX + 1 precisely so this case is detectable.
           poolRows(
-            Array.from({ length: 2001 }, (_, i) => ({
+            Array.from({ length: 20001 }, (_, i) => ({
               id: `t${i}`,
               status: "new",
               assignedTo: null,
@@ -503,7 +571,7 @@ void test("balanceCallQueueAction: a queue past the cap is refused rather than h
   const result = await balanceCallQueueAction({}, balanceForm("staff-2"));
 
   assert.equal(result.ok, undefined);
-  assert.match(result.error ?? "", /2000/);
+  assert.match(result.error ?? "", /20000/);
   assert.equal(updates.length, 0, "a partial balance is indistinguishable from a complete one");
   assert.equal(inserts.length, 0);
 });

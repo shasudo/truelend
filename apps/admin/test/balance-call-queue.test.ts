@@ -194,7 +194,7 @@ void test("balancing an already-balanced queue is a no-op", () => {
   assert.deepEqual(balanceCallQueue(settled, employees), []);
 });
 
-void test("a move never unassigns a task or targets an unticked caller", () => {
+void test("without a max, a move never unassigns a task or targets an unticked caller", () => {
   const tasks = [
     ...unassigned(5),
     task("a0", "new", "a"),
@@ -204,7 +204,8 @@ void test("a move never unassigns a task or targets an unticked caller", () => {
   const employees = ["a", "b", "c"];
 
   for (const move of balanceCallQueue(tasks, employees)) {
-    assert.ok(employees.includes(move.to), `move targeted ${move.to}`);
+    assert.notEqual(move.to, null, `${move.taskId} was unassigned with no cap in force`);
+    assert.ok(employees.includes(move.to!), `move targeted ${move.to}`);
   }
 });
 
@@ -234,14 +235,61 @@ void test("nobody is handed more than the max, and the surplus stays unassigned"
   assert.equal(moves.length, 6, "the other four were left unassigned, not forced onto someone");
 });
 
-void test("the max is a ceiling on what is handed out, never a strip of what is held", () => {
+/*
+ * The case that was silently doing nothing: every caller already sits above the
+ * cap, so there is not a single free slot to place a shed task into. Handing
+ * them back to their current owner made the whole control a no-op and reported
+ * "already evenly split".
+ */
+void test("callers already over the max are cut down to it, and the excess is unassigned", () => {
   const tasks = [
     ...Array.from({ length: 5 }, (_, i) => task(`a${i}`, "new", "a")),
     ...Array.from({ length: 5 }, (_, i) => task(`b${i}`, "new", "b")),
   ];
   const moves = balanceCallQueue(tasks, ["a", "b"], 2);
 
-  assert.deepEqual(moves, [], "a balanced pair over the cap were raided for no reason");
+  assert.deepEqual(sortedLoads(tasks, moves), [2, 2], "each caller was cut to the cap");
+  assert.equal(moves.length, 6, "three off each caller");
+  assert.ok(
+    moves.every((move) => move.to === null),
+    "the excess went back to the pool rather than to the other caller",
+  );
+});
+
+void test("a big queue over a small cap parks everything the callers cannot hold", () => {
+  const tasks = unassigned(16000);
+  const moves = balanceCallQueue(tasks, ["a", "b", "c"], 100);
+
+  assert.deepEqual(sortedLoads(tasks, moves), [100, 100, 100]);
+  assert.equal(moves.length, 300, "only the placements are moves; 15700 were already unassigned");
+});
+
+void test("the excess a cap parks is the never-dialled work, not the rapport", () => {
+  const tasks = [
+    task("t-interested", "interested", "a"),
+    task("t-attempted", "attempted", "a"),
+    task("t-new-1", "new", "a"),
+    task("t-new-2", "new", "a"),
+  ];
+  const moves = balanceCallQueue(tasks, ["a"], 2);
+
+  assert.deepEqual(
+    moves.map((move) => move.taskId).sort(),
+    ["t-new-1", "t-new-2"],
+    "a caller kept the two they had worked",
+  );
+  assert.ok(moves.every((move) => move.to === null));
+});
+
+void test("a parked task reports the owner it was taken from, for the audit row", () => {
+  const tasks = Array.from({ length: 3 }, (_, i) => task(`a${i}`, "new", "a"));
+  const moves = balanceCallQueue(tasks, ["a"], 1);
+
+  assert.equal(moves.length, 2);
+  assert.ok(
+    moves.every((move) => move.from === "a" && move.to === null),
+    "before/after must both read honestly",
+  );
 });
 
 void test("scheduled callbacks can hold a caller above the max, since nobody else can take them", () => {
@@ -257,7 +305,12 @@ void test("scheduled callbacks can hold a caller above the max, since nobody els
 });
 
 void test("balancing under a max is stable on a second run", () => {
-  const tasks = [...unassigned(9), task("x", "new", "a")];
+  // Deliberately a queue the cap cannot fit: the second run must not re-park,
+  // re-hand-out or otherwise churn what the first run already settled.
+  const tasks = [
+    ...unassigned(9),
+    ...Array.from({ length: 4 }, (_, i) => task(`a${i}`, "new", "a")),
+  ];
   const employees = ["a", "b", "c"];
   const settled = applied(tasks, balanceCallQueue(tasks, employees, 3));
 
