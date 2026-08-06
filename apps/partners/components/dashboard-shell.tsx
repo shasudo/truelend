@@ -29,6 +29,13 @@ interface NavItem {
   label: string;
   href: string;
   icon: typeof LayoutDashboard;
+  /**
+   * Always filled, not just on its own page — the one thing a partner is here
+   * to do. Red rather than the navy active fill, so "this is the action" and
+   * "this is where you are" stay two different signals instead of one colour
+   * meaning both.
+   */
+  primary?: boolean;
 }
 
 interface NavGroup {
@@ -81,15 +88,26 @@ function NavLinks({ groups, onNavigate }: NavLinksProps) {
                 aria-current={active(item.href) ? "page" : undefined}
                 className={cx(
                   "group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
-                  active(item.href)
-                    ? "bg-navy-800 text-white shadow-[0_8px_24px_-16px_rgba(7,13,36,0.85)]"
-                    : "text-navy-600 hover:bg-navy-800/[0.06] hover:text-navy-950",
+                  item.primary
+                    ? cx(
+                        "font-semibold text-white shadow-[0_8px_24px_-16px_rgba(206,14,23,0.9)]",
+                        // Still darkens on its own page, so the active state
+                        // remains readable without stealing the accent colour.
+                        active(item.href) ? "bg-red-700" : "bg-red-600 hover:bg-red-700",
+                      )
+                    : active(item.href)
+                      ? "bg-navy-800 text-white shadow-[0_8px_24px_-16px_rgba(7,13,36,0.85)]"
+                      : "text-navy-600 hover:bg-navy-800/[0.06] hover:text-navy-950",
                 )}
               >
                 <item.icon
                   className={cx(
                     "h-4.5 w-4.5 shrink-0",
-                    active(item.href) ? "text-sun-400" : "text-navy-500 group-hover:text-red-600",
+                    item.primary
+                      ? "text-white"
+                      : active(item.href)
+                        ? "text-sun-400"
+                        : "text-navy-500 group-hover:text-red-600",
                   )}
                   aria-hidden
                 />
@@ -179,7 +197,7 @@ export function DashboardShell({ referenceId, name, photoUrl, children }: Dashbo
       items: [
         { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
         { label: "Products", href: "/products", icon: LayoutGrid },
-        { label: "Refer Someone", href: "/refer", icon: UserRoundPlus },
+        { label: "Refer Someone", href: "/refer", icon: UserRoundPlus, primary: true },
         { label: "Card Referrals", href: "/card-referrals", icon: QrCode },
         { label: "My Referrals", href: "/customers", icon: Handshake },
         { label: "Referral Status", href: "/pipeline", icon: NotebookTabs },
