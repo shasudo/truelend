@@ -200,17 +200,71 @@ function safeHref(href: string): string {
   return url.toString();
 }
 
+interface MessageStep {
+  /** Inline HTML is permitted; callers escape their own interpolations. */
+  title: string;
+  body: string;
+  /** Renders a tick instead of a number — for a step already behind them. */
+  done?: boolean;
+}
+
 interface Message {
   heading: string;
   /** Inline HTML is permitted; callers escape their own interpolations. */
   paragraphs: string[];
+  /** A boxed callout under the paragraphs, for the one fact worth keeping. */
+  highlight?: { label: string; value: string };
+  /** A numbered walkthrough. Rendered between the paragraphs and the rows. */
+  steps?: { caption?: string; items: MessageStep[] };
   rows?: (readonly [string, string])[];
   action?: { href: string; label: string };
+  /** Small print under the button, e.g. what to do if the button fails. */
+  footnote?: string;
 }
 
 function render(message: Message): { html: string; text: string } {
   const href = message.action ? safeHref(message.action.href) : undefined;
   const rows = message.rows ?? [];
+  const steps = message.steps;
+
+  const highlightHtml = message.highlight
+    ? `<table role="presentation" style="width:100%;border-collapse:separate;margin:0 0 22px 0;"><tr><td style="background:${PAPER};border:1px solid rgba(20,32,74,0.10);border-left:3px solid ${RED};border-radius:10px;padding:14px 16px;">` +
+      `<div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#6d7dac;">${esc(message.highlight.label)}</div>` +
+      `<div style="margin-top:4px;font-size:19px;font-weight:800;letter-spacing:0.5px;color:${NAVY};">${esc(message.highlight.value)}</div>` +
+      `</td></tr></table>`
+    : "";
+
+  /*
+   * One table per step rather than one table with many rows: Outlook's renderer
+   * is far more reliable about a two-cell table than about vertical alignment
+   * across a long one, and a step is a self-contained unit anyway. Flex and grid
+   * are unavailable here, so the numbered badge is a fixed-width cell.
+   */
+  const stepsHtml = steps
+    ? `<div style="margin:0 0 6px 0;">` +
+      (steps.caption
+        ? `<div style="margin:0 0 14px 0;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#6d7dac;">${esc(steps.caption)}</div>`
+        : "") +
+      steps.items
+        .map((step, index) => {
+          const badge = step.done
+            ? `background:#0f7a3d;color:#ffffff;`
+            : `background:${NAVY};color:#ffffff;`;
+          const mark = step.done ? "&#10003;" : String(index + 1);
+          return (
+            `<table role="presentation" style="width:100%;border-collapse:collapse;"><tr>` +
+            `<td style="width:28px;padding:0 12px 16px 0;vertical-align:top;">` +
+            `<div style="width:26px;height:26px;line-height:26px;border-radius:13px;${badge}font-size:13px;font-weight:700;text-align:center;">${mark}</div>` +
+            `</td>` +
+            `<td style="padding:0 0 16px 0;vertical-align:top;">` +
+            `<div style="font-size:15px;font-weight:700;color:${NAVY};line-height:1.4;">${step.title}</div>` +
+            `<div style="margin-top:4px;font-size:14px;line-height:1.6;color:#4a5a8a;">${step.body}</div>` +
+            `</td></tr></table>`
+          );
+        })
+        .join("") +
+      `</div>`
+    : "";
 
   const rowsHtml =
     rows.length > 0
@@ -227,6 +281,10 @@ function render(message: Message): { html: string; text: string } {
       ? `<div style="margin-top:8px;"><a href="${esc(href)}" style="display:inline-block;background:${RED};color:#ffffff;text-decoration:none;font-weight:600;font-size:15px;padding:12px 22px;border-radius:9px;">${esc(message.action.label)}</a></div>`
       : "";
 
+  const footnoteHtml = message.footnote
+    ? `<p style="margin:16px 0 0 0;font-size:12px;line-height:1.6;color:#6d7dac;">${message.footnote}</p>`
+    : "";
+
   const body =
     `<h1 style="margin:0 0 12px 0;font-size:22px;font-weight:800;color:${NAVY};">${esc(message.heading)}</h1>` +
     message.paragraphs
@@ -235,8 +293,11 @@ function render(message: Message): { html: string; text: string } {
           `<p style="margin:0 0 14px 0;font-size:15px;line-height:1.6;color:#2d3d74;">${paragraph}</p>`,
       )
       .join("") +
+    highlightHtml +
+    stepsHtml +
     rowsHtml +
-    actionHtml;
+    actionHtml +
+    footnoteHtml;
 
   const html = `<!doctype html><html><body style="margin:0;padding:0;background:${PAPER};font-family:Helvetica,Arial,sans-serif;color:#1c2a56;">
   <div style="max-width:560px;margin:0 auto;padding:24px 16px;">
@@ -253,9 +314,20 @@ function render(message: Message): { html: string; text: string } {
 
   const lines = [message.heading, ""];
   for (const paragraph of message.paragraphs) lines.push(textOf(paragraph), "");
+  if (message.highlight) {
+    lines.push(`${message.highlight.label}: ${message.highlight.value}`, "");
+  }
+  if (steps) {
+    if (steps.caption) lines.push(steps.caption.toUpperCase(), "");
+    steps.items.forEach((step, index) => {
+      lines.push(`${step.done ? "[done]" : `${index + 1}.`} ${textOf(step.title)}`);
+      lines.push(`   ${textOf(step.body)}`, "");
+    });
+  }
   for (const [label, value] of rows) lines.push(`${label}: ${value}`);
   if (rows.length > 0) lines.push("");
   if (href && message.action) lines.push(`${message.action.label}: ${href}`, "");
+  if (message.footnote) lines.push(textOf(message.footnote), "");
   lines.push("TrueLend · Lending Choices, Simplified.");
 
   return { html, text: lines.join("\n") };
@@ -584,15 +656,54 @@ export function notifyPartnerRegistration(
     "partner_registration",
     from,
     info.to,
-    "Complete your TrueLend Referral Partner application",
+    "Welcome to TrueLend — here's what happens next",
     {
-      heading: "Your Referral Partner account is ready",
+      heading: `Welcome aboard, ${firstName(info.name)}`,
       paragraphs: [
-        `Hi ${esc(firstName(info.name))}, thank you for joining the TrueLend Referral Network.`,
-        `Your Referral Partner reference ID is <strong>${esc(info.referenceId)}</strong>. Keep it for future support requests.`,
-        "Sign in to add the remaining details and documents, then submit your application for review.",
+        "Your Referral Partner account is created. Everything from here is a short, one-time setup — then you can start referring customers and earning on every loan that lands.",
+        "Here is the whole journey, start to finish, so nothing takes you by surprise.",
       ],
+      highlight: { label: "Your Referral Partner ID", value: info.referenceId },
+      steps: {
+        caption: "How it works",
+        items: [
+          {
+            done: true,
+            title: "Account created",
+            body: "Done — that's this email. Your Referral Partner ID above identifies you in every conversation with our team, so keep it somewhere handy.",
+          },
+          {
+            title: "Complete your profile and KYC",
+            body: "Sign in and fill in your PAN, address, occupation, bank account details and nominee. Then upload four documents: <strong>PAN card, Aadhaar card, a passport-size photo and a cancelled cheque</strong>. The cheque is how we pay you, so make sure the account details match it exactly.",
+          },
+          {
+            title: "Submit for review",
+            body: "One button once everything is in. Your details lock at that point so nothing changes underneath our check — you'll still be able to see everything you submitted.",
+          },
+          {
+            title: "We verify you",
+            body: "Our team reviews applications within <strong>two working days</strong> and emails you either way. If something needs correcting we'll tell you exactly what, unlock your form, and you can resubmit — there's no penalty and no starting over.",
+          },
+          {
+            title: "Start referring customers",
+            body: "Once verified, refer a customer in under a minute from your dashboard, or share your personal referral link and QR code and let them apply themselves.",
+          },
+          {
+            title: "Track every referral to disbursal",
+            body: "Each referral moves through your pipeline — contacted, documents, approved, disbursed — and you get an email at every stage. No chasing anyone for updates.",
+          },
+          {
+            title: "Get paid",
+            // "incentive" matches referralRewardLabel in @truelend/reference.
+            // Spelled out rather than imported: this package is deliberately
+            // dependency-free, and one word is not worth the coupling.
+            body: "Your incentive is recorded against a referral the moment it qualifies, and again when the money is actually sent to your account. Both land in your earnings page and in your inbox.",
+          },
+        ],
+      },
       action: { href: info.dashboardUrl, label: "Complete your application" },
+      footnote:
+        "If the button doesn't work, copy the link into your browser. Just reply to this email if you get stuck at any point — a real person reads it.",
     },
     { idempotencyKey: info.idempotencyKey },
   );

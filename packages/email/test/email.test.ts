@@ -98,15 +98,25 @@ void test("Referral Partner registration email uses the dedicated sender", async
     throw new TypeError("Expected HTML and text email bodies");
   }
   assert.match(html, /RP000001/);
-  assert.match(html, /remaining details and documents/);
+  assert.match(html, /Cancelled cheque|cancelled cheque/);
   assert.doesNotMatch(html, /application has been submitted/);
   assert.deepEqual(body, {
     from: "TrueLend Referral Partners <partner@example.test>",
     to: ["recipient@example.test"],
-    subject: "Complete your TrueLend Referral Partner application",
+    subject: "Welcome to TrueLend — here's what happens next",
     html,
     text,
   });
+
+  /*
+   * The walkthrough is the point of this email, so the plain-text part has to
+   * carry it too — a text/plain reader must not be left with a heading and a
+   * bare link where the HTML reader gets seven numbered steps.
+   */
+  assert.match(text, /Your Referral Partner ID: RP000001/);
+  assert.match(text, /\[done\] Account created/);
+  assert.match(text, /^7\. Get paid$/m);
+  assert.doesNotMatch(text, /<[a-z]/i);
 });
 
 void test("transient provider failures retry with one idempotency key", async () => {
