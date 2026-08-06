@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button, Checkbox, Field, Input, Select } from "@truelend/ui";
-import { products, employmentTypes, loanTenures } from "@truelend/reference";
+import { products, employmentTypes, itrFiledOptions, loanTenures } from "@truelend/reference";
 import { referralSchema } from "@/lib/lead-schemas";
 import {
   FormSuccess,
@@ -49,6 +49,7 @@ export function ReferralForm() {
       existingEmi: "",
       assetValue: "",
       annualTurnover: "",
+      itrFiled: "",
       consent: false,
     },
     "referral",
@@ -199,6 +200,16 @@ export function ReferralForm() {
               placeholder="If you know it"
               {...register("monthlyIncome")}
             />
+          </Field>
+          <Field label="Do they file IT returns?" htmlFor="ref-itr" error={err.itrFiled?.message}>
+            <Select id="ref-itr" {...register("itrFiled")}>
+              <option value="">Not sure</option>
+              {itrFiledOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </Select>
           </Field>
         </div>
       </fieldset>

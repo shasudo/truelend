@@ -157,6 +157,14 @@ export const leads = pgTable(
     outstandingLoanAmountPaise: bigint("outstanding_loan_amount_paise", { mode: "number" }),
     creditCardOutstandingPaise: bigint("credit_card_outstanding_paise", { mode: "number" }),
     existingWithEmployer: text("existing_with_employer"),
+    /*
+     * Does the applicant file an income tax return? Nullable on purpose, and the
+     * three states are all meaningful: true, false, and "nobody asked" — a lead
+     * captured before the question existed, or a caller who never got to it.
+     * Storing an unanswered question as false would read as "does not file",
+     * which is a materially different lending profile.
+     */
+    itrFiled: boolean("itr_filed"),
 
     referrerName: text("referrer_name"),
     referrerPhone: text("referrer_phone"),

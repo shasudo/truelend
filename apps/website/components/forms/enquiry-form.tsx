@@ -10,6 +10,7 @@ import {
   loanPurposes,
   experienceBands,
   employerTenureLabels,
+  itrFiledOptions,
   cardProducts,
   type ProductSlug,
 } from "@truelend/reference";
@@ -83,6 +84,7 @@ export function EnquiryForm({ defaultProduct = "" }: EnquiryFormProps) {
       monthlyIncome: "",
       experienceYears: "",
       existingWithEmployer: "",
+      itrFiled: "",
       existingEmi: "",
       outstandingLoanAmount: "",
       creditCardOutstanding: "",
@@ -325,6 +327,20 @@ export function EnquiryForm({ defaultProduct = "" }: EnquiryFormProps) {
               {employerTenureLabels.map((label) => (
                 <option key={label} value={label}>
                   {label}
+                </option>
+              ))}
+            </Select>
+          </Field>
+          <Field
+            label="Do you file income tax returns?"
+            htmlFor="enq-itr"
+            error={err.itrFiled?.message}
+          >
+            <Select id="enq-itr" {...register("itrFiled")}>
+              <option value="">Select an answer</option>
+              {itrFiledOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
                 </option>
               ))}
             </Select>

@@ -10,6 +10,8 @@ import {
   productName,
   rupeesToPaise,
   employmentTypeValues,
+  itrFiledToBoolean,
+  itrFiledValues,
   residenceTypeValues,
   normalizeIndianMobile,
   validationMessages,
@@ -67,6 +69,7 @@ const loanApplicationFields = {
   existingEmi: rupeeAmountOptional,
   assetValue: rupeeAmountOptional,
   annualTurnover: rupeeAmountOptional,
+  itrFiled: z.enum(itrFiledValues).or(z.literal("")).optional(),
 };
 
 const leadSchema = z.object({
@@ -136,6 +139,7 @@ export async function submitLead(_prev: LeadState, formData: FormData): Promise<
             existingEmiPaise: rupeesToPaise(d.existingEmi),
             assetValuePaise: rupeesToPaise(d.assetValue),
             annualTurnoverPaise: rupeesToPaise(d.annualTurnover),
+            itrFiled: itrFiledToBoolean(d.itrFiled),
           })
           .returning({ id: schema.leads.id });
         leadId = lead?.id;

@@ -10,9 +10,14 @@ import {
   appUrls,
   customerConsentVersion,
   employeeCallStatusValues,
+  employmentTypeValues,
   isTerminalCallStatus,
+  itrFiledToBoolean,
+  itrFiledValues,
+  loanPurposes,
   normalizeIndianMobile,
   productSlugs,
+  residenceTypeValues,
   rupeesToPaise,
   terminalCallStatusValues,
   validationMessages,
@@ -605,6 +610,38 @@ export async function updateCallTaskStatusAction(
 
 /* ---- conversion ---- */
 
+/*
+ * Rupee amounts and bounded integers arrive as digit strings from the form and
+ * are stored as paise / smallint, exactly as the public enquiry form's fields
+ * are. Blank stays blank: a caller who did not ask about the customer's credit
+ * card balance must not be forced to invent a zero.
+ */
+const rupees = z
+  .string()
+  .trim()
+  .regex(validationPatterns.rupeeAmount, validationMessages.rupeeAmount)
+  .optional()
+  .or(z.literal(""));
+const boundedInt = (max: number, message: string) =>
+  z
+    .string()
+    .trim()
+    .regex(validationPatterns.smallInteger, validationMessages.smallInteger)
+    .refine((value) => Number(value) <= max, { message })
+    .optional()
+    .or(z.literal(""));
+
+/*
+ * Mirrors the public /enquiry form field for field, so a lead a caller creates
+ * on the phone is as complete as one the customer fills in themselves — the
+ * admin lead page renders all of these, and until now a conversion could only
+ * ever populate six of them.
+ *
+ * The difference is requiredness, not coverage: /enquiry can insist on income
+ * and employer because the customer is sitting there typing. A caller captures
+ * whatever the conversation actually produced, so everything past name, phone
+ * and consent is optional here.
+ */
 const convertSchema = z.object({
   taskId: z.string().uuid(),
   name: z.string().trim().min(2).max(120),
@@ -615,8 +652,39 @@ const convertSchema = z.object({
     .refine((v) => validationPatterns.indianMobile.test(v), validationMessages.indianMobile),
   email: z.string().trim().max(254).email().optional().or(z.literal("")),
   city: z.string().trim().max(80).optional(),
+  pincode: z
+    .string()
+    .trim()
+    .regex(validationPatterns.pincode, validationMessages.pincode)
+    .optional()
+    .or(z.literal("")),
   productSlug: z.enum(productSlugs).optional().or(z.literal("")),
-  loanAmount: z.string().trim().max(24).optional(),
+  loanAmount: rupees,
+  loanPurpose: z.enum(loanPurposes).optional().or(z.literal("")),
+  tenureMonths: boundedInt(600, "Tenure must be 600 months or less"),
+  preferredEmi: rupees,
+  // Transformed rather than left as "" because these two are database enums:
+  // the column takes a member or null, and "" is neither.
+  residenceType: z
+    .enum(residenceTypeValues)
+    .or(z.literal(""))
+    .optional()
+    .transform((value) => value || null),
+  employmentType: z
+    .enum(employmentTypeValues)
+    .or(z.literal(""))
+    .optional()
+    .transform((value) => value || null),
+  employerName: z.string().trim().max(160).optional(),
+  monthlyIncome: rupees,
+  experienceYears: boundedInt(100, "Experience must be 100 years or less"),
+  existingWithEmployer: z.string().trim().max(40).optional(),
+  itrFiled: z.enum(itrFiledValues).or(z.literal("")).optional(),
+  existingEmi: rupees,
+  outstandingLoanAmount: rupees,
+  creditCardOutstanding: rupees,
+  assetValue: rupees,
+  annualTurnover: rupees,
   message: z.string().trim().max(2000).optional(),
   // The caller attests that the prospect agreed on the call. Without it the
   // lead would have to be written consent:false, which satisfies the database
@@ -625,6 +693,8 @@ const convertSchema = z.object({
 });
 
 const blank = (value: string | undefined) => (value && value.length > 0 ? value : null);
+const wholeNumber = (value: string | undefined) =>
+  value && value.length > 0 ? Number(value) : null;
 
 export async function convertCallTaskAction(
   _prev: ActionResult,
@@ -644,17 +714,13 @@ export async function convertCallTaskAction(
   }
 
   try {
-    const parsed = convertSchema.safeParse({
-      taskId: formData.get("taskId"),
-      name: formData.get("name"),
-      phone: formData.get("phone"),
-      email: formData.get("email") ?? undefined,
-      city: formData.get("city") ?? undefined,
-      productSlug: formData.get("productSlug") ?? undefined,
-      loanAmount: formData.get("loanAmount") ?? undefined,
-      message: formData.get("message") ?? undefined,
-      consent: formData.get("consent") ?? undefined,
-    });
+    // Read straight off the schema so a field added above cannot be forgotten
+    // here — the failure mode that silently drops a captured value.
+    const parsed = convertSchema.safeParse(
+      Object.fromEntries(
+        Object.keys(convertSchema.shape).map((field) => [field, formData.get(field) ?? undefined]),
+      ),
+    );
     if (!parsed.success) {
       return { error: parsed.error.issues[0]?.message ?? "Check the highlighted fields." };
     }
@@ -703,19 +769,40 @@ export async function convertCallTaskAction(
        * submitted phone only ever populates a newly created row.
        */
       const [existing] = await tx
-        .select({
-          id: schema.leads.id,
-          name: schema.leads.name,
-          email: schema.leads.email,
-          city: schema.leads.city,
-          productSlug: schema.leads.productSlug,
-          loanAmountPaise: schema.leads.loanAmountPaise,
-          assignedTo: schema.leads.assignedTo,
-        })
+        .select()
         .from(schema.leads)
         .where(eq(schema.leads.phone, task.phone))
         .orderBy(desc(schema.leads.createdAt))
         .limit(1);
+
+      /*
+       * Everything the caller captured, in lead-column shape. Written whole on
+       * a new lead and gap-filled onto a linked one, so neither path can quietly
+       * know about a field the other does not.
+       */
+      const captured = {
+        name: d.name,
+        email: blank(d.email),
+        city: blank(d.city),
+        pincode: blank(d.pincode),
+        productSlug: blank(d.productSlug),
+        loanPurpose: blank(d.loanPurpose),
+        tenureMonths: wholeNumber(d.tenureMonths),
+        residenceType: d.residenceType,
+        employmentType: d.employmentType,
+        employerName: blank(d.employerName),
+        experienceYears: wholeNumber(d.experienceYears),
+        existingWithEmployer: blank(d.existingWithEmployer),
+        itrFiled: itrFiledToBoolean(d.itrFiled),
+        loanAmountPaise: rupeesToPaise(d.loanAmount),
+        preferredEmiPaise: rupeesToPaise(d.preferredEmi),
+        monthlyIncomePaise: rupeesToPaise(d.monthlyIncome),
+        existingEmiPaise: rupeesToPaise(d.existingEmi),
+        outstandingLoanAmountPaise: rupeesToPaise(d.outstandingLoanAmount),
+        creditCardOutstandingPaise: rupeesToPaise(d.creditCardOutstanding),
+        assetValuePaise: rupeesToPaise(d.assetValue),
+        annualTurnoverPaise: rupeesToPaise(d.annualTurnover),
+      };
 
       let leadId = existing?.id;
       const linkedExisting = Boolean(leadId);
@@ -728,13 +815,9 @@ export async function convertCallTaskAction(
             // leads_required_fields holds. A dedicated kind would break four
             // exhaustive maps for no gain.
             kind: "enquiry",
-            name: d.name,
+            ...captured,
             phone: d.phone,
-            email: blank(d.email),
-            city: blank(d.city),
-            productSlug: blank(d.productSlug),
             message: blank(d.message),
-            loanAmountPaise: rupeesToPaise(d.loanAmount),
             status: "new",
             // A creation default, not an assignment control: the caller keeps
             // the person they just spoke to. Only an admin can move it after.
@@ -755,20 +838,15 @@ export async function convertCallTaskAction(
          * values win; but anything it left empty should still receive what the
          * caller just captured rather than being silently dropped on the floor.
          */
-        const filled = {
-          ...(existing.name === null && { name: d.name }),
-          ...(existing.email === null && blank(d.email) !== null && { email: blank(d.email) }),
-          ...(existing.city === null && blank(d.city) !== null && { city: blank(d.city) }),
-          ...(existing.productSlug === null &&
-            blank(d.productSlug) !== null && { productSlug: blank(d.productSlug) }),
-          ...(existing.loanAmountPaise === null &&
-            rupeesToPaise(d.loanAmount) !== null && {
-              loanAmountPaise: rupeesToPaise(d.loanAmount),
-            }),
-          // An unassigned website lead becomes the caller's; an already-assigned
-          // one keeps its owner, since only an admin may reassign.
-          ...(existing.assignedTo === null && { assignedTo: task.assignedTo ?? user.id }),
-        };
+        const row = existing as Record<string, unknown>;
+        const filled: Record<string, unknown> = Object.fromEntries(
+          Object.entries(captured).filter(
+            ([column, value]) => value !== null && row[column] == null,
+          ),
+        );
+        // An unassigned website lead becomes the caller's; an already-assigned
+        // one keeps its owner, since only an admin may reassign.
+        if (existing.assignedTo === null) filled.assignedTo = task.assignedTo ?? user.id;
         if (Object.keys(filled).length > 0) {
           await tx.update(schema.leads).set(filled).where(eq(schema.leads.id, leadId));
         }

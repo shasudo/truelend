@@ -13,10 +13,20 @@ import { useRouter } from "next/navigation";
 import { Copy, Check, Mail, Scale, Upload } from "lucide-react";
 import { Button, Card, Checkbox, Field, Input, Select, Textarea, cx } from "@truelend/ui";
 import {
+  businessProducts,
   callStatusLabels,
+  cardProducts,
   employeeCallStatusValues,
-  products,
+  employerTenureLabels,
+  employmentTypes,
+  experienceBands,
   isTerminalCallStatus,
+  itrFiledOptions,
+  loanPurposes,
+  loanTenures,
+  products,
+  residenceTypes,
+  securedProducts,
 } from "@truelend/reference";
 import { ActionFeedback } from "@/components/action-feedback";
 import type { ActionResult } from "@/lib/action-result";
@@ -191,6 +201,33 @@ interface ConvertCallTaskFormProps {
   productSlug: string | null;
 }
 
+interface ConvertSectionProps {
+  title: string;
+  children: ReactNode;
+}
+
+function ConvertSection({ title, children }: ConvertSectionProps) {
+  return (
+    <fieldset className="space-y-4 border-t border-hairline pt-4 first:border-t-0 first:pt-0">
+      <legend className="sr-only">{title}</legend>
+      <p aria-hidden className="text-xs font-bold uppercase tracking-[0.12em] text-muted">
+        {title}
+      </p>
+      {children}
+    </fieldset>
+  );
+}
+
+/*
+ * The same capture surface as the public /enquiry form, because the lead this
+ * creates is read on the same admin page as one the customer filled in — a
+ * caller who asked about income and existing EMIs on the call had nowhere to
+ * put the answers before this, and the detail was simply lost.
+ *
+ * Requiredness deliberately does not match /enquiry: only name, phone and the
+ * consent attestation are mandatory. A phone call produces whatever it
+ * produces, and forcing twenty fields would push callers into inventing them.
+ */
 export function ConvertCallTaskForm({
   taskId,
   name,
@@ -203,57 +240,239 @@ export function ConvertCallTaskForm({
     convertCallTaskAction,
     initialState,
   );
+  const [product, setProduct] = useState(productSlug ?? "");
   const router = useRouter();
 
   useEffect(() => {
     if (state.ok) router.refresh();
   }, [state, router]);
 
+  // Mirrors the public form's conditional fields, for the same reasons: a card
+  // has no loan amount or tenure, only secured products have an asset behind
+  // them, and turnover is a business question.
+  const isCard = cardProducts.has(product);
+  const showAsset = securedProducts.has(product);
+  const showTurnover = businessProducts.has(product);
+
   return (
-    <form action={action} className="mt-4 space-y-4">
+    <form action={action} className="mt-4 space-y-5">
       <input type="hidden" name="taskId" value={taskId} />
-      <div className="grid gap-4 min-[480px]:grid-cols-2">
-        <Field label="Name" htmlFor="convert-name" required>
-          <Input id="convert-name" name="name" defaultValue={name} required maxLength={120} />
+
+      <ConvertSection title="Contact">
+        <div className="grid gap-4 min-[480px]:grid-cols-2">
+          <Field label="Name" htmlFor="convert-name" required>
+            <Input id="convert-name" name="name" defaultValue={name} required maxLength={120} />
+          </Field>
+          <Field label="Phone" htmlFor="convert-phone" required>
+            <Input id="convert-phone" name="phone" defaultValue={phone} required inputMode="tel" />
+          </Field>
+          <Field label="Email" htmlFor="convert-email">
+            <Input id="convert-email" name="email" type="email" defaultValue={email ?? ""} />
+          </Field>
+          <Field label="City" htmlFor="convert-city">
+            <Input id="convert-city" name="city" defaultValue={city ?? ""} maxLength={80} />
+          </Field>
+          <Field label="PIN code" htmlFor="convert-pincode">
+            <Input
+              id="convert-pincode"
+              name="pincode"
+              inputMode="numeric"
+              placeholder="e.g. 411001"
+            />
+          </Field>
+          <Field label="Residence" htmlFor="convert-residence">
+            <Select id="convert-residence" name="residenceType" defaultValue="">
+              <option value="">Not asked</option>
+              {residenceTypes.map((type) => (
+                <option key={type.value} value={type.value}>
+                  {type.label}
+                </option>
+              ))}
+            </Select>
+          </Field>
+        </div>
+      </ConvertSection>
+
+      <ConvertSection title="Requirement">
+        <div className="grid gap-4 min-[480px]:grid-cols-2">
+          <Field label="Product" htmlFor="convert-product">
+            <Select
+              id="convert-product"
+              name="productSlug"
+              value={product}
+              onChange={(event) => setProduct(event.target.value)}
+            >
+              <option value="">Not sure yet</option>
+              {products.map((item) => (
+                <option key={item.slug} value={item.slug}>
+                  {item.name}
+                </option>
+              ))}
+            </Select>
+          </Field>
+          {!isCard && (
+            <Field label="Loan amount (₹)" htmlFor="convert-amount">
+              <Input
+                id="convert-amount"
+                name="loanAmount"
+                inputMode="numeric"
+                placeholder="e.g. 500000"
+              />
+            </Field>
+          )}
+          <Field label="Purpose" htmlFor="convert-purpose">
+            <Select id="convert-purpose" name="loanPurpose" defaultValue="">
+              <option value="">Not asked</option>
+              {loanPurposes.map((purpose) => (
+                <option key={purpose} value={purpose}>
+                  {purpose}
+                </option>
+              ))}
+            </Select>
+          </Field>
+          {!isCard && (
+            <Field label="Preferred tenure" htmlFor="convert-tenure">
+              <Select id="convert-tenure" name="tenureMonths" defaultValue="">
+                <option value="">No preference</option>
+                {loanTenures.map((tenure) => (
+                  <option key={tenure.value} value={tenure.value}>
+                    {tenure.label}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+          )}
+          {!isCard && (
+            <Field label="Preferred EMI (₹)" htmlFor="convert-preferred-emi">
+              <Input
+                id="convert-preferred-emi"
+                name="preferredEmi"
+                inputMode="numeric"
+                placeholder="e.g. 25000"
+              />
+            </Field>
+          )}
+          {showAsset && (
+            <Field label="Asset / property value (₹)" htmlFor="convert-asset">
+              <Input
+                id="convert-asset"
+                name="assetValue"
+                inputMode="numeric"
+                placeholder="e.g. 6000000"
+              />
+            </Field>
+          )}
+          {showTurnover && (
+            <Field label="Annual turnover (₹)" htmlFor="convert-turnover">
+              <Input
+                id="convert-turnover"
+                name="annualTurnover"
+                inputMode="numeric"
+                placeholder="e.g. 12000000"
+              />
+            </Field>
+          )}
+        </div>
+      </ConvertSection>
+
+      <ConvertSection title="Employment & income">
+        <div className="grid gap-4 min-[480px]:grid-cols-2">
+          <Field label="Employment type" htmlFor="convert-employment">
+            <Select id="convert-employment" name="employmentType" defaultValue="">
+              <option value="">Not asked</option>
+              {employmentTypes.map((type) => (
+                <option key={type.value} value={type.value}>
+                  {type.label}
+                </option>
+              ))}
+            </Select>
+          </Field>
+          <Field label="Employer / business" htmlFor="convert-employer">
+            <Input id="convert-employer" name="employerName" maxLength={160} />
+          </Field>
+          <Field label="Monthly income (₹)" htmlFor="convert-income">
+            <Input
+              id="convert-income"
+              name="monthlyIncome"
+              inputMode="numeric"
+              placeholder="e.g. 80000"
+            />
+          </Field>
+          <Field label="Experience" htmlFor="convert-experience">
+            <Select id="convert-experience" name="experienceYears" defaultValue="">
+              <option value="">Not asked</option>
+              {experienceBands.map((band) => (
+                <option key={band.value} value={band.value}>
+                  {band.label}
+                </option>
+              ))}
+            </Select>
+          </Field>
+          <Field label="With current employer" htmlFor="convert-employer-tenure">
+            <Select id="convert-employer-tenure" name="existingWithEmployer" defaultValue="">
+              <option value="">Not asked</option>
+              {employerTenureLabels.map((label) => (
+                <option key={label} value={label}>
+                  {label}
+                </option>
+              ))}
+            </Select>
+          </Field>
+          <Field label="Files IT returns?" htmlFor="convert-itr">
+            <Select id="convert-itr" name="itrFiled" defaultValue="">
+              <option value="">Not asked</option>
+              {itrFiledOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </Select>
+          </Field>
+        </div>
+      </ConvertSection>
+
+      <ConvertSection title="Existing borrowings">
+        <div className="grid gap-4 min-[480px]:grid-cols-2">
+          <Field label="Current EMIs / month (₹)" htmlFor="convert-emi">
+            <Input
+              id="convert-emi"
+              name="existingEmi"
+              inputMode="numeric"
+              placeholder="e.g. 25000"
+            />
+          </Field>
+          <Field label="Outstanding loan (₹)" htmlFor="convert-outstanding">
+            <Input
+              id="convert-outstanding"
+              name="outstandingLoanAmount"
+              inputMode="numeric"
+              placeholder="e.g. 1000000"
+            />
+          </Field>
+          <Field label="Credit card outstanding (₹)" htmlFor="convert-cc">
+            <Input
+              id="convert-cc"
+              name="creditCardOutstanding"
+              inputMode="numeric"
+              placeholder="e.g. 50000"
+            />
+          </Field>
+        </div>
+      </ConvertSection>
+
+      <ConvertSection title="Notes and consent">
+        <Field label="What did they tell you?" htmlFor="convert-message">
+          <Textarea id="convert-message" name="message" maxLength={2000} className="min-h-20" />
         </Field>
-        <Field label="Phone" htmlFor="convert-phone" required>
-          <Input id="convert-phone" name="phone" defaultValue={phone} required inputMode="tel" />
-        </Field>
-        <Field label="Email" htmlFor="convert-email">
-          <Input id="convert-email" name="email" type="email" defaultValue={email ?? ""} />
-        </Field>
-        <Field label="City" htmlFor="convert-city">
-          <Input id="convert-city" name="city" defaultValue={city ?? ""} maxLength={80} />
-        </Field>
-        <Field label="Product" htmlFor="convert-product">
-          <Select id="convert-product" name="productSlug" defaultValue={productSlug ?? ""}>
-            <option value="">Not sure yet</option>
-            {products.map((product) => (
-              <option key={product.slug} value={product.slug}>
-                {product.name}
-              </option>
-            ))}
-          </Select>
-        </Field>
-        <Field label="Loan amount (₹)" htmlFor="convert-amount">
-          <Input
-            id="convert-amount"
-            name="loanAmount"
-            inputMode="numeric"
-            placeholder="e.g. 500000"
-          />
-        </Field>
-      </div>
-      <Field label="What did they tell you?" htmlFor="convert-message">
-        <Textarea id="convert-message" name="message" maxLength={2000} className="min-h-20" />
-      </Field>
-      <label className="flex items-start gap-2 text-sm text-navy-700">
-        <input type="checkbox" name="consent" value="on" required className="mt-1" />
-        <span>
-          They agreed on this call to be contacted about a loan. You are recording that consent on
-          their behalf.
-        </span>
-      </label>
+        <label className="flex items-start gap-2 text-sm text-navy-700">
+          <input type="checkbox" name="consent" value="on" required className="mt-1" />
+          <span>
+            They agreed on this call to be contacted about a loan. You are recording that consent on
+            their behalf.
+          </span>
+        </label>
+      </ConvertSection>
+
       <ActionFeedback state={state} success="Converted to a lead." />
       <Button type="submit" size="sm" disabled={pending}>
         {pending ? "Converting…" : "Convert to lead"}

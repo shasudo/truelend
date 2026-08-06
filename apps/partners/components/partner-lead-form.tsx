@@ -9,6 +9,7 @@ import {
   loanTenures,
   securedProducts,
   businessProducts,
+  itrFiledOptions,
 } from "@truelend/reference";
 import { submitLead, type LeadState } from "@/lib/lead-actions";
 
@@ -30,6 +31,7 @@ const partnerLeadFieldNames = [
   "existingEmi",
   "assetValue",
   "annualTurnover",
+  "itrFiled",
   "message",
   "consent",
 ] as const;
@@ -200,6 +202,16 @@ export function PartnerLeadForm({ initialProduct = "", storageKey }: PartnerLead
               inputMode="numeric"
               placeholder="0 if none"
             />
+          </Field>
+          <Field label="Do they file IT returns?" htmlFor="itrFiled">
+            <Select id="itrFiled" name="itrFiled" defaultValue="">
+              <option value="">Not sure</option>
+              {itrFiledOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </Select>
           </Field>
           {showAsset && (
             <Field label="Property / asset value (₹)" htmlFor="assetValue">

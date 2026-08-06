@@ -2,6 +2,7 @@ import { z } from "zod";
 import {
   productSlugs,
   employmentTypeValues,
+  itrFiledValues,
   residenceTypeValues,
   loanPurposes,
   cardProducts,
@@ -41,6 +42,10 @@ const loanDetails = {
   existingEmi: rupeeAmountOptional,
   assetValue: rupeeAmountOptional,
   annualTurnover: rupeeAmountOptional,
+  // Optional even on the enquiry form, where most fields are required: an
+  // applicant who genuinely does not know should be able to submit, and a
+  // guessed answer here is worse than no answer.
+  itrFiled: z.enum(itrFiledValues).or(z.literal("")).optional(),
 };
 // Everything optional — for a third party (referral) submitting on someone's behalf.
 const loanAllOptional = {
@@ -115,6 +120,7 @@ export const enquirySchema = z.object({
       message: "Experience must be 100 years or less",
     }),
   existingWithEmployer: z.string().trim().max(40).optional(),
+  itrFiled: loanDetails.itrFiled,
   // 04 · Existing borrowings
   existingEmi: rupeeAmountOptional,
   outstandingLoanAmount: rupeeAmountOptional,

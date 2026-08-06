@@ -69,6 +69,11 @@ function convertForm(overrides: Record<string, string> = {}): FormData {
   formData.set("name", overrides.name ?? "Anil Rao");
   formData.set("phone", overrides.phone ?? "9876543210");
   formData.set("consent", overrides.consent ?? "on");
+  // Everything else on the form is optional, so overrides carry the detail
+  // fields verbatim — the same way the browser posts them.
+  for (const [field, value] of Object.entries(overrides)) {
+    if (!formData.has(field)) formData.set(field, value);
+  }
   return formData;
 }
 
@@ -704,15 +709,30 @@ void test("convertCallTaskAction: a matching lead is linked instead of duplicate
           schema.callTasks,
           [{ id: TASK_ID, status: "interested", leadId: null, assignedTo: "staff-1" }],
         ],
-        // The prospect already filled the public form themselves.
-        [schema.leads, [{ id: "existing-lead" }]],
+        // The prospect already filled the public form themselves, and said more
+        // there about their income than they did on the call.
+        [
+          schema.leads,
+          [
+            {
+              id: "existing-lead",
+              name: "Anil Rao",
+              monthlyIncomePaise: 9000000,
+              existingEmiPaise: null,
+              assignedTo: "staff-9",
+            },
+          ],
+        ],
       ]),
       onInsert: (table, values) => inserts.push({ table, values }),
       onUpdate: (table, values) => updates.push({ table, values }),
     },
   });
 
-  const result = await convertCallTaskAction({}, convertForm());
+  const result = await convertCallTaskAction(
+    {},
+    convertForm({ monthlyIncome: "50000", existingEmi: "12000" }),
+  );
 
   assert.equal(result.ok, true);
   assert.equal(
@@ -720,8 +740,139 @@ void test("convertCallTaskAction: a matching lead is linked instead of duplicate
     false,
     "linking must not create a second lead for the same person",
   );
-  assert.equal(updates[0]?.values.leadId, "existing-lead");
-  assert.equal(updates[0]!.values.status, "converted");
+
+  const leadUpdate = updates.find((write) => write.table === schema.leads);
+  assert.ok(leadUpdate, "the gaps on the existing lead are filled");
+  assert.equal(
+    leadUpdate.values.monthlyIncomePaise,
+    undefined,
+    "the prospect's own submission wins over what the caller noted down",
+  );
+  assert.equal(leadUpdate.values.existingEmiPaise, 1200000, "but an empty column is filled");
+  assert.equal(leadUpdate.values.assignedTo, undefined, "an already-assigned lead keeps its owner");
+
+  const taskUpdate = updates.find((write) => write.table === schema.callTasks);
+  assert.ok(taskUpdate);
+  assert.equal(taskUpdate.values.leadId, "existing-lead");
+  assert.equal(taskUpdate.values.status, "converted");
+});
+
+void test("convertCallTaskAction: every field the caller captured reaches the lead", async () => {
+  const inserts: RecordedWrite[] = [];
+  setFakeAuthState({
+    getSession: async () => buildStaffSession(),
+    dbOptions: {
+      rowsByTable: new Map<unknown, FakeRow[]>([
+        [
+          schema.callTasks,
+          [{ id: TASK_ID, status: "interested", leadId: null, assignedTo: "staff-1" }],
+        ],
+        [schema.leads, []],
+      ]),
+      returningRows: (table) => (table === schema.leads ? [{ id: "lead-1" }] : []),
+      onInsert: (table, values) => inserts.push({ table, values }),
+    },
+  });
+
+  const result = await convertCallTaskAction(
+    {},
+    convertForm({
+      productSlug: "loan-against-property",
+      loanAmount: "2500000",
+      loanPurpose: "Business Expansion",
+      tenureMonths: "120",
+      preferredEmi: "30000",
+      pincode: "411001",
+      residenceType: "owned",
+      employmentType: "self_employed_business",
+      employerName: "Rao Traders",
+      monthlyIncome: "150000",
+      experienceYears: "5",
+      existingWithEmployer: "5–10 years",
+      itrFiled: "yes",
+      existingEmi: "18000",
+      outstandingLoanAmount: "800000",
+      creditCardOutstanding: "45000",
+      assetValue: "9000000",
+      annualTurnover: "12000000",
+    }),
+  );
+
+  assert.deepEqual(result, { ok: true });
+  const lead = inserts.find((write) => write.table === schema.leads)?.values;
+  assert.ok(lead, "a lead row is created");
+  // Rupee strings become integer paise; bounded integers stay integers.
+  assert.equal(lead.loanAmountPaise, 250000000);
+  assert.equal(lead.preferredEmiPaise, 3000000);
+  assert.equal(lead.monthlyIncomePaise, 15000000);
+  assert.equal(lead.existingEmiPaise, 1800000);
+  assert.equal(lead.outstandingLoanAmountPaise, 80000000);
+  assert.equal(lead.creditCardOutstandingPaise, 4500000);
+  assert.equal(lead.assetValuePaise, 900000000);
+  assert.equal(lead.annualTurnoverPaise, 1200000000);
+  assert.equal(lead.tenureMonths, 120);
+  assert.equal(lead.experienceYears, 5);
+  assert.equal(lead.productSlug, "loan-against-property");
+  assert.equal(lead.loanPurpose, "Business Expansion");
+  assert.equal(lead.pincode, "411001");
+  assert.equal(lead.residenceType, "owned");
+  assert.equal(lead.employmentType, "self_employed_business");
+  assert.equal(lead.employerName, "Rao Traders");
+  assert.equal(lead.existingWithEmployer, "5–10 years");
+  assert.equal(lead.itrFiled, true);
+});
+
+void test("convertCallTaskAction: fields the caller left blank stay null, not zero", async () => {
+  const inserts: RecordedWrite[] = [];
+  setFakeAuthState({
+    getSession: async () => buildStaffSession(),
+    dbOptions: {
+      rowsByTable: new Map<unknown, FakeRow[]>([
+        [
+          schema.callTasks,
+          [{ id: TASK_ID, status: "interested", leadId: null, assignedTo: "staff-1" }],
+        ],
+        [schema.leads, []],
+      ]),
+      returningRows: (table) => (table === schema.leads ? [{ id: "lead-1" }] : []),
+      onInsert: (table, values) => inserts.push({ table, values }),
+    },
+  });
+
+  // The caller submits the form having asked nothing beyond the name and number.
+  const result = await convertCallTaskAction({}, convertForm());
+
+  assert.deepEqual(result, { ok: true });
+  const lead = inserts.find((write) => write.table === schema.leads)?.values;
+  assert.ok(lead, "a lead row is created");
+  assert.equal(lead.monthlyIncomePaise, null, "an unasked question is not an income of zero");
+  assert.equal(lead.existingEmiPaise, null);
+  assert.equal(lead.tenureMonths, null);
+  assert.equal(lead.employmentType, null);
+  assert.equal(lead.itrFiled, null, "an unasked ITR question is not a 'does not file'");
+});
+
+void test("convertCallTaskAction: a bad optional value is refused rather than dropped", async () => {
+  const inserts: RecordedWrite[] = [];
+  setFakeAuthState({
+    getSession: async () => buildStaffSession(),
+    dbOptions: {
+      rowsByTable: new Map<unknown, FakeRow[]>([
+        [
+          schema.callTasks,
+          [{ id: TASK_ID, status: "interested", leadId: null, assignedTo: "staff-1" }],
+        ],
+        [schema.leads, []],
+      ]),
+      onInsert: (table, values) => inserts.push({ table, values }),
+    },
+  });
+
+  const result = await convertCallTaskAction({}, convertForm({ monthlyIncome: "80,000 approx" }));
+
+  assert.equal(result.ok, undefined);
+  assert.equal(typeof result.error, "string");
+  assert.equal(inserts.length, 0, "nothing is written when a field fails validation");
 });
 
 void test("emailEnquiryFormAction: a rejected send reports the failure and writes no audit row", async () => {

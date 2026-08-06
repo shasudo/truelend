@@ -12,6 +12,7 @@ import {
   formatPaise,
   tenureLabel,
   employmentTypeLabels,
+  itrFiledLabel,
   residenceTypeLabels,
 } from "@truelend/reference";
 import { LeadNoteForm, LeadPipelineForm } from "@/components/lead-action-forms";
@@ -158,6 +159,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
                   }
                 />
                 <Detail label="Existing with employer" value={lead.existingWithEmployer} />
+                <Detail label="Files IT returns" value={itrFiledLabel(lead.itrFiled)} />
                 <Detail
                   label="Current EMIs / mo"
                   value={lead.existingEmiPaise != null ? formatPaise(lead.existingEmiPaise) : null}

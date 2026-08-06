@@ -7,6 +7,7 @@ import { notifyLeadReceived, notifyNewLead, notifyPartnerLeadStatusChanged } fro
 import {
   appUrls,
   customerConsentVersion,
+  itrFiledToBoolean,
   leadKindLabels,
   productName,
   rupeesToPaise,
@@ -136,6 +137,7 @@ export async function submitLead(input: unknown): Promise<SubmitResult> {
               employerName: blank(d.employerName),
               experienceYears: intOrNull(d.experienceYears),
               existingEmiPaise: rupeesToPaise(d.existingEmi),
+              itrFiled: itrFiledToBoolean(d.itrFiled),
             }
           : {};
       const enquiryLoan =

@@ -107,6 +107,38 @@ export const residenceTypes = [
   { value: "company", label: "Company-provided" },
 ] as const;
 
+/*
+ * "Do you file an income tax return?" — asked on every detailed lead form,
+ * because it decides which lenders can even look at a self-employed applicant.
+ *
+ * Stored as a nullable boolean, so the form value is a three-state string: an
+ * unanswered question stays null rather than becoming a "no", which would
+ * describe a completely different borrower.
+ */
+export const itrFiledOptions = [
+  { value: "yes", label: "Yes — ITR filed" },
+  { value: "no", label: "No" },
+] as const;
+
+export type ItrFiledValue = (typeof itrFiledOptions)[number]["value"];
+export const itrFiledValues = itrFiledOptions.map((option) => option.value) as [
+  ItrFiledValue,
+  ...ItrFiledValue[],
+];
+
+/** Form value → column value. Anything unanswered is null, never false. */
+export function itrFiledToBoolean(value: string | null | undefined): boolean | null {
+  if (value === "yes") return true;
+  if (value === "no") return false;
+  return null;
+}
+
+/** Column value → what a reviewer reads. Null stays null so the row can be hidden. */
+export function itrFiledLabel(value: boolean | null | undefined): string | null {
+  if (value == null) return null;
+  return value ? "Yes" : "No";
+}
+
 type EmploymentType = (typeof employmentTypes)[number]["value"];
 type ResidenceType = (typeof residenceTypes)[number]["value"];
 

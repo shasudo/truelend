@@ -134,6 +134,13 @@
       "when": 1785910353015,
       "tag": "0018_workable_nova",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1786018960271,
+      "tag": "0019_dry_proudstar",
+      "breakpoints": true
     }
   ]
 }
