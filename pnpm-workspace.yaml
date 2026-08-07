@@ -72,6 +72,14 @@ overrides:
   # private cache directives. Pulled in by wrangler>miniflare, dev tooling only
   # (never shipped in a Worker bundle), but still worth pinning past the fix.
   undici: ">=7.29.0"
+  # GHSA-5p4m-2wfm-xmqj (CVE-2026-59870): quadratic CPU consumption resolving
+  # !!omap. Two majors are in the tree and neither dependent has bumped, so each
+  # path is pinned to its own fixed release — a single tree-wide pin would force
+  # js-yaml 4 onto gray-matter, which calls the v3-only safeLoad API.
+  # Both are build/dev-time only (blog frontmatter, eslint config loading); no
+  # Worker bundle parses untrusted YAML at runtime.
+  "gray-matter>js-yaml": "3.15.1"
+  "@eslint/eslintrc>js-yaml": "4.3.1"
 
 # Postinstall scripts are blocked by default. Allow only the native binaries we
 # use: esbuild (drizzle-kit/tsx), workerd (wrangler dev/preview/deploy),
