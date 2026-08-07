@@ -288,6 +288,9 @@ export const callTasks = pgTable(
     index("call_tasks_status_idx").on(t.status),
     index("call_tasks_phone_idx").on(t.phone),
     index("call_tasks_created_at_idx").on(t.createdAt),
+    // Serves callbackWhere's "overdue"/"today" quick filters and the callback
+    // sort — two of the four default CRM quick-filter links hit this.
+    index("call_tasks_callback_at_idx").on(t.callbackAt),
     check(
       "call_tasks_callback_time",
       sql`${t.status} <> 'callback_scheduled' or ${t.callbackAt} is not null`,

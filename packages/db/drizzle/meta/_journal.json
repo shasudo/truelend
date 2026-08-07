@@ -148,6 +148,13 @@
       "when": 1786082626356,
       "tag": "0020_right_captain_britain",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1786091193424,
+      "tag": "0021_striped_toxin",
+      "breakpoints": true
     }
   ]
 }

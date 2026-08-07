@@ -1,0 +1,1 @@
+CREATE INDEX "call_tasks_callback_at_idx" ON "call_tasks" USING btree ("callback_at");
