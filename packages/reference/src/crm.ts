@@ -95,7 +95,8 @@ export function isTerminalCallStatus(status: string): boolean {
  */
 export const MAX_CALL_ATTEMPTS = 6;
 
-const unansweredCallStatuses = new Set<string>(["attempted", "busy"]);
+export const unansweredCallStatusValues = ["attempted", "busy"] as const;
+const unansweredCallStatuses = new Set<string>(unansweredCallStatusValues);
 
 export function isUnansweredCallStatus(status: string): boolean {
   return unansweredCallStatuses.has(status);

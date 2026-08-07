@@ -1,6 +1,11 @@
 import "server-only";
 import type { Database } from "@truelend/db";
-import { channelForKind, normalizeSafeInteger, products } from "@truelend/reference";
+import {
+  channelForKind,
+  normalizeSafeInteger,
+  products,
+  unansweredCallStatusValues,
+} from "@truelend/reference";
 
 // These aggregates are gnarly (FILTER clauses, date_trunc, cross-table joins),
 // so they use the raw postgres.js client (db.$client) rather than the query
@@ -51,7 +56,8 @@ export interface ActivityStats {
  * logged in: that is when the money is actually earned.
  */
 export async function getActivityStats(db: Database, from: Date, to: Date): Promise<ActivityStats> {
-  const rows = (await db.$client`
+  const sql = db.$client;
+  const rows = (await sql`
     select
       (select count(*) from leads
         where created_at >= ${from} and created_at < ${to})::int as new_leads,
@@ -60,7 +66,7 @@ export async function getActivityStats(db: Database, from: Date, to: Date): Prom
           and created_at >= ${from} and created_at < ${to})::int as calls_made,
       (select count(distinct entity_id) from audit_log
         where entity_type = 'call_task' and action = 'call_task.status_update'
-          and after->>'status' not in ('attempted', 'busy')
+          and after->>'status' not in ${sql([...unansweredCallStatusValues])}
           and created_at >= ${from} and created_at < ${to})::int as contacted,
       (select count(distinct entity_id) from audit_log
         where entity_type = 'call_task' and action = 'call_task.status_update'
@@ -106,7 +112,8 @@ export async function getMyActivityStats(
   to: Date,
   userId: string,
 ): Promise<ActivityStats> {
-  const rows = (await db.$client`
+  const sql = db.$client;
+  const rows = (await sql`
     select
       (select count(*) from leads
         where assigned_to = ${userId}
@@ -117,7 +124,7 @@ export async function getMyActivityStats(
           and created_at >= ${from} and created_at < ${to})::int as calls_made,
       (select count(distinct entity_id) from audit_log
         where entity_type = 'call_task' and action = 'call_task.status_update'
-          and actor_id = ${userId} and after->>'status' not in ('attempted', 'busy')
+          and actor_id = ${userId} and after->>'status' not in ${sql([...unansweredCallStatusValues])}
           and created_at >= ${from} and created_at < ${to})::int as contacted,
       (select count(distinct entity_id) from audit_log
         where entity_type = 'call_task' and action = 'call_task.status_update'

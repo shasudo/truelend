@@ -22,6 +22,7 @@ import {
   residenceTypeValues,
   rupeesToPaise,
   terminalCallStatusValues,
+  unansweredCallStatusValues,
   validationMessages,
   validationPatterns,
   type CallStatus,
@@ -122,7 +123,9 @@ export async function assignCallTasksAction(
 
       // Locks every selected row for the rest of this transaction, so a second
       // bulk-assign touching the same tasks blocks here rather than silently
-      // overwriting this one the instant it commits.
+      // overwriting this one the instant it commits. Ordered by id — same lock
+      // order balanceCallQueueAction uses — so two transactions that lock an
+      // overlapping row set never deadlock by taking them in opposite order.
       const current = await tx
         .select({
           id: schema.callTasks.id,
@@ -131,6 +134,7 @@ export async function assignCallTasksAction(
         })
         .from(schema.callTasks)
         .where(inArray(schema.callTasks.id, taskIds))
+        .orderBy(schema.callTasks.id)
         .for("update");
 
       // A closed task has nothing left to do; reassigning it is almost never
@@ -598,7 +602,7 @@ export async function updateCallTaskStatusAction(
               eq(schema.auditLog.entityType, "call_task"),
               eq(schema.auditLog.entityId, parsed.data.taskId),
               eq(schema.auditLog.action, "call_task.status_update"),
-              sql`${schema.auditLog.after}->>'status' in ('attempted', 'busy')`,
+              inArray(sql`${schema.auditLog.after}->>'status'`, unansweredCallStatusValues),
             ),
           );
         // This outcome is itself an attempt, so the one being recorded now counts
