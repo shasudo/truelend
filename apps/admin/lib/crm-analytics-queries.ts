@@ -249,7 +249,7 @@ export async function getCallQueueByCaller(db: Database): Promise<CallerPerforma
         count(*) filter (where status = 'callback_scheduled')::int as callbacks_scheduled,
         count(*) filter (where status = 'callback_scheduled' and callback_at <= now())::int
           as callbacks_due,
-        count(*) filter (where status like 'interested%')::int as interested,
+        count(*) filter (where status in ('interested', 'interested_card', 'interested_both'))::int as interested,
         count(*) filter (where status in ('not_interested', 'already_has_product'))::int
           as not_interested,
         count(*) filter (where status in ('wrong_number', 'do_not_contact'))::int as wrong_number,
@@ -506,7 +506,7 @@ async function segmentQuery(db: Database, dimension: string) {
       select
         key,
         count(*)::int as total,
-        count(*) filter (where status like 'interested%')::int as interested,
+        count(*) filter (where status in ('interested', 'interested_card', 'interested_both'))::int as interested,
         count(*) filter (where status in ('not_interested', 'already_has_product'))::int
           as not_interested,
         count(*) filter (where status in ('wrong_number', 'do_not_contact'))::int as wrong_number,

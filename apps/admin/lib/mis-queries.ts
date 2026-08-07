@@ -173,7 +173,7 @@ export async function getPipelineStats(db: Database): Promise<PipelineStats> {
       (select count(*) from call_tasks where status = 'callback_scheduled')::int as follow_ups,
       (select count(*) from call_tasks
         where status = 'callback_scheduled' and callback_at <= now())::int as follow_ups_overdue,
-      (select count(*) from call_tasks where status like 'interested%')::int as interested,
+      (select count(*) from call_tasks where status in ('interested', 'interested_card', 'interested_both'))::int as interested,
       (select count(*) from leads where status = 'qualified')::int as docs_pending,
       (select count(*) from loan_cases where status = 'logged_in')::int as applications_pending,
       (select count(*) from loan_cases where status = 'approved')::int as awaiting_disbursement
@@ -201,7 +201,8 @@ export async function getMyPipelineStats(db: Database, userId: string): Promise<
         where assigned_to = ${userId} and status = 'callback_scheduled'
           and callback_at <= now())::int as follow_ups_overdue,
       (select count(*) from call_tasks
-        where assigned_to = ${userId} and status like 'interested%')::int as interested,
+        where assigned_to = ${userId}
+          and status in ('interested', 'interested_card', 'interested_both'))::int as interested,
       (select count(*) from leads
         where assigned_to = ${userId} and status = 'qualified')::int as docs_pending,
       (select count(*) from loan_cases c join leads l on l.id = c.lead_id
