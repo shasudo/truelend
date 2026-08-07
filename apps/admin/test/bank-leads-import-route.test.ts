@@ -46,13 +46,16 @@ function buildRequest(body: BodyInit, headers: Record<string, string> = {}): Req
   });
 }
 
-function csvForm(csv: BlobPart, name = "report.csv", type = "text/csv"): FormData {
+function csvForm(csv: BlobPart, options: { bank?: string } = {}): FormData {
   const formData = new FormData();
-  formData.set("file", new File([csv], name, { type }));
+  formData.set("file", new File([csv], "report.csv", { type: "text/csv" }));
+  if (options.bank) formData.set("bank", options.bank);
   return formData;
 }
 
 const HEADER = "Application_Id,Status,Sub_Status,Stage,Workflow_Status,utm_content,CardIssualDate";
+const HDFC_HEADER =
+  "APPLICATION_REFERENCE_NUMBER,CUSTOMER_NAME,CITY,STATE,CURRENT_STAGE,FINAL_DECISION";
 
 void test("bank leads import: a non-admin session is refused", async () => {
   setFakeAuthState({
@@ -125,6 +128,85 @@ void test("bank leads import: a matching tracking code updates the row and write
   const auditInsert = inserts.find((i) => i.table === schema.auditLog);
   assert.equal(auditInsert?.values.action, "bank_apply_lead.reconcile");
   assert.deepEqual(auditInsert.values.after, { total: 1, matched: 1 });
+});
+
+void test("hdfc application import: a header without application_reference_number is refused", async () => {
+  setFakeAuthState({ getSession: async () => buildAdminSession(), env: buildEnv() });
+
+  const response = await POST(
+    buildRequest(csvForm("Customer_Name,City\nJane,Pune\n", { bank: "hdfc" })),
+  );
+
+  assert.equal(response.status, 400);
+  const body = (await response.json()) as { error: string };
+  assert.match(body.error, /application_reference_number/);
+});
+
+void test("hdfc application import: a never-seen application reference is inserted", async () => {
+  const inserts: RecordedWrite[] = [];
+  setFakeAuthState({
+    getSession: async () => buildAdminSession(),
+    env: buildEnv(),
+    dbOptions: {
+      rowsByTable: new Map([[schema.hdfcApplications, []]]),
+      onInsert: (table, values) => inserts.push({ table, values }),
+    },
+  });
+
+  const response = await POST(
+    buildRequest(
+      csvForm(`${HDFC_HEADER}\nD26H01309079S0TM,Jane Doe,Pune,MAHARASHTRA,Inprocess,\n`, {
+        bank: "hdfc",
+      }),
+    ),
+  );
+
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), { ok: true, total: 1, matched: 0, created: 1 });
+  const appInsert = inserts.find((i) => i.table === schema.hdfcApplications);
+  assert.ok(appInsert);
+  const [insertedRow] = appInsert.values as unknown as FakeRow[];
+  assert.ok(insertedRow);
+  assert.equal(insertedRow.applicationReferenceNumber, "D26H01309079S0TM");
+  assert.equal(insertedRow.customerName, "Jane Doe");
+});
+
+void test("hdfc application import: an already-seen application reference is updated, not re-inserted", async () => {
+  const updates: RecordedWrite[] = [];
+  const inserts: RecordedWrite[] = [];
+  setFakeAuthState({
+    getSession: async () => buildAdminSession(),
+    env: buildEnv(),
+    dbOptions: {
+      rowsByTable: new Map([
+        [
+          schema.hdfcApplications,
+          [{ id: "app-1", applicationReferenceNumber: "D26H01309079S0TM" }],
+        ],
+      ]),
+      onUpdate: (table, values) => updates.push({ table, values }),
+      onInsert: (table, values) => inserts.push({ table, values }),
+    },
+  });
+
+  const response = await POST(
+    buildRequest(
+      csvForm(`${HDFC_HEADER}\nD26H01309079S0TM,Jane Doe,Pune,MAHARASHTRA,Approved,APPROVE\n`, {
+        bank: "hdfc",
+      }),
+    ),
+  );
+
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), { ok: true, total: 1, matched: 1, created: 0 });
+  const appUpdate = updates.find((u) => u.table === schema.hdfcApplications);
+  assert.equal(appUpdate?.values.currentStage, "Approved");
+  assert.equal(
+    inserts.find((i) => i.table === schema.hdfcApplications),
+    undefined,
+  );
+  const auditInsert = inserts.find((i) => i.table === schema.auditLog);
+  assert.equal(auditInsert?.values.action, "hdfc_application.import");
 });
 
 void test("bank leads import: rate limiting returns 429 before the file is read", async () => {

@@ -44,7 +44,19 @@ export default async function BankLeadsPage({ searchParams }: { searchParams: Pr
         subtitle="QR quick-apply leads, reconciled against bank status exports"
       />
 
-      <BankLeadCsvImport />
+      <div className="mb-4 flex gap-2">
+        <span className="rounded-lg bg-navy-800 px-3.5 py-1.5 text-sm font-medium text-white">
+          IndusInd
+        </span>
+        <Link
+          href="/bank-leads/hdfc"
+          className="rounded-lg border border-hairline px-3.5 py-1.5 text-sm font-medium text-navy-600 transition-colors hover:border-navy-800/40"
+        >
+          HDFC
+        </Link>
+      </div>
+
+      <BankLeadCsvImport defaultBank="indusind" />
 
       <div className="mb-6 flex flex-wrap gap-2">
         {tabs.map((t) => (

@@ -16,6 +16,15 @@ export interface BankApplyProduct {
   bankSlug: BankSlug;
   /** Builds the bank's hosted application URL for a given tracking code. */
   buildApplyUrl: (trackingCode: string) => string;
+  /**
+   * False when the bank's hosted URL has no slot for a per-customer tracking
+   * code (a static DSA-channel link, not a per-lead one) — HDFC's export
+   * carries no tracking code or phone number to match back to a bank_apply_leads
+   * row either, so a non-trackable product skips that record entirely and is
+   * reconciled, if at all, from the bank's own MIS report (see
+   * hdfcApplicationCsvColumns below), not from bank_apply_leads.
+   */
+  trackable: boolean;
 }
 
 export const bankApplyProducts: readonly BankApplyProduct[] = [
@@ -23,10 +32,20 @@ export const bankApplyProducts: readonly BankApplyProduct[] = [
     slug: "indusind-credit-card",
     label: "IndusInd Credit Card",
     bankSlug: "indusind",
+    trackable: true,
     buildApplyUrl: (trackingCode) =>
       "https://induseasycredit.indusind.bank.in/customer/credit-card/new-lead" +
       "?utm_source=assisted&utm_medium=IBLV899SOUTHIBL101549%20" +
       `&utm_campaign=Credit-Card&utm_content=TRUE${trackingCode}`,
+  },
+  {
+    slug: "hdfc-credit-card",
+    label: "HDFC Credit Card",
+    bankSlug: "hdfc",
+    trackable: false,
+    buildApplyUrl: () =>
+      "https://applyonline.hdfc.bank.in/cards/credit-cards.html" +
+      "?CHANNELSOURCE=ZETA&CHANNEL=DSA&DSACode=XFIF&LGcode=FIFH591&LCcode=FIFH591&LC2=FIFH591&SMcode=K13395",
   },
 ];
 
@@ -86,3 +105,30 @@ export type BankLeadCsvColumn = keyof typeof bankLeadCsvColumns;
 export const bankLeadCsvRequiredColumns = [
   "trackingCode",
 ] as const satisfies readonly BankLeadCsvColumn[];
+
+/*
+ * HDFC's weekly MIS export (the "CardAssist & Sales Force Waterfall MIS")
+ * has no tracking code or phone number column — it's already TrueLend's
+ * whole book of HDFC business for the period, not the bank's full portfolio
+ * filtered by us. So unlike bankLeadCsvColumns above, there's nothing here
+ * to reconcile against a bank_apply_leads row; these rows land in their own
+ * hdfc_applications report table instead. Save the .xlsx as .csv before
+ * uploading — same importer as the IndusInd export, just a different bank
+ * and column set.
+ */
+export const hdfcApplicationCsvColumns = {
+  applicationReferenceNumber: ["application_reference_number"],
+  customerName: ["customer_name"],
+  city: ["city"],
+  state: ["state"],
+  currentStage: ["current_stage"],
+  finalDecision: ["final_decision"],
+  creationDateTime: ["creation_date_time"],
+  dsaCode: ["top 10 dsa code"],
+} as const;
+
+export type HdfcApplicationCsvColumn = keyof typeof hdfcApplicationCsvColumns;
+
+export const hdfcApplicationCsvRequiredColumns = [
+  "applicationReferenceNumber",
+] as const satisfies readonly HdfcApplicationCsvColumn[];

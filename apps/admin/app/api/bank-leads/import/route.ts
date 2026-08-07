@@ -1,7 +1,12 @@
 import { headers } from "next/headers";
 import { eq, inArray } from "drizzle-orm";
 import { schema } from "@truelend/db";
-import { bankLeadCsvColumns, bankLeadCsvRequiredColumns } from "@truelend/reference";
+import {
+  bankLeadCsvColumns,
+  bankLeadCsvRequiredColumns,
+  hdfcApplicationCsvColumns,
+  hdfcApplicationCsvRequiredColumns,
+} from "@truelend/reference";
 import { createAuthContext } from "@/lib/auth";
 import { deriveBankLeadStatus } from "@/lib/bank-lead-status";
 import { parseBankDate } from "@/lib/bank-lead-date";
@@ -9,6 +14,11 @@ import { extractTrackingCode } from "@/lib/bank-lead-tracking-code";
 import { parseCsv, mapHeader } from "@/lib/csv";
 import { errorType } from "@/lib/error-type";
 import { scheduleAdminRequestContextCleanup } from "@/lib/request-context-cleanup";
+
+// Chunk size for the HDFC bulk insert of new (never-seen) applications —
+// mirrors the CRM import's CHUNK, same reasoning: bind-parameter limit per
+// statement on a file that may carry MAX_ROWS rows.
+const INSERT_CHUNK = 500;
 
 const MAX_BYTES = 5 * 1024 * 1024;
 const MAX_ROWS = 20_000;
@@ -87,6 +97,124 @@ export async function POST(req: Request) {
     }
     const [header, ...dataRows] = records;
     if (!header) return Response.json({ error: "That file is empty." }, { status: 400 });
+    if (dataRows.length === 0) {
+      return Response.json({ error: "That file has no rows." }, { status: 400 });
+    }
+    if (dataRows.length > MAX_ROWS) {
+      return Response.json(
+        { error: `Import up to ${MAX_ROWS} rows at a time. Split the file and try again.` },
+        { status: 413 },
+      );
+    }
+
+    // HDFC's export has no tracking code or phone number to reconcile
+    // against a bank_apply_leads row — see hdfcApplicationCsvColumns's
+    // comment — so it's imported into its own report table instead.
+    const bank = form.get("bank") === "hdfc" ? "hdfc" : "indusind";
+
+    if (bank === "hdfc") {
+      const columns = mapHeader(header, hdfcApplicationCsvColumns);
+      const missing = hdfcApplicationCsvRequiredColumns.filter(
+        (name) => columns[name] === undefined,
+      );
+      if (missing.length > 0) {
+        const missingLabels = missing.map((name) => hdfcApplicationCsvColumns[name][0]);
+        return Response.json(
+          { error: `The header row needs a column for: ${missingLabels.join(", ")}.` },
+          { status: 400 },
+        );
+      }
+
+      const cell = (row: string[], column: keyof typeof columns) => {
+        const index = columns[column];
+        return index === undefined ? "" : (row[index] ?? "").trim();
+      };
+
+      // Keyed by applicationReferenceNumber: first occurrence in the file
+      // wins, same convention as the CRM import's phone dedup.
+      const candidates = new Map<
+        string,
+        {
+          customerName: string | null;
+          city: string | null;
+          state: string | null;
+          currentStage: string | null;
+          finalDecision: string | null;
+          creationDateTime: string | null;
+          dsaCode: string | null;
+          raw: Record<string, string>;
+        }
+      >();
+      dataRows.forEach((row) => {
+        if (row.every((value) => value.trim() === "")) return;
+        const applicationReferenceNumber = cell(row, "applicationReferenceNumber");
+        if (!applicationReferenceNumber || candidates.has(applicationReferenceNumber)) return;
+        const raw: Record<string, string> = {};
+        header.forEach((name, index) => {
+          if (name.trim()) raw[name.trim()] = (row[index] ?? "").trim();
+        });
+        candidates.set(applicationReferenceNumber, {
+          customerName: cell(row, "customerName") || null,
+          city: cell(row, "city") || null,
+          state: cell(row, "state") || null,
+          currentStage: cell(row, "currentStage") || null,
+          finalDecision: cell(row, "finalDecision") || null,
+          creationDateTime: cell(row, "creationDateTime") || null,
+          dsaCode: cell(row, "dsaCode") || null,
+          raw,
+        });
+      });
+
+      let matched = 0;
+      let created = 0;
+      if (candidates.size > 0) {
+        const existing = await db
+          .select({
+            id: schema.hdfcApplications.id,
+            applicationReferenceNumber: schema.hdfcApplications.applicationReferenceNumber,
+          })
+          .from(schema.hdfcApplications)
+          .where(
+            inArray(schema.hdfcApplications.applicationReferenceNumber, [...candidates.keys()]),
+          );
+        const existingRefs = new Set(existing.map((row) => row.applicationReferenceNumber));
+        const newRows = [...candidates.entries()]
+          .filter(([ref]) => !existingRefs.has(ref))
+          .map(([applicationReferenceNumber, update]) => ({
+            applicationReferenceNumber,
+            ...update,
+          }));
+
+        databaseOutcomeUnknown = true;
+        await db.transaction(async (tx) => {
+          for (const row of existing) {
+            const update = candidates.get(row.applicationReferenceNumber);
+            if (!update) continue;
+            await tx
+              .update(schema.hdfcApplications)
+              .set(update)
+              .where(eq(schema.hdfcApplications.id, row.id));
+            matched += 1;
+          }
+          for (let i = 0; i < newRows.length; i += INSERT_CHUNK) {
+            await tx.insert(schema.hdfcApplications).values(newRows.slice(i, i + INSERT_CHUNK));
+          }
+          created = newRows.length;
+          await tx.insert(schema.auditLog).values({
+            actorId: session.user.id,
+            actorEmail: session.user.email,
+            action: "hdfc_application.import",
+            entityType: "hdfc_application",
+            entityId: null,
+            after: { total: dataRows.length, matched, created },
+          });
+        });
+        databaseOutcomeUnknown = false;
+      }
+
+      return Response.json({ ok: true, total: dataRows.length, matched, created });
+    }
+
     const columns = mapHeader(header, bankLeadCsvColumns);
     const missing = bankLeadCsvRequiredColumns.filter((name) => columns[name] === undefined);
     if (missing.length > 0) {
@@ -96,15 +224,6 @@ export async function POST(req: Request) {
       return Response.json(
         { error: `The header row needs a column for: ${missingLabels.join(", ")}.` },
         { status: 400 },
-      );
-    }
-    if (dataRows.length === 0) {
-      return Response.json({ error: "That file has no rows." }, { status: 400 });
-    }
-    if (dataRows.length > MAX_ROWS) {
-      return Response.json(
-        { error: `Import up to ${MAX_ROWS} rows at a time. Split the file and try again.` },
-        { status: 413 },
       );
     }
 

@@ -8,6 +8,7 @@ import {
   normalizeIndianMobile,
   validationMessages,
   validationPatterns,
+  type BankApplyProduct,
 } from "@truelend/reference";
 import { startBankApply } from "@/lib/bank-apply-actions";
 import { RootError, TurnstileField } from "./lead-form";
@@ -46,12 +47,19 @@ export function QuickApplyFlow({ refCode }: QuickApplyFlowProps) {
     setStep("catalog");
   }
 
-  async function applyTo(productSlug: string) {
+  async function applyTo(product: BankApplyProduct) {
+    // A non-trackable product (e.g. HDFC's static DSA link) has nowhere to
+    // send a tracking code and no bank_apply_leads row to create — it's a
+    // plain redirect, no server round-trip needed.
+    if (!product.trackable) {
+      window.location.href = product.buildApplyUrl("");
+      return;
+    }
     setRootError(undefined);
-    setApplyingTo(productSlug);
+    setApplyingTo(product.slug);
     try {
       const result = await startBankApply({
-        productSlug,
+        productSlug: product.slug,
         phone,
         consent,
         turnstileToken,
@@ -123,8 +131,8 @@ export function QuickApplyFlow({ refCode }: QuickApplyFlowProps) {
             <h2 className="mt-1 font-display text-lg font-bold text-navy-950">{product.label}</h2>
             <Button
               className="mt-4 w-full"
-              disabled={!turnstileReady || applyingTo === product.slug}
-              onClick={() => void applyTo(product.slug)}
+              disabled={product.trackable && (!turnstileReady || applyingTo === product.slug)}
+              onClick={() => void applyTo(product)}
             >
               {applyingTo === product.slug ? "Redirecting…" : "Apply Now"}
             </Button>

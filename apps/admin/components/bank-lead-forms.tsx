@@ -3,9 +3,16 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Upload } from "lucide-react";
-import { Card, cx } from "@truelend/ui";
+import { Card, Select, cx } from "@truelend/ui";
 
-export function BankLeadCsvImport() {
+type Bank = "indusind" | "hdfc";
+
+interface BankLeadCsvImportProps {
+  defaultBank?: Bank;
+}
+
+export function BankLeadCsvImport({ defaultBank = "indusind" }: BankLeadCsvImportProps) {
+  const [bank, setBank] = useState<Bank>(defaultBank);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -17,11 +24,13 @@ export function BankLeadCsvImport() {
     try {
       const body = new FormData();
       body.set("file", file);
+      body.set("bank", bank);
       const response = await fetch("/api/bank-leads/import", { method: "POST", body });
       const result = (await response.json()) as {
         ok?: boolean;
         total?: number;
         matched?: number;
+        created?: number;
         error?: string;
         uncertain?: boolean;
       };
@@ -32,7 +41,10 @@ export function BankLeadCsvImport() {
       }
       setMessage({
         ok: true,
-        text: `Matched ${result.matched} of ${result.total} rows. The rest belong to other agents or channels.`,
+        text:
+          bank === "hdfc"
+            ? `Imported ${result.total} rows: ${result.created} new, ${result.matched} updated.`
+            : `Matched ${result.matched} of ${result.total} rows. The rest belong to other agents or channels.`,
       });
       router.refresh();
     } catch {
@@ -54,11 +66,31 @@ export function BankLeadCsvImport() {
         <div className="min-w-0 flex-1">
           <p className="text-sm font-semibold text-navy-950">Import a bank status export</p>
           <p className="text-xs text-muted">
-            The bank&rsquo;s periodic CSV — needs a <code>utm_content</code> column. Rows whose code
-            doesn&rsquo;t match one we generated are simply skipped, not rejected. Up to 20,000
-            rows, 5MB.
+            {bank === "hdfc" ? (
+              <>
+                HDFC&rsquo;s weekly MIS report — save the .xlsx as .csv first, needs an{" "}
+                <code>APPLICATION_REFERENCE_NUMBER</code> column. Every application updates or adds
+                a row in the HDFC report; up to 20,000 rows, 5MB.
+              </>
+            ) : (
+              <>
+                The bank&rsquo;s periodic CSV — needs a <code>utm_content</code> column. Rows whose
+                code doesn&rsquo;t match one we generated are simply skipped, not rejected. Up to
+                20,000 rows, 5MB.
+              </>
+            )}
           </p>
         </div>
+        <Select
+          aria-label="Bank"
+          value={bank}
+          disabled={busy}
+          onChange={(event) => setBank(event.target.value as Bank)}
+          className="w-auto"
+        >
+          <option value="indusind">IndusInd</option>
+          <option value="hdfc">HDFC</option>
+        </Select>
         <input
           ref={inputRef}
           type="file"

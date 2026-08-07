@@ -556,6 +556,40 @@ export const bankApplyLeads = pgTable(
 );
 
 /*
+ * HDFC's weekly MIS export, imported as its own read-only report — not
+ * linked to bank_apply_leads. Unlike IndusInd, HDFC's apply link carries no
+ * per-customer tracking code and the export carries no phone number, so
+ * there's no key to reconcile a row here against a specific partner
+ * referral. Upserted by application_reference_number on each weekly import.
+ */
+export const hdfcApplications = pgTable(
+  "hdfc_applications",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    applicationReferenceNumber: text("application_reference_number").notNull().unique(),
+    customerName: text("customer_name"),
+    city: text("city"),
+    state: text("state"),
+    currentStage: text("current_stage"),
+    finalDecision: text("final_decision"),
+    creationDateTime: text("creation_date_time"),
+    dsaCode: text("dsa_code"),
+    // Full matched CSV row (header → cell), so nothing is lost if HDFC's
+    // export gains or renames columns before the schema catches up.
+    raw: jsonb("raw"),
+    importedAt: timestamp("imported_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (t) => [
+    index("hdfc_applications_current_stage_idx").on(t.currentStage),
+    index("hdfc_applications_imported_at_idx").on(t.importedAt),
+  ],
+);
+
+/*
  * Append-only audit trail: who did what to which entity, with optional
  * before/after snapshots. Insert-only in application code — never updated or
  * deleted. actor_id is NOT a foreign key and actor_email is denormalized so the
@@ -596,5 +630,7 @@ export type PartnerDocument = typeof partnerDocuments.$inferSelect;
 export type PartnerPayout = typeof partnerPayouts.$inferSelect;
 export type BankApplyLead = typeof bankApplyLeads.$inferSelect;
 export type NewBankApplyLead = typeof bankApplyLeads.$inferInsert;
+export type HdfcApplication = typeof hdfcApplications.$inferSelect;
+export type NewHdfcApplication = typeof hdfcApplications.$inferInsert;
 export type AuditLog = typeof auditLog.$inferSelect;
 export type NewAuditLog = typeof auditLog.$inferInsert;

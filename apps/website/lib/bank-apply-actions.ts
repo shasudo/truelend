@@ -51,6 +51,13 @@ export async function startBankApply(input: unknown): Promise<BankApplyResult> {
   if (!product) {
     return { ok: false, error: "That product is no longer available." };
   }
+  // Non-trackable products (a static DSA-channel link) have nowhere to send a
+  // tracking code and no bank_apply_leads row to create — this is the actual
+  // gate, not just the client's redirect shortcut, so a direct call can't
+  // force one to be written.
+  if (!product.trackable) {
+    return { ok: true, redirectUrl: product.buildApplyUrl("") };
+  }
 
   try {
     const { env, ctx } = getCloudflareContext();
