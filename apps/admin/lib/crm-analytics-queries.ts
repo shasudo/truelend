@@ -1,5 +1,5 @@
 import "server-only";
-import type { Database } from "@truelend/db";
+import { sqlDate, type Database } from "@truelend/db";
 import { callStatusLabels, normalizeSafeInteger } from "@truelend/reference";
 import { istDaysBetween } from "./date-range";
 import type { NamedCount, TimePoint } from "./mis-queries";
@@ -562,13 +562,14 @@ export async function getCallTasksOverTime(
   from: Date,
   to: Date,
 ): Promise<TimePoint[]> {
+  const [f, t] = [sqlDate(from), sqlDate(to)];
   const rows = (await db.$client`
     select
       to_char(date_trunc('day', created_at at time zone 'Asia/Kolkata'), 'YYYY-MM-DD') as day,
       count(*)::int as n
     from call_tasks
-    where created_at >= greatest(${from}::timestamptz, ${to}::timestamptz - interval '90 days')
-      and created_at < ${to}
+    where created_at >= greatest(${f}::timestamptz, ${t}::timestamptz - interval '90 days')
+      and created_at < ${t}
     group by 1 order by 1
   `) as Row[];
   return rows.map((r) => ({ day: String(r.day), count: num(r.n) }));
@@ -580,14 +581,15 @@ export async function getCallActivityOverTime(
   from: Date,
   to: Date,
 ): Promise<TimePoint[]> {
+  const [f, t] = [sqlDate(from), sqlDate(to)];
   const rows = (await db.$client`
     select
       to_char(date_trunc('day', created_at at time zone 'Asia/Kolkata'), 'YYYY-MM-DD') as day,
       count(*)::int as n
     from audit_log
     where entity_type = 'call_task' and action = 'call_task.status_update'
-      and created_at >= greatest(${from}::timestamptz, ${to}::timestamptz - interval '90 days')
-      and created_at < ${to}
+      and created_at >= greatest(${f}::timestamptz, ${t}::timestamptz - interval '90 days')
+      and created_at < ${t}
     group by 1 order by 1
   `) as Row[];
   return rows.map((r) => ({ day: String(r.day), count: num(r.n) }));
@@ -603,13 +605,14 @@ export async function getCallActivityByHour(
   from: Date,
   to: Date,
 ): Promise<NamedCount[]> {
+  const [f, t] = [sqlDate(from), sqlDate(to)];
   const rows = (await db.$client`
     select
       extract(hour from created_at at time zone 'Asia/Kolkata')::int as hour,
       count(*)::int as n
     from audit_log
     where entity_type = 'call_task' and action = 'call_task.status_update'
-      and created_at >= ${from} and created_at < ${to}
+      and created_at >= ${f} and created_at < ${t}
     group by 1 order by 1
   `) as Row[];
   const counts = new Map(rows.map((r) => [num(r.hour), num(r.n)]));
@@ -688,6 +691,7 @@ export async function getCallerActivityTimeline(
   // at `from` — otherwise older calls would inflate a caller's total against a
   // grid that never shows them.
   const start = days[0] ? new Date(`${days[0]}T00:00:00+05:30`) : from;
+  const [startIso, toIso] = [sqlDate(start), sqlDate(to)];
 
   /*
    * Left-joined off `user`, the same shape getCallQueueByCaller uses: a caller
@@ -705,7 +709,7 @@ export async function getCallerActivityTimeline(
         on a.actor_id = u.id
         and a.entity_type = 'call_task'
         and a.action = 'call_task.status_update'
-        and a.created_at >= ${start} and a.created_at < ${to}
+        and a.created_at >= ${startIso} and a.created_at < ${toIso}
     where u.role in ('admin', 'employee')
       and (u.banned is null or u.banned = false)
     group by 1, 2, 3, 4

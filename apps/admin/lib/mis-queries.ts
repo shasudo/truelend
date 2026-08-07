@@ -1,5 +1,5 @@
 import "server-only";
-import type { Database } from "@truelend/db";
+import { sqlDate, type Database } from "@truelend/db";
 import {
   channelForKind,
   normalizeSafeInteger,
@@ -57,32 +57,33 @@ export interface ActivityStats {
  */
 export async function getActivityStats(db: Database, from: Date, to: Date): Promise<ActivityStats> {
   const sql = db.$client;
+  const [f, t] = [sqlDate(from), sqlDate(to)];
   const rows = (await sql`
     select
       (select count(*) from leads
-        where created_at >= ${from} and created_at < ${to})::int as new_leads,
+        where created_at >= ${f} and created_at < ${t})::int as new_leads,
       (select count(*) from audit_log
         where entity_type = 'call_task' and action = 'call_task.status_update'
-          and created_at >= ${from} and created_at < ${to})::int as calls_made,
+          and created_at >= ${f} and created_at < ${t})::int as calls_made,
       (select count(distinct entity_id) from audit_log
         where entity_type = 'call_task' and action = 'call_task.status_update'
           and after->>'status' not in ${sql([...unansweredCallStatusValues])}
-          and created_at >= ${from} and created_at < ${to})::int as contacted,
+          and created_at >= ${f} and created_at < ${t})::int as contacted,
       (select count(distinct entity_id) from audit_log
         where entity_type = 'call_task' and action = 'call_task.status_update'
           and after->>'status' like 'interested%'
-          and created_at >= ${from} and created_at < ${to})::int as interested,
+          and created_at >= ${f} and created_at < ${t})::int as interested,
       (select count(*) from loan_cases
-        where created_at >= ${from} and created_at < ${to})::int as applications,
+        where created_at >= ${f} and created_at < ${t})::int as applications,
       (select count(*) from loan_cases
-        where approved_at >= ${from} and approved_at < ${to})::int as approvals,
+        where approved_at >= ${f} and approved_at < ${t})::int as approvals,
       (select count(*) from loan_cases
-        where disbursed_at >= ${from} and disbursed_at < ${to})::int as disbursed,
+        where disbursed_at >= ${f} and disbursed_at < ${t})::int as disbursed,
       (select coalesce(sum(disbursed_amount_paise), 0) from loan_cases
-        where disbursed_at >= ${from} and disbursed_at < ${to}) as disbursed_volume_paise,
+        where disbursed_at >= ${f} and disbursed_at < ${t}) as disbursed_volume_paise,
       (select coalesce(sum(coalesce(revenue_paise, 0) - coalesce(payout_paise, 0)), 0)
         from loan_cases
-        where disbursed_at >= ${from} and disbursed_at < ${to}) as net_paise
+        where disbursed_at >= ${f} and disbursed_at < ${t}) as net_paise
   `) as Row[];
   const r = rows[0] ?? {};
   return {
@@ -113,36 +114,37 @@ export async function getMyActivityStats(
   userId: string,
 ): Promise<ActivityStats> {
   const sql = db.$client;
+  const [f, t] = [sqlDate(from), sqlDate(to)];
   const rows = (await sql`
     select
       (select count(*) from leads
         where assigned_to = ${userId}
-          and created_at >= ${from} and created_at < ${to})::int as new_leads,
+          and created_at >= ${f} and created_at < ${t})::int as new_leads,
       (select count(*) from audit_log
         where entity_type = 'call_task' and action = 'call_task.status_update'
           and actor_id = ${userId}
-          and created_at >= ${from} and created_at < ${to})::int as calls_made,
+          and created_at >= ${f} and created_at < ${t})::int as calls_made,
       (select count(distinct entity_id) from audit_log
         where entity_type = 'call_task' and action = 'call_task.status_update'
           and actor_id = ${userId} and after->>'status' not in ${sql([...unansweredCallStatusValues])}
-          and created_at >= ${from} and created_at < ${to})::int as contacted,
+          and created_at >= ${f} and created_at < ${t})::int as contacted,
       (select count(distinct entity_id) from audit_log
         where entity_type = 'call_task' and action = 'call_task.status_update'
           and actor_id = ${userId} and after->>'status' like 'interested%'
-          and created_at >= ${from} and created_at < ${to})::int as interested,
+          and created_at >= ${f} and created_at < ${t})::int as interested,
       (select count(*) from loan_cases c join leads l on l.id = c.lead_id
         where l.assigned_to = ${userId}
-          and c.created_at >= ${from} and c.created_at < ${to})::int as applications,
+          and c.created_at >= ${f} and c.created_at < ${t})::int as applications,
       (select count(*) from loan_cases c join leads l on l.id = c.lead_id
         where l.assigned_to = ${userId}
-          and c.approved_at >= ${from} and c.approved_at < ${to})::int as approvals,
+          and c.approved_at >= ${f} and c.approved_at < ${t})::int as approvals,
       (select count(*) from loan_cases c join leads l on l.id = c.lead_id
         where l.assigned_to = ${userId}
-          and c.disbursed_at >= ${from} and c.disbursed_at < ${to})::int as disbursed,
+          and c.disbursed_at >= ${f} and c.disbursed_at < ${t})::int as disbursed,
       (select coalesce(sum(c.disbursed_amount_paise), 0)
         from loan_cases c join leads l on l.id = c.lead_id
         where l.assigned_to = ${userId}
-          and c.disbursed_at >= ${from} and c.disbursed_at < ${to}) as disbursed_volume_paise
+          and c.disbursed_at >= ${f} and c.disbursed_at < ${t}) as disbursed_volume_paise
   `) as Row[];
   const r = rows[0] ?? {};
   return {
@@ -243,13 +245,14 @@ export interface TimePoint {
  * a shape, and a shape nobody can read is worse than a shorter one.
  */
 export async function getLeadsOverTime(db: Database, from: Date, to: Date): Promise<TimePoint[]> {
+  const [f, t] = [sqlDate(from), sqlDate(to)];
   const rows = (await db.$client`
     select
       to_char(date_trunc('day', created_at at time zone 'Asia/Kolkata'), 'YYYY-MM-DD') as day,
       count(*)::int as n
     from leads
-    where created_at >= greatest(${from}::timestamptz, ${to}::timestamptz - interval '90 days')
-      and created_at < ${to}
+    where created_at >= greatest(${f}::timestamptz, ${t}::timestamptz - interval '90 days')
+      and created_at < ${t}
     group by 1 order by 1
   `) as Row[];
   return rows.map((r) => ({ day: String(r.day), count: num(r.n) }));
@@ -261,10 +264,11 @@ export interface NamedCount {
 }
 
 export async function getLeadsByProduct(db: Database, from: Date, to: Date): Promise<NamedCount[]> {
+  const [f, t] = [sqlDate(from), sqlDate(to)];
   const rows = (await db.$client`
     select product_slug, count(*)::int as n
     from leads
-    where product_slug is not null and created_at >= ${from} and created_at < ${to}
+    where product_slug is not null and created_at >= ${f} and created_at < ${t}
     group by 1 order by n desc
   `) as Row[];
   return rows.map((r) => ({
@@ -274,10 +278,11 @@ export async function getLeadsByProduct(db: Database, from: Date, to: Date): Pro
 }
 
 export async function getLeadsByChannel(db: Database, from: Date, to: Date): Promise<NamedCount[]> {
+  const [f, t] = [sqlDate(from), sqlDate(to)];
   const rows = (await db.$client`
     select le.kind, (le.partner_id is not null) as is_partner_lead, count(*)::int as n
     from leads le
-    where le.created_at >= ${from} and le.created_at < ${to}
+    where le.created_at >= ${f} and le.created_at < ${t}
     group by le.kind, (le.partner_id is not null)
   `) as Row[];
   const counts = new Map<string, number>();

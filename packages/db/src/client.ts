@@ -28,6 +28,25 @@ export interface PartnerRegistrationSchemaProbe {
   referenceSequence: string | null;
 }
 
+/*
+ * Every raw db.$client tagged-template query must pass a Date through this,
+ * never interpolate one bare. drizzle(client, { schema }) — called above, on
+ * this same client, for the query-builder half of `db` — permanently
+ * overwrites the client's timestamp/date/jsonb (de)serializers with an
+ * identity passthrough (drizzle-orm/postgres-js's own column mapping expects
+ * to own that conversion). A bare Date reaching a raw query's Bind step is
+ * then written to the wire unconverted, and postgres.js's
+ * Buffer.byteLength(value) throws "Received an instance of Date" — the
+ * postgres.js/drizzle-orm versions pinned in this repo (postgres@3.4.9,
+ * drizzle-orm@0.45.2) confirmed to trigger this on every Date parameter, by
+ * direct reproduction against a local Postgres. Pre-stringifying sidesteps it:
+ * a text-format timestamptz parameter accepts an ISO string identically to a
+ * native Date, so nothing about the query's result changes.
+ */
+export function sqlDate(value: Date): string {
+  return value.toISOString();
+}
+
 export function assertPartnerRegistrationSchemaReady(
   probe: PartnerRegistrationSchemaProbe | undefined,
 ): void {

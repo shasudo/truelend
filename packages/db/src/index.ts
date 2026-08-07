@@ -5,6 +5,7 @@ export {
   ping,
   pingAuditImmutability,
   pingPartnerRegistrationSchema,
+  sqlDate,
   type AuditImmutabilityProbe,
   type Database,
   type PartnerRegistrationSchemaProbe,
