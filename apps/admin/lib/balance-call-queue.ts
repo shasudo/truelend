@@ -1,4 +1,8 @@
-import type { CallStatus } from "@truelend/reference";
+import {
+  isInterestedCallStatus,
+  isUnansweredCallStatus,
+  type CallStatus,
+} from "@truelend/reference";
 
 /*
  * Evens out an open call queue across a chosen set of callers.
@@ -53,8 +57,8 @@ const compareIds = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
  * lives, so it is the last thing taken from the person who built it.
  */
 function keepRank(status: CallStatus): number {
-  if (status === "interested") return 2;
-  if (status === "attempted") return 1;
+  if (isInterestedCallStatus(status)) return 2;
+  if (isUnansweredCallStatus(status)) return 1;
   return 0;
 }
 

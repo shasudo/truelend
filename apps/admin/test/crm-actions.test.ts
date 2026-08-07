@@ -3,7 +3,7 @@ import { isDeepStrictEqual } from "node:util";
 import test, { beforeEach } from "node:test";
 import { and, eq, inArray, isNull, notInArray, or } from "drizzle-orm";
 import { schema } from "@truelend/db";
-import { terminalCallStatusValues } from "@truelend/reference";
+import { MAX_CALL_ATTEMPTS, terminalCallStatusValues } from "@truelend/reference";
 import {
   getSendEnquiryFormLinkCalls,
   installAuthDependencyMocks,
@@ -182,6 +182,65 @@ void test("updateCallTaskStatusAction: a closed non-converted task also refuses 
   assert.equal(result.ok, undefined);
   assert.equal(typeof result.error, "string");
   assert.equal(updates.length, 0, "a closed task must not be reopened");
+});
+
+/*
+ * The maximum-attempt policy. `auditLog` rows stand in for the attempt count the
+ * action reads back inside its transaction, so these prove the cap arithmetic
+ * and — more importantly — which outcomes are allowed to trip it at all.
+ */
+function attemptCapState(priorAttempts: number, updates: RecordedWrite[]) {
+  return {
+    getSession: async () => buildStaffSession(),
+    dbOptions: {
+      rowsByTable: new Map<unknown, FakeRow[]>([
+        [schema.callTasks, [{ status: "attempted", callbackAt: null }]],
+        [schema.auditLog, [{ attempts: priorAttempts }]],
+      ]),
+      onUpdate: (table: unknown, values: FakeRow) => updates.push({ table, values }),
+    },
+  };
+}
+
+void test("updateCallTaskStatusAction: the last allowed unanswered attempt closes the number", async () => {
+  const updates: RecordedWrite[] = [];
+  setFakeAuthState(attemptCapState(MAX_CALL_ATTEMPTS - 1, updates));
+
+  const result = await updateCallTaskStatusAction({}, statusForm({ status: "busy" }));
+
+  assert.equal(result.ok, true);
+  assert.equal(
+    updates[0]?.values.status,
+    "exhausted",
+    "the attempt being recorded counts towards the cap, so this one is the last",
+  );
+  assert.equal(typeof result.notice, "string", "the caller is told the number was closed");
+});
+
+void test("updateCallTaskStatusAction: an attempt below the cap stores the outcome as chosen", async () => {
+  const updates: RecordedWrite[] = [];
+  setFakeAuthState(attemptCapState(MAX_CALL_ATTEMPTS - 2, updates));
+
+  const result = await updateCallTaskStatusAction({}, statusForm({ status: "busy" }));
+
+  assert.equal(result.ok, true);
+  assert.equal(updates[0]?.values.status, "busy");
+  assert.equal(result.notice, undefined);
+});
+
+void test("updateCallTaskStatusAction: reaching someone never trips the attempt cap", async () => {
+  const updates: RecordedWrite[] = [];
+  // Well past the cap on failed dials — but they picked up this time, and a
+  // caller must always be able to record what the person actually said.
+  setFakeAuthState(attemptCapState(MAX_CALL_ATTEMPTS + 5, updates));
+
+  const result = await updateCallTaskStatusAction(
+    {},
+    statusForm({ status: "callback_scheduled", callbackAt: "2026-08-09T11:00" }),
+  );
+
+  assert.equal(result.ok, true);
+  assert.equal(updates[0]?.values.status, "callback_scheduled");
 });
 
 void test("assignCallTasksAction: an employee is refused and nothing is written", async () => {

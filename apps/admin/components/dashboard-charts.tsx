@@ -31,11 +31,22 @@ interface TrendChartProps {
   id?: string;
   /** What the series counts, e.g. "leads" or "call tasks". */
   noun?: string;
+  /*
+   * The period the data covers, for the empty state and the a11y title. The page
+   * owns the range now, so a hardcoded "last 30 days" here would caption a
+   * one-day chart as a month of data.
+   */
+  period?: string;
 }
 
 /** Server-rendered SVG keeps the trend visual without shipping a chart runtime. */
-export function TrendChart({ data, id = "lead-trend", noun = "leads" }: TrendChartProps) {
-  if (data.length === 0) return <Empty label={`No ${noun} in the last 30 days`} />;
+export function TrendChart({
+  data,
+  id = "lead-trend",
+  noun = "leads",
+  period = "the last 30 days",
+}: TrendChartProps) {
+  if (data.length === 0) return <Empty label={`No ${noun} in ${period}`} />;
   const plotWidth = WIDTH - PLOT.left - PLOT.right;
   const plotHeight = HEIGHT - PLOT.top - PLOT.bottom;
   const max = Math.max(1, ...data.map((point) => point.count));
@@ -57,7 +68,7 @@ export function TrendChart({ data, id = "lead-trend", noun = "leads" }: TrendCha
         aria-labelledby={`${id}-title ${id}-desc`}
       >
         <title id={`${id}-title`}>
-          {noun.charAt(0).toUpperCase() + noun.slice(1)} over the last 30 days
+          {noun.charAt(0).toUpperCase() + noun.slice(1)} over {period}
         </title>
         <desc id={`${id}-desc`}>
           Daily {noun} counts. The highest daily count is {max}.

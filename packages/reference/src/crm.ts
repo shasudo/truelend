@@ -11,33 +11,94 @@
  */
 export const employeeCallStatusValues = [
   "new",
+  // `attempted` is the original no-answer outcome and is spelled that way in
+  // every row already written; it is labelled "No answer" rather than renamed so
+  // the outcome list reads the way callers describe it without a data migration.
   "attempted",
+  "busy",
   "callback_scheduled",
+  // Three interest outcomes, one per product the caller can be sold. `interested`
+  // predates the split and keeps meaning the loan one — same reason as above.
   "interested",
+  "interested_card",
+  "interested_both",
   "not_interested",
+  "already_has_product",
   "wrong_number",
+  "do_not_contact",
 ] as const;
 export type EmployeeCallStatus = (typeof employeeCallStatusValues)[number];
 
-export const callStatusValues = [...employeeCallStatusValues, "converted"] as const;
+/*
+ * `converted` is written only by the conversion action; `exhausted` only by the
+ * attempt cap in updateCallTaskStatusAction. Neither is settable from the
+ * dropdown, which is the point of keeping the employee list separate.
+ */
+export const callStatusValues = [...employeeCallStatusValues, "converted", "exhausted"] as const;
 export type CallStatus = (typeof callStatusValues)[number];
 
 export const callStatusLabels: Readonly<Record<string, string>> = {
   new: "New",
-  attempted: "Attempted",
+  attempted: "No answer",
+  busy: "Busy",
   callback_scheduled: "Callback scheduled",
-  interested: "Interested",
+  interested: "Interested – Loan",
+  interested_card: "Interested – Credit Card",
+  interested_both: "Interested – Both",
   not_interested: "Not interested",
+  already_has_product: "Already has product",
   wrong_number: "Wrong number",
+  do_not_contact: "Do not contact",
   converted: "Converted",
+  exhausted: "Max attempts reached",
 } satisfies Record<CallStatus, string>;
 
+/*
+ * Any interest outcome. Grouped rather than compared to a single value because
+ * three of them now mean "this prospect is worth converting", and every count,
+ * filter and badge that used to test `= 'interested'` has to mean all three.
+ */
+export const interestedCallStatusValues = [
+  "interested",
+  "interested_card",
+  "interested_both",
+] as const;
+const interestedCallStatuses = new Set<string>(interestedCallStatusValues);
+
+export function isInterestedCallStatus(status: string): boolean {
+  return interestedCallStatuses.has(status);
+}
+
 // A terminal task is done: no further outcome, and the convert action refuses it.
-export const terminalCallStatusValues = ["not_interested", "wrong_number", "converted"] as const;
+export const terminalCallStatusValues = [
+  "not_interested",
+  "already_has_product",
+  "wrong_number",
+  // ponytail: suppression is per-task, so a re-import of the same number opens a
+  // fresh task that nobody has flagged yet. Add a phone-level suppression list if
+  // a DNC number ever comes back through an import.
+  "do_not_contact",
+  "converted",
+  "exhausted",
+] as const;
 const terminalCallStatuses = new Set<string>(terminalCallStatusValues);
 
 export function isTerminalCallStatus(status: string): boolean {
   return terminalCallStatuses.has(status);
+}
+
+/*
+ * How many times a number may be dialled without ever reaching the person before
+ * the queue gives up on it. Only the outcomes below count: a conversation that
+ * ended in "call me Tuesday" is contact, not a failed attempt, so it does not
+ * burn the budget. The cap-th failed attempt closes the task as `exhausted`.
+ */
+export const MAX_CALL_ATTEMPTS = 6;
+
+const unansweredCallStatuses = new Set<string>(["attempted", "busy"]);
+
+export function isUnansweredCallStatus(status: string): boolean {
+  return unansweredCallStatuses.has(status);
 }
 
 /*

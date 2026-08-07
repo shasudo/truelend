@@ -26,13 +26,14 @@ import {
   getCallQueueLoad,
   listCallTaskSources,
   listCallTasks,
-  type CallStatus,
   type CallTaskFilters,
 } from "@/lib/crm-queries";
 import {
+  ANY_INTEREST,
   callbackFilterValues,
   callTaskSortValues,
   type CallbackFilter,
+  type CallStatusFilter,
   type CallTaskSort,
 } from "@/lib/query-filters";
 import { listEmployees } from "@/lib/lead-queries";
@@ -78,10 +79,9 @@ function day(sp: SP, key: string): string | undefined {
  */
 function parseFilters(sp: SP, isAdmin: boolean): CallTaskFilters {
   const status = str(sp, "status");
+  const statusValues: readonly string[] = [...schema.callStatus.enumValues, ANY_INTEREST];
   return {
-    status: (schema.callStatus.enumValues as readonly string[]).includes(status ?? "")
-      ? (status as CallStatus)
-      : undefined,
+    status: statusValues.includes(status ?? "") ? (status as CallStatusFilter) : undefined,
     assignee: isAdmin ? str(sp, "assignee") : undefined,
     source: str(sp, "source"),
     product: str(sp, "product"),
@@ -342,6 +342,7 @@ export default async function CallQueuePage({ searchParams }: { searchParams: Pr
           </div>
           <Select name="status" defaultValue={filters.status ?? ""} aria-label="Outcome">
             <option value="">Any outcome</option>
+            <option value={ANY_INTEREST}>Interested – any</option>
             {schema.callStatus.enumValues.map((s) => (
               <option key={s} value={s}>
                 {callStatusLabels[s]}

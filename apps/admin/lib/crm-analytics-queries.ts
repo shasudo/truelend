@@ -1,6 +1,7 @@
 import "server-only";
 import type { Database } from "@truelend/db";
 import { callStatusLabels, normalizeSafeInteger } from "@truelend/reference";
+import { istDaysBetween } from "./date-range";
 import type { NamedCount, TimePoint } from "./mis-queries";
 
 /*
@@ -22,10 +23,13 @@ import type { NamedCount, TimePoint } from "./mis-queries";
  * They match for a caller working their own queue and diverge when somebody
  * else logs an outcome on a task, which is itself worth being able to see.
  *
- * Windows are rolling (24h / 7d / 30d) rather than IST calendar days: a
- * calendar day needs a timezone shift on an index-covered column, and "in the
- * last 24 hours" is the question an operations lead actually asks. The one
- * exception is the hour-of-day histogram, which is meaningless outside IST.
+ * Two kinds of window appear below, and which one a number uses is deliberate:
+ *   - The standing tiles keep their rolling 24h / 7d / 30d comparisons. Those
+ *     are "is the queue healthy right now", and a rolling window needs no
+ *     timezone shift on an index-covered column.
+ *   - Anything drawn against a time axis takes the page's [from, to) range and
+ *     buckets by IST calendar day, because a chart the reader picked the dates
+ *     for has to agree with the dates they picked.
  */
 
 type Row = Record<string, unknown>;
@@ -44,7 +48,14 @@ function ratio(numerator: number, denominator: number): number {
   return denominator === 0 ? 0 : Math.round((numerator / denominator) * 10) / 10;
 }
 
-const OPEN = "status not in ('converted','not_interested','wrong_number')";
+/*
+ * Open = still workable. Spelled out rather than built from
+ * terminalCallStatusValues because it is interpolated with sql.unsafe below; a
+ * generated list would put an array through a raw-SQL path for no gain. Keep it
+ * in step with that constant.
+ */
+const OPEN =
+  "status not in ('converted','exhausted','not_interested','already_has_product','wrong_number','do_not_contact')";
 
 export interface CallQueueStats {
   total: number;
@@ -192,8 +203,12 @@ export interface CallerPerformance {
   callbacksScheduled: number;
   callbacksDue: number;
   interested: number;
+  /** Not interested, incl. prospects who already hold the product. */
   notInterested: number;
+  /** Unusable numbers: wrong number and do-not-contact. */
   wrongNumber: number;
+  /** Closed by the maximum-attempt policy without ever being reached. */
+  exhausted: number;
   converted: number;
   /** Owned tasks with at least one outcome logged on them, by anyone. */
   touched: number;
@@ -230,13 +245,15 @@ export async function getCallQueueByCaller(db: Database): Promise<CallerPerforma
         assigned_to as uid,
         count(*)::int as assigned,
         count(*) filter (where ${sql.unsafe(OPEN)})::int as open,
-        count(*) filter (where status = 'attempted')::int as attempted,
+        count(*) filter (where status in ('attempted', 'busy'))::int as attempted,
         count(*) filter (where status = 'callback_scheduled')::int as callbacks_scheduled,
         count(*) filter (where status = 'callback_scheduled' and callback_at <= now())::int
           as callbacks_due,
-        count(*) filter (where status = 'interested')::int as interested,
-        count(*) filter (where status = 'not_interested')::int as not_interested,
-        count(*) filter (where status = 'wrong_number')::int as wrong_number,
+        count(*) filter (where status like 'interested%')::int as interested,
+        count(*) filter (where status in ('not_interested', 'already_has_product'))::int
+          as not_interested,
+        count(*) filter (where status in ('wrong_number', 'do_not_contact'))::int as wrong_number,
+        count(*) filter (where status = 'exhausted')::int as exhausted,
         count(*) filter (where status = 'converted')::int as converted
       from call_tasks
       where assigned_to is not null
@@ -314,6 +331,7 @@ export async function getCallQueueByCaller(db: Database): Promise<CallerPerforma
       coalesce(o.interested, 0) as interested,
       coalesce(o.not_interested, 0) as not_interested,
       coalesce(o.wrong_number, 0) as wrong_number,
+      coalesce(o.exhausted, 0) as exhausted,
       coalesce(o.converted, 0) as converted,
       coalesce(w.touched, 0) as touched,
       w.avg_first_touch_hours,
@@ -355,6 +373,7 @@ export async function getCallQueueByCaller(db: Database): Promise<CallerPerforma
       interested: num(r.interested),
       notInterested: num(r.not_interested),
       wrongNumber: num(r.wrong_number),
+      exhausted: num(r.exhausted),
       converted,
       touched,
       calls,
@@ -487,9 +506,10 @@ async function segmentQuery(db: Database, dimension: string) {
       select
         key,
         count(*)::int as total,
-        count(*) filter (where status = 'interested')::int as interested,
-        count(*) filter (where status = 'not_interested')::int as not_interested,
-        count(*) filter (where status = 'wrong_number')::int as wrong_number,
+        count(*) filter (where status like 'interested%')::int as interested,
+        count(*) filter (where status in ('not_interested', 'already_has_product'))::int
+          as not_interested,
+        count(*) filter (where status in ('wrong_number', 'do_not_contact'))::int as wrong_number,
         count(*) filter (where status = 'converted')::int as converted,
         min(created_at) as first_imported_at,
         max(created_at) as last_imported_at
@@ -531,23 +551,43 @@ async function segmentQuery(db: Database, dimension: string) {
   `) as Row[];
 }
 
-export async function getCallTasksOverTime(db: Database): Promise<TimePoint[]> {
+/*
+ * Days are IST, matching the range boundaries — bucketing by UTC day would put
+ * every task imported before 05:30 IST on the previous day's bar. The lower
+ * bound is clamped to 90 days so "All time" cannot draw a bar per day since
+ * launch; the tiles are the numbers that have to be exact, this is a shape.
+ */
+export async function getCallTasksOverTime(
+  db: Database,
+  from: Date,
+  to: Date,
+): Promise<TimePoint[]> {
   const rows = (await db.$client`
-    select to_char(date_trunc('day', created_at), 'YYYY-MM-DD') as day, count(*)::int as n
+    select
+      to_char(date_trunc('day', created_at at time zone 'Asia/Kolkata'), 'YYYY-MM-DD') as day,
+      count(*)::int as n
     from call_tasks
-    where created_at > now() - interval '30 days'
+    where created_at >= greatest(${from}::timestamptz, ${to}::timestamptz - interval '90 days')
+      and created_at < ${to}
     group by 1 order by 1
   `) as Row[];
   return rows.map((r) => ({ day: String(r.day), count: num(r.n) }));
 }
 
 /** Calls logged per day — effort, where getCallTasksOverTime is intake. */
-export async function getCallActivityOverTime(db: Database): Promise<TimePoint[]> {
+export async function getCallActivityOverTime(
+  db: Database,
+  from: Date,
+  to: Date,
+): Promise<TimePoint[]> {
   const rows = (await db.$client`
-    select to_char(date_trunc('day', created_at), 'YYYY-MM-DD') as day, count(*)::int as n
+    select
+      to_char(date_trunc('day', created_at at time zone 'Asia/Kolkata'), 'YYYY-MM-DD') as day,
+      count(*)::int as n
     from audit_log
     where entity_type = 'call_task' and action = 'call_task.status_update'
-      and created_at > now() - interval '30 days'
+      and created_at >= greatest(${from}::timestamptz, ${to}::timestamptz - interval '90 days')
+      and created_at < ${to}
     group by 1 order by 1
   `) as Row[];
   return rows.map((r) => ({ day: String(r.day), count: num(r.n) }));
@@ -558,14 +598,18 @@ export async function getCallActivityOverTime(db: Database): Promise<TimePoint[]
  * not do, since "we call nobody after 6pm" is the finding. Hours with no calls
  * are filled in JS so the shape of the day stays visible.
  */
-export async function getCallActivityByHour(db: Database): Promise<NamedCount[]> {
+export async function getCallActivityByHour(
+  db: Database,
+  from: Date,
+  to: Date,
+): Promise<NamedCount[]> {
   const rows = (await db.$client`
     select
       extract(hour from created_at at time zone 'Asia/Kolkata')::int as hour,
       count(*)::int as n
     from audit_log
     where entity_type = 'call_task' and action = 'call_task.status_update'
-      and created_at > now() - interval '30 days'
+      and created_at >= ${from} and created_at < ${to}
     group by 1 order by 1
   `) as Row[];
   const counts = new Map(rows.map((r) => [num(r.hour), num(r.n)]));
@@ -604,6 +648,97 @@ export async function getOpenTaskAging(db: Database): Promise<NamedCount[]> {
     group by 1, 2 order by 2
   `) as Row[];
   return rows.map((r) => ({ name: String(r.bucket), count: num(r.n) }));
+}
+
+export interface CallerTimelineRow {
+  id: string;
+  name: string;
+  email: string;
+  /** One count per day in `days`, same order. Zero for a day they logged nothing. */
+  counts: number[];
+  total: number;
+}
+
+export interface CallerTimeline {
+  /** IST days, ascending — the shared axis every row is drawn against. */
+  days: string[];
+  rows: CallerTimelineRow[];
+  /** Busiest single caller-day in the grid. The shading scale, so one hot cell doesn't flatten the rest. */
+  peak: number;
+}
+
+/*
+ * Who dialled, on which day. The two existing time series answer "how much
+ * calling happened" but not "by whom", and the caller tables answer "by whom"
+ * but not "when" — so neither shows the thing an operations lead is actually
+ * looking for: somebody who stopped working their queue three days ago, or a
+ * team where every call lands on one person.
+ *
+ * Rows come back sparse (only caller-days with activity) and are squared off in
+ * JS against the day axis: a caller who logged nothing all period still gets a
+ * row of zeroes, which is precisely the row worth seeing.
+ */
+export async function getCallerActivityTimeline(
+  db: Database,
+  from: Date,
+  to: Date,
+): Promise<CallerTimeline> {
+  const days = istDaysBetween(from, to);
+  // The axis is capped, so the query must start where the axis does rather than
+  // at `from` — otherwise older calls would inflate a caller's total against a
+  // grid that never shows them.
+  const start = days[0] ? new Date(`${days[0]}T00:00:00+05:30`) : from;
+
+  /*
+   * Left-joined off `user`, the same shape getCallQueueByCaller uses: a caller
+   * who logged nothing in the period comes back as a single row with a null day,
+   * and so still gets a line in the grid. An inner join would simply drop them —
+   * hiding the one person a "who has gone quiet" view exists to surface.
+   */
+  const rows = (await db.$client`
+    select
+      u.id, u.name, u.email,
+      to_char(date_trunc('day', a.created_at at time zone 'Asia/Kolkata'), 'YYYY-MM-DD') as day,
+      count(a.*)::int as n
+    from "user" u
+      left join audit_log a
+        on a.actor_id = u.id
+        and a.entity_type = 'call_task'
+        and a.action = 'call_task.status_update'
+        and a.created_at >= ${start} and a.created_at < ${to}
+    where u.role in ('admin', 'employee')
+      and (u.banned is null or u.banned = false)
+    group by 1, 2, 3, 4
+  `) as Row[];
+
+  const index = new Map(days.map((day, position) => [day, position]));
+  const byCaller = new Map<string, CallerTimelineRow>();
+  let peak = 0;
+  for (const row of rows) {
+    const id = String(row.id);
+    const caller = byCaller.get(id) ?? {
+      id,
+      name: String(row.name),
+      email: String(row.email ?? ""),
+      counts: days.map(() => 0),
+      total: 0,
+    };
+    byCaller.set(id, caller);
+    // The null-day row of a caller who logged nothing: the row itself is the
+    // point, and there is no column to put a count in.
+    const position = row.day == null ? undefined : index.get(String(row.day));
+    if (position === undefined) continue;
+    const value = num(row.n);
+    caller.counts[position] = value;
+    caller.total += value;
+    peak = Math.max(peak, value);
+  }
+
+  return {
+    days,
+    rows: [...byCaller.values()].sort((a, b) => b.total - a.total || a.name.localeCompare(b.name)),
+    peak,
+  };
 }
 
 export interface CallActivityEntry {

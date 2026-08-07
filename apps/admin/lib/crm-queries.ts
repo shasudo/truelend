@@ -159,7 +159,16 @@ export interface CallTaskHistoryEntry {
   action: string;
   actorEmail: string | null;
   createdAt: Date;
-  after: { status?: string; note?: string; leadId?: string; assignedTo?: string | null } | null;
+  after: {
+    status?: string;
+    note?: string;
+    leadId?: string;
+    assignedTo?: string | null;
+    /** ISO instant the caller committed to ring back on, when the outcome was a callback. */
+    callbackAt?: string | null;
+    /** Present when this attempt tripped the maximum-attempt policy and closed the task. */
+    closed?: string;
+  } | null;
 }
 
 /*

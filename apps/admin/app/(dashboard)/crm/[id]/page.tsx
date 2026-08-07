@@ -8,6 +8,7 @@ import {
   callStatusLabels,
   formatDateTime,
   isTerminalCallStatus,
+  MAX_CALL_ATTEMPTS,
   productName,
 } from "@truelend/reference";
 import { PageTitle } from "@/components/page-title";
@@ -46,6 +47,15 @@ export default async function CallTaskPage({ params }: { params: Promise<{ id: s
   const data = await getCallTask(db, scopeFor(session), id);
   if (!data) notFound();
   const { task, duplicateLead, duplicateTask, history } = data;
+
+  /*
+   * The attempt record Harsha asked for: every logged outcome, numbered in the
+   * order it was dialled. The query returns newest-first (it is capped at 50, so
+   * the cap has to keep the RECENT rows), which is the wrong end to number from —
+   * attempt 1 is the first call ever made, so the list is reversed here.
+   */
+  const attempts = history.filter((entry) => entry.action === "call_task.status_update").reverse();
+  const otherEvents = history.filter((entry) => entry.action !== "call_task.status_update");
 
   const enquiryUrl = `${appUrls.website}/enquiry${
     task.productSlug ? `?product=${encodeURIComponent(task.productSlug)}` : ""
@@ -172,28 +182,80 @@ export default async function CallTaskPage({ params }: { params: Promise<{ id: s
             </Card>
           )}
 
-          <Card className="p-5 sm:p-6">
-            <h2 className="font-display text-lg font-bold text-navy-950">Call history</h2>
-            {history.length === 0 && (
+          <Card className="max-w-full overscroll-x-contain overflow-x-auto p-5 sm:p-6">
+            <div className="flex flex-wrap items-baseline justify-between gap-2">
+              <h2 className="font-display text-lg font-bold text-navy-950">Call attempts</h2>
+              <p className="text-sm text-muted">
+                {attempts.length} of {MAX_CALL_ATTEMPTS} before the number is closed
+              </p>
+            </div>
+            {attempts.length === 0 ? (
               <p className="mt-4 text-sm text-muted">Nothing recorded yet.</p>
+            ) : (
+              <table className="mt-4 w-full text-left text-sm" style={{ minWidth: "620px" }}>
+                <thead>
+                  <tr className="border-b border-hairline text-xs font-semibold uppercase tracking-[0.1em] text-navy-500">
+                    <th className="py-2 pr-3">#</th>
+                    <th className="py-2 pr-3">When</th>
+                    <th className="py-2 pr-3">Caller</th>
+                    <th className="py-2 pr-3">Outcome</th>
+                    <th className="py-2 pr-3">Next callback</th>
+                    <th className="py-2">Notes</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {attempts.map((entry, index) => (
+                    <tr
+                      key={`${entry.createdAt.toISOString()}-${index}`}
+                      className="border-b border-hairline align-top last:border-b-0"
+                    >
+                      <td className="py-2.5 pr-3 tabular-nums font-semibold text-navy-900">
+                        {index + 1}
+                      </td>
+                      <td className="py-2.5 pr-3 whitespace-nowrap tabular-nums text-navy-700">
+                        {formatDateTime(entry.createdAt)}
+                      </td>
+                      <td className="py-2.5 pr-3 break-all text-navy-700">
+                        {entry.actorEmail ?? "Unknown"}
+                      </td>
+                      <td className="py-2.5 pr-3 text-navy-900">
+                        {callStatusLabels[entry.after?.status ?? ""] ?? entry.after?.status}
+                        {entry.after?.closed === "exhausted" && (
+                          <span className="mt-0.5 block text-xs text-red-600">
+                            Attempt limit reached — closed
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-2.5 pr-3 whitespace-nowrap tabular-nums text-navy-700">
+                        {entry.after?.callbackAt
+                          ? formatDateTime(new Date(entry.after.callbackAt))
+                          : "—"}
+                      </td>
+                      <td className="py-2.5 break-words text-navy-700">
+                        {entry.after?.note || "—"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             )}
-            <ul className="mt-4 space-y-4">
-              {history.map((entry, index) => (
-                <li key={`${entry.createdAt.toISOString()}-${index}`} className="min-w-0">
-                  <p className="text-sm font-semibold text-navy-900">
-                    {entry.after?.status
-                      ? (callStatusLabels[entry.after.status] ?? entry.after.status)
-                      : entry.action.replace("call_task.", "").replace(/_/g, " ")}
-                  </p>
-                  {entry.after?.note && (
-                    <p className="mt-0.5 break-words text-sm text-navy-700">{entry.after.note}</p>
-                  )}
-                  <p className="mt-0.5 text-xs text-muted">
+
+            {/* Assignments, conversions and emailed forms are things done TO the
+                task rather than dials on it, so they sit below the attempt
+                record instead of being numbered alongside it. */}
+            {otherEvents.length > 0 && (
+              <ul className="mt-5 space-y-2 border-t border-hairline pt-4">
+                {otherEvents.map((entry, index) => (
+                  <li
+                    key={`${entry.createdAt.toISOString()}-${index}`}
+                    className="text-xs text-muted"
+                  >
+                    {entry.action.replace("call_task.", "").replace(/_/g, " ")} ·{" "}
                     {entry.actorEmail ?? "Unknown"} · {formatDateTime(entry.createdAt)}
-                  </p>
-                </li>
-              ))}
-            </ul>
+                  </li>
+                ))}
+              </ul>
+            )}
           </Card>
         </div>
 

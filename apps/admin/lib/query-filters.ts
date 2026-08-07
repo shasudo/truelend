@@ -1,6 +1,19 @@
-import { and, or, eq, ne, gte, lt, lte, ilike, isNull, isNotNull, type SQL } from "drizzle-orm";
+import {
+  and,
+  or,
+  eq,
+  ne,
+  gte,
+  inArray,
+  lt,
+  lte,
+  ilike,
+  isNull,
+  isNotNull,
+  type SQL,
+} from "drizzle-orm";
 import { schema } from "@truelend/db";
-import { normalizeIndianMobile } from "@truelend/reference";
+import { interestedCallStatusValues, normalizeIndianMobile } from "@truelend/reference";
 
 /*
  * Row-level read scope and list filters for the three queues staff work.
@@ -47,8 +60,18 @@ export type CallbackFilter = (typeof callbackFilterValues)[number];
 export const callTaskSortValues = ["newest", "oldest", "callback"] as const;
 export type CallTaskSort = (typeof callTaskSortValues)[number];
 
+/*
+ * "Any interest" is a real thing to filter a queue by — three statuses now mean
+ * the prospect is worth converting, and asking for them one at a time is three
+ * views of the same list. Modelled as an extra value on the existing status
+ * filter rather than a second control, so one param still describes the outcome
+ * the list is narrowed to.
+ */
+export const ANY_INTEREST = "interested_any";
+export type CallStatusFilter = CallStatus | typeof ANY_INTEREST;
+
 export interface CallTaskFilters {
-  status?: CallStatus;
+  status?: CallStatusFilter;
   /** user id, or "unassigned" */
   assignee?: string;
   /** The imported list/campaign name the CSV import writes to `source`. */
@@ -162,7 +185,11 @@ export function callTaskWhere(
   const toStart = f.to ? istDayStart(f.to) : null;
   return and(
     scopeUserId ? eq(schema.callTasks.assignedTo, scopeUserId) : undefined,
-    f.status ? eq(schema.callTasks.status, f.status) : undefined,
+    f.status === ANY_INTEREST
+      ? inArray(schema.callTasks.status, [...interestedCallStatusValues])
+      : f.status
+        ? eq(schema.callTasks.status, f.status)
+        : undefined,
     f.assignee === "unassigned"
       ? isNull(schema.callTasks.assignedTo)
       : f.assignee

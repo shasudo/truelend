@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { and, desc, eq, inArray, isNull, notInArray, or, sql } from "drizzle-orm";
+import { and, count, desc, eq, inArray, isNull, notInArray, or, sql } from "drizzle-orm";
 import { z } from "zod";
 import { schema } from "@truelend/db";
 import { sendEnquiryFormLink } from "@truelend/email";
@@ -12,9 +12,11 @@ import {
   employeeCallStatusValues,
   employmentTypeValues,
   isTerminalCallStatus,
+  isUnansweredCallStatus,
   itrFiledToBoolean,
   itrFiledValues,
   loanPurposes,
+  MAX_CALL_ATTEMPTS,
   normalizeIndianMobile,
   productSlugs,
   residenceTypeValues,
@@ -22,6 +24,7 @@ import {
   terminalCallStatusValues,
   validationMessages,
   validationPatterns,
+  type CallStatus,
 } from "@truelend/reference";
 import { type ActionResult } from "./action-result";
 import { getMutationContext, isAdminUser } from "./auth";
@@ -573,9 +576,40 @@ export async function updateCallTaskStatusAction(
       // same way the UI already hides the form for one.
       if (isTerminalCallStatus(task.status)) return "terminal" as const;
 
+      /*
+       * The maximum-attempt policy. A number that has rung out MAX_CALL_ATTEMPTS
+       * times is not worth a MAX+1th dial, and without a cap a queue re-serves
+       * the same dead numbers forever.
+       *
+       * Counted from the audit log rather than a counter column, because the log
+       * is already the record of every attempt and a second copy of the same
+       * number is a second thing that can drift. Only unanswered outcomes are
+       * counted and only an unanswered outcome can trip the cap: someone who
+       * picked up and asked to be called on Tuesday has been reached, and a
+       * caller must always be able to record what they actually said.
+       */
+      let stored: CallStatus = parsed.data.status;
+      if (isUnansweredCallStatus(stored)) {
+        const [row] = await tx
+          .select({ attempts: count() })
+          .from(schema.auditLog)
+          .where(
+            and(
+              eq(schema.auditLog.entityType, "call_task"),
+              eq(schema.auditLog.entityId, parsed.data.taskId),
+              eq(schema.auditLog.action, "call_task.status_update"),
+              sql`${schema.auditLog.after}->>'status' in ('attempted', 'busy')`,
+            ),
+          );
+        // This outcome is itself an attempt, so the one being recorded now counts
+        // towards the cap — the MAX_CALL_ATTEMPTS-th failed dial is the last one,
+        // not the one after it.
+        if ((row?.attempts ?? 0) + 1 >= MAX_CALL_ATTEMPTS) stored = "exhausted";
+      }
+
       await tx
         .update(schema.callTasks)
-        .set({ status: parsed.data.status, callbackAt })
+        .set({ status: stored, callbackAt })
         .where(eq(schema.callTasks.id, parsed.data.taskId));
       await tx.insert(schema.auditLog).values({
         actorId: user.id,
@@ -584,11 +618,20 @@ export async function updateCallTaskStatusAction(
         entityType: "call_task",
         entityId: parsed.data.taskId,
         before: { status: task.status, callbackAt: task.callbackAt },
-        // The caller's note rides the outcome that produced it, which is why
-        // there is no separate notes table.
-        after: { status: parsed.data.status, callbackAt, note: parsed.data.note },
+        /*
+         * The caller's note rides the outcome that produced it, which is why
+         * there is no separate notes table. `status` is what the caller chose,
+         * not the possibly-exhausted stored value: the log has to say the number
+         * did not answer, and `closed` records that this attempt was the last.
+         */
+        after: {
+          status: parsed.data.status,
+          callbackAt,
+          note: parsed.data.note,
+          ...(stored === "exhausted" ? { closed: "exhausted" } : {}),
+        },
       });
-      return "updated" as const;
+      return stored === "exhausted" ? ("exhausted" as const) : ("updated" as const);
     });
     if (outcome === "missing") return { error: TASK_OUT_OF_SCOPE };
     if (outcome === "converted") {
@@ -599,7 +642,12 @@ export async function updateCallTaskStatusAction(
     }
     revalidatePath(`/crm/${parsed.data.taskId}`);
     revalidatePath("/crm");
-    return { ok: true };
+    return outcome === "exhausted"
+      ? {
+          ok: true,
+          notice: `Saved. That was attempt ${MAX_CALL_ATTEMPTS} without reaching them, so this number is now closed.`,
+        }
+      : { ok: true };
   } catch (error) {
     reportCrmActionFailure("crm_status_update_failed", error);
     return { error: UNKNOWN_STATUS_OUTCOME };

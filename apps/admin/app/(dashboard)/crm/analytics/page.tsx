@@ -5,10 +5,14 @@ import { Card, StatTile } from "@truelend/ui";
 import { callStatusLabels, formatDateTime, formatPaise } from "@truelend/reference";
 import { PageTitle } from "@/components/page-title";
 import { CategoryBars, TrendChart } from "@/components/dashboard-charts";
+import { CallerTimelineGrid } from "@/components/caller-timeline";
+import { RangePicker } from "@/components/range-picker";
 import { getAuthContext, requireAdmin } from "@/lib/auth";
+import { resolveRange } from "@/lib/date-range";
 import {
   getCallActivityByHour,
   getCallActivityOverTime,
+  getCallerActivityTimeline,
   getCallQueueByCaller,
   getCallQueueStats,
   getCallTasksByCity,
@@ -182,12 +186,26 @@ function CallerCell({ caller }: CallerCellProps) {
  * business: mixing a caller leaderboard into a P&L makes both harder to read,
  * and this one is useful to look at daily.
  */
-export default async function CallQueueAnalyticsPage() {
+type SP = Record<string, string | string[] | undefined>;
+
+function str(sp: SP, key: string): string | undefined {
+  const v = sp[key];
+  return typeof v === "string" && v !== "" ? v : undefined;
+}
+
+export default async function CallQueueAnalyticsPage({
+  searchParams,
+}: {
+  searchParams: Promise<SP>;
+}) {
+  const sp = await searchParams;
   await requireAdmin();
   const { db } = getAuthContext();
+  const range = resolveRange({ range: str(sp, "range"), from: str(sp, "from"), to: str(sp, "to") });
   const [
     stats,
     callers,
+    timeline,
     byStatus,
     loggedOutcomes,
     bySource,
@@ -201,14 +219,15 @@ export default async function CallQueueAnalyticsPage() {
   ] = await Promise.all([
     getCallQueueStats(db),
     getCallQueueByCaller(db),
+    getCallerActivityTimeline(db, range.from, range.to),
     getCallTasksByStatus(db),
     getLoggedOutcomes(db),
     getCallTasksBySource(db),
     getCallTasksByProduct(db),
     getCallTasksByCity(db),
-    getCallTasksOverTime(db),
-    getCallActivityOverTime(db),
-    getCallActivityByHour(db),
+    getCallTasksOverTime(db, range.from, range.to),
+    getCallActivityOverTime(db, range.from, range.to),
+    getCallActivityByHour(db, range.from, range.to),
     getOpenTaskAging(db),
     getRecentCallActivity(db),
   ]);
@@ -226,6 +245,8 @@ export default async function CallQueueAnalyticsPage() {
         title="Call Queue Analytics"
         subtitle={`${n(stats.total)} ${stats.total === 1 ? "task" : "tasks"} imported all time · ${n(stats.callsLoggedTotal)} outcomes logged`}
       />
+
+      <RangePicker range={range} basePath="/crm/analytics" />
 
       <Section title="Queue" sub="Where the list stands right now.">
         <div className="grid grid-cols-1 gap-4 min-[420px]:grid-cols-2 sm:grid-cols-3 xl:grid-cols-4">
@@ -394,6 +415,7 @@ export default async function CallQueueAnalyticsPage() {
               <th className={THR}>Interested</th>
               <th className={THR}>Not int.</th>
               <th className={THR}>Wrong no.</th>
+              <th className={THR}>Exhausted</th>
               <th className={THR}>Forms sent</th>
               <th className={THR}>Converted</th>
               <th className={THR}>Conv %</th>
@@ -406,7 +428,7 @@ export default async function CallQueueAnalyticsPage() {
           <tbody>
             {callers.length === 0 && (
               <tr>
-                <td colSpan={12} className="px-4 py-12 text-center text-muted">
+                <td colSpan={13} className="px-4 py-12 text-center text-muted">
                   No active callers yet.
                 </td>
               </tr>
@@ -421,6 +443,7 @@ export default async function CallQueueAnalyticsPage() {
                 <td className={TDR}>{n(caller.interested)}</td>
                 <td className={TDR}>{n(caller.notInterested)}</td>
                 <td className={TDR}>{n(caller.wrongNumber)}</td>
+                <td className={TDR}>{n(caller.exhausted)}</td>
                 <td className={TDR}>{n(caller.formsEmailed)}</td>
                 <td className={TDR}>{n(caller.converted)}</td>
                 <td className={`${TDR} font-semibold text-navy-950`}>{caller.conversionRate}%</td>
@@ -434,6 +457,15 @@ export default async function CallQueueAnalyticsPage() {
             ))}
           </tbody>
         </WideTable>
+      </Section>
+
+      <Section
+        title={`Callers — day by day · ${range.label}`}
+        sub="Who dialled, on which day. A row that goes pale and stays pale is someone who stopped working their queue; rows are ordered by calls logged in this period, and everyone still active appears even if they logged nothing."
+      >
+        <Card className="p-5 sm:p-6">
+          <CallerTimelineGrid {...timeline} />
+        </Card>
       </Section>
 
       <Section
@@ -482,19 +514,21 @@ export default async function CallQueueAnalyticsPage() {
         </Card>
         <Card className="p-5 sm:p-6">
           <h2 className="font-display text-lg font-bold text-navy-950">Calls by hour</h2>
-          <p className="mt-0.5 text-sm text-muted">Last 30 days, IST.</p>
+          <p className="mt-0.5 text-sm text-muted">{range.label}, IST.</p>
           <div className="mt-5">
             <CategoryBars data={byHour} label="Calls logged by hour of day, IST" />
           </div>
         </Card>
         <Card className="p-5 sm:p-6">
           <h2 className="font-display text-lg font-bold text-navy-950">Imported over time</h2>
+          <p className="mt-0.5 text-sm text-muted">{range.label}.</p>
           <div className="mt-5">
             <TrendChart data={imported} id="call-task-trend" noun="call tasks" />
           </div>
         </Card>
         <Card className="p-5 sm:p-6">
           <h2 className="font-display text-lg font-bold text-navy-950">Calls logged over time</h2>
+          <p className="mt-0.5 text-sm text-muted">{range.label}.</p>
           <div className="mt-5">
             <TrendChart data={activity} id="call-activity-trend" noun="logged calls" />
           </div>

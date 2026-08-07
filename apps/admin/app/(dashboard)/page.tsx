@@ -9,9 +9,13 @@ import { StatusBadge } from "@/components/status-badge";
 import { TrendChart, CategoryBars } from "@/components/dashboard-charts";
 import { requireStaff, getAuthContext, scopeFor } from "@/lib/auth";
 import { ownRow } from "@/lib/query-filters";
+import { resolveRange } from "@/lib/date-range";
+import { RangePicker } from "@/components/range-picker";
 import {
-  getOverviewStats,
-  getEmployeeOverviewStats,
+  getActivityStats,
+  getMyActivityStats,
+  getPipelineStats,
+  getMyPipelineStats,
   getLeadsOverTime,
   getLeadsByProduct,
   getLeadsByChannel,
@@ -20,21 +24,73 @@ import {
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Overview" };
 
-export default async function OverviewPage() {
+type SP = Record<string, string | string[] | undefined>;
+
+const n = (value: number) => value.toLocaleString("en-IN");
+
+function str(sp: SP, key: string): string | undefined {
+  const v = sp[key];
+  return typeof v === "string" && v !== "" ? v : undefined;
+}
+
+interface PipelineTileProps {
+  href: string;
+  label: string;
+  value: number;
+  sub?: string;
+  accent?: boolean;
+}
+
+/** A backlog number and the filtered queue it stands for, so one is never read without the other. */
+function PipelineTile({ href, label, value, sub, accent }: PipelineTileProps) {
+  return (
+    <Link
+      href={href}
+      className="rounded-xl transition-colors hover:[&>div]:border-red-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600"
+    >
+      <StatTile label={label} value={n(value)} sub={sub} accent={accent} />
+    </Link>
+  );
+}
+
+interface SectionProps {
+  eyebrow: string;
+  title: string;
+  sub: string;
+  children: React.ReactNode;
+}
+
+function Section({ eyebrow, title, sub, children }: SectionProps) {
+  return (
+    <section className="mt-8 first:mt-0">
+      <SectionHeading eyebrow={eyebrow} title={title} />
+      <p className="mt-1 text-sm text-muted">{sub}</p>
+      <div className="mt-4">{children}</div>
+    </section>
+  );
+}
+
+export default async function OverviewPage({ searchParams }: { searchParams: Promise<SP> }) {
+  const sp = await searchParams;
   const session = await requireStaff();
   const scopeUserId = scopeFor(session);
   const isAdmin = scopeUserId === null;
   const { db } = getAuthContext();
+  const range = resolveRange({ range: str(sp, "range"), from: str(sp, "from"), to: str(sp, "to") });
 
-  // Revenue, company-wide totals and the company-wide charts are all an admin
-  // view. An employee, who can now only see their own leads, gets their own
-  // numbers instead — and the unscoped aggregates are not even queried for them.
-  const [stats, mine, overTime, byProduct, byChannel, recent] = await Promise.all([
-    isAdmin ? getOverviewStats(db) : null,
-    scopeUserId ? getEmployeeOverviewStats(db, scopeUserId) : null,
-    isAdmin ? getLeadsOverTime(db) : null,
-    isAdmin ? getLeadsByProduct(db) : null,
-    isAdmin ? getLeadsByChannel(db) : null,
+  /*
+   * Revenue and the company-wide breakdowns are an admin view; an employee gets
+   * the same two sections scoped to their own book, and the unscoped aggregates
+   * are not even queried for them.
+   */
+  const [activity, pipeline, overTime, byProduct, byChannel, recent] = await Promise.all([
+    scopeUserId
+      ? getMyActivityStats(db, range.from, range.to, scopeUserId)
+      : getActivityStats(db, range.from, range.to),
+    scopeUserId ? getMyPipelineStats(db, scopeUserId) : getPipelineStats(db),
+    isAdmin ? getLeadsOverTime(db, range.from, range.to) : null,
+    isAdmin ? getLeadsByProduct(db, range.from, range.to) : null,
+    isAdmin ? getLeadsByChannel(db, range.from, range.to) : null,
     db
       .select()
       .from(schema.leads)
@@ -47,35 +103,86 @@ export default async function OverviewPage() {
     <>
       <PageTitle title={`Welcome back, ${session.user.name.split(" ")[0]}`} subtitle="Overview" />
 
-      {stats && (
-        <div className="grid grid-cols-1 gap-4 min-[420px]:grid-cols-2 sm:grid-cols-3 xl:grid-cols-5">
-          <StatTile label="Total leads" value={stats.totalLeads.toLocaleString("en-IN")} />
-          <StatTile label="In pipeline" value={stats.inPipeline.toLocaleString("en-IN")} />
-          <StatTile label="Disbursed cases" value={stats.disbursedCases.toLocaleString("en-IN")} />
-          <StatTile label="Disbursed volume" value={formatPaise(stats.disbursedVolumePaise)} />
-          <StatTile label="Net to TrueLend" value={formatPaise(stats.netPaise)} accent />
-        </div>
-      )}
+      <RangePicker range={range} basePath="/" />
 
-      {mine && (
-        <div className="grid grid-cols-1 gap-4 min-[420px]:grid-cols-2 sm:grid-cols-3 xl:grid-cols-5">
-          <StatTile label="My leads" value={mine.myLeads.toLocaleString("en-IN")} />
-          <StatTile label="My open pipeline" value={mine.myOpenLeads.toLocaleString("en-IN")} />
-          <StatTile label="My call queue" value={mine.myCallTasks.toLocaleString("en-IN")} />
+      <Section
+        eyebrow={range.label}
+        title="Activity"
+        sub={isAdmin ? "What happened during this period." : "What you did during this period."}
+      >
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4">
+          <StatTile label="New leads" value={n(activity.newLeads)} />
           <StatTile
-            label="Callbacks due"
-            value={mine.myCallbacksDue.toLocaleString("en-IN")}
-            accent={mine.myCallbacksDue > 0}
+            label="Calls made"
+            value={n(activity.callsMade)}
+            sub={`${n(activity.contacted)} prospects reached`}
           />
-          <StatTile label="My conversions" value={mine.myConversions.toLocaleString("en-IN")} />
+          <StatTile label="Interested" value={n(activity.interested)} />
+          <StatTile label="Applications" value={n(activity.applications)} />
+          <StatTile label="Approvals" value={n(activity.approvals)} />
+          <StatTile label="Disbursed" value={n(activity.disbursed)} />
+          <StatTile label="Disbursed volume" value={formatPaise(activity.disbursedVolumePaise)} />
+          {/* Null, not zero, for an employee — the tile is absent rather than lying. */}
+          {activity.netPaise !== null && (
+            <StatTile label="Revenue" value={formatPaise(activity.netPaise)} accent />
+          )}
         </div>
-      )}
+      </Section>
+
+      {/*
+       * Deliberately not affected by the range picker above: a backlog is a
+       * standing quantity, and a "today" filter over it would report near zero
+       * and read as an empty pipeline. Each tile links to the queue it counts,
+       * so a number is one click from the rows behind it.
+       */}
+      <Section
+        eyebrow="Right now"
+        title="Pipeline"
+        sub="What is waiting to be worked, regardless of period."
+      >
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-6">
+          <PipelineTile
+            href="/crm?status=new&sort=oldest"
+            label="Uncontacted"
+            value={pipeline.uncontacted}
+          />
+          <PipelineTile
+            href="/crm?callback=scheduled&sort=callback"
+            label="Follow-ups"
+            value={pipeline.followUps}
+            sub={
+              pipeline.followUpsOverdue > 0 ? `${n(pipeline.followUpsOverdue)} overdue` : undefined
+            }
+            accent={pipeline.followUpsOverdue > 0}
+          />
+          <PipelineTile
+            href="/crm?status=interested_any"
+            label="Interested"
+            value={pipeline.interested}
+          />
+          <PipelineTile
+            href="/leads?status=qualified"
+            label="Docs pending"
+            value={pipeline.docsPending}
+          />
+          <PipelineTile
+            href="/loan-cases?status=logged_in"
+            label="Applications pending"
+            value={pipeline.applicationsPending}
+          />
+          <PipelineTile
+            href="/loan-cases?status=approved"
+            label="Awaiting disbursement"
+            value={pipeline.awaitingDisbursement}
+          />
+        </div>
+      </Section>
 
       {overTime && (
-        <Card className="mt-6 p-5 sm:p-6">
-          <SectionHeading eyebrow="Last 30 days" title="Leads over time" />
+        <Card className="mt-8 p-5 sm:p-6">
+          <SectionHeading eyebrow={range.label} title="Leads over time" />
           <div className="mt-6">
-            <TrendChart data={overTime} />
+            <TrendChart data={overTime} period={range.label.toLowerCase()} />
           </div>
         </Card>
       )}
