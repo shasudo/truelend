@@ -25,26 +25,30 @@ function errorPage(title: string, message: string, status: number) {
 export async function GET(_req: Request, { params }: { params: Promise<{ key: string[] }> }) {
   const { auth, db, ctx, env } = createAuthContext();
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
-    if (session?.user.role !== "admin") {
-      return errorPage("Not allowed", "You need an admin account to view this document.", 403);
-    }
     const { key } = await params;
     const r2Key = key.join("/");
     if (!r2Key.startsWith("kyc/")) {
       return errorPage("Document not found", "This file may have been removed.", 404);
     }
+    // Session check and document lookup don't depend on each other — run them
+    // concurrently instead of paying two sequential DB round trips.
     // Never turn this route into a generic authenticated R2 reader. Only keys
     // currently referenced by a KYC database row may be fetched.
-    const [document] = await db
-      .select({
-        id: schema.partnerDocuments.id,
-        partnerId: schema.partnerDocuments.partnerId,
-        r2Key: schema.partnerDocuments.r2Key,
-      })
-      .from(schema.partnerDocuments)
-      .where(eq(schema.partnerDocuments.r2Key, r2Key))
-      .limit(1);
+    const [session, [document]] = await Promise.all([
+      auth.api.getSession({ headers: await headers() }),
+      db
+        .select({
+          id: schema.partnerDocuments.id,
+          partnerId: schema.partnerDocuments.partnerId,
+          r2Key: schema.partnerDocuments.r2Key,
+        })
+        .from(schema.partnerDocuments)
+        .where(eq(schema.partnerDocuments.r2Key, r2Key))
+        .limit(1),
+    ]);
+    if (session?.user.role !== "admin") {
+      return errorPage("Not allowed", "You need an admin account to view this document.", 403);
+    }
     if (!document) {
       return errorPage("Document not found", "This file may have been removed.", 404);
     }
