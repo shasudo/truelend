@@ -8,6 +8,7 @@ import {
   callStatusLabels,
   formatDateTime,
   isTerminalCallStatus,
+  isUnansweredCallStatus,
   MAX_CALL_ATTEMPTS,
   productName,
 } from "@truelend/reference";
@@ -56,6 +57,12 @@ export default async function CallTaskPage({ params }: { params: Promise<{ id: s
    */
   const attempts = history.filter((entry) => entry.action === "call_task.status_update").reverse();
   const otherEvents = history.filter((entry) => entry.action !== "call_task.status_update");
+  // Only unanswered outcomes (attempted/busy) count towards MAX_CALL_ATTEMPTS —
+  // see updateCallTaskStatusAction — so the header count must match, not the
+  // total row count below it, or it misstates how close the number is to closing.
+  const unansweredAttempts = attempts.filter((entry) =>
+    isUnansweredCallStatus(entry.after?.status ?? ""),
+  ).length;
 
   const enquiryUrl = `${appUrls.website}/enquiry${
     task.productSlug ? `?product=${encodeURIComponent(task.productSlug)}` : ""
@@ -186,7 +193,7 @@ export default async function CallTaskPage({ params }: { params: Promise<{ id: s
             <div className="flex flex-wrap items-baseline justify-between gap-2">
               <h2 className="font-display text-lg font-bold text-navy-950">Call attempts</h2>
               <p className="text-sm text-muted">
-                {attempts.length} of {MAX_CALL_ATTEMPTS} before the number is closed
+                {unansweredAttempts} of {MAX_CALL_ATTEMPTS} unanswered before the number is closed
               </p>
             </div>
             {attempts.length === 0 ? (
