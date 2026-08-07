@@ -77,12 +77,20 @@ function isStaff(role: string | null | undefined): boolean {
   return role != null && STAFF_ROLES.has(role);
 }
 
-async function requireSession(): Promise<AdminSession> {
+/*
+ * Every (dashboard) route calls requireStaff()/requireAdmin() once in
+ * layout.tsx and again in its own page.tsx. Without cache() that runs
+ * auth.api.getSession() — a drizzle-orm query build plus a Postgres round
+ * trip — twice per request, which is what was pushing /crm over the Worker
+ * CPU limit. Mirrors getAuthContext just above and partners'
+ * getOptionalPartnerSession/requirePartnerSession.
+ */
+const requireSession = cache(async (): Promise<AdminSession> => {
   const { auth } = getAuthContext();
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) redirect("/login");
   return session;
-}
+});
 
 /**
  * Page/layout guard for all internal staff. Non-staff (partners, or a raw-signup
