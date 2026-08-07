@@ -6,6 +6,7 @@ interface __BaseEnv_CloudflareEnv {
 	AUTH_RATE_LIMITER: RateLimit;
 	REGISTRATION_RATE_LIMITER: RateLimit;
 	PARTNER_WRITE_RATE_LIMITER: RateLimit;
+	IMAGES: ImagesBinding;
 	ASSETS: Fetcher;
 	BETTER_AUTH_URL: "https://partner.truelend.in";
 	TURNSTILE_SITE_KEY: "0x4AAAAAAD0gmfEKR5XdzhJR";

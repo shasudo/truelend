@@ -3,6 +3,7 @@
 interface __BaseEnv_CloudflareEnv {
 	HYPERDRIVE: Hyperdrive;
 	LEAD_RATE_LIMITER: RateLimit;
+	IMAGES: ImagesBinding;
 	ASSETS: Fetcher;
 	EMAIL_FROM: "TrueLend <hello@truelend.in>";
 	TEAM_EMAIL: "loans@truelend.in";
