@@ -1,18 +1,8 @@
 # Architecture
 
-## Boundaries
-
-TrueLend has three independent Worker capabilities:
-
-| App      | Public surface                                | Privileged capabilities                           |
-| -------- | --------------------------------------------- | ------------------------------------------------- |
-| Website  | Content, enquiry, referral, and contact forms | Lead database writes; no auth or KYC bucket       |
-| Admin    | Staff login and internal operations           | Staff-authorized database mutations and KYC reads |
-| Partners | Referral Partner registration and portal      | Referral-scoped writes and private KYC uploads    |
-
-The website must never receive a KYC R2 binding. Admin and partners currently bind the same private
-bucket; that capability-wide access is a known external hardening gap, not proof of isolated read-only
-admin access.
+App/port/trust-boundary ownership and the KYC storage rules are defined once, in
+[CLAUDE.md](../CLAUDE.md#architecture-and-trust-boundaries) — this file covers everything CLAUDE.md
+doesn't: dependency direction, the data model, and the release pipeline.
 
 ## Dependency direction
 
@@ -29,15 +19,6 @@ App directories own routes and thin server boundaries. Reusable app UI belongs i
 app-only logic in `lib/`, and behavior shared across apps in the smallest existing domain package.
 Repository-policy tests enforce centralized dependency versions, workspace transpilation, the public
 website storage boundary, and selected source-boundary rules.
-
-## Request model
-
-- Server Components are the default.
-- Every protected route/action enforces server-side authentication and authorization.
-- Database and auth objects are created per request; Worker I/O objects are never cross-request
-  singletons.
-- Route handlers and server actions that own a database client close it with `ctx.waitUntil()`.
-- Worker bindings come from `getCloudflareContext().env`; Node scripts are the explicit exception.
 
 ## Server-to-client data
 
@@ -61,9 +42,10 @@ same rules.
 
 ## Referral-only data model
 
-`packages/db/src/schema.ts` defines 11 PostgreSQL tables. The `partners` table name remains stable for
-route, binding, and migration compatibility, but it now represents only Referral Partners. There is
-no partner-type discriminator, Business Partner role, business profile, GST KYC document, or
+`packages/db/src/schema.ts` defines 14 PostgreSQL tables — the source of truth for every column,
+index, and constraint; nothing below restates field-level detail. The `partners` table name remains
+stable for route, binding, and migration compatibility, but it now represents only Referral Partners.
+There is no partner-type discriminator, Business Partner role, business profile, GST KYC document, or
 Business Partner reference code. New Referral Partner references use the `RP<sequence>` format.
 
 ```mermaid
@@ -76,15 +58,21 @@ erDiagram
   USER ||--o{ LOAN_CASES : "creates"
   USER o|--o{ PARTNERS : "verifies"
   USER o|--o{ PARTNER_PAYOUTS : "records"
+  USER o|--o{ CALL_TASKS : "is assigned"
 
   PARTNERS ||--o{ LEADS : "sources referrals"
   PARTNERS ||--o{ PARTNER_DOCUMENTS : "uploads KYC"
   PARTNERS ||--o{ PARTNER_PAYOUTS : "has incentive ledger"
+  PARTNERS o|--o{ BANK_APPLY_LEADS : "sources referrals"
 
   LEADS ||--o{ LEAD_NOTES : "has notes"
   LEADS ||--o{ LOAN_CASES : "has lender cases"
   LOAN_CASES o|--o{ PARTNER_PAYOUTS : "supports incentive entry"
+  CALL_TASKS o|--o| LEADS : "converts to (set once)"
 ```
+
+`bank_apply_leads` and `hdfc_applications` (the two bank quick-apply tables) are deliberately outside
+this graph — see "Bank quick-apply is a separate track" below.
 
 | Entity              | Responsibility                                                                  |
 | ------------------- | ------------------------------------------------------------------------------- |
@@ -98,6 +86,9 @@ erDiagram
 | `lead_notes`        | Staff-authored notes attached to a lead                                         |
 | `loan_cases`        | Per-lender processing attempts for a lead, including paise-denominated amounts  |
 | `partner_payouts`   | Referral Partner incentive ledger (`earned` and `paid`)                         |
+| `call_tasks`        | Outbound call queue; converts into a `leads` row or dies on a terminal outcome  |
+| `bank_apply_leads`  | IndusInd bank quick-apply, tracking-code-reconciled against the bank's CSV      |
+| `hdfc_applications` | HDFC's weekly MIS export; read-only report, no join key to any other table      |
 | `audit_log`         | Append-only evidence for privileged or sensitive state changes                  |
 
 `audit_log` intentionally has no foreign keys so historical evidence survives identity or domain
@@ -108,6 +99,16 @@ optional PAN/experience directly to `partners`; later onboarding extends that sa
 with professional, address, nominee, banking, and review fields. Loan products are a reference
 catalog rather than database rows, so removing the Business Partner program does not remove Business
 Loan or any other loan type offered to Referral Partners.
+
+### Bank quick-apply is a separate track
+
+`bank_apply_leads` and `hdfc_applications` never join `leads`/`loan_cases`, and MIS reporting
+(`apps/admin/lib/mis-queries.ts`) does not query either table — this product line has no revenue
+rollup anywhere in the system today. `bank_apply_leads.partner_id` references `partners.user_id`
+(nullable, matched by tracking code against the bank's CSV export). `hdfc_applications` has no
+partner, phone, or tracking-code column at all — it is upserted by the bank's own application
+reference number and cannot be attributed to a referral, by design (HDFC's apply link carries no
+per-customer tracking slot).
 
 ## Release model
 

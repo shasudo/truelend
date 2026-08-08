@@ -27,7 +27,7 @@ const num = (value: unknown) => normalizeSafeInteger(value, "MIS aggregate");
  * is independently readable and can join whichever table it belongs to.
  *
  * Admin and employee variants are separate queries rather than one query with an
- * optional predicate, because AGENTS.md bans conditional empty postgres.js
+ * optional predicate, because CLAUDE.md bans conditional empty postgres.js
  * fragments — and because an employee has no business seeing revenue, which is
  * simply absent from their shape rather than zeroed.
  */

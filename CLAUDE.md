@@ -1,6 +1,6 @@
-# AGENTS.md
+# CLAUDE.md
 
-Repository-wide instructions for coding agents working on TrueLend. A more specific `AGENTS.md`
+Repository-wide instructions for coding agents working on TrueLend. A more specific `CLAUDE.md`
 may add rules for its subtree. Read the relevant instructions and inspect the surrounding code before
 editing.
 
@@ -70,7 +70,7 @@ pnpm --filter @truelend/website test
 ```
 
 Replace `website` with the affected workspace and use only scripts declared by that workspace. Format
-touched files explicitly, for example `pnpm exec prettier --write AGENTS.md`. Run the repository-wide
+touched files explicitly, for example `pnpm exec prettier --write CLAUDE.md`. Run the repository-wide
 `pnpm format` only when the worktree is clean or every resulting change is intentional.
 
 Before requesting review, run the same source and artifact gates as CI:
@@ -221,6 +221,10 @@ verified evidence, not inference from repository files.
 - `packages/db/src/schema.ts` is the schema source of truth. Commit generated SQL, snapshots, and
   `_journal.json` together. Treat committed/applied migrations as append-only; correct them with a new
   migration.
+- The Tier A characterization tests assert on the drizzle call surface directly — the table/values
+  passed to `.select()`/`.update()`/`.insert()`/`.transaction()`. That survives a file move or rename
+  but not a repository/data-access abstraction introduced over the ORM; don't add one without updating
+  those tests' seam deliberately, not as a side effect of an unrelated change.
 - Runtime Workers connect only with `env.HYPERDRIVE.connectionString`. Direct `DATABASE_URL` access is
   for protected CI or local Node tooling and must never be bundled into a Worker.
 - Actions and route handlers create one database client per request and close it with

@@ -369,7 +369,7 @@ void test("createUserAction: a Referral Partner's email cannot become a staff ac
 
   const result = await createUserAction({}, formData);
 
-  // AGENTS.md: staff provisioning refuses partner-linked or existing identities.
+  // CLAUDE.md: staff provisioning refuses partner-linked or existing identities.
   assert.match(result.error ?? "", /Referral Partner/);
   assert.equal(result.uncertain, undefined, "a refusal is a certain outcome, not an unknown one");
   assert.equal(createUserCalled, false, "better-auth is never reached for a taken identity");

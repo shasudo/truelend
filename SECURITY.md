@@ -16,6 +16,6 @@ availability, authorization, production data, email recipients, database state, 
 objects.
 
 Repository checks and source review are not a security certification. Production readiness also
-depends on verified external controls described in [AGENTS.md](./AGENTS.md), including GitHub and
+depends on verified external controls described in [CLAUDE.md](./CLAUDE.md), including GitHub and
 Cloudflare access controls, least-privilege identities, private KYC storage, secrets, monitoring,
 backups, restoration exercises, and incident response.

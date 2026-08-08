@@ -137,7 +137,7 @@ export async function createUserAction(
         }
         /*
          * Staff provisioning refuses an existing or partner-linked identity
-         * before it reaches better-auth (AGENTS.md: "Staff provisioning must
+         * before it reaches better-auth (CLAUDE.md: "Staff provisioning must
          * refuse partner-linked or existing identities by default"). Without
          * this, `user.email`'s unique index throws and the catch below reports a
          * deterministic, operator-fixable mistake as an unknown outcome —

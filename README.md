@@ -1,16 +1,10 @@
 # TrueLend
 
-TrueLend is a pnpm/Turborepo monorepo with three Next.js App Router applications deployed as
-separate Cloudflare Workers through OpenNext.
-
-| Workspace       | Responsibility                                                           | Local port |
-| --------------- | ------------------------------------------------------------------------ | ---------: |
-| `apps/website`  | Public product content and lead capture                                  |       3000 |
-| `apps/admin`    | Staff operations and authenticated KYC review                            |       3001 |
-| `apps/partners` | Referral Partner registration, onboarding, leads, and private KYC upload |       3002 |
-
-There is no separate API service. Route handlers and server actions are the server boundary. Shared
-runtime behavior belongs in a focused package under `packages/`.
+TrueLend is a pnpm/Turborepo monorepo with three Next.js App Router applications (`website`, `admin`,
+`partners`) deployed as separate Cloudflare Workers through OpenNext — see
+[CLAUDE.md](./CLAUDE.md#architecture-and-trust-boundaries) for what each app owns, its local port, and
+its trust boundary. There is no separate API service. Route handlers and server actions are the server
+boundary. Shared runtime behavior belongs in a focused package under `packages/`.
 
 ## Start locally
 
@@ -76,11 +70,11 @@ scripts/             repository, build, release, and safety checks
 tests/               repository architecture-policy tests
 ```
 
-Read [AGENTS.md](./AGENTS.md) before changing the repository. It is the authoritative engineering and
-security contract. [Architecture](./docs/architecture.md) explains ownership and trust boundaries;
-[UI engineering](./docs/ui-engineering.md) records the visual conventions; and
-[AI-assisted development](./docs/ai-development.md) is the concise routing, naming, comment, and
-validation guide for everyday changes.
+Read [CLAUDE.md](./CLAUDE.md) before changing the repository. It is the single authoritative
+engineering and security contract — architecture, style, security, and workflow rules all live there.
+[Architecture](./docs/architecture.md) adds the dependency graph, data model, and release pipeline;
+[AI-assisted development](./docs/ai-development.md) adds the change-ownership routing table. Neither
+restates what's already in CLAUDE.md.
 
 ## Release status
 
